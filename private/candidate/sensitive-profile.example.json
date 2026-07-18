@@ -1,0 +1,9 @@
+{
+  "gender_identity": "",
+  "race_ethnicity": [],
+  "sexual_orientation": "",
+  "veteran_status": "",
+  "disability_status": "",
+  "self_identification_preferences": {},
+  "_note": "Real sensitive values must live in sensitive-profile.enc (Phase 2). Never commit plaintext sensitive-profile.json."
+}

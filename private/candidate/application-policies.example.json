@@ -1,0 +1,19 @@
+{
+  "cover_letter": {
+    "generate_when_required": true,
+    "generate_when_optional": false
+  },
+  "demographics": {
+    "answer_voluntary_questions": true
+  },
+  "salary": {
+    "default_response": null,
+    "route_if_required": "AMBIGUOUS_FIELD"
+  },
+  "relocation": {
+    "approved_values": []
+  },
+  "legal_attestations": {
+    "standard_accuracy_attestation_approved": false
+  }
+}

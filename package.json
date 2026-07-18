@@ -1,0 +1,43 @@
+{
+  "name": "jobright-application-agent",
+  "version": "0.1.0",
+  "description": "Deterministic Playwright job-application processor for JobRight → ATS → Outlook drafts",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "migrate": "tsx src/cli/index.ts migrate",
+    "cli": "tsx src/cli/index.ts",
+    "run": "tsx src/cli/index.ts run",
+    "run:dry": "tsx src/cli/index.ts run --dry-run",
+    "dashboard": "tsx src/cli/index.ts dashboard",
+    "inspect": "tsx src/cli/index.ts inspect",
+    "retry": "tsx src/cli/index.ts retry",
+    "resume:essay": "tsx src/cli/index.ts resume-essay",
+    "report": "tsx src/cli/index.ts report",
+    "login:jobright": "tsx src/cli/index.ts login --service jobright",
+    "login:linkedin": "tsx src/cli/index.ts login --service linkedin",
+    "login:outlook": "tsx src/cli/index.ts login --service outlook",
+    "record:jobright": "tsx src/cli/index.ts record-jobright",
+    "check:forbidden": "tsx scripts/check-forbidden.ts",
+    "check:secrets": "tsx scripts/check-secrets-staged.ts",
+    "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dotenv": "^16.5.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^22.15.32",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

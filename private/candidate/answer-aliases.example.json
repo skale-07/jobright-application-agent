@@ -1,0 +1,18 @@
+{
+  "legal_name.first": ["First name", "Legal first name", "Given name"],
+  "legal_name.last": ["Last name", "Legal last name", "Surname", "Family name"],
+  "email": ["Email", "Email address", "E-mail"],
+  "phone": ["Phone", "Phone number", "Mobile", "Cell"],
+  "school": ["School", "University", "College", "Current school"],
+  "graduation_year": [
+    "Graduation year",
+    "Expected graduation date",
+    "Anticipated completion",
+    "Expected graduation"
+  ],
+  "requires_sponsorship": [
+    "Will you now or in the future require sponsorship?",
+    "Do you require visa sponsorship?",
+    "Sponsorship"
+  ]
+}

@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+dist/
+
+# Secrets and private local data
+.env
+.env.*
+!.env.example
+private/**
+!private/**/
+!private/**/*.example.json
+!private/**/*.example.md
+*.storage.json
+*.enc
+browser-profiles/
+
+# Operational data and artifacts
+data/
+artifacts/
+cache/
+traces/
+screenshots/
+fixtures/live-captures/
+
+# Logs and OS noise
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
