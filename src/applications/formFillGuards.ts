@@ -1,19 +1,19 @@
 import { getConfig } from "../config/index.js";
 
 /**
- * Phase 4: form fill and submit must stay off unless explicitly enabled.
- * Later phases call these before mutating employer forms.
+ * Form fill and submit stay fail-closed unless explicitly enabled.
+ * Phase 5 implements fill/verify; submit remains Phase 7.
  */
 export function assertFormFillAllowed(reason: string): void {
   const cfg = getConfig();
   if (!cfg.formFillEnabled) {
     throw new Error(
-      `FORM_FILL_ENABLED=false — refusing form fill (${reason}). Phase 4 inspection only.`,
+      `FORM_FILL_ENABLED=false — refusing form fill (${reason}). Use ats:fill --dry-run for a plan, or set FORM_FILL_ENABLED=true and DRY_RUN=false to execute.`,
     );
   }
   if (cfg.dryRun) {
     throw new Error(
-      `DRY_RUN=true — refusing form fill (${reason}). Use inspection dry-run instead.`,
+      `DRY_RUN=true — refusing form fill (${reason}). Set DRY_RUN=false to execute fill.`,
     );
   }
 }

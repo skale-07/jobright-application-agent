@@ -33,9 +33,12 @@ import {
 } from "../applications/atsFixtureInspect.js";
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../ats/greenhouse/v1.js";
+import { runAtsFixtureFill } from "../applications/applicationFiller.js";
+import { loadPublicProfile } from "../candidate/publicProfileIO.js";
+import { resetConfigCache } from "../config/index.js";
 
 function printHelp(): void {
-  console.log(`jobright-application-agent (Phase 4)
+  console.log(`jobright-application-agent (Phase 5)
 
 Usage:
   npm run cli -- <command> [options]
@@ -50,9 +53,14 @@ Commands:
   discover [--fixture] [--max-jobs N] [--probe-detail]
   inspect --job <jobright-job-id> [--fixture]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
+  ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
-Phase 4: ATS inspection (Greenhouse + generic). FORM_FILL/SUBMIT stay off.
+Phase 5: Greenhouse native fill/verify/upload/reset. SUBMIT stays off.
+  Plan only (default): npm run ats:fill -- --fixture greenhouse
+  Execute (requires FORM_FILL_ENABLED=true DRY_RUN=false):
+    npm run ats:fill -- --fixture greenhouse --execute
+
 JobRight selector registry: ${JOBRIGHT_SELECTOR_REGISTRY_VERSION}
 Greenhouse adapter: v${GREENHOUSE_ADAPTER_VERSION}
 ATS fixtures: ${ATS_FIXTURE_NAMES.join(", ")}
@@ -332,6 +340,48 @@ async function cmdAtsInspect(
   process.exit(1);
 }
 
+async function cmdAtsFill(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const fixture = flags["fixture"];
+  if (fixture !== "greenhouse") {
+    console.error(
+      'Usage: ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]',
+    );
+    process.exit(1);
+  }
+
+  // Allow --execute to force re-read of env if caller set vars in-shell
+  resetConfigCache();
+
+  const execute = Boolean(flags["execute"]);
+  const resumePath =
+    typeof flags["resume"] === "string" ? flags["resume"] : undefined;
+  const coverPath =
+    typeof flags["cover"] === "string" ? flags["cover"] : undefined;
+
+  // Prefer real public-profile.json; fall back to example with sponsorship filled for demos
+  let profile = loadPublicProfile();
+  if (!profile.requires_sponsorship) {
+    profile = {
+      ...profile,
+      requires_sponsorship: "No",
+    };
+  }
+
+  const report = await runAtsFixtureFill("greenhouse", {
+    execute,
+    profile,
+    ...(resumePath ? { resumePath } : {}),
+    ...(coverPath ? { coverLetterPath: coverPath } : {}),
+    resetAfter: Boolean(flags["reset"]),
+  });
+  console.log(JSON.stringify(report, null, 2));
+  if (execute && report.verify && !report.verify.passed) {
+    process.exitCode = 2;
+  }
+}
+
 async function main(): Promise<void> {
   const { command, flags } = parseArgs(process.argv.slice(2));
 
@@ -363,6 +413,9 @@ async function main(): Promise<void> {
       return;
     case "ats:inspect":
       await cmdAtsInspect(flags);
+      return;
+    case "ats:fill":
+      await cmdAtsFill(flags);
       return;
     case "run":
       if (flags["dry-run"] || getConfig().dryRun) {

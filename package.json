@@ -29,13 +29,15 @@
     "record:jobright": "tsx src/cli/index.ts record-jobright",
     "discover": "tsx src/cli/index.ts discover",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
+    "ats:fill": "tsx src/cli/index.ts ats:fill",
     "check:forbidden": "tsx scripts/check-forbidden.ts",
     "check:secrets": "tsx scripts/check-secrets-staged.ts",
     "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help",
     "verify:phase2": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run report",
     "verify:phase2b": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run cli -- --help",
     "verify:phase3": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run discover -- --fixture --max-jobs 5",
-    "verify:phase4": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:inspect -- --all-fixtures"
+    "verify:phase4": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:inspect -- --all-fixtures",
+    "verify:phase5": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:fill -- --fixture greenhouse"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

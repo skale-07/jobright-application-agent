@@ -1,31 +1,57 @@
+import type { Page } from "playwright";
 import type {
   ApplicationAdapter,
   ApplicationInspection,
   DetectionResult,
   DiscoveredField,
+  FillResult,
+  FormResetResult,
+  FormVerificationResult,
+  ResolvedApplicationAnswers,
+  SubmissionAttempt,
+  UploadVerification,
 } from "../adapter.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import {
+  greenhouseFillFromPlan,
+  greenhouseRefuseSubmit,
+  greenhouseResetForm,
+  greenhouseUploadFile,
+  greenhouseVerifyAnswers,
+  type FieldMeta,
+} from "./fill.js";
+import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
+import { greenhouseSelectorsV1 } from "./selectors.js";
 
+export { greenhouseSelectorsV1 } from "./selectors.js";
 export const GREENHOUSE_ADAPTER_VERSION = 1;
 
 /**
- * Greenhouse board forms — selectors derived from common public Greenhouse markup
- * plus fixture tests. Prefer #application_form and data attributes over brittle classes.
+ * Greenhouse board forms — selectors in ./selectors.ts
  */
-export const greenhouseSelectorsV1 = {
-  form: "#application_form, form#new_job_application, form[action*='greenhouse']",
-  fieldContainer: ".field, .application--field, .field--text, .field--textarea",
-  requiredMarker: ".required, [aria-required='true'], .asterisk",
-  resume: "input[type='file'][name*='resume' i], #resume",
-  coverLetter: "input[type='file'][name*='cover' i], #cover_letter",
-  submit: "input[type='submit'], button[type='submit']",
-  loginMarkers: /sign in|log in|create an account|create account/i,
-  captchaMarkers: /captcha|recaptcha|hcaptcha|cf-turnstile/i,
-} as const;
 
 export class GreenhouseAdapterV1 implements ApplicationAdapter {
   readonly id = "greenhouse";
   readonly version = GREENHOUSE_ADAPTER_VERSION;
+
+  /** Last fill plan used — needed for verify when called via adapter API. */
+  private lastPlanEntries: FillPlanEntry[] = [];
+  private lastFieldMeta = new Map<string, FieldMeta>();
+
+  setFillContext(
+    entries: FillPlanEntry[],
+    fields: DiscoveredField[],
+  ): void {
+    this.lastPlanEntries = entries;
+    this.lastFieldMeta = new Map(
+      fields.map((f) => {
+        const meta: FieldMeta = { type: f.type };
+        if (f.name) meta.name = f.name;
+        if (f.inputId) meta.inputId = f.inputId;
+        return [f.id, meta] as const;
+      }),
+    );
+  }
 
   async detect(input: {
     url: string;
@@ -85,5 +111,60 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
       fields,
       warnings,
     };
+  }
+
+  async fill(
+    page: Page,
+    resolvedAnswers: ResolvedApplicationAnswers,
+  ): Promise<FillResult> {
+    const entries =
+      this.lastPlanEntries.length > 0
+        ? this.lastPlanEntries.filter(
+            (e) =>
+              e.action === "fill" &&
+              e.canonical_field &&
+              resolvedAnswers[e.canonical_field] !== undefined,
+          )
+        : Object.entries(resolvedAnswers).map(([canonical, value]) => ({
+            field_id: canonical,
+            label: canonical,
+            type: "text" as const,
+            canonical_field: canonical,
+            action: "fill" as const,
+            value,
+            reason: "direct answers",
+          }));
+    return greenhouseFillFromPlan(page, entries, this.lastFieldMeta);
+  }
+
+  async verify(
+    page: Page,
+    expected: ResolvedApplicationAnswers,
+  ): Promise<FormVerificationResult> {
+    return greenhouseVerifyAnswers(
+      page,
+      expected,
+      this.lastPlanEntries,
+      this.lastFieldMeta,
+    );
+  }
+
+  async uploadResume(page: Page, resumePath: string): Promise<UploadVerification> {
+    return greenhouseUploadFile(page, "resume", resumePath);
+  }
+
+  async uploadCoverLetter(
+    page: Page,
+    coverLetterPath: string,
+  ): Promise<UploadVerification> {
+    return greenhouseUploadFile(page, "cover_letter", coverLetterPath);
+  }
+
+  async resetForm(page: Page): Promise<FormResetResult> {
+    return greenhouseResetForm(page);
+  }
+
+  async submit(page: Page): Promise<SubmissionAttempt> {
+    return greenhouseRefuseSubmit(page);
   }
 }
