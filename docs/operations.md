@@ -20,6 +20,16 @@ npm run report
 
 Login, record, dashboard, inspect, retry, and resume-essay commands exist as stubs and exit non-zero with a clear message until later phases.
 
-## Database
+## Authentication (Phase 2)
 
-Default path: `data/app.sqlite` (gitignored). Migrations: `src/storage/db/migrations/`.
+```text
+npm run login:jobright
+npm run login:linkedin
+npm run login:outlook
+npm run login:jobright -- --mode PERSISTENT_CONTEXT
+npm run candidate:encrypt-sensitive
+npm run report
+npm run verify:phase2
+```
+
+See [authentication.md](authentication.md).

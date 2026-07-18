@@ -7,7 +7,8 @@
 ## Sensitive candidate data
 
 - Public profile: gitignored plaintext JSON (Phase 1: `.example.json` only committed).
-- Sensitive profile: encrypted `sensitive-profile.enc` (Phase 2). Key via DPAPI / OS secret store — **not** in `.env` beside the file.
+- Sensitive profile: encrypted `sensitive-profile.enc`. AES-256-GCM; Windows wraps the master key with DPAPI (`master.key.dpapi`, CurrentUser). Do **not** put the raw key in `.env` beside the enc file.
+- Auth: `*.storage.json` and `private/browser-profiles/*` are gitignored. Passwords are never stored.
 - Never infer demographics; never let an LLM choose them.
 
 ## Dashboard

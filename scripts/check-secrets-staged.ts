@@ -13,7 +13,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const FORBIDDEN_NAME_PATTERNS = [
   /\.storage\.json$/i,
   /sensitive-profile\.json$/i,
+  /sensitive-profile\.draft\.json$/i,
   /sensitive-profile\.enc$/i,
+  /master\.key\.dpapi$/i,
   /cookies\.json$/i,
   /resume\.pdf$/i,
   /cover-letter\.pdf$/i,

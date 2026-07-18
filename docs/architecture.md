@@ -21,11 +21,13 @@ Project root: `C:\dev\jobright-application-agent` (outside OneDrive).
 | JSONL | Optional diagnostic log |
 | `state.json` | Readable export from SQLite only |
 
-## Phase 1 scope
+## Phase 1–2 scope
 
-Skeleton only: config, logging, migrations, state machine, idempotency, leases, review items, job fingerprints, artifact paths, CLI stubs, security/forbidden checks, recorder sanitization helpers.
+Phase 1: config, logging, migrations, state machine, idempotency, leases, review items, job fingerprints, artifact paths, CLI stubs, security/forbidden checks, recorder sanitization helpers.
 
-**Out of scope until later phases:** authentication, JobRight automation, ATS adapters, LinkedIn extraction, LLM calls, Outlook interaction.
+Phase 2: `ServiceSession` (`STORAGE_STATE` | `PERSISTENT_CONTEXT`), three login CLIs, auth validation + expiry → review items, AES-GCM sensitive profile + Windows DPAPI key wrap.
+
+**Out of scope until later phases:** JobRight automation beyond login URL, ATS adapters, LinkedIn extraction, LLM calls, Outlook draft interaction (send remains forbidden).
 
 ## Key corrections baked into schema
 

@@ -23,14 +23,17 @@
     "login:jobright": "tsx src/cli/index.ts login --service jobright",
     "login:linkedin": "tsx src/cli/index.ts login --service linkedin",
     "login:outlook": "tsx src/cli/index.ts login --service outlook",
+    "candidate:encrypt-sensitive": "tsx src/cli/index.ts candidate:encrypt-sensitive",
     "record:jobright": "tsx src/cli/index.ts record-jobright",
     "check:forbidden": "tsx scripts/check-forbidden.ts",
     "check:secrets": "tsx scripts/check-secrets-staged.ts",
-    "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help"
+    "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help",
+    "verify:phase2": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run report"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.5.0",
+    "playwright": "^1.61.1",
     "zod": "^3.25.67"
   },
   "devDependencies": {

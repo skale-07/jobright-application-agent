@@ -3,9 +3,21 @@ import { migrate, openDatabase, closeDatabase } from "../storage/db/client.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems } from "../queue/reviewItems.js";
+import { runLoginFlow } from "../auth/loginFlow.js";
+import {
+  parseServiceName,
+  parseSessionMode,
+  getServiceAuthConfig,
+} from "../auth/serviceRegistry.js";
+import { listServiceSessionRows } from "../auth/sessionStore.js";
+import { describeSessionReadiness } from "../auth/serviceSession.js";
+import {
+  encryptSensitiveProfileFromDraft,
+  sensitiveProfileStatus,
+} from "../candidate/sensitiveProfileIO.js";
 
 function printHelp(): void {
-  console.log(`jobright-application-agent (Phase 1)
+  console.log(`jobright-application-agent (Phase 2)
 
 Usage:
   npm run cli -- <command> [options]
@@ -18,11 +30,12 @@ Commands:
   inspect --job <id>     Stub: inspect job (not implemented)
   retry --application <id>
   resume-essay --application <id>
-  report                 Print DB summary / open review items
-  login --service <jobright|linkedin|outlook>
+  report                 Print DB summary / auth / review items
+  login --service <jobright|linkedin|outlook> [--mode STORAGE_STATE|PERSISTENT_CONTEXT]
+  candidate:encrypt-sensitive
   record-jobright        Stub: Phase 2b recorder (not implemented)
 
-Phase 1 implements migrate, report, and --help only.
+Phase 2 adds login:* and sensitive profile encryption.
 `);
 }
 
@@ -77,8 +90,25 @@ function cmdReport(): void {
   const db = openDatabase();
   try {
     migrate(db);
-    const apps = db.prepare(`SELECT state, COUNT(*) AS n FROM applications GROUP BY state`).all();
+    const apps = db
+      .prepare(`SELECT state, COUNT(*) AS n FROM applications GROUP BY state`)
+      .all();
     const openReviews = listOpenReviewItems(db);
+    const sessions = listServiceSessionRows(db);
+    const services = ["jobright", "linkedin", "outlook"] as const;
+    const auth = services.map((service) => {
+      const cfg = getServiceAuthConfig(service);
+      const readiness = describeSessionReadiness(service, cfg.defaultMode);
+      const row = sessions.find((s) => s.service === service);
+      return {
+        service,
+        mode: cfg.defaultMode,
+        ready: readiness.ready,
+        detail: readiness.detail,
+        last_status: row?.last_status ?? null,
+        last_validated_at: row?.last_validated_at ?? null,
+      };
+    });
     console.log(
       JSON.stringify(
         {
@@ -91,6 +121,8 @@ function cmdReport(): void {
           email_send_enabled: config.emailSendEnabled,
           applications_by_state: apps,
           open_review_items: openReviews.length,
+          auth,
+          sensitive_profile: sensitiveProfileStatus(),
         },
         null,
         2,
@@ -101,7 +133,28 @@ function cmdReport(): void {
   }
 }
 
-function main(): void {
+async function cmdLogin(flags: Record<string, string | boolean>): Promise<void> {
+  const serviceRaw = flags["service"];
+  if (typeof serviceRaw !== "string") {
+    console.error("Usage: login --service <jobright|linkedin|outlook> [--mode ...]");
+    process.exit(1);
+  }
+  const service = parseServiceName(serviceRaw);
+  const mode =
+    typeof flags["mode"] === "string" ? parseSessionMode(flags["mode"]) : undefined;
+  await runLoginFlow({
+    service,
+    ...(mode ? { mode } : {}),
+  });
+}
+
+function cmdEncryptSensitive(): void {
+  const result = encryptSensitiveProfileFromDraft();
+  console.log(`Encrypted sensitive profile → ${result.encPath}`);
+  console.log("Draft plaintext deleted.");
+}
+
+async function main(): Promise<void> {
   const { command, flags } = parseArgs(process.argv.slice(2));
 
   switch (command) {
@@ -114,6 +167,12 @@ function main(): void {
       return;
     case "report":
       cmdReport();
+      return;
+    case "login":
+      await cmdLogin(flags);
+      return;
+    case "candidate:encrypt-sensitive":
+      cmdEncryptSensitive();
       return;
     case "run":
       logger.info("run stub invoked", {
@@ -134,9 +193,6 @@ function main(): void {
     case "resume-essay":
       notImplemented("resume-essay (Phase 8)");
       break;
-    case "login":
-      notImplemented(`login:${String(flags["service"] ?? "?")} (Phase 2)`);
-      break;
     case "record-jobright":
       notImplemented("record:jobright (Phase 2b)");
       break;
@@ -147,4 +203,7 @@ function main(): void {
   }
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+});
