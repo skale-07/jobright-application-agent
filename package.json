@@ -21,14 +21,21 @@
     "resume:essay": "tsx src/cli/index.ts resume-essay",
     "report": "tsx src/cli/index.ts report",
     "login:jobright": "tsx src/cli/index.ts login --service jobright",
+    "login:jobright:cdp": "tsx src/cli/index.ts login --service jobright --cdp http://127.0.0.1:9222",
+    "chrome:debug:jobright": "tsx scripts/start-chrome-debug-jobright.ts",
     "login:linkedin": "tsx src/cli/index.ts login --service linkedin",
     "login:outlook": "tsx src/cli/index.ts login --service outlook",
     "candidate:encrypt-sensitive": "tsx src/cli/index.ts candidate:encrypt-sensitive",
     "record:jobright": "tsx src/cli/index.ts record-jobright",
+    "discover": "tsx src/cli/index.ts discover",
+    "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "check:forbidden": "tsx scripts/check-forbidden.ts",
     "check:secrets": "tsx scripts/check-secrets-staged.ts",
     "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help",
-    "verify:phase2": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run report"
+    "verify:phase2": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run report",
+    "verify:phase2b": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run cli -- --help",
+    "verify:phase3": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run discover -- --fixture --max-jobs 5",
+    "verify:phase4": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:inspect -- --all-fixtures"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

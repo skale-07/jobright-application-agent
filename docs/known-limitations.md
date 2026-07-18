@@ -1,9 +1,9 @@
-# Known limitations (Phase 2)
+# Known limitations (Phase 2b)
 
-- Login validation uses URL heuristics only (JobRight DOM selectors still unknown).
-- JobRight workflow automation / recorder not implemented until Phase 2b–3.
-- Persistent-context fallback exists but is not auto-promoted; switch via config/CLI.
-- DPAPI key wrapping is Windows-only; non-Windows needs Phase 2 follow-up or insecure test key.
+- Login validation uses URL heuristics; Google OAuth requires `BROWSER_CHANNEL=chrome` (system Chrome), not bundled Chromium.
+- Recorder requires a prior `npm run login:jobright` session.
+- Captures are operator-guided (press Enter); not fully automatic navigation.
+- JobRight production selectors are still not implemented (Phase 3).
+- DPAPI key wrapping is Windows-only; non-Windows needs insecure test key for sensitive profile.
 - Dashboard and Express API not started.
 - LinkedIn enrichment package not created.
-- Throughput targets deferred; correctness metrics come first.

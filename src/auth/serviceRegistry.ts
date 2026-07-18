@@ -30,7 +30,7 @@ export function getServiceAuthConfig(service: ServiceName): ServiceAuthConfig {
       return {
         service,
         loginUrl: "https://jobright.ai/",
-        validateUrl: "https://jobright.ai/",
+        validateUrl: "https://jobright.ai/jobs/recommend",
         unauthenticatedUrlPatterns: [
           /\/login/i,
           /\/signin/i,
@@ -38,7 +38,13 @@ export function getServiceAuthConfig(service: ServiceName): ServiceAuthConfig {
           /accounts\.google\.com/i,
           /clerk\.|auth0\./i,
         ],
-        checkpointUrlPatterns: [/\/challenge/i, /\/captcha/i, /\/verify/i],
+        checkpointUrlPatterns: [
+          /\/challenge/i,
+          /\/captcha/i,
+          /\/verify/i,
+          /signin\/rejected/i,
+          /accounts\.google\.com\/v3\/signin\/rejected/i,
+        ],
         ...shared,
       };
     case "linkedin":

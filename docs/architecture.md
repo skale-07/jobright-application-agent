@@ -27,7 +27,9 @@ Phase 1: config, logging, migrations, state machine, idempotency, leases, review
 
 Phase 2: `ServiceSession` (`STORAGE_STATE` | `PERSISTENT_CONTEXT`), three login CLIs, auth validation + expiry → review items, AES-GCM sensitive profile + Windows DPAPI key wrap.
 
-**Out of scope until later phases:** JobRight automation beyond login URL, ATS adapters, LinkedIn extraction, LLM calls, Outlook draft interaction (send remains forbidden).
+Phase 2b: JobRight recorder (`npm run record:jobright`) writes sanitized live captures under `fixtures/live-captures/` for seven workflows. No production selectors yet.
+
+**Out of scope until later phases:** JobRight automation beyond login/recorder, ATS adapters, LinkedIn extraction, LLM calls, Outlook draft interaction (send remains forbidden).
 
 ## Key corrections baked into schema
 

@@ -1,0 +1,94 @@
+import type { DiscoveredField } from "../ats/adapter.js";
+import { normalizeFieldLabel } from "./fieldNormalization.js";
+
+export type EssayClassification = {
+  field_id: string;
+  label: string;
+  is_essay: boolean;
+  reasons: string[];
+  estimated_min_words: number | null;
+};
+
+const ESSAY_LABEL_HINTS =
+  /why (do )?you (want|are)|cover letter|tell us about|describe|essay|statement of|motivation|what interests you|additional information|anything else/i;
+
+/**
+ * Heuristic essay detector for Stage 1 inspection.
+ * Flags long textareas / high minlength / essay-ish labels.
+ */
+export function classifyEssayFields(fields: DiscoveredField[]): EssayClassification[] {
+  return fields.map((f) => {
+    const reasons: string[] = [];
+    let isEssay = false;
+    let estimatedMin: number | null = null;
+
+    // File uploads (resume/cover) are not free-text essays
+    if (f.type === "file") {
+      return {
+        field_id: f.id,
+        label: f.label,
+        is_essay: false,
+        reasons: [],
+        estimated_min_words: null,
+      };
+    }
+
+    if (f.type === "textarea") {
+      reasons.push("textarea");
+      isEssay = true;
+    }
+    if (f.maxLength && f.maxLength >= 500) {
+      reasons.push(`maxLength>=500 (${f.maxLength})`);
+      isEssay = true;
+    }
+    if (f.minLength && f.minLength >= 100) {
+      reasons.push(`minLength>=100 (${f.minLength})`);
+      estimatedMin = Math.ceil(f.minLength / 5);
+      isEssay = true;
+    }
+    if (ESSAY_LABEL_HINTS.test(f.label)) {
+      reasons.push("essay-like label");
+      isEssay = true;
+    }
+    // Short optional text fields are not essays
+    if (
+      f.type === "text" &&
+      !f.minLength &&
+      (!f.maxLength || f.maxLength < 200) &&
+      !ESSAY_LABEL_HINTS.test(f.label)
+    ) {
+      isEssay = false;
+      reasons.length = 0;
+    }
+    // Select/radio/checkbox are never essays
+    if (f.type === "select" || f.type === "radio" || f.type === "checkbox" || f.type === "date") {
+      isEssay = false;
+      reasons.length = 0;
+    }
+
+    if (isEssay && estimatedMin === null) {
+      estimatedMin = 50;
+    }
+
+    return {
+      field_id: f.id,
+      label: f.label,
+      is_essay: isEssay,
+      reasons,
+      estimated_min_words: isEssay ? estimatedMin : null,
+    };
+  });
+}
+
+export function essayFieldsOnly(fields: DiscoveredField[]): EssayClassification[] {
+  return classifyEssayFields(fields).filter((c) => c.is_essay);
+}
+
+export function isDemographicsField(field: DiscoveredField): boolean {
+  const n = normalizeFieldLabel(
+    `${field.label} ${field.name ?? ""} ${field.inputId ?? ""}`,
+  );
+  return /gender|race|ethnicity|veteran|disability|hispanic|eeo|equal opportunity|decline to (self-)?identify/.test(
+    n,
+  );
+}

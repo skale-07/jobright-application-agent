@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Essay form</title></head>
+<body>
+  <form id="application_form">
+    <label for="first_name">First name</label>
+    <input id="first_name" name="job_application[first_name]" type="text" required />
+    <label for="why">Why do you want to work at Acme?</label>
+    <textarea id="why" name="job_application[answers][why]" minlength="200" maxlength="2000" required></textarea>
+    <label for="extra">Tell us about a project you are proud of</label>
+    <textarea id="extra" name="job_application[answers][project]"></textarea>
+    <input type="submit" value="Submit" />
+  </form>
+</body>
+</html>

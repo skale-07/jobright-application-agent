@@ -1,6 +1,10 @@
 import { z } from "zod";
 import dotenv from "dotenv";
 import path from "node:path";
+import {
+  parseBrowserChannel,
+  type BrowserChannel,
+} from "../browser/launchOptions.js";
 
 dotenv.config();
 
@@ -33,6 +37,8 @@ const envSchema = z.object({
   ARTIFACTS_DIR: z.string().default("artifacts"),
   PRIVATE_DIR: z.string().default("private"),
   JSONL_EVENTS_PATH: z.string().default("data/events/applications.jsonl"),
+  /** chrome = system Google Chrome (needed for Google OAuth). chromium = bundled. */
+  BROWSER_CHANNEL: z.string().default("chrome"),
 });
 
 export type AppConfig = {
@@ -54,6 +60,7 @@ export type AppConfig = {
   artifactsDir: string;
   privateDir: string;
   jsonlEventsPath: string;
+  browserChannel: BrowserChannel;
   /** Always false — no send capability exists. */
   emailSendEnabled: false;
 };
@@ -69,7 +76,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     );
   }
 
-  // Hard ban: never honor a send-enabled flag even if present in env
   const forbiddenSendFlag = ["EMAIL", "SEND", "ENABLED"].join("_");
   if (env[forbiddenSendFlag] !== undefined) {
     throw new Error(
@@ -96,6 +102,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     artifactsDir: path.resolve(parsed.ARTIFACTS_DIR),
     privateDir: path.resolve(parsed.PRIVATE_DIR),
     jsonlEventsPath: path.resolve(parsed.JSONL_EVENTS_PATH),
+    browserChannel: parseBrowserChannel(parsed.BROWSER_CHANNEL),
     emailSendEnabled: false,
   };
 }
@@ -111,7 +118,6 @@ export function resetConfigCache(): void {
   cached = undefined;
 }
 
-/** Rollout stage derived from flags (documentation helper). */
 export function deriveRolloutStage(config: AppConfig): 1 | 2 | 3 | 4 | 5 {
   if (!config.formFillEnabled) return 1;
   if (!config.submitEnabled) return 2;

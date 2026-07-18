@@ -6,7 +6,7 @@ Local deterministic Playwright application processor (JobRight → ATS → Outlo
 
 ## Phase status
 
-Phase 0–2 complete: skeleton + SQLite + separate service login (`STORAGE_STATE` / `PERSISTENT_CONTEXT`) + encrypted sensitive profile. No JobRight/ATS automation yet.
+Phase 0–3 complete for JobRight **discovery** (feed parse, eligibility, SQLite queue). Contacts automation and ATS submit are not started.
 
 ## Quick start
 
@@ -14,10 +14,10 @@ Phase 0–2 complete: skeleton + SQLite + separate service login (`STORAGE_STATE
 npm install
 npx playwright install chromium
 npm run migrate
-npm run verify:phase2
-npm run login:jobright
-npm run login:linkedin
-npm run login:outlook
+npm run verify:phase3
+npm run login:jobright:cdp
+npm run discover -- --fixture --max-jobs 5
+npm run discover -- --max-jobs 10
 ```
 
-See [docs/architecture.md](docs/architecture.md), [docs/authentication.md](docs/authentication.md), and [docs/operations.md](docs/operations.md).
+See [docs/jobright-workflow.md](docs/jobright-workflow.md).

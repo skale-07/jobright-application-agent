@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><title>Demographics</title></head>
+<body>
+  <form id="application_form">
+    <label for="email">Email</label>
+    <input id="email" name="job_application[email]" type="email" required />
+    <fieldset>
+      <legend>Gender (EEO voluntary)</legend>
+      <label><input type="radio" name="gender" value="female" /> Female</label>
+      <label><input type="radio" name="gender" value="male" /> Male</label>
+      <label><input type="radio" name="gender" value="decline" /> Decline to self-identify</label>
+    </fieldset>
+    <label for="race">Race / Ethnicity</label>
+    <select id="race" name="race">
+      <option>Prefer not to say</option>
+      <option>Decline to identify</option>
+    </select>
+    <label for="veteran">Veteran status</label>
+    <select id="veteran" name="veteran">
+      <option>I am not a veteran</option>
+      <option>Decline to self-identify</option>
+    </select>
+  </form>
+</body>
+</html>

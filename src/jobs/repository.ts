@@ -26,14 +26,25 @@ export type JobRow = {
 
 export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
   const fingerprint = computeJobFingerprint(input);
-  const existing = db
-    .prepare(`SELECT * FROM jobs WHERE job_fingerprint = ?`)
-    .get(fingerprint) as JobRow | undefined;
-
   const now = new Date().toISOString();
   const normalizedUrl = input.applicationUrl
     ? normalizeApplicationUrl(input.applicationUrl)
     : null;
+
+  const existing =
+    (db
+      .prepare(`SELECT * FROM jobs WHERE job_fingerprint = ?`)
+      .get(fingerprint) as JobRow | undefined) ??
+    (input.jobrightJobId
+      ? (db
+          .prepare(`SELECT * FROM jobs WHERE jobright_job_id = ?`)
+          .get(input.jobrightJobId) as JobRow | undefined)
+      : undefined) ??
+    (normalizedUrl
+      ? (db
+          .prepare(`SELECT * FROM jobs WHERE normalized_application_url = ?`)
+          .get(normalizedUrl) as JobRow | undefined)
+      : undefined);
 
   if (existing) {
     db.prepare(
@@ -42,7 +53,7 @@ export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
         normalized_application_url = COALESCE(?, normalized_application_url),
         company = ?, role = ?, location = ?, employment_type = ?,
         description_text = ?, description_hash = ?, source_ats = ?,
-        raw_json = ?, updated_at = ?
+        job_fingerprint = ?, raw_json = ?, updated_at = ?
        WHERE id = ?`,
     ).run(
       input.jobrightJobId ?? null,
@@ -54,6 +65,7 @@ export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
       input.descriptionText ?? null,
       input.descriptionHash ?? null,
       input.sourceAts ?? null,
+      fingerprint,
       JSON.stringify(input.raw ?? {}),
       now,
       existing.id,

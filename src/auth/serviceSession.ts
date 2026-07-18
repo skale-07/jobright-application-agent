@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import type { Browser, BrowserContext, Page } from "playwright";
 import { chromium } from "playwright";
+import { browserLaunchOptions } from "../browser/launchOptions.js";
 import { logger } from "../logging/logger.js";
 import { validateAuthFromPage } from "./authValidation.js";
 import { getServiceAuthConfig } from "./serviceRegistry.js";
@@ -47,21 +48,21 @@ export class PlaywrightServiceSession implements ServiceSession {
       throw new Error(`ServiceSession already open for ${this.service}`);
     }
     const cfg = getServiceAuthConfig(this.service);
+    const launch = browserLaunchOptions({
+      headless: this.headless,
+      slowMoMs: this.slowMoMs,
+    });
 
     if (this.mode === "PERSISTENT_CONTEXT") {
       fs.mkdirSync(cfg.persistentProfilePath, { recursive: true });
       this.context = await chromium.launchPersistentContext(cfg.persistentProfilePath, {
-        headless: this.headless,
-        slowMo: this.slowMoMs,
+        ...launch,
         viewport: cfg.viewport,
       });
       this.browser = null;
     } else {
       requireStorageState(cfg.storageStatePath);
-      this.browser = await chromium.launch({
-        headless: this.headless,
-        slowMo: this.slowMoMs,
-      });
+      this.browser = await chromium.launch(launch);
       this.context = await this.browser.newContext({
         storageState: cfg.storageStatePath,
         viewport: cfg.viewport,
