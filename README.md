@@ -6,7 +6,9 @@ Local deterministic Playwright application processor (JobRight → ATS → Outlo
 
 ## Phase status
 
-Phase 0–3 complete for JobRight **discovery** (feed parse, eligibility, SQLite queue). Contacts automation and ATS submit are not started.
+**Phase 5.5 complete** (Phases 0–5 integrated and hardened). Phase 6 not started.
+
+See [docs/phase55-remediation.md](docs/phase55-remediation.md).
 
 ## Quick start
 
@@ -14,10 +16,9 @@ Phase 0–3 complete for JobRight **discovery** (feed parse, eligibility, SQLite
 npm install
 npx playwright install chromium
 npm run migrate
-npm run verify:phase3
+npm run verify:phase5
 npm run login:jobright:cdp
 npm run discover -- --fixture --max-jobs 5
-npm run discover -- --max-jobs 10
 ```
 
 See [docs/jobright-workflow.md](docs/jobright-workflow.md).

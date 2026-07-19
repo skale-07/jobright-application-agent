@@ -8,6 +8,7 @@ import {
   runAtsFixtureFill,
 } from "../../src/applications/applicationFiller.js";
 import { buildFillPlan } from "../../src/applications/resolveAnswers.js";
+import { toApprovedFillPlan } from "../../src/applications/approvedFillPlan.js";
 import { mapDiscoveredFields } from "../../src/applications/fieldNormalization.js";
 import { loadAnswerAliases } from "../../src/candidate/answerAliases.js";
 import { discoverFieldsFromHtml } from "../../src/applications/fieldDiscovery.js";
@@ -18,8 +19,12 @@ import {
   assertSubmitAllowed,
 } from "../../src/applications/formFillGuards.js";
 import { GreenhouseAdapterV1 } from "../../src/ats/greenhouse/v1.js";
-import { resetConfigCache, loadConfig } from "../../src/config/index.js";
 import { browserLaunchOptions } from "../../src/browser/launchOptions.js";
+import {
+  applyFixtureFillEnv,
+  applySafeFillEnv,
+  useIsolatedFillEnv,
+} from "../helpers/fillEnvIsolation.js";
 
 const testProfile = parsePublicProfile({
   ...loadPublicProfile(),
@@ -32,6 +37,9 @@ const testProfile = parsePublicProfile({
 });
 
 describe("Phase 5 Greenhouse fill", () => {
+  // Default safe; individual tests opt into fixture_fill when mutating
+  useIsolatedFillEnv("safe");
+
   let browser: Browser;
 
   beforeAll(async () => {
@@ -57,10 +65,7 @@ describe("Phase 5 Greenhouse fill", () => {
   });
 
   it("plan_only mode does not require FORM_FILL_ENABLED", async () => {
-    resetConfigCache();
-    process.env.FORM_FILL_ENABLED = "false";
-    process.env.DRY_RUN = "true";
-    resetConfigCache();
+    applySafeFillEnv();
     const report = await runAtsFixtureFill("greenhouse", {
       execute: false,
       profile: testProfile,
@@ -69,24 +74,22 @@ describe("Phase 5 Greenhouse fill", () => {
     expect(report.submit_attempted).toBe(false);
   });
 
-  it("fills and verifies Greenhouse fixture when flags allow", async () => {
-    process.env.FORM_FILL_ENABLED = "true";
-    process.env.DRY_RUN = "false";
-    process.env.SUBMIT_ENABLED = "false";
-    resetConfigCache();
-    loadConfig();
+  it("fills and verifies Greenhouse fixture when flags allow (FIXTURE_CONFIRMED)", async () => {
+    applyFixtureFillEnv();
 
     const fixture = loadAtsFixture("greenhouse");
     const adapter = new GreenhouseAdapterV1();
     const fields = await adapter.discoverFields({ html: fixture.html });
     const mapped = mapDiscoveredFields(fields, loadAnswerAliases());
     const plan = buildFillPlan(mapped, testProfile);
+    const approved = toApprovedFillPlan(plan.entries);
     adapter.setFillContext(plan.entries, fields);
+    adapter.setApprovedFillPlan(approved);
 
     const page = await browser.newPage();
     try {
       await page.setContent(fixture.html, { waitUntil: "domcontentloaded" });
-      const fill = await adapter.fill(page, plan.answers);
+      const fill = await adapter.fill(page, approved.answers);
       expect(fill.errors).toEqual([]);
       expect(fill.filled).toContain("legal_name.first");
       expect(fill.filled).toContain("email");
@@ -96,7 +99,7 @@ describe("Phase 5 Greenhouse fill", () => {
       const email = await page.locator("#email").inputValue();
       expect(email).toBe("ada@example.com");
 
-      const verify = await adapter.verify(page, plan.answers);
+      const verify = await adapter.verify(page, approved.answers);
       expect(verify.passed).toBe(true);
 
       const sampleResume = path.join(
@@ -126,18 +129,16 @@ describe("Phase 5 Greenhouse fill", () => {
       );
     } finally {
       await page.close();
-      process.env.FORM_FILL_ENABLED = "false";
-      process.env.DRY_RUN = "true";
-      resetConfigCache();
+      applySafeFillEnv();
     }
   });
 
-  it("refuses execute when FORM_FILL_ENABLED is false", async () => {
-    process.env.FORM_FILL_ENABLED = "false";
-    process.env.DRY_RUN = "true";
-    resetConfigCache();
+  it("refuses execute when FORM_FILL_ENABLED is false", () => {
+    applySafeFillEnv();
     expect(() => assertFormFillAllowed("test")).toThrow(/FORM_FILL_ENABLED/);
-    expect(() => assertSubmitAllowed("test")).toThrow(/FORM_FILL_ENABLED|SUBMIT_ENABLED/);
+    expect(() => assertSubmitAllowed("test")).toThrow(
+      /FORM_FILL_ENABLED|SUBMIT_ENABLED/,
+    );
   });
 
   it("never plans essay autofill", () => {
@@ -145,11 +146,11 @@ describe("Phase 5 Greenhouse fill", () => {
     const fields = discoverFieldsFromHtml(essayHtml, { preferGreenhouse: true });
     const mapped = mapDiscoveredFields(fields, loadAnswerAliases());
     const plan = buildFillPlan(mapped, testProfile);
-    expect(plan.entries.filter((e) => e.action === "skip_essay").length).toBeGreaterThanOrEqual(1);
     expect(
-      plan.entries.some(
-        (e) => e.action === "fill" && e.type === "textarea",
-      ),
+      plan.entries.filter((e) => e.action === "skip_essay").length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      plan.entries.some((e) => e.action === "fill" && e.type === "textarea"),
     ).toBe(false);
   });
 });

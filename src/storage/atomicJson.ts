@@ -30,6 +30,7 @@ export function ensureApplicationArtifactDirs(applicationId: string): {
   linkedin: string;
   emails: string;
   drafts: string;
+  materials: string;
 } {
   const root = applicationArtifactDir(applicationId);
   const dirs = {
@@ -40,6 +41,7 @@ export function ensureApplicationArtifactDirs(applicationId: string): {
     linkedin: path.join(root, "linkedin"),
     emails: path.join(root, "emails"),
     drafts: path.join(root, "drafts"),
+    materials: path.join(root, "materials"),
   };
   for (const d of Object.values(dirs)) {
     fs.mkdirSync(d, { recursive: true });

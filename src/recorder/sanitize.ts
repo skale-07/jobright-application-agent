@@ -16,6 +16,13 @@ const REDACT_PATTERNS: RegExp[] = [
   /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
   /\b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
   /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g,
+  // Extra secret patterns (Phase 5.5 hardening)
+  /\bAKIA[0-9A-Z]{16}\b/g,
+  /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g,
+  /\bsk-(?:live|test|proj)?[-_]?[A-Za-z0-9]{20,}\b/g,
+  /(?:api[_-]?key|secret[_-]?key|access[_-]?token)\s*[:=]\s*['"]?[^\s"'<>]{8,}/gi,
+  /(?:password|passwd|pwd)\s*[:=]\s*['"]?[^\s"'<>]{4,}/gi,
+  /\b\d{3}-\d{2}-\d{4}\b/g, // SSN-shaped
 ];
 
 export type SanitizeOptions = {

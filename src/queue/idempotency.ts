@@ -50,57 +50,61 @@ export function claimIdempotencyKey(
     resourceId?: string;
   },
 ): { action: "execute" } | { action: "skip"; record: IdempotencyRecord } {
-  const existing = getIdempotency(db, key);
-  if (existing) {
-    if (existing.status === "completed") {
-      return { action: "skip", record: existing };
+  const claim = db.transaction(() => {
+    const existing = getIdempotency(db, key);
+    if (existing) {
+      if (existing.status === "completed") {
+        return { action: "skip" as const, record: existing };
+      }
+      if (existing.status === "uncertain") {
+        throw new IdempotencyConflictError(
+          `Idempotency key ${key} is uncertain — human review required before retry`,
+          existing,
+        );
+      }
+      if (existing.status === "in_progress") {
+        throw new IdempotencyConflictError(
+          `Idempotency key ${key} is already in progress`,
+          existing,
+        );
+      }
+      // failed — allow reclaim
     }
-    if (existing.status === "uncertain") {
-      throw new IdempotencyConflictError(
-        `Idempotency key ${key} is uncertain — human review required before retry`,
-        existing,
+
+    const now = new Date().toISOString();
+    if (existing?.status === "failed") {
+      db.prepare(
+        `UPDATE idempotency_keys
+         SET status = 'in_progress', holder_run_id = ?, resource_type = ?,
+             resource_id = ?, result_ref = NULL, updated_at = ?, completed_at = NULL
+         WHERE idempotency_key = ?`,
+      ).run(
+        opts.holderRunId,
+        opts.resourceType ?? null,
+        opts.resourceId ?? null,
+        now,
+        key,
+      );
+    } else {
+      db.prepare(
+        `INSERT INTO idempotency_keys (
+          idempotency_key, status, resource_type, resource_id, result_ref,
+          holder_run_id, created_at, updated_at, completed_at
+        ) VALUES (?, 'in_progress', ?, ?, NULL, ?, ?, ?, NULL)`,
+      ).run(
+        key,
+        opts.resourceType ?? null,
+        opts.resourceId ?? null,
+        opts.holderRunId,
+        now,
+        now,
       );
     }
-    if (existing.status === "in_progress") {
-      throw new IdempotencyConflictError(
-        `Idempotency key ${key} is already in progress`,
-        existing,
-      );
-    }
-    // failed — allow reclaim
-  }
 
-  const now = new Date().toISOString();
-  if (existing?.status === "failed") {
-    db.prepare(
-      `UPDATE idempotency_keys
-       SET status = 'in_progress', holder_run_id = ?, resource_type = ?,
-           resource_id = ?, result_ref = NULL, updated_at = ?, completed_at = NULL
-       WHERE idempotency_key = ?`,
-    ).run(
-      opts.holderRunId,
-      opts.resourceType ?? null,
-      opts.resourceId ?? null,
-      now,
-      key,
-    );
-  } else {
-    db.prepare(
-      `INSERT INTO idempotency_keys (
-        idempotency_key, status, resource_type, resource_id, result_ref,
-        holder_run_id, created_at, updated_at, completed_at
-      ) VALUES (?, 'in_progress', ?, ?, NULL, ?, ?, ?, NULL)`,
-    ).run(
-      key,
-      opts.resourceType ?? null,
-      opts.resourceId ?? null,
-      opts.holderRunId,
-      now,
-      now,
-    );
-  }
+    return { action: "execute" as const };
+  });
 
-  return { action: "execute" };
+  return claim.immediate();
 }
 
 export function completeIdempotencyKey(

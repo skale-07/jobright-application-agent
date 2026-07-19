@@ -71,8 +71,8 @@ export async function probeResumeUi(page: Page): Promise<{
 }
 
 /**
- * Best-effort: click Improve My Resume. Full download orchestration lands when
- * live download selectors are confirmed; Phase 3 verifies PDF postconditions only.
+ * Best-effort: click Improve My Resume.
+ * Prefer downloadAndVerifyResume for full download → verify → persist.
  */
 export async function clickImproveResume(page: Page): Promise<{ clicked: boolean }> {
   const btn = page.getByRole(jobrightSelectorsV1.jobDetail.improveResume.role, {
@@ -84,3 +84,14 @@ export async function clickImproveResume(page: Page): Promise<{ clicked: boolean
   await btn.first().click();
   return { clicked: true };
 }
+
+export {
+  downloadAndVerifyResume,
+  resumeIdempotencyKey,
+  saveVerifiedResume,
+  verifyResumePdfBuffer,
+  verifyResumePdfFile,
+  MIN_RESUME_PDF_BYTES,
+  type ResumeDownloadOptions,
+  type ResumeDownloadResult,
+} from "./resumeDownload.js";

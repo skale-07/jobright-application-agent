@@ -31,6 +31,8 @@ export class PlaywrightServiceSession implements ServiceSession {
   readonly mode: SessionPersistenceMode;
   private readonly headless: boolean;
   private readonly slowMoMs: number;
+  private readonly acceptDownloads: boolean;
+  private readonly skipAuthValidation: boolean;
   private browser: Browser | null = null;
   private context: BrowserContext | null = null;
   private opened = false;
@@ -41,6 +43,8 @@ export class PlaywrightServiceSession implements ServiceSession {
     this.mode = options.mode ?? cfg.defaultMode;
     this.headless = options.headless ?? false;
     this.slowMoMs = options.slowMoMs ?? 50;
+    this.acceptDownloads = options.acceptDownloads ?? false;
+    this.skipAuthValidation = options.skipAuthValidation ?? false;
   }
 
   async open(): Promise<void> {
@@ -58,6 +62,7 @@ export class PlaywrightServiceSession implements ServiceSession {
       this.context = await chromium.launchPersistentContext(cfg.persistentProfilePath, {
         ...launch,
         viewport: cfg.viewport,
+        acceptDownloads: this.acceptDownloads,
       });
       this.browser = null;
     } else {
@@ -66,22 +71,31 @@ export class PlaywrightServiceSession implements ServiceSession {
       this.context = await this.browser.newContext({
         storageState: cfg.storageStatePath,
         viewport: cfg.viewport,
+        acceptDownloads: this.acceptDownloads,
       });
     }
 
     this.opened = true;
-    const validation = await this.validate();
-    if (!validation.ok) {
-      await this.close();
-      throw new Error(
-        `${this.service} session invalid (${validation.status}): ${validation.reason}. Re-run npm run login:${this.service}.`,
-      );
+    if (!this.skipAuthValidation) {
+      const validation = await this.validate();
+      if (!validation.ok) {
+        await this.close();
+        throw new Error(
+          `${this.service} session invalid (${validation.status}): ${validation.reason}. Re-run npm run login:${this.service}.`,
+        );
+      }
+      logger.info("service session opened", {
+        service: this.service,
+        action: "session_open",
+        metadata: { mode: this.mode, status: validation.status },
+      });
     }
-    logger.info("service session opened", {
-      service: this.service,
-      action: "session_open",
-      metadata: { mode: this.mode, status: validation.status },
-    });
+  }
+
+  /** Advanced: context listeners (recorder). Prefer newPage() for normal work. */
+  getContext(): BrowserContext {
+    this.assertOpen();
+    return this.context!;
   }
 
   async newPage(options?: { purpose?: string }): Promise<Page> {

@@ -21,6 +21,10 @@ import {
   type FieldMeta,
 } from "./fill.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
+import {
+  approvedFillEntries,
+  type ApprovedFillPlan,
+} from "../../applications/approvedFillPlan.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
 
 export { greenhouseSelectorsV1 } from "./selectors.js";
@@ -37,6 +41,7 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
   /** Last fill plan used — needed for verify when called via adapter API. */
   private lastPlanEntries: FillPlanEntry[] = [];
   private lastFieldMeta = new Map<string, FieldMeta>();
+  private approvedPlan: ApprovedFillPlan | null = null;
 
   setFillContext(
     entries: FillPlanEntry[],
@@ -51,6 +56,13 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
         return [f.id, meta] as const;
       }),
     );
+  }
+
+  /**
+   * Required before fill(). Only approved FILL entries are executed.
+   */
+  setApprovedFillPlan(plan: ApprovedFillPlan): void {
+    this.approvedPlan = plan;
   }
 
   async detect(input: {
@@ -117,23 +129,13 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
     page: Page,
     resolvedAnswers: ResolvedApplicationAnswers,
   ): Promise<FillResult> {
-    const entries =
-      this.lastPlanEntries.length > 0
-        ? this.lastPlanEntries.filter(
-            (e) =>
-              e.action === "fill" &&
-              e.canonical_field &&
-              resolvedAnswers[e.canonical_field] !== undefined,
-          )
-        : Object.entries(resolvedAnswers).map(([canonical, value]) => ({
-            field_id: canonical,
-            label: canonical,
-            type: "text" as const,
-            canonical_field: canonical,
-            action: "fill" as const,
-            value,
-            reason: "direct answers",
-          }));
+    if (this.approvedPlan === null) {
+      throw new Error(
+        "Approved fill plan required — call setApprovedFillPlan before fill(). Direct resolvedAnswers fill is not allowed.",
+      );
+    }
+    void resolvedAnswers;
+    const entries = approvedFillEntries(this.approvedPlan);
     return greenhouseFillFromPlan(page, entries, this.lastFieldMeta);
   }
 
@@ -141,10 +143,14 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
     page: Page,
     expected: ResolvedApplicationAnswers,
   ): Promise<FormVerificationResult> {
+    const entries =
+      this.approvedPlan !== null
+        ? approvedFillEntries(this.approvedPlan)
+        : this.lastPlanEntries;
     return greenhouseVerifyAnswers(
       page,
       expected,
-      this.lastPlanEntries,
+      entries,
       this.lastFieldMeta,
     );
   }

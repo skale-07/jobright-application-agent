@@ -27,6 +27,7 @@
     "login:outlook": "tsx src/cli/index.ts login --service outlook",
     "candidate:encrypt-sensitive": "tsx src/cli/index.ts candidate:encrypt-sensitive",
     "record:jobright": "tsx src/cli/index.ts record-jobright",
+    "recorder:promote": "tsx src/cli/index.ts recorder:promote",
     "discover": "tsx src/cli/index.ts discover",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",
@@ -37,7 +38,7 @@
     "verify:phase2b": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run check:secrets && npm run cli -- --help",
     "verify:phase3": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run discover -- --fixture --max-jobs 5",
     "verify:phase4": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:inspect -- --all-fixtures",
-    "verify:phase5": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run ats:fill -- --fixture greenhouse"
+    "verify:phase5": "tsx scripts/verify-phase5.ts"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",

@@ -11,6 +11,11 @@ import type {
 import { greenhouseSelectorsV1 } from "./selectors.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
 import {
+  assertExecutableApprovedEntry,
+  type ApprovedFillPlanEntry,
+} from "../../applications/approvedFillPlan.js";
+import { isDemographicsField } from "../../applications/essayDetector.js";
+import {
   assertFormFillAllowed,
   assertSubmitAllowed,
 } from "../../applications/formFillGuards.js";
@@ -20,6 +25,8 @@ export type FieldMeta = {
   inputId?: string;
   type: FillPlanEntry["type"];
 };
+
+export type ExecutableFillEntry = ApprovedFillPlanEntry | FillPlanEntry;
 
 function cssEscapeIdent(id: string): string {
   return id.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, "\\$1");
@@ -88,13 +95,24 @@ function valuesMatch(expected: unknown, observed: unknown): boolean {
   return false;
 }
 
+function isApprovedExecutable(
+  entry: ExecutableFillEntry,
+): entry is ApprovedFillPlanEntry & { approved: true; action: "FILL" } {
+  return (
+    "approved" in entry &&
+    entry.approved === true &&
+    entry.action === "FILL"
+  );
+}
+
 /**
- * Fill Greenhouse fields from a fill plan. Call assertFormFillAllowed first.
- * Does not click submit.
+ * Fill Greenhouse fields from an approved fill plan.
+ * Rejects essay/textarea/demographic/unapproved entries even if present.
+ * Call assertFormFillAllowed first. Does not click submit.
  */
 export async function greenhouseFillFromPlan(
   page: Page,
-  entries: FillPlanEntry[],
+  entries: ExecutableFillEntry[],
   fieldMeta: Map<string, FieldMeta>,
 ): Promise<FillResult> {
   assertFormFillAllowed("greenhouse.fill");
@@ -103,10 +121,43 @@ export async function greenhouseFillFromPlan(
   const errors: string[] = [];
 
   for (const entry of entries) {
-    if (entry.action !== "fill") {
-      skipped.push(entry.field_id);
+    if (!isApprovedExecutable(entry)) {
+      if (
+        entry.action === "fill" ||
+        entry.action === "FILL" ||
+        ("approved" in entry && entry.approved)
+      ) {
+        errors.push(
+          `${entry.field_id}: rejected — entry is not an approved FILL action`,
+        );
+      } else {
+        skipped.push(entry.field_id);
+      }
       continue;
     }
+
+    try {
+      assertExecutableApprovedEntry(entry);
+      if (entry.type === "textarea") {
+        throw new Error("textarea/essay never filled");
+      }
+      if (
+        isDemographicsField({
+          id: entry.field_id,
+          label: entry.label,
+          type: entry.type,
+          required: false,
+        })
+      ) {
+        throw new Error("demographics never filled");
+      }
+    } catch (err) {
+      errors.push(
+        `${entry.field_id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      continue;
+    }
+
     const meta = fieldMeta.get(entry.field_id);
     try {
       const loc = locatorForField(page, {
@@ -206,18 +257,30 @@ export async function greenhouseReadFieldValue(
 
 export async function greenhouseVerifyFromPlan(
   page: Page,
-  entries: FillPlanEntry[],
+  entries: ExecutableFillEntry[],
   fieldMeta: Map<string, FieldMeta>,
 ): Promise<FormVerificationResult> {
   const fields: FormVerificationResult["fields"] = [];
   const warnings: string[] = [];
 
-  for (const entry of entries.filter((e) => e.action === "fill")) {
+  const fillable = entries.filter(
+    (e) =>
+      (e.action === "fill" || e.action === "FILL") &&
+      (!("approved" in e) || e.approved === true),
+  );
+
+  for (const entry of fillable) {
     const meta = fieldMeta.get(entry.field_id);
     const canonical = entry.canonical_field ?? entry.field_id;
     try {
       const observed = await greenhouseReadFieldValue(page, {
-        ...entry,
+        field_id: entry.field_id,
+        label: entry.label,
+        type: entry.type,
+        canonical_field: entry.canonical_field,
+        action: "fill",
+        value: entry.value,
+        reason: "verify",
         ...(meta?.name ? { name: meta.name } : {}),
         ...(meta?.inputId ? { inputId: meta.inputId } : {}),
       });
@@ -332,12 +395,13 @@ export async function greenhouseRefuseSubmit(page: Page): Promise<never> {
 export async function greenhouseVerifyAnswers(
   page: Page,
   expected: ResolvedApplicationAnswers,
-  entries: FillPlanEntry[],
+  entries: ExecutableFillEntry[],
   fieldMeta: Map<string, FieldMeta>,
 ): Promise<FormVerificationResult> {
   const filtered = entries.filter(
     (e) =>
-      e.action === "fill" &&
+      (e.action === "fill" || e.action === "FILL") &&
+      (!("approved" in e) || e.approved === true) &&
       e.canonical_field &&
       expected[e.canonical_field] !== undefined,
   );

@@ -1,8 +1,7 @@
 import type { Request, Response } from "playwright";
-import { chromium } from "playwright";
+import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { getServiceAuthConfig } from "../auth/serviceRegistry.js";
 import { requireStorageState, storageStateExists } from "../auth/storageStateManager.js";
-import { browserLaunchOptions } from "../browser/launchOptions.js";
 import { logger } from "../logging/logger.js";
 import { waitForEnter } from "../util/stdin.js";
 import {
@@ -25,7 +24,6 @@ function interestingNetwork(url: string): boolean {
   try {
     const u = new URL(url);
     if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-    // Skip noisy static assets
     if (/\.(png|jpe?g|gif|svg|woff2?|css|ico)(\?|$)/i.test(u.pathname)) return false;
     return true;
   } catch {
@@ -64,14 +62,14 @@ export async function runJobRightRecorder(
   console.log(`Captures root: ${capturesRoot}`);
   console.log("Navigate in the browser to the requested UI, then press Enter here to capture.\n");
 
-  const browser = await chromium.launch(
-    browserLaunchOptions({ headless: false, slowMoMs: 40 }),
-  );
-  const context = await browser.newContext({
-    storageState: cfg.storageStatePath,
-    viewport: cfg.viewport,
+  const session = new PlaywrightServiceSession({
+    service: "jobright",
+    headless: false,
+    slowMoMs: 40,
     acceptDownloads: true,
   });
+  await session.open();
+  const context = session.getContext();
 
   const network: Array<Record<string, unknown>> = [];
   const pagesMeta: Array<{ url: string; title: string }> = [];
@@ -104,7 +102,9 @@ export async function runJobRightRecorder(
   context.on("response", onResponse);
   context.on("page", async (p) => {
     try {
-      await p.waitForLoadState("domcontentloaded", { timeout: 15_000 }).catch(() => undefined);
+      await p
+        .waitForLoadState("domcontentloaded", { timeout: 15_000 })
+        .catch(() => undefined);
       pagesMeta.push({ url: p.url(), title: await p.title().catch(() => "") });
       routeLog.push({
         at: new Date().toISOString(),
@@ -118,7 +118,7 @@ export async function runJobRightRecorder(
   });
 
   try {
-    const page = await context.newPage();
+    const page = await session.newPage({ purpose: "recorder" });
     page.on("framenavigated", (frame) => {
       if (frame !== page.mainFrame()) return;
       routeLog.push({
@@ -156,7 +156,6 @@ export async function runJobRightRecorder(
       );
 
       const state = await capturePageState(page);
-      // Collect open pages in context
       for (const p of context.pages()) {
         pagesMeta.push({
           url: p.url(),
@@ -193,20 +192,24 @@ export async function runJobRightRecorder(
       console.log(`Saved: ${result.dir}`);
 
       if (options.deriveFixtures) {
+        console.log(
+          "Prefer explicit promotion: npm run recorder:promote -- --run <runId> --workflow <name>",
+        );
         const derived = deriveCommittedFixture({
           workflow,
           captureDir: result.dir,
         });
-        console.log(`Derived fixture: ${derived.outDir}`);
+        console.log(`Derived fixture (review required): ${derived.outDir}`);
       }
     }
   } finally {
-    await context.close();
-    await browser.close();
+    await session.close();
   }
 
   console.log(`\nDone. ${written.length} capture(s) under ${capturesRoot}`);
-  console.log("Review sanitized DOM before promoting anything into tests/fixtures/.");
+  console.log(
+    "Promote with: npm run recorder:promote -- --run <runId> --workflow <name>",
+  );
   return written;
 }
 

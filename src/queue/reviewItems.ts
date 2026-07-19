@@ -57,6 +57,69 @@ export function createReviewItem(
   return db.prepare(`SELECT * FROM review_items WHERE id = ?`).get(id) as ReviewItem;
 }
 
+/**
+ * Create or return existing open review with the same kind+title(+application).
+ * Prevents auth-expiry spam.
+ */
+export function upsertOpenReviewItem(
+  db: Db,
+  input: {
+    applicationId?: string;
+    kind: ReviewKind;
+    title: string;
+    payload?: Record<string, unknown>;
+  },
+): { item: ReviewItem; created: boolean } {
+  const existing = (
+    input.applicationId
+      ? db
+          .prepare(
+            `SELECT * FROM review_items
+             WHERE kind = ? AND application_id = ? AND title = ?
+               AND status IN ('OPEN', 'IN_PROGRESS')
+             LIMIT 1`,
+          )
+          .get(input.kind, input.applicationId, input.title)
+      : db
+          .prepare(
+            `SELECT * FROM review_items
+             WHERE kind = ? AND application_id IS NULL AND title = ?
+               AND status IN ('OPEN', 'IN_PROGRESS')
+             LIMIT 1`,
+          )
+          .get(input.kind, input.title)
+  ) as ReviewItem | undefined;
+
+  if (existing) {
+    return { item: existing, created: false };
+  }
+
+  try {
+    return { item: createReviewItem(db, input), created: true };
+  } catch {
+    // Unique index race — re-read
+    const raced = (
+      input.applicationId
+        ? db
+            .prepare(
+              `SELECT * FROM review_items
+               WHERE kind = ? AND application_id = ? AND title = ?
+                 AND status IN ('OPEN', 'IN_PROGRESS') LIMIT 1`,
+            )
+            .get(input.kind, input.applicationId, input.title)
+        : db
+            .prepare(
+              `SELECT * FROM review_items
+               WHERE kind = ? AND application_id IS NULL AND title = ?
+                 AND status IN ('OPEN', 'IN_PROGRESS') LIMIT 1`,
+            )
+            .get(input.kind, input.title)
+    ) as ReviewItem | undefined;
+    if (raced) return { item: raced, created: false };
+    throw new Error("Failed to upsert review item");
+  }
+}
+
 export function listOpenReviewItems(db: Db): ReviewItem[] {
   return db
     .prepare(

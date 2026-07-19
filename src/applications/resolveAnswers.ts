@@ -7,12 +7,21 @@ import {
   type PublicProfile,
 } from "../candidate/publicProfile.js";
 
+export type FillPlanAction =
+  | "fill"
+  | "skip_essay"
+  | "skip_demographics"
+  | "skip_file"
+  | "skip_unmapped"
+  | "skip_empty"
+  | "review_required";
+
 export type FillPlanEntry = {
   field_id: string;
   label: string;
   type: DiscoveredField["type"];
   canonical_field: string | null;
-  action: "fill" | "skip_essay" | "skip_demographics" | "skip_file" | "skip_unmapped" | "skip_empty";
+  action: FillPlanAction;
   value: unknown;
   reason: string;
 };
@@ -22,6 +31,7 @@ export type ResolvedFillPlan = {
   entries: FillPlanEntry[];
   fillable_count: number;
   skipped_count: number;
+  review_required_count: number;
 };
 
 function isEmptyValue(v: unknown): boolean {
@@ -30,7 +40,12 @@ function isEmptyValue(v: unknown): boolean {
   return false;
 }
 
+/**
+ * Normalize an explicit sponsorship value. Never invents Yes/No for empty input.
+ */
 function normalizeSponsorship(value: unknown): string | unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value === "string" && value.trim() === "") return value;
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "string") {
     const s = value.trim().toLowerCase();
@@ -41,8 +56,23 @@ function normalizeSponsorship(value: unknown): string | unknown {
 }
 
 /**
+ * True when the canonical key or visible label is sponsorship / work-authorization.
+ */
+export function isWorkAuthorizationField(
+  canonicalOrLabel: string | null | undefined,
+): boolean {
+  if (!canonicalOrLabel) return false;
+  const s = canonicalOrLabel.trim().toLowerCase();
+  if (s === "requires_sponsorship" || s === "work_authorization") return true;
+  return /sponsor|work[\s_-]?auth|visa|authorized to work|legally authorized|require sponsorship/.test(
+    s,
+  );
+}
+
+/**
  * Build a fill plan from mapped fields + public profile.
  * Never auto-fills essays. Skips demographics and file fields (uploads are separate).
+ * Never defaults empty requires_sponsorship / work_authorization to Yes/No.
  */
 export function buildFillPlan(
   mapped: MappedField[],
@@ -119,6 +149,21 @@ export function buildFillPlan(
     }
 
     if (isEmptyValue(value)) {
+      const workAuth =
+        isWorkAuthorizationField(field.canonical_field) ||
+        isWorkAuthorizationField(field.label);
+      if (workAuth && field.required) {
+        entries.push({
+          field_id: field.id,
+          label: field.label,
+          type: field.type,
+          canonical_field: field.canonical_field,
+          action: "review_required",
+          value: null,
+          reason: `Required ${field.canonical_field} missing from profile — human review`,
+        });
+        continue;
+      }
       entries.push({
         field_id: field.id,
         label: field.label,
@@ -147,12 +192,14 @@ export function buildFillPlan(
     answers,
     entries,
     fillable_count: entries.filter((e) => e.action === "fill").length,
-    skipped_count: entries.filter((e) => e.action !== "fill").length,
+    skipped_count: entries.filter(
+      (e) => e.action !== "fill" && e.action !== "review_required",
+    ).length,
+    review_required_count: entries.filter((e) => e.action === "review_required")
+      .length,
   };
 }
 
-export function fillEntriesForAnswers(
-  plan: ResolvedFillPlan,
-): FillPlanEntry[] {
+export function fillEntriesForAnswers(plan: ResolvedFillPlan): FillPlanEntry[] {
   return plan.entries.filter((e) => e.action === "fill");
 }

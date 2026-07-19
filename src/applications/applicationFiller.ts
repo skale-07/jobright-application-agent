@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { chromium, type Page } from "playwright";
 import { getConfig } from "../config/index.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
 import { loadAnswerAliases } from "../candidate/answerAliases.js";
@@ -9,18 +8,21 @@ import type { PublicProfile } from "../candidate/publicProfile.js";
 import { GreenhouseAdapterV1 } from "../ats/greenhouse/v1.js";
 import { mapDiscoveredFields } from "./fieldNormalization.js";
 import { buildFillPlan } from "./resolveAnswers.js";
+import { toApprovedFillPlan } from "./approvedFillPlan.js";
 import { assertFormFillAllowed } from "./formFillGuards.js";
 import {
   loadAtsFixture,
   type AtsFixtureName,
 } from "./atsFixtureInspect.js";
-import { browserLaunchOptions } from "../browser/launchOptions.js";
+import { withFixtureHtmlPage } from "../browser/fixtureSession.js";
+import { redactFillReportForArtifact } from "./fillReportRedaction.js";
 
 export type ApplicationFillReport = {
   mode: "plan_only" | "executed";
   ats: string;
   url: string;
   plan: ReturnType<typeof buildFillPlan>;
+  approved_plan?: ReturnType<typeof toApprovedFillPlan>;
   fill?: Awaited<ReturnType<GreenhouseAdapterV1["fill"]>>;
   verify?: Awaited<ReturnType<GreenhouseAdapterV1["verify"]>>;
   uploads?: Awaited<ReturnType<GreenhouseAdapterV1["uploadResume"]>>[];
@@ -37,6 +39,7 @@ export async function planApplicationFill(input: {
 }): Promise<{
   adapter: GreenhouseAdapterV1;
   plan: ReturnType<typeof buildFillPlan>;
+  approvedPlan: ReturnType<typeof toApprovedFillPlan>;
   fields: Awaited<ReturnType<GreenhouseAdapterV1["discoverFields"]>>;
 }> {
   const adapter = new GreenhouseAdapterV1();
@@ -51,24 +54,10 @@ export async function planApplicationFill(input: {
   const mapped = mapDiscoveredFields(fields, aliases);
   const profile = input.profile ?? loadPublicProfile();
   const plan = buildFillPlan(mapped, profile);
+  const approvedPlan = toApprovedFillPlan(plan.entries);
   adapter.setFillContext(plan.entries, fields);
-  return { adapter, plan, fields };
-}
-
-async function withFixturePage<T>(
-  html: string,
-  fn: (page: Page) => Promise<T>,
-): Promise<T> {
-  const browser = await chromium.launch(
-    browserLaunchOptions({ headless: true, channel: "chromium", slowMoMs: 0 }),
-  );
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "domcontentloaded" });
-    return await fn(page);
-  } finally {
-    await browser.close();
-  }
+  adapter.setApprovedFillPlan(approvedPlan);
+  return { adapter, plan, approvedPlan, fields };
 }
 
 export async function runApplicationFill(input: {
@@ -82,7 +71,7 @@ export async function runApplicationFill(input: {
   artifactName?: string;
 }): Promise<ApplicationFillReport> {
   const notes: string[] = [];
-  const { adapter, plan } = await planApplicationFill(input);
+  const { adapter, plan, approvedPlan } = await planApplicationFill(input);
 
   if (!input.execute) {
     notes.push("plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate");
@@ -91,6 +80,7 @@ export async function runApplicationFill(input: {
       ats: adapter.id,
       url: input.url,
       plan,
+      approved_plan: approvedPlan,
       submit_attempted: false,
       notes,
     };
@@ -99,9 +89,9 @@ export async function runApplicationFill(input: {
 
   assertFormFillAllowed("applicationFiller.execute");
 
-  return withFixturePage(input.html, async (page) => {
-    const fill = await adapter.fill(page, plan.answers);
-    const verify = await adapter.verify(page, plan.answers);
+  return withFixtureHtmlPage(input.html, async (page) => {
+    const fill = await adapter.fill(page, approvedPlan.answers);
+    const verify = await adapter.verify(page, approvedPlan.answers);
     const uploads = [];
     if (input.resumePath) {
       uploads.push(await adapter.uploadResume(page, input.resumePath));
@@ -121,6 +111,7 @@ export async function runApplicationFill(input: {
       ats: adapter.id,
       url: input.url,
       plan,
+      approved_plan: approvedPlan,
       fill,
       verify,
       ...(uploads.length ? { uploads } : {}),
@@ -170,9 +161,10 @@ function persistFillReport(
     outDir,
     report.mode === "plan_only" ? "fill-plan.json" : "fill-report.json",
   );
-  writeJsonAtomic(reportPath, {
+  const redacted = redactFillReportForArtifact({
     ...report,
     written_at: new Date().toISOString(),
   });
+  writeJsonAtomic(reportPath, redacted);
   return { ...report, report_path: reportPath };
 }

@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { loadAtsFixture, runAtsFixtureInspection } from "../../src/applications/atsFixtureInspect.js";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  loadAtsFixture,
+  runAtsFixtureInspection,
+} from "../../src/applications/atsFixtureInspect.js";
 import { inspectApplicationHtml } from "../../src/applications/applicationInspector.js";
 import { discoverFieldsFromHtml } from "../../src/applications/fieldDiscovery.js";
 import { classifyEssayFields } from "../../src/applications/essayDetector.js";
@@ -12,8 +15,19 @@ import {
 import { detectAts } from "../../src/ats/registry.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../../src/ats/greenhouse/v1.js";
 import { resetConfigCache } from "../../src/config/index.js";
+import {
+  applySafeFillEnv,
+  useIsolatedFillEnv,
+} from "../helpers/fillEnvIsolation.js";
 
 describe("Phase 4 ATS inspection", () => {
+  useIsolatedFillEnv("safe");
+
+  beforeEach(() => {
+    // Explicit — do not rely on .env, shell, or prior files
+    applySafeFillEnv();
+  });
+
   it("detects Greenhouse from fixture URL + form markers", async () => {
     const f = loadAtsFixture("greenhouse");
     const { detection, adapter } = await detectAts(f);
@@ -28,9 +42,7 @@ describe("Phase 4 ATS inspection", () => {
     expect(fields.length).toBeGreaterThanOrEqual(6);
     const aliases = loadAnswerAliases();
     const mapped = mapDiscoveredFields(fields, aliases);
-    const keys = mapped
-      .map((m) => m.canonical_field)
-      .filter(Boolean);
+    const keys = mapped.map((m) => m.canonical_field).filter(Boolean);
     expect(keys).toContain("legal_name.first");
     expect(keys).toContain("legal_name.last");
     expect(keys).toContain("email");
@@ -77,8 +89,11 @@ describe("Phase 4 ATS inspection", () => {
   });
 
   it("refuses form fill and submit while flags are off", () => {
+    applySafeFillEnv();
     resetConfigCache();
     expect(() => assertFormFillAllowed("test")).toThrow(/FORM_FILL_ENABLED/);
-    expect(() => assertSubmitAllowed("test")).toThrow(/FORM_FILL_ENABLED|SUBMIT_ENABLED/);
+    expect(() => assertSubmitAllowed("test")).toThrow(
+      /FORM_FILL_ENABLED|SUBMIT_ENABLED/,
+    );
   });
 });

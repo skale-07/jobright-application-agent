@@ -37,6 +37,14 @@ const allowlist = new Set([
   path.join(root, "docs", "architecture.md"),
 ]);
 
+/** chromium.launch may only appear in session infrastructure + login + fixture helper. */
+const CHROMIUM_LAUNCH_ALLOW = new Set([
+  path.join(root, "src", "auth", "serviceSession.ts"),
+  path.join(root, "src", "auth", "loginFlow.ts"),
+  path.join(root, "src", "browser", "fixtureSession.ts"),
+  path.join(root, "scripts", "check-forbidden.ts"),
+]);
+
 let failed = false;
 const files = walk(root);
 
@@ -48,6 +56,16 @@ for (const file of files) {
       console.error(`FORBIDDEN pattern "${pattern}" in ${path.relative(root, file)}`);
       failed = true;
     }
+  }
+  if (
+    /chromium\.launch(PersistentContext)?\s*\(/.test(text) &&
+    !CHROMIUM_LAUNCH_ALLOW.has(file) &&
+    !file.includes(`${path.sep}tests${path.sep}`)
+  ) {
+    console.error(
+      `FORBIDDEN direct chromium.launch in ${path.relative(root, file)} — use PlaywrightServiceSession or fixtureSession`,
+    );
+    failed = true;
   }
 }
 

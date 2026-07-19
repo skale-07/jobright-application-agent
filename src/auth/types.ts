@@ -38,4 +38,8 @@ export type ServiceSessionOptions = {
   mode?: SessionPersistenceMode;
   headless?: boolean;
   slowMoMs?: number;
+  /** Recorder / download workflows */
+  acceptDownloads?: boolean;
+  /** Skip auth validate on open (tests only) */
+  skipAuthValidation?: boolean;
 };

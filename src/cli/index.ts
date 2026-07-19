@@ -34,11 +34,13 @@ import {
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../ats/greenhouse/v1.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
+import { redactFillReportForArtifact } from "../applications/fillReportRedaction.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { resetConfigCache } from "../config/index.js";
+import { promoteFixture } from "../recorder/promoteFixture.js";
 
 function printHelp(): void {
-  console.log(`jobright-application-agent (Phase 5)
+  console.log(`jobright-application-agent (Phase 5.5)
 
 Usage:
   npm run cli -- <command> [options]
@@ -50,13 +52,20 @@ Commands:
   login --service <jobright|linkedin|outlook> [--cdp url] [--mode ...]
   candidate:encrypt-sensitive
   record-jobright [--workflow <name>] [--all] [--derive-fixtures]
+  recorder:promote --run <runId> --workflow <name> [--force]
   discover [--fixture] [--max-jobs N] [--probe-detail]
   inspect --job <jobright-job-id> [--fixture]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
-Phase 5: Greenhouse native fill/verify/upload/reset. SUBMIT stays off.
+Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
+  Promote sanitized live-captures only (excludes screenshots):
+    npm run recorder:promote -- --run <runId> --workflow job-feed
+  Overwrite existing derived fixtures:
+    npm run recorder:promote -- --run <runId> --workflow job-feed --force
+
+Greenhouse fill/verify/upload/reset. SUBMIT stays off.
   Plan only (default): npm run ats:fill -- --fixture greenhouse
   Execute (requires FORM_FILL_ENABLED=true DRY_RUN=false):
     npm run ats:fill -- --fixture greenhouse --execute
@@ -360,14 +369,8 @@ async function cmdAtsFill(
   const coverPath =
     typeof flags["cover"] === "string" ? flags["cover"] : undefined;
 
-  // Prefer real public-profile.json; fall back to example with sponsorship filled for demos
-  let profile = loadPublicProfile();
-  if (!profile.requires_sponsorship) {
-    profile = {
-      ...profile,
-      requires_sponsorship: "No",
-    };
-  }
+  // Prefer real public-profile.json; do not invent sponsorship answers
+  const profile = loadPublicProfile();
 
   const report = await runAtsFixtureFill("greenhouse", {
     execute,
@@ -376,9 +379,38 @@ async function cmdAtsFill(
     ...(coverPath ? { coverLetterPath: coverPath } : {}),
     resetAfter: Boolean(flags["reset"]),
   });
-  console.log(JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(redactFillReportForArtifact(report), null, 2));
   if (execute && report.verify && !report.verify.passed) {
     process.exitCode = 2;
+  }
+}
+
+function cmdRecorderPromote(flags: Record<string, string | boolean>): void {
+  const runId = flags["run"];
+  const workflow = flags["workflow"];
+  if (typeof runId !== "string" || typeof workflow !== "string") {
+    console.error(
+      "Usage: recorder:promote --run <runId> --workflow <name> [--force]",
+    );
+    process.exit(1);
+  }
+  parseWorkflow(workflow);
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const result = promoteFixture({
+      runId,
+      workflow,
+      force: Boolean(flags["force"]),
+      db,
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.status === "failed") {
+      process.exitCode = 2;
+    }
+  } finally {
+    closeDatabase(db);
   }
 }
 
@@ -404,6 +436,9 @@ async function main(): Promise<void> {
       return;
     case "record-jobright":
       await cmdRecordJobright(flags);
+      return;
+    case "recorder:promote":
+      cmdRecorderPromote(flags);
       return;
     case "discover":
       await cmdDiscover(flags);

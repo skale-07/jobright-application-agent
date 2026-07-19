@@ -1,26 +1,17 @@
 #!/usr/bin/env node
 /**
  * Rejects presence of sensitive artifact filenames in the working tree
- * that should never be committed. Used as a Phase 1 security check.
+ * that should never be committed. Used as a Phase 1+ security check.
+ *
+ * Allowlist: only tests/fixtures/ats/greenhouse/sample-resume.pdf
+ * (synthetic minimal PDF; content must start with %PDF- and match expected hash).
  */
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
+import { scanArtifactPaths } from "../src/security/artifactScan.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-
-const FORBIDDEN_NAME_PATTERNS = [
-  /\.storage\.json$/i,
-  /sensitive-profile\.json$/i,
-  /sensitive-profile\.draft\.json$/i,
-  /sensitive-profile\.enc$/i,
-  /master\.key\.dpapi$/i,
-  /cookies\.json$/i,
-  /resume\.pdf$/i,
-  /cover-letter\.pdf$/i,
-  /submission-receipt\.json$/i,
-];
 
 function listTrackedOrStaged(): string[] {
   try {
@@ -34,34 +25,12 @@ function listTrackedOrStaged(): string[] {
   }
 }
 
-let failed = false;
-for (const file of listTrackedOrStaged()) {
-  const base = path.basename(file);
-  // Allow committed examples only
-  if (file.includes(".example.")) continue;
-  if (file.startsWith("private/") && !file.includes(".example.")) {
-    // private/ itself is gitignored; if it appears in ls-files something is wrong
-    console.error(`Sensitive path should not be tracked: ${file}`);
-    failed = true;
-  }
-  for (const re of FORBIDDEN_NAME_PATTERNS) {
-    if (re.test(base) || re.test(file)) {
-      console.error(`Forbidden artifact pattern matched: ${file}`);
-      failed = true;
-    }
-  }
-}
+const result = scanArtifactPaths(listTrackedOrStaged(), root);
 
-// Also ensure .gitignore contains critical entries
-const gi = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
-for (const required of ["private/", "data/", "artifacts/", "*.storage.json", "*.enc"]) {
-  if (!gi.includes(required)) {
-    console.error(`.gitignore missing required entry: ${required}`);
-    failed = true;
+if (!result.ok) {
+  for (const hit of result.hits) {
+    console.error(`${hit.reason}: ${hit.file}`);
   }
-}
-
-if (failed) {
   process.exit(1);
 }
 

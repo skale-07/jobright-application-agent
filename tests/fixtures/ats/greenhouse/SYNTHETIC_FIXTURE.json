@@ -1,0 +1,8 @@
+{
+  "path": "tests/fixtures/ats/greenhouse/sample-resume.pdf",
+  "kind": "synthetic_minimal_pdf",
+  "must_start_with": "%PDF-",
+  "sha256": "aeb3142125f4707795376346666c7e94b9704fa1344e5bd30e9423e475c7c396",
+  "byte_length": 45,
+  "note": "Minimal synthetic PDF for Greenhouse upload tests. Not a real resume. Allowlisted only at this exact path by check:secrets."
+}
