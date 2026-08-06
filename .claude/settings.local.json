@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm C:/Users/skale/.claude/commands/karpathy.md)",
+      "Bash(rmdir C:/Users/skale/.claude/commands)",
+      "Bash(claude update:*)"
+    ]
+  }
+}
