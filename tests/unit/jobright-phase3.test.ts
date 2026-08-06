@@ -8,7 +8,10 @@ import { evaluateEligibility } from "../../src/jobright/eligibility.js";
 import { verifyPdfDownload } from "../../src/jobright/jobDetails.js";
 import { detectCoverLetterState } from "../../src/jobright/materials.js";
 import { JOBRIGHT_SELECTOR_REGISTRY_VERSION } from "../../src/jobright/selectors/v1.js";
-import { runJobRightDiscovery } from "../../src/jobright/discoveryRun.js";
+import {
+  buildEmptyFeedMeta,
+  runJobRightDiscovery,
+} from "../../src/jobright/discoveryRun.js";
 import { resetConfigCache } from "../../src/config/index.js";
 
 const feedFixture = path.join(
@@ -76,6 +79,37 @@ describe("jobright phase3", () => {
         requiredByPolicy: true,
       }),
     ).toBe("REQUIRED");
+  });
+});
+
+describe("empty live feed evidence (UNIT_CONFIRMED)", () => {
+  const base = {
+    feedUrl: "https://jobright.ai/jobs/recommend",
+    finalUrl: "https://jobright.ai/jobs/recommend",
+    title: "Jobright",
+    htmlBytes: 1234,
+    htmlPath: "/artifacts/discovery/empty-feed-x/page.html",
+    screenshotPath: "/artifacts/discovery/empty-feed-x/page.png",
+  };
+
+  it("blames parser drift when card links rendered but none parsed", () => {
+    const meta = buildEmptyFeedMeta({ ...base, cardsAttached: true });
+    expect(meta.cards_selector_attached).toBe(true);
+    expect(meta.likely_cause).toMatch(/parser drift/i);
+  });
+
+  it("blames auth or render when no card links ever appeared", () => {
+    const meta = buildEmptyFeedMeta({ ...base, cardsAttached: false });
+    expect(meta.cards_selector_attached).toBe(false);
+    expect(meta.likely_cause).toMatch(/auth or feed render/i);
+  });
+
+  it("carries artifact paths so the failure is diagnosable", () => {
+    const meta = buildEmptyFeedMeta({ ...base, cardsAttached: false });
+    expect(meta.html_path).toBe(base.htmlPath);
+    expect(meta.screenshot_path).toBe(base.screenshotPath);
+    expect(meta.html_bytes).toBe(1234);
+    expect(meta.feed_url).toBe(base.feedUrl);
   });
 });
 

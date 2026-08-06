@@ -14,6 +14,10 @@ async function main(): Promise<void> {
     service: "jobright",
     headless: true,
     slowMoMs: 0,
+    // This script exists to discover what the live logged-in page contains.
+    // Gating it behind validateExtra would make it depend on the very
+    // selectors it is meant to confirm.
+    skipAuthValidation: true,
   });
   await session.open();
   const page = await session.newPage({ purpose: "feed_diag" });

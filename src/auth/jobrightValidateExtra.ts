@@ -30,7 +30,9 @@ export function assessJobrightAuthMarkers(input: {
       checkedAt,
     };
   }
-  if (input.hasRecommendNav && input.hasAppliedNav) {
+  // Either nav link is sufficient evidence of the app shell. Requiring both
+  // would fail closed on a nav that renders the active route as a non-anchor.
+  if (input.hasRecommendNav || input.hasAppliedNav) {
     return null;
   }
   return {
@@ -38,7 +40,7 @@ export function assessJobrightAuthMarkers(input: {
     status: "UNAUTHENTICATED",
     url: input.url,
     reason:
-      "Missing JobRight app nav (recommend + applied links) — session may not carry auth into this context",
+      "No JobRight app nav (recommend or applied link) — session may not carry auth into this context",
     checkedAt,
   };
 }

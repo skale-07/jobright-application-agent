@@ -82,6 +82,27 @@ describe("auth validation", () => {
     });
     expect(ok).toBeNull();
   });
+
+  it("accepts either nav link alone as app-shell evidence", () => {
+    // The active route may render as a non-anchor, so requiring both would
+    // fail closed on a logged-in page.
+    expect(
+      assessJobrightAuthMarkers({
+        url: "https://jobright.ai/jobs/recommend",
+        bodyText: "Jobs\nApplied",
+        hasRecommendNav: false,
+        hasAppliedNav: true,
+      }),
+    ).toBeNull();
+    expect(
+      assessJobrightAuthMarkers({
+        url: "https://jobright.ai/jobs/recommend",
+        bodyText: "Jobs\nRecommended",
+        hasRecommendNav: true,
+        hasAppliedNav: false,
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("storage state manager", () => {
