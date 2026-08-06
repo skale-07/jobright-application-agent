@@ -11,6 +11,7 @@ import {
 } from "../../src/ats/greenhouse/identityVerification.js";
 import { verifyFinalNavigation } from "../../src/ats/greenhouse/finalNavigation.js";
 import { detectLoginWall } from "../../src/ats/greenhouse/loginWallDetection.js";
+import { detectBlockingCaptcha } from "../../src/ats/greenhouse/captchaDetection.js";
 import { buildProposedFillPlan } from "../../src/ats/greenhouse/proposedFillPlan.js";
 import {
   GreenhouseLiveInspectError,
@@ -352,6 +353,89 @@ describe("Greenhouse identity (UNIT_CONFIRMED)", () => {
   });
 });
 
+describe("Greenhouse blocking-CAPTCHA detection (UNIT_CONFIRMED)", () => {
+  const dormantFixture = path.join(
+    process.cwd(),
+    "tests",
+    "fixtures",
+    "ats",
+    "greenhouse",
+    "captcha-dormant-recaptcha.html",
+  );
+  const interstitialFixture = path.join(
+    process.cwd(),
+    "tests",
+    "fixtures",
+    "ats",
+    "greenhouse",
+    "captcha-blocking-interstitial.html",
+  );
+
+  it("dormant reCAPTCHA script + v3 badge on a readable form is not blocking", () => {
+    const html = fs.readFileSync(dormantFixture, "utf8");
+    const r = detectBlockingCaptcha({
+      finalUrl: "https://boards.greenhouse.io/acme/jobs/12345",
+      html,
+      title: "Software Engineer Intern — Acme",
+      formDetected: true,
+      fieldCount: 5,
+    });
+    expect(r.detected).toBe(false);
+    expect(r.confidence).not.toBe("HIGH");
+    expect(r.dormantMarkers).toContain("recaptcha_api_script_loaded");
+    expect(r.dormantMarkers).toContain("recaptcha_v3_badge");
+  });
+
+  it("Cloudflare interstitial with no readable form is HIGH", () => {
+    const html = fs.readFileSync(interstitialFixture, "utf8");
+    const r = detectBlockingCaptcha({
+      finalUrl: "https://boards.greenhouse.io/acme/jobs/12345",
+      html,
+      title: "Just a moment...",
+      formDetected: false,
+      fieldCount: 0,
+    });
+    expect(r.detected).toBe(true);
+    expect(r.confidence).toBe("HIGH");
+    expect(r.signals).toContain("no_readable_form_behind_challenge");
+  });
+
+  it("the bare word captcha is never enough on its own", () => {
+    const r = detectBlockingCaptcha({
+      finalUrl: "https://boards.greenhouse.io/acme/jobs/12345",
+      html: '<form id="application_form"><input name="captcha_token" type="hidden"/><input id="a" name="a"/></form>',
+      formDetected: true,
+      fieldCount: 1,
+    });
+    expect(r.detected).toBe(false);
+    expect(r.signals).toEqual([]);
+    expect(r.dormantMarkers).toContain("generic_captcha_word_only");
+  });
+
+  it("an explicit solve-this prompt with a rendered widget still blocks", () => {
+    const html = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "ats",
+        "captcha",
+        "dom.sanitized.html",
+      ),
+      "utf8",
+    );
+    const r = detectBlockingCaptcha({
+      finalUrl: "https://boards.greenhouse.io/acme/jobs/captcha-1",
+      html,
+      title: "Captcha wall",
+      formDetected: true,
+      fieldCount: 1,
+    });
+    expect(r.detected).toBe(true);
+    expect(r.confidence).toBe("HIGH");
+  });
+});
+
 describe("Greenhouse proposed fill plan (UNIT_CONFIRMED)", () => {
   it("classifies deterministic, sponsorship, essay, demographic, file, consent, unknown", () => {
     const plan = buildProposedFillPlan([
@@ -546,6 +630,31 @@ describe("Greenhouse fixture inspection (FIXTURE_CONFIRMED)", () => {
         fixtureHtml: captchaHtml,
       }),
     ).rejects.toThrow(/CAPTCHA|not a verified Greenhouse|Inspection/i);
+  }, 30_000);
+
+  it("inspects a form carrying dormant CAPTCHA assets instead of aborting", async () => {
+    const html = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "ats",
+        "greenhouse",
+        "captcha-dormant-recaptcha.html",
+      ),
+      "utf8",
+    );
+    const report = await inspectGreenhouseApplication({
+      url: "https://boards.greenhouse.io/acme/jobs/12345",
+      fixtureHtml: html,
+    });
+    expect(report.validation_level).toBe("FIXTURE_CONFIRMED");
+    expect(report.captcha_detected).toBe(false);
+    expect(report.failure_code).toBeNull();
+    expect(report.field_count).toBeGreaterThan(0);
+    expect(report.captcha_detection?.dormantMarkers).toContain(
+      "recaptcha_api_script_loaded",
+    );
   }, 30_000);
 
   it("classifies essay and demographic fixtures", async () => {

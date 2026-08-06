@@ -25,6 +25,10 @@ import {
 } from "./finalNavigation.js";
 import { detectLoginWall, type LoginWallDetection } from "./loginWallDetection.js";
 import {
+  detectBlockingCaptcha,
+  type CaptchaDetection,
+} from "./captchaDetection.js";
+import {
   validateGreenhouseApplicationUrl,
   type GreenhouseUrlValidation,
 } from "./urlValidation.js";
@@ -52,6 +56,7 @@ export type GreenhouseLiveInspectReport = {
   identity_verification: GreenhouseIdentityVerification | null;
   login_wall_detection: LoginWallDetection | null;
   captcha_detected: boolean;
+  captcha_detection: CaptchaDetection | null;
   form_detected: boolean;
   field_count: number;
   failure_code: GreenhouseFailureCode | string | null;
@@ -138,6 +143,7 @@ function baseReport(
     identity_verification: null,
     login_wall_detection: null,
     captcha_detected: false,
+    captcha_detection: null,
     form_detected: false,
     field_count: 0,
     failure_code: null,
@@ -175,6 +181,7 @@ function applyNavigationFailure(
   report.field_count = 0;
   report.login_wall_detection = { detected: false, confidence: "LOW", signals: [] };
   report.captcha_detected = false;
+  report.captcha_detection = null;
   report.failure_code = nav.failureCode;
   report.failure_reason = nav.failureReason;
   report.error = nav.failureReason;
@@ -250,7 +257,6 @@ async function runInspectionFromHtml(input: {
   }
 
   // Trusted Greenhouse host — Greenhouse-specific page checks
-  const captchaDetected = greenhouseSelectorsV1.captchaMarkers.test(html);
   const loginWall = detectLoginWall({ finalUrl, html, title });
   const closedJobDetected = detectClosedJobSignals(html, title);
   const errorPageDetected = detectErrorPageSignals(html, title);
@@ -258,7 +264,6 @@ async function runInspectionFromHtml(input: {
   const boardToken =
     extractBoardTokenFromUrl(finalUrl) ?? report.url_validation.boardToken;
 
-  report.captcha_detected = captchaDetected;
   report.login_wall_detection = loginWall;
   report.form_detected = formDetected;
 
@@ -283,6 +288,23 @@ async function runInspectionFromHtml(input: {
   report.company = boardToken;
   report.role = title || null;
 
+  // Captcha is assessed only once the form is known: a readable application form
+  // is evidence nothing is blocking. Dormant markers never abort.
+  const captcha = detectBlockingCaptcha({
+    finalUrl,
+    html,
+    title,
+    formDetected: formOk,
+    fieldCount,
+  });
+  report.captcha_detection = captcha;
+  report.captcha_detected = captcha.detected;
+  if (!captcha.detected && captcha.signals.length > 0) {
+    report.warnings.push(
+      `captcha_${captcha.confidence.toLowerCase()}: ${captcha.signals.join(",")}`,
+    );
+  }
+
   const identity = verifyGreenhousePageIdentity({
     requestedUrl,
     finalUrl,
@@ -292,8 +314,7 @@ async function runInspectionFromHtml(input: {
     role: title || null,
     formDetected: formOk,
     fieldCount,
-    captchaDetected:
-      captchaDetected || inspectReport.inspection.captcha_detected,
+    captchaDetected: captcha.detected,
     loginWall,
     closedJobDetected,
     errorPageDetected,

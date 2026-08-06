@@ -10,5 +10,6 @@ export const greenhouseSelectorsV1 = {
   coverLetter: "input[type='file'][name*='cover' i], #cover_letter",
   submit: "input[type='submit'], button[type='submit']",
   loginMarkers: /sign in|log in|create an account|create account/i,
-  captchaMarkers: /captcha|recaptcha|hcaptcha|cf-turnstile/i,
+  /** HTML-side form presence (no browser). Mirrors the `form` CSS selector. */
+  formMarkers: /id=["']application_form["']|new_job_application/i,
 } as const;
