@@ -10,6 +10,8 @@ Local deterministic Playwright application processor (JobRight → ATS → Outlo
 
 See [docs/phase55-remediation.md](docs/phase55-remediation.md).
 
+Phase 6 candidate evaluation: [docs/browser-use-evaluation.md](docs/browser-use-evaluation.md).
+
 ## Quick start
 
 ```text
