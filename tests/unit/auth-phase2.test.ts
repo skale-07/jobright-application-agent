@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import { classifyAuthUrl } from "../../src/auth/authValidation.js";
 import { getServiceAuthConfig, parseServiceName, parseSessionMode } from "../../src/auth/serviceRegistry.js";
+import { assessJobrightAuthMarkers } from "../../src/auth/jobrightValidateExtra.js";
 import { assertLooksLikeStorageState, writeStorageStateFile } from "../../src/auth/storageStateManager.js";
 import { handleAuthExpiry } from "../../src/auth/authExpiry.js";
 import { upsertServiceSessionStatus, getServiceSessionRow } from "../../src/auth/sessionStore.js";
@@ -49,6 +50,37 @@ describe("auth validation", () => {
     expect(() => parseServiceName("x")).toThrow();
     expect(parseSessionMode("PERSISTENT_CONTEXT")).toBe("PERSISTENT_CONTEXT");
     expect(parseSessionMode(undefined)).toBeUndefined();
+  });
+
+  it("jobright config wires validateExtra", () => {
+    expect(typeof getServiceAuthConfig("jobright").validateExtra).toBe("function");
+  });
+
+  it("assessJobrightAuthMarkers requires app nav", () => {
+    const bad = assessJobrightAuthMarkers({
+      url: "https://jobright.ai/jobs/recommend",
+      bodyText: "Welcome to Jobright",
+      hasRecommendNav: false,
+      hasAppliedNav: false,
+    });
+    expect(bad?.ok).toBe(false);
+    expect(bad?.status).toBe("UNAUTHENTICATED");
+
+    const loginish = assessJobrightAuthMarkers({
+      url: "https://jobright.ai/",
+      bodyText: "Sign in with Google\nContinue",
+      hasRecommendNav: false,
+      hasAppliedNav: false,
+    });
+    expect(loginish?.ok).toBe(false);
+
+    const ok = assessJobrightAuthMarkers({
+      url: "https://jobright.ai/jobs/recommend",
+      bodyText: "Jobs\nRecommended\nLiked\nApplied",
+      hasRecommendNav: true,
+      hasAppliedNav: true,
+    });
+    expect(ok).toBeNull();
   });
 });
 

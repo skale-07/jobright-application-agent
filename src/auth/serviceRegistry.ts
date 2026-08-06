@@ -1,5 +1,6 @@
 import path from "node:path";
 import { getConfig } from "../config/index.js";
+import { validateJobrightAuthExtra } from "./jobrightValidateExtra.js";
 import type { ServiceAuthConfig, ServiceName, SessionPersistenceMode } from "./types.js";
 
 export function authPaths(privateDir = getConfig().privateDir): {
@@ -45,6 +46,7 @@ export function getServiceAuthConfig(service: ServiceName): ServiceAuthConfig {
           /signin\/rejected/i,
           /accounts\.google\.com\/v3\/signin\/rejected/i,
         ],
+        validateExtra: validateJobrightAuthExtra,
         ...shared,
       };
     case "linkedin":
