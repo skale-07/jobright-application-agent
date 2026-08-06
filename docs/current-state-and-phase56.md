@@ -132,6 +132,8 @@ login (JobRight)
 
 There is **no** closed loop: SQLite application → live ATS fill → verified submission.
 
+As of the current commit the missing CLIs exist (`resume:download --job`, `ats:fill --url`), so the remaining gap in 5.6 is **live evidence**, not engineering. Every 5.6 workstream that can be closed without a browser on a real page is closed; see §5.
+
 ### 2.5 Safety model (still binding)
 
 | Flag | Default intent |
@@ -333,8 +335,10 @@ npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
 
 ### Phase 5.6 mutation (optional extension)
 
-- [ ] JobRight resume download CLI + live evidence **or** documented block (controls absent)
-- [ ] Greenhouse live fill path + live evidence with submit still off
+- [x] JobRight resume download CLI shipped with gate + lease + confirmation (`UNIT_CONFIRMED`)
+- [ ] JobRight resume live evidence **or** documented block (controls absent) — operator
+- [x] Greenhouse live fill path shipped with pre-mutation identity gate (`UNIT_CONFIRMED`)
+- [ ] Greenhouse live fill evidence with submit still off — operator
 
 Do not claim Phase 5.6 “complete” until B’s open checkboxes are closed with evidence. Mutation items can be a follow-on tag.
 
