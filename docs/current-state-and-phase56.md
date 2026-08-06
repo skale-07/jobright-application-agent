@@ -85,7 +85,7 @@ A lower level never promotes a feature to a higher level.
 | JobRight feed discover + queue + dedupe + eligibility | **Live path failing** | `FIXTURE_CONFIRMED`; live `UNVERIFIED` — see §2.6b |
 | JobRight detail probe (Apply / Improve Resume visibility) | Done | Visibility only; Improve Resume often missing live |
 | JobRight `inspect --job` (SQLite → stored detail URL) | Done (5.6A) | `LIVE_READ_ONLY_CONFIRMED` when live identity passes |
-| JobRight live resume generate/download CLI | **Missing CLI** (library `downloadAndVerifyResume` exists) | Download path `FIXTURE_CONFIRMED`; live UI `UNVERIFIED` |
+| JobRight live resume generate/download CLI | Done (`resume:download --job`) | Download path + gate `FIXTURE_CONFIRMED` / `UNIT_CONFIRMED`; live UI `UNVERIFIED` |
 | Greenhouse inspect (fixtures / HTML file) | Done | `FIXTURE_CONFIRMED` |
 | Greenhouse `ats:inspect --url` live read-only | Done (5.6B) | Code + unit fixtures; live depends on host/CAPTCHA gates (see open issues) |
 | Greenhouse redirect-off-host handling | Done | Untrusted final host → `GREENHOUSE_APPLICATION_UNAVAILABLE` (not login wall) |
@@ -220,7 +220,7 @@ Status keys for this section:
 | E | Greenhouse live `ats:inspect --url` | Partial | `LIVE_READ_ONLY` | Redirect/login fixed; CAPTCHA false positive open |
 | F | CAPTCHA high-confidence detector | Done (code) | `FIXTURE_CONFIRMED` | Unblocks E and all of Phase 6 |
 | G | Re-confirm GH live inspect on sandbox URL | **Next** (operator) | `LIVE_READ_ONLY` | Manual evidence + artifact |
-| H | JobRight resume control detect → live download CLI | Later in 5.6 | `LIVE_MUTATION` possible | Library exists; wrap CLI + human initiation |
+| H | JobRight resume control detect → live download CLI | Done (code) | `LIVE_MUTATION` possible | `resume:download --job`; gate + lease + confirmation shipped. Live run is the operator's |
 | I | Greenhouse live fill (`ats:fill --url` or equivalent) | Later in 5.6 | `LIVE_MUTATION` | Deterministic fields only; verify read-back; no submit |
 | J1 | Phase 6a: agent-assisted adapter authoring (Lever / Ashby) | **Out of 5.6** | — | Build-time only; emits selectors for `recorder:promote`. Gated on 5.6B closing — needs one live-confirmed deterministic ATS path as the control |
 | J2 | Phase 6b: constrained agent executor (Workday), fill-only | **Out of 5.6** | — | Gated on J1 + workstream I. Verify read-back must be proven live before anything nondeterministic drives a page. No submit method |
@@ -259,13 +259,25 @@ https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003
 
 ### 4.3 JobRight live resume (later in 5.6)
 
-When unblocked by UI presence of Improve Resume (or equivalent):
+Shipped as `npm run resume:download -- --job <jobright_job_id>`:
 
-- Lease + idempotency
-- Human-initiated generate/download only
+- Lease + idempotency (delegated to `downloadAndVerifyResume`)
+- Human-initiated: interactive confirmation unless `--yes`
+- Fail-closed gate `assertResumeDownloadAllowed` — requires
+  `MATERIALS_DOWNLOAD_ENABLED=true` **and** `DRY_RUN=false` **and**
+  `SUBMIT_ENABLED=false`
+- Resolves the job from SQLite (no feed search), so it does not depend on C′
+- Absent Improve Resume control is reported as a **documented block**, not a
+  failure
 - Verify `%PDF-`, size, SHA-256; atomic persist; materials row
-- No duplicate material for same key
-- Target: possible `LIVE_MUTATION_CONFIRMED` for download only
+- Report artifact under `artifacts/materials/`
+- Target: possible `LIVE_MUTATION_CONFIRMED` for download only — the run
+  itself sets `validation_level` and only claims it on a verified download
+
+```powershell
+$env:MATERIALS_DOWNLOAD_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
+npm run resume:download -- --job <jobright_job_id>
+```
 
 ### 4.4 Greenhouse guarded live fill (later in 5.6)
 

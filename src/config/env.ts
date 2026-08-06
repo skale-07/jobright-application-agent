@@ -29,6 +29,8 @@ const envSchema = z.object({
   LINKEDIN_ENRICHMENT_ENABLED: boolFromEnv.default(false),
   JOBRIGHT_AUTOFILL_ENABLED: boolFromEnv.default(false),
   NATIVE_AUTOFILL_ENABLED: boolFromEnv.default(false),
+  /** Phase 5.6H: generating/downloading a resume mutates JobRight. Fail closed. */
+  MATERIALS_DOWNLOAD_ENABLED: boolFromEnv.default(false),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
   DASHBOARD_PORT: z.coerce.number().int().positive().default(8788),
   CANDIDATE_DATA_KEY_NAME: z
@@ -54,6 +56,7 @@ export type AppConfig = {
   linkedinEnrichmentEnabled: boolean;
   jobrightAutofillEnabled: boolean;
   nativeAutofillEnabled: boolean;
+  materialsDownloadEnabled: boolean;
   dashboardHost: string;
   dashboardPort: number;
   candidateDataKeyName: string;
@@ -96,6 +99,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     linkedinEnrichmentEnabled: parsed.LINKEDIN_ENRICHMENT_ENABLED,
     jobrightAutofillEnabled: parsed.JOBRIGHT_AUTOFILL_ENABLED,
     nativeAutofillEnabled: parsed.NATIVE_AUTOFILL_ENABLED,
+    materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
     candidateDataKeyName: parsed.CANDIDATE_DATA_KEY_NAME,

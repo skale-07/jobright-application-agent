@@ -14,6 +14,7 @@ import {
 import { chromium, type Browser } from "playwright";
 import { browserLaunchOptions } from "../../src/browser/launchOptions.js";
 import { resetConfigCache } from "../../src/config/index.js";
+import { assertResumeDownloadAllowed } from "../../src/jobright/resumeDownloadRun.js";
 import { closeDatabase, migrate, openDatabase } from "../../src/storage/db/client.js";
 import { createApplication } from "../../src/queue/stateMachine.js";
 import { getIdempotency } from "../../src/queue/idempotency.js";
@@ -51,6 +52,57 @@ function seedApplication(dbPath: string, artifactsDir: string): {
   const app = createApplication(db, { jobId });
   return { applicationId: app.id, db };
 }
+
+describe("Phase 5.6H resume download gate (UNIT_CONFIRMED)", () => {
+  const saved = {
+    materials: process.env.MATERIALS_DOWNLOAD_ENABLED,
+    dryRun: process.env.DRY_RUN,
+    submit: process.env.SUBMIT_ENABLED,
+  };
+
+  afterEach(() => {
+    process.env.MATERIALS_DOWNLOAD_ENABLED = saved.materials ?? "";
+    process.env.DRY_RUN = saved.dryRun ?? "true";
+    process.env.SUBMIT_ENABLED = saved.submit ?? "false";
+    resetConfigCache();
+  });
+
+  it("refuses when MATERIALS_DOWNLOAD_ENABLED is unset (default)", () => {
+    process.env.MATERIALS_DOWNLOAD_ENABLED = "false";
+    process.env.DRY_RUN = "false";
+    process.env.SUBMIT_ENABLED = "false";
+    resetConfigCache();
+    expect(() => assertResumeDownloadAllowed("test")).toThrow(
+      /MATERIALS_DOWNLOAD_ENABLED=false/,
+    );
+  });
+
+  it("refuses while DRY_RUN is on", () => {
+    process.env.MATERIALS_DOWNLOAD_ENABLED = "true";
+    process.env.DRY_RUN = "true";
+    process.env.SUBMIT_ENABLED = "false";
+    resetConfigCache();
+    expect(() => assertResumeDownloadAllowed("test")).toThrow(/DRY_RUN=true/);
+  });
+
+  it("refuses if submit was left enabled", () => {
+    process.env.MATERIALS_DOWNLOAD_ENABLED = "true";
+    process.env.DRY_RUN = "false";
+    process.env.SUBMIT_ENABLED = "true";
+    resetConfigCache();
+    expect(() => assertResumeDownloadAllowed("test")).toThrow(
+      /SUBMIT_ENABLED=true/,
+    );
+  });
+
+  it("allows only the deliberate mutation combination", () => {
+    process.env.MATERIALS_DOWNLOAD_ENABLED = "true";
+    process.env.DRY_RUN = "false";
+    process.env.SUBMIT_ENABLED = "false";
+    resetConfigCache();
+    expect(() => assertResumeDownloadAllowed("test")).not.toThrow();
+  });
+});
 
 describe("phase55 materials — verify/save/persist", () => {
   let dbPath: string;
