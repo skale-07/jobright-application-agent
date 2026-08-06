@@ -261,6 +261,10 @@ https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003
 
 ### 4.3 JobRight live resume (later in 5.6)
 
+> **Descoped (operator decision).** JobRight resume generation will not be live-validated. A small set of pre-written domain-targeted resumes replaces it: the "Improve My Resume" control is often absent live, per-job generation adds a mutation and a failure class per application, and a static variant is strictly more predictable. `ats:fill --url --resume <path>` already accepts a file path, so nothing downstream depends on generation.
+>
+> The CLI below stays in the tree. It is inert: `MATERIALS_DOWNLOAD_ENABLED` defaults to `false`, so it cannot run by accident. Revisit only if per-job tailoring becomes worth a live mutation.
+
 Shipped as `npm run resume:download -- --job <jobright_job_id>`:
 
 - Lease + idempotency (delegated to `downloadAndVerifyResume`)
@@ -336,7 +340,7 @@ npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
 ### Phase 5.6 mutation (optional extension)
 
 - [x] JobRight resume download CLI shipped with gate + lease + confirmation (`UNIT_CONFIRMED`)
-- [ ] JobRight resume live evidence **or** documented block (controls absent) — operator
+- [~] JobRight resume live evidence — **descoped by decision**, not pending. See §4.3.
 - [x] Greenhouse live fill path shipped with pre-mutation identity gate (`UNIT_CONFIRMED`)
 - [ ] Greenhouse live fill evidence with submit still off — operator
 
