@@ -12,6 +12,7 @@ import type {
   UploadVerification,
 } from "../adapter.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import { detectBlockingCaptcha } from "./captchaDetection.js";
 import {
   greenhouseFillFromPlan,
   greenhouseRefuseSubmit,
@@ -103,13 +104,26 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
   }): Promise<ApplicationInspection> {
     const fields = await this.discoverFields({ html: input.html });
     const requires_login = greenhouseSelectorsV1.loginMarkers.test(input.html);
-    const captcha_detected = greenhouseSelectorsV1.captchaMarkers.test(input.html);
+    const captcha = detectBlockingCaptcha({
+      finalUrl: input.url,
+      html: input.html,
+      ...(input.title ? { title: input.title } : {}),
+      formDetected: greenhouseSelectorsV1.formMarkers.test(input.html),
+      fieldCount: fields.length,
+    });
+    const captcha_detected = captcha.detected;
     const account_creation_detected =
       /create (an )?account|sign up to apply/i.test(input.html);
 
     const warnings: string[] = [];
     if (requires_login) warnings.push("Login wall detected");
-    if (captcha_detected) warnings.push("CAPTCHA markers detected");
+    if (captcha_detected) {
+      warnings.push(`Blocking CAPTCHA detected: ${captcha.signals.join(",")}`);
+    } else if (captcha.dormantMarkers.length > 0) {
+      warnings.push(
+        `Dormant CAPTCHA markers ignored: ${captcha.dormantMarkers.join(",")}`,
+      );
+    }
     if (account_creation_detected) warnings.push("Account creation markers detected");
 
     return {

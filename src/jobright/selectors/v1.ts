@@ -15,11 +15,14 @@ export const jobrightSelectorsV1 = {
     jobInfoUrlPattern: /\/jobs\/info\/([a-f0-9]+)/i,
   },
 
-  /** Feed / navigation */
+  /**
+   * Feed / navigation. Prefix matching, not exact: these are used as
+   * logged-in evidence, and the live app appends query params to nav hrefs.
+   */
   nav: {
-    jobsRecommend: 'a[href="/jobs/recommend"]',
-    applied: 'a[href="/jobs/applied"]',
-    liked: 'a[href="/jobs/liked"]',
+    jobsRecommend: 'a[href^="/jobs/recommend"]',
+    applied: 'a[href^="/jobs/applied"]',
+    liked: 'a[href^="/jobs/liked"]',
   },
 
   feed: {

@@ -83,6 +83,7 @@ export async function runJobRightDiscovery(
         feedUrl,
         maxJobs,
         headless: options.headless ?? false,
+        runId,
       });
 
   const db = openDatabase();
@@ -297,6 +298,7 @@ async function scrapeFeedCardsLive(options: {
   feedUrl: string;
   maxJobs: number;
   headless: boolean;
+  runId: string;
 }): Promise<ParsedJobCard[]> {
   const session = new PlaywrightServiceSession({
     service: "jobright",
@@ -322,7 +324,8 @@ async function scrapeFeedCardsLive(options: {
         })
         .then(() => true)
         .catch(() => false);
-      await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+      // No networkidle wait: this feed keeps connections open, so it never
+      // settles and only costs the full timeout before being swallowed.
       await page.waitForTimeout(500);
       if (await detectAuthLossOnPage(page, "jobright")) {
         handleAuthExpiry(db, {
@@ -338,6 +341,7 @@ async function scrapeFeedCardsLive(options: {
           feedUrl: options.feedUrl,
           cardsAttached,
           html,
+          runId: options.runId,
         });
       }
       return cards;
@@ -350,6 +354,47 @@ async function scrapeFeedCardsLive(options: {
   }
 }
 
+export type EmptyFeedMeta = {
+  feed_url: string;
+  final_url: string;
+  title: string;
+  cards_selector_attached: boolean;
+  html_bytes: number;
+  html_path: string;
+  screenshot_path: string;
+  likely_cause: string;
+  note: string;
+};
+
+/**
+ * Pure evidence summary for an empty live feed.
+ * `cards_selector_attached` is the discriminator: cards present but unparsed
+ * means the parser drifted; cards absent means auth or render never happened.
+ */
+export function buildEmptyFeedMeta(input: {
+  feedUrl: string;
+  finalUrl: string;
+  title: string;
+  cardsAttached: boolean;
+  htmlBytes: number;
+  htmlPath: string;
+  screenshotPath: string;
+}): EmptyFeedMeta {
+  return {
+    feed_url: input.feedUrl,
+    final_url: input.finalUrl,
+    title: input.title,
+    cards_selector_attached: input.cardsAttached,
+    html_bytes: input.htmlBytes,
+    html_path: input.htmlPath,
+    screenshot_path: input.screenshotPath,
+    likely_cause: input.cardsAttached
+      ? "job card links rendered but parser matched none — selector/parser drift"
+      : "no job card links ever rendered — session auth or feed render",
+    note: "Live discovery parsed zero job cards — inspect artifacts before changing selectors",
+  };
+}
+
 /**
  * Empty live feed must never look like success. Persist evidence and open a review item.
  */
@@ -360,13 +405,13 @@ async function failLoudEmptyFeed(
     feedUrl: string;
     cardsAttached: boolean;
     html: string;
+    runId: string;
   },
 ): Promise<never> {
-  const runId = randomUUID();
   const dir = path.join(
     getConfig().artifactsDir,
     "discovery",
-    `empty-feed-${runId}`,
+    `empty-feed-${input.runId}`,
   );
   fs.mkdirSync(dir, { recursive: true });
   const htmlPath = path.join(dir, "page.html");
@@ -374,18 +419,15 @@ async function failLoudEmptyFeed(
   const metaPath = path.join(dir, "meta.json");
   fs.writeFileSync(htmlPath, input.html, "utf8");
   await page.screenshot({ path: shotPath, fullPage: true }).catch(() => undefined);
-  const finalUrl = page.url();
-  const title = await page.title().catch(() => "");
-  const meta = {
-    feed_url: input.feedUrl,
-    final_url: finalUrl,
-    title,
-    cards_selector_attached: input.cardsAttached,
-    html_bytes: input.html.length,
-    html_path: htmlPath,
-    screenshot_path: shotPath,
-    note: "Live discovery parsed zero job cards — inspect artifacts before changing selectors",
-  };
+  const meta = buildEmptyFeedMeta({
+    feedUrl: input.feedUrl,
+    finalUrl: page.url(),
+    title: await page.title().catch(() => ""),
+    cardsAttached: input.cardsAttached,
+    htmlBytes: input.html.length,
+    htmlPath,
+    screenshotPath: shotPath,
+  });
   writeJsonAtomic(metaPath, meta);
 
   const { item } = upsertOpenReviewItem(db, {
@@ -475,6 +517,7 @@ export async function inspectJobById(options: {
     feedUrl: defaultJobRightStartUrl(),
     maxJobs: 40,
     headless: false,
+    runId: newDiscoveryRunId(),
   });
   return cards.find((c) => c.jobright_job_id === options.jobId) ?? null;
 }

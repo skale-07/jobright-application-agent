@@ -82,16 +82,16 @@ A lower level never promotes a feature to a higher level.
 | Safety checks (`check:forbidden`, secrets staged check) | Done | `UNIT_CONFIRMED` |
 | Service login CLIs (JR CDP preferred for Google OAuth) | Done | Operator-proven for JR when CDP path used |
 | Recorder + promote | Done | Fixture / operator-guided |
-| JobRight feed discover + queue + dedupe + eligibility | Done | `LIVE_READ_ONLY_CONFIRMED` (and fixture) |
+| JobRight feed discover + queue + dedupe + eligibility | **Live path failing** | `FIXTURE_CONFIRMED`; live `UNVERIFIED` — see §2.6b |
 | JobRight detail probe (Apply / Improve Resume visibility) | Done | Visibility only; Improve Resume often missing live |
 | JobRight `inspect --job` (SQLite → stored detail URL) | Done (5.6A) | `LIVE_READ_ONLY_CONFIRMED` when live identity passes |
-| JobRight live resume generate/download CLI | **Missing CLI** (library `downloadAndVerifyResume` exists) | Download path `FIXTURE_CONFIRMED`; live UI `UNVERIFIED` |
+| JobRight live resume generate/download CLI | Done (`resume:download --job`) | Download path + gate `FIXTURE_CONFIRMED` / `UNIT_CONFIRMED`; live UI `UNVERIFIED` |
 | Greenhouse inspect (fixtures / HTML file) | Done | `FIXTURE_CONFIRMED` |
 | Greenhouse `ats:inspect --url` live read-only | Done (5.6B) | Code + unit fixtures; live depends on host/CAPTCHA gates (see open issues) |
 | Greenhouse redirect-off-host handling | Done | Untrusted final host → `GREENHOUSE_APPLICATION_UNAVAILABLE` (not login wall) |
 | High-confidence login-wall detection | Done | Generic nav “Login” is not enough |
 | Greenhouse fill / upload / verify | Done for fixtures | `FIXTURE_CONFIRMED` only; **`ats:fill` is fixture-only** |
-| Live Greenhouse fill | **Not shipped** | Ceiling today: missing CLI / flags path for live URL |
+| Live Greenhouse fill | Done (`ats:fill --url`) | Gate + refusal paths `UNIT_CONFIRMED`; live mutation `UNVERIFIED` |
 | Employer submit | Forbidden | Must stay impossible until a later, explicit phase |
 | Essays / demographics / invented sponsorship | Never auto | Review / skip |
 | Lever / Ashby / Workday fill | Deferred | Skip / unsupported |
@@ -132,6 +132,8 @@ login (JobRight)
 
 There is **no** closed loop: SQLite application → live ATS fill → verified submission.
 
+As of the current commit the missing CLIs exist (`resume:download --job`, `ats:fill --url`), so the remaining gap in 5.6 is **live evidence**, not engineering. Every 5.6 workstream that can be closed without a browser on a real page is closed; see §5.
+
 ### 2.5 Safety model (still binding)
 
 | Flag | Default intent |
@@ -142,18 +144,35 @@ There is **no** closed loop: SQLite application → live ATS fill → verified s
 
 `assertReadOnlyInspectionAllowed` / fill guards enforce this in code paths. Live mutation in 5.6 is **human-initiated only** when gates allow.
 
-### 2.6 Known open defect (blocking clean GH live read-only)
+### 2.6 CAPTCHA false positives — FIXED (code)
 
-CAPTCHA detection still uses a weak HTML regex (`captcha|recaptcha|hcaptcha|cf-turnstile`) over full page HTML and can OR weak adapter flags — **false positives on normal Greenhouse application pages** (dormant scripts/assets). Live inspect may abort with `captcha_detected=true` even when final host is trusted and the form is usable.
+Previously: a weak HTML regex (`captcha|recaptcha|hcaptcha|cf-turnstile`) over full page HTML, OR'd with weak adapter flags, aborted inspection on normal Greenhouse pages carrying dormant reCAPTCHA assets.
 
-**Required fix before claiming stable `LIVE_READ_ONLY_CONFIRMED` on GH:** high-confidence **visible blocking** CAPTCHA only; structured signals in artifact; stop treating dormant markers as abort.
+Now: `src/ats/greenhouse/captchaDetection.ts` scores blocking evidence only (provider interstitial, rendered challenge iframe, explicit human-verification prompt, rendered widget container). Dormant markers — `api.js` script, v3 badge, `grecaptcha` reference, bare `data-sitekey`, the word "captcha" — are recorded in the artifact and can never abort. A readable application form lowers the score; a challenge with no readable form behind it raises it. `liveInspect` no longer ORs the adapter flag.
+
+Level: `FIXTURE_CONFIRMED`. Live retest is still required for §5's `LIVE_READ_ONLY_CONFIRMED` checkbox.
+
+## 2.6b Known open defect — live JobRight discovery returns zero cards
+
+`npm run discover -- --max-jobs 5` completes in ~6s reporting `jobs_inspected: 0` while auth reports `AUTHENTICATED`. The same parser returns 5 cards from the saved fixture, so this is **not** parser rot against the capture — the live HTML differs from the capture.
+
+**Every application currently in SQLite is fixture-derived. The live discovery path has never produced a job.**
+
+Ranked hypotheses (untested):
+
+1. `storageState` does not carry the auth. `context.storageState()` captures cookies + localStorage only; Google Sign-In apps commonly keep the session in IndexedDB. Playwright ≥1.61 supports `storageState({ indexedDB: true })`.
+2. SPA had not rendered. Now mitigated by a 30s `waitForSelector` on job-card links, but unproven live.
+3. Markup drift since the capture (~3 weeks).
+
+Discriminator: run `npx tsx scripts/diag-jobright-feed.ts` and read `cards_selector_attached` in the empty-feed artifact. Links present but unparsed ⇒ parser drift. Links absent ⇒ auth or render.
 
 ### 2.7 Lab vs live (summary)
 
 | Track | Quality |
 | --- | --- |
 | Local (typecheck, unit tests, fixtures, `verify:phase5`) | Strong foundation |
-| Live JobRight discover + stored-job inspect | Usable; partially proven |
+| Live JobRight stored-job inspect | Usable; partially proven |
+| Live JobRight feed discover | **Failing** — 0 cards; fails loud with artifacts as of §2.6b |
 | Live Greenhouse understand form | Usable but brittle (CAPTCHA false positives, employer redirects) |
 | Live fill any real application | Not there |
 | Autopilot apply / multi-ATS / outreach product | Not there |
@@ -197,31 +216,42 @@ Status keys for this section:
 | --- | --- | --- | --- | --- |
 | A | Preflight / local suite always green | Done (lab) | `UNIT` / `FIXTURE` | `npm run verify:phase5` |
 | B | JobRight auth readiness | Done (ops) | Prerequisite | CDP login |
-| C | JobRight live feed discover + queue | Done | `LIVE_READ_ONLY` | Writes SQLite |
+| C | JobRight live feed discover + queue | **Failing live** | `LIVE_READ_ONLY` | Returns 0 cards; fixture path fine. See §2.6b |
+| C′ | Diagnose + fix live discovery | **Next** | Unblocks the closed loop | Run diag script; then fix per `cards_selector_attached` |
 | D | JobRight stored-job inspect (`inspect --job`) | Done (code + live path) | `LIVE_READ_ONLY` | No feed search; SQLite → detail URL |
 | E | Greenhouse live `ats:inspect --url` | Partial | `LIVE_READ_ONLY` | Redirect/login fixed; CAPTCHA false positive open |
-| F | CAPTCHA high-confidence detector | **Next** | Unblocks E | Visible blocking only |
-| G | Re-confirm GH live inspect on sandbox URL | **Next** (after F) | `LIVE_READ_ONLY` | Manual evidence + artifact |
-| H | JobRight resume control detect → live download CLI | Later in 5.6 | `LIVE_MUTATION` possible | Library exists; wrap CLI + human initiation |
-| I | Greenhouse live fill (`ats:fill --url` or equivalent) | Later in 5.6 | `LIVE_MUTATION` | Deterministic fields only; verify read-back; no submit |
-| J | Phase 6 browser-use / autofill compare | **Out of 5.6** | — | Eval doc only; stash if needed |
+| F | CAPTCHA high-confidence detector | Done (code) | `FIXTURE_CONFIRMED` | Unblocks E and all of Phase 6 |
+| G | Re-confirm GH live inspect on sandbox URL | **Next** (operator) | `LIVE_READ_ONLY` | Manual evidence + artifact |
+| H | JobRight resume control detect → live download CLI | Done (code) | `LIVE_MUTATION` possible | `resume:download --job`; gate + lease + confirmation shipped. Live run is the operator's |
+| I | Greenhouse live fill (`ats:fill --url`) | Done (code) | `LIVE_MUTATION` | Re-runs full identity gate on the page it mutates; no submit path exists. Live run is the operator's |
+| J1 | Phase 6a: agent-assisted adapter authoring (Lever / Ashby) | **Out of 5.6** | — | Build-time only; emits selectors for `recorder:promote`. Gated on 5.6B closing — needs one live-confirmed deterministic ATS path as the control |
+| J2 | Phase 6b: constrained agent executor (Workday), fill-only | **Out of 5.6** | — | Gated on J1 + workstream I. Verify read-back must be proven live before anything nondeterministic drives a page. No submit method |
 
 ### 4.2 Immediate next (priority order)
 
-```text
-1. CAPTCHA false-positive fix
-   → high-confidence visible blocking CAPTCHA
-   → artifact signals + fixtures (dormant / hidden / blocking / badge)
-   → do not OR weak full-HTML markers into abort
+Engineering for 1 and 2 is done; both now need an **operator** on the Windows box.
 
-2. Manual re-run Greenhouse live inspect
+```text
+1. [OPERATOR] Diagnose live discovery (C′)
+   npx tsx scripts/diag-jobright-feed.ts
+   → read cards_selector_attached + sample_hrefs in the report
+   → links present, none parsed  ⇒ parser/selector drift; fix jobFeed.ts
+   → links absent                ⇒ auth did not carry; try storageState
+                                    ({ indexedDB: true }) or run discovery in
+                                    PERSISTENT_CONTEXT against the CDP profile
+
+2. [OPERATOR] Manual re-run Greenhouse live inspect (G)
    $GREENHOUSE_URL = sandbox or real boards URL that stays on Greenhouse
    FORM_FILL_ENABLED=false DRY_RUN=true SUBMIT_ENABLED=false
    npm run ats:inspect -- --url $GREENHOUSE_URL --headed
    → proof: LIVE_READ_ONLY_CONFIRMED only if success + artifact clean
+   → confirm captcha_detection.dormant_markers is populated and
+     captcha_detected is false on a normal board page
 
 3. Only then: resume CLI and/or live fill (H then I)
 ```
+
+Steps 1 and 2 are independent: `ats:inspect --url` takes a URL directly and does not depend on discovery. Run whichever is convenient first. The **product** is blocked on 1 — there is no closed loop while live discovery yields nothing.
 
 Preferred GH sandbox (integration board, not a stealth employer hit):
 
@@ -231,24 +261,45 @@ https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003
 
 ### 4.3 JobRight live resume (later in 5.6)
 
-When unblocked by UI presence of Improve Resume (or equivalent):
+Shipped as `npm run resume:download -- --job <jobright_job_id>`:
 
-- Lease + idempotency
-- Human-initiated generate/download only
+- Lease + idempotency (delegated to `downloadAndVerifyResume`)
+- Human-initiated: interactive confirmation unless `--yes`
+- Fail-closed gate `assertResumeDownloadAllowed` — requires
+  `MATERIALS_DOWNLOAD_ENABLED=true` **and** `DRY_RUN=false` **and**
+  `SUBMIT_ENABLED=false`
+- Resolves the job from SQLite (no feed search), so it does not depend on C′
+- Absent Improve Resume control is reported as a **documented block**, not a
+  failure
 - Verify `%PDF-`, size, SHA-256; atomic persist; materials row
-- No duplicate material for same key
-- Target: possible `LIVE_MUTATION_CONFIRMED` for download only
+- Report artifact under `artifacts/materials/`
+- Target: possible `LIVE_MUTATION_CONFIRMED` for download only — the run
+  itself sets `validation_level` and only claims it on a verified download
+
+```powershell
+$env:MATERIALS_DOWNLOAD_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
+npm run resume:download -- --job <jobright_job_id>
+```
 
 ### 4.4 Greenhouse guarded live fill (later in 5.6)
 
-Only after stable live inspect:
+Shipped as `npm run ats:fill -- --url <GREENHOUSE_APPLICATION_URL>`. **Run only after G passes.**
 
-- `FORM_FILL_ENABLED=true`, `DRY_RUN=false`, `SUBMIT_ENABLED=false`
-- Fill deterministic allowlist only
-- No essays; no invented sponsorship / work auth
-- Upload verified resume when mapped; verify field values on page
-- Close without Submit
-- Target: possible `LIVE_MUTATION_CONFIRMED`
+- Plan-only by default. `--execute` requires `FORM_FILL_ENABLED=true` and `DRY_RUN=false`; `SUBMIT_ENABLED` is never consulted because no submit path exists in this command.
+- Re-runs the **full identity gate on the page it is about to mutate** — final-host navigation, blocking CAPTCHA, login wall, closed job, error page, job-id match, form present, fields > 0. `ats:inspect --url` proves a URL on its own page load; this proves the document actually in hand.
+- Fills the approved deterministic allowlist only. Essays, demographics and empty sponsorship are rejected upstream by `toApprovedFillPlan` and again by `assertExecutableApprovedEntry`.
+- Uploads only a caller-supplied resume path; verifies field values by read-back.
+- `validation_level` reaches `LIVE_MUTATION_CONFIRMED` only when verification passes — never on intent.
+- Refusals persist a report with `mutation_attempted: false` rather than only throwing.
+
+```powershell
+# 1. Plan first, always. Read the plan before enabling mutation.
+npm run ats:fill -- --url $GREENHOUSE_URL
+
+# 2. Only then, deliberately:
+$env:FORM_FILL_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
+npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
+```
 
 ### 4.5 Explicit non-goals (through and beyond 5.6 unless re-scoped)
 
@@ -267,20 +318,27 @@ Only after stable live inspect:
 
 - [x] Deterministic `inspect --job` from SQLite (code)
 - [x] Live identity + control visibility can pass for at least one stored job (manual)
+- [x] Empty live feed fails loud with artifacts + review item instead of reporting success (code + unit)
+- [ ] Live feed discovery returns ≥1 card (C′ — currently failing, §2.6b)
 - [ ] Resume generate/download proven live (optional stretch of 5.6, not same as inspect)
+
+`inspect --job` resolves a stored URL from SQLite, so its checkbox stands independently of C′.
 
 ### Phase 5.6B / Greenhouse (read-only) — met when
 
 - [x] `ats:inspect --url` exists with URL validation + proposed plan (code)
 - [x] Untrusted redirect classified as application unavailable (code + fixture)
 - [x] High-confidence login wall vs generic Login link (code + fixture)
-- [ ] CAPTCHA false positives fixed (code + fixtures + live retest)
+- [x] CAPTCHA false positives fixed — code + fixtures (`FIXTURE_CONFIRMED`)
+- [ ] CAPTCHA fix confirmed on a live board page (operator)
 - [ ] Manual live inspect succeeds on a trusted Greenhouse application host with artifact (`LIVE_READ_ONLY_CONFIRMED`)
 
 ### Phase 5.6 mutation (optional extension)
 
-- [ ] JobRight resume download CLI + live evidence **or** documented block (controls absent)
-- [ ] Greenhouse live fill path + live evidence with submit still off
+- [x] JobRight resume download CLI shipped with gate + lease + confirmation (`UNIT_CONFIRMED`)
+- [ ] JobRight resume live evidence **or** documented block (controls absent) — operator
+- [x] Greenhouse live fill path shipped with pre-mutation identity gate (`UNIT_CONFIRMED`)
+- [ ] Greenhouse live fill evidence with submit still off — operator
 
 Do not claim Phase 5.6 “complete” until B’s open checkboxes are closed with evidence. Mutation items can be a follow-on tag.
 
@@ -297,6 +355,11 @@ Discover (done) → materials (partial) → inspect (partial live)
 ```
 
 Optional Phase 6 track (eval only today): constrained residual fill assist for **unsupported ATS** under the same policy invariants — see [browser-use-evaluation.md](./browser-use-evaluation.md). That is **coverage**, not a replacement of Greenhouse fill.
+
+Two Phase 6 notes that affect 5.6 sequencing:
+
+- Workstream **F is on Phase 6's critical path**, not just Greenhouse's. Any agent will meet CAPTCHAs and must route to a human; the high-confidence detector is the shared gate.
+- Do **not** reach for an agent to debug the live feed (§2.6b). `scripts/diag-jobright-feed.ts` answers that deterministically, cheaper and repeatably. Adding an LLM to an unsolved perception problem produces a second unsolved problem.
 
 ---
 
