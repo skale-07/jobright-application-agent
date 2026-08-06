@@ -21,20 +21,28 @@ Derived from live captures. Contacts selectors are marked incomplete.
 
 ## Commands
 
-Offline (fixture HTML, no browser):
+Offline discovery (fixture feed HTML, no browser):
 
 ```text
 npm run discover -- --fixture --max-jobs 5
-npm run inspect -- --job <jobrightJobId> --fixture
 npm run run:dry -- --fixture
 ```
 
-Live (requires JobRight storageState):
+Live (requires JobRight storageState + job already in SQLite):
 
 ```text
 npm run discover -- --max-jobs 10
 npm run discover -- --max-jobs 3 --probe-detail
-npm run inspect -- --job <jobrightJobId>
+npm run inspect -- --job <jobright_job_id>
+```
+
+`inspect --job` resolves the job from SQLite and opens the persisted detail URL directly.
+It does **not** search the recommendation feed. Run discovery first so the job is stored.
+
+Offline fixture detail page (job must still exist in SQLite; uses local HTML):
+
+```text
+npm run inspect -- --job <jobright_job_id> --fixture
 ```
 
 ## Capture gaps

@@ -20,18 +20,24 @@ import { JOBRIGHT_WORKFLOWS, parseWorkflow } from "../recorder/workflows.js";
 import fs from "node:fs";
 import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
-import {
-  inspectJobById,
-  runJobRightDiscovery,
-} from "../jobright/discoveryRun.js";
-import { evaluateEligibility } from "../jobright/eligibility.js";
+import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { JOBRIGHT_SELECTOR_REGISTRY_VERSION } from "../jobright/selectors/v1.js";
+import {
+  formatInspectionConsole,
+  inspectStoredJobrightJob,
+  StoredJobInspectionError,
+} from "../jobright/inspectStoredJob.js";
 import {
   ATS_FIXTURE_NAMES,
   runAtsFixtureInspection,
   type AtsFixtureName,
 } from "../applications/atsFixtureInspect.js";
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
+import {
+  formatGreenhouseInspectConsole,
+  GreenhouseLiveInspectError,
+  inspectGreenhouseApplication,
+} from "../ats/greenhouse/liveInspect.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../ats/greenhouse/v1.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { redactFillReportForArtifact } from "../applications/fillReportRedaction.js";
@@ -54,7 +60,8 @@ Commands:
   record-jobright [--workflow <name>] [--all] [--derive-fixtures]
   recorder:promote --run <runId> --workflow <name> [--force]
   discover [--fixture] [--max-jobs N] [--probe-detail]
-  inspect --job <jobright-job-id> [--fixture]
+  inspect --job <jobright_job_id> [--application <uuid>] [--fixture] [--save-diagnostics]
+  ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
@@ -69,6 +76,23 @@ Greenhouse fill/verify/upload/reset. SUBMIT stays off.
   Plan only (default): npm run ats:fill -- --fixture greenhouse
   Execute (requires FORM_FILL_ENABLED=true DRY_RUN=false):
     npm run ats:fill -- --fixture greenhouse --execute
+
+Greenhouse live read-only inspection:
+  Read-only inspection only.
+  Does not fill, upload, click Submit, or mutate the application.
+  Requires DRY_RUN=true, FORM_FILL_ENABLED=false, SUBMIT_ENABLED=false.
+  Example:
+    npm run ats:inspect -- --url https://boards.greenhouse.io/acme/jobs/12345
+
+JobRight stored-job inspection (deterministic; SQLite → detail URL; read-only):
+  --job <jobright_job_id>    Inspect a persisted JobRight job by its JobRight ID
+                            (not an application UUID)
+  --application <uuid>      Optional: resolve via application UUID → job
+  Requires FORM_FILL_ENABLED=false DRY_RUN=true SUBMIT_ENABLED=false
+  Example:
+    npm run inspect -- --job 6a0fad5383d7144289822170
+  Offline fixture detail page (no live JobRight):
+    npm run inspect -- --job <jobright_job_id> --fixture
 
 JobRight selector registry: ${JOBRIGHT_SELECTOR_REGISTRY_VERSION}
 Greenhouse adapter: v${GREENHOUSE_ADAPTER_VERSION}
@@ -268,34 +292,64 @@ async function cmdInspect(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
   const jobId = flags["job"];
-  if (typeof jobId !== "string") {
-    console.error("Usage: inspect --job <jobright-job-id> [--fixture]");
+  const applicationId = flags["application"];
+  if (typeof jobId !== "string" && typeof applicationId !== "string") {
+    console.error(
+      "Usage: inspect --job <jobright_job_id> | --application <uuid> [--fixture] [--save-diagnostics]",
+    );
+    console.error(
+      "  --job accepts a JobRight job ID (e.g. 6a0fad5383d7144289822170), not an application UUID.",
+    );
     process.exit(1);
   }
-  const feedHtmlPath = flags["fixture"]
+
+  const fixtureDetailHtmlPath = flags["fixture"]
     ? path.join(
         process.cwd(),
         "tests",
         "fixtures",
         "jobright",
-        "job-feed",
+        "job-detail",
         "dom.sanitized.html",
       )
     : undefined;
-  const card = await inspectJobById({
-    jobId,
-    ...(feedHtmlPath ? { feedHtmlPath } : {}),
-  });
-  if (!card) {
-    console.error(`Job not found: ${jobId}`);
-    process.exit(1);
+
+  try {
+    const report = await inspectStoredJobrightJob({
+      ...(typeof jobId === "string" ? { jobrightJobId: jobId } : {}),
+      ...(typeof applicationId === "string"
+        ? { applicationId }
+        : {}),
+      ...(fixtureDetailHtmlPath ? { fixtureDetailHtmlPath } : {}),
+      headless: Boolean(flags["fixture"]),
+      saveDiagnostics: Boolean(flags["save-diagnostics"]),
+    });
+    console.log(formatInspectionConsole(report));
+  } catch (err) {
+    if (err instanceof StoredJobInspectionError) {
+      if (
+        err.report.identity_verification &&
+        !err.report.identity_verification.passed
+      ) {
+        const idv = err.report.identity_verification;
+        console.error("JobRight identity verification failed.");
+        console.error(`Requested: ${idv.requestedJobrightJobId}`);
+        console.error(`Observed: ${idv.parsedJobrightJobId ?? "null"}`);
+        console.error("No controls were activated.");
+        if (idv.failureReason) console.error(idv.failureReason);
+      } else if (err.message.includes("Stored JobRight job not found")) {
+        console.error(`Stored JobRight job not found: ${jobId ?? applicationId}`);
+        console.error("Run discovery first or verify the job ID.");
+      } else {
+        console.error(err.message);
+      }
+      if (err.report.artifact_path) {
+        console.error(`Artifact: ${err.report.artifact_path}`);
+      }
+      process.exit(err.exitCode);
+    }
+    throw err;
   }
-  const eligibility = evaluateEligibility({
-    role: card.role,
-    employmentType: card.employment_type,
-    description: card.role,
-  });
-  console.log(JSON.stringify({ card, eligibility }, null, 2));
 }
 
 async function cmdAtsInspect(
@@ -332,6 +386,8 @@ async function cmdAtsInspect(
 
   const htmlPath = flags["html"];
   const url = flags["url"];
+
+  // Offline: saved HTML + URL metadata
   if (typeof htmlPath === "string" && typeof url === "string") {
     const html = fs.readFileSync(path.resolve(htmlPath), "utf8");
     const report = await inspectApplicationHtml({
@@ -343,8 +399,36 @@ async function cmdAtsInspect(
     return;
   }
 
+  // Live read-only: URL only (no --html)
+  if (typeof url === "string" && htmlPath === undefined) {
+    try {
+      const report = await inspectGreenhouseApplication({
+        url,
+        headless: !Boolean(flags["headed"]),
+        saveDiagnostics: Boolean(flags["save-diagnostics"]),
+      });
+      console.log(formatGreenhouseInspectConsole(report));
+    } catch (err) {
+      if (err instanceof GreenhouseLiveInspectError) {
+        console.error(formatGreenhouseInspectConsole(err.report));
+        process.exit(err.exitCode);
+      }
+      throw err;
+    }
+    return;
+  }
+
   console.error(
-    "Usage: ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>",
+    "Usage: ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]",
+  );
+  console.error(
+    "   or: ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>",
+  );
+  console.error(
+    "Read-only inspection only. Does not fill, upload, click Submit, or mutate the application.",
+  );
+  console.error(
+    "Requires DRY_RUN=true, FORM_FILL_ENABLED=false, SUBMIT_ENABLED=false.",
   );
   process.exit(1);
 }

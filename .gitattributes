@@ -1,0 +1,2 @@
+# Keep synthetic PDF bytes exact (LF). Autocrlf must not rewrite the allowlisted hash.
+tests/fixtures/ats/greenhouse/sample-resume.pdf binary
