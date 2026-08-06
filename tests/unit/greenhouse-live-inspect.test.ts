@@ -12,6 +12,10 @@ import {
 import { verifyFinalNavigation } from "../../src/ats/greenhouse/finalNavigation.js";
 import { detectLoginWall } from "../../src/ats/greenhouse/loginWallDetection.js";
 import { detectBlockingCaptcha } from "../../src/ats/greenhouse/captchaDetection.js";
+import {
+  GreenhouseLiveFillError,
+  runGreenhouseLiveFill,
+} from "../../src/ats/greenhouse/liveFill.js";
 import { buildProposedFillPlan } from "../../src/ats/greenhouse/proposedFillPlan.js";
 import {
   GreenhouseLiveInspectError,
@@ -505,6 +509,55 @@ describe("Greenhouse proposed fill plan (UNIT_CONFIRMED)", () => {
     for (const e of plan.entries) {
       expect(JSON.stringify(e)).not.toMatch(/@example\.com|555-0100/);
       expect(e).not.toHaveProperty("value");
+    }
+  });
+});
+
+describe("Phase 5.6I guarded live fill (UNIT_CONFIRMED)", () => {
+  beforeEach(() => {
+    process.env.ARTIFACTS_DIR = path.join(
+      os.tmpdir(),
+      `jaa-live-fill-${randomUUID()}`,
+    );
+    forceSafeEnv();
+  });
+
+  afterEach(() => {
+    forceSafeEnv();
+  });
+
+  it("refuses a non-Greenhouse URL before opening a browser", async () => {
+    await expect(
+      runGreenhouseLiveFill({
+        url: "https://boards.lever.co/acme/jobs/1",
+        execute: false,
+      }),
+    ).rejects.toBeInstanceOf(GreenhouseLiveFillError);
+  });
+
+  it("refuses --execute while flags are read-only, before opening a browser", async () => {
+    // forceSafeEnv leaves FORM_FILL_ENABLED=false and DRY_RUN=true.
+    await expect(
+      runGreenhouseLiveFill({
+        url: "https://boards.greenhouse.io/acme/jobs/12345",
+        execute: true,
+      }),
+    ).rejects.toThrow(/FORM_FILL_ENABLED=false/);
+  });
+
+  it("records the refusal in a report rather than only throwing", async () => {
+    try {
+      await runGreenhouseLiveFill({
+        url: "https://boards.lever.co/acme/jobs/1",
+        execute: false,
+      });
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      const report = (err as GreenhouseLiveFillError).report;
+      expect(report.failure_code).toBe("UNSAFE_FINAL_URL");
+      expect(report.mutation_attempted).toBe(false);
+      expect(report.validation_level).toBe("UNVERIFIED");
+      expect(report.submit_attempted).toBe(false);
     }
   });
 });

@@ -22,6 +22,7 @@ import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { runJobrightResumeDownload } from "../jobright/resumeDownloadRun.js";
+import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { JOBRIGHT_SELECTOR_REGISTRY_VERSION } from "../jobright/selectors/v1.js";
 import {
   formatInspectionConsole,
@@ -65,6 +66,7 @@ Commands:
   ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
+  ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
   resume:download --job <jobright_job_id> [--yes] [--headless]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
@@ -464,9 +466,13 @@ async function cmdAtsFill(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
   const fixture = flags["fixture"];
-  if (fixture !== "greenhouse") {
+  const url = flags["url"];
+  if (typeof url !== "string" && fixture !== "greenhouse") {
     console.error(
       'Usage: ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]',
+    );
+    console.error(
+      "   or: ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]",
     );
     process.exit(1);
   }
@@ -479,6 +485,23 @@ async function cmdAtsFill(
     typeof flags["resume"] === "string" ? flags["resume"] : undefined;
   const coverPath =
     typeof flags["cover"] === "string" ? flags["cover"] : undefined;
+
+  if (typeof url === "string") {
+    const profileForLive = loadPublicProfile();
+    const liveReport = await runGreenhouseLiveFill({
+      url,
+      execute,
+      profile: profileForLive,
+      ...(resumePath ? { resumePath } : {}),
+      ...(coverPath ? { coverLetterPath: coverPath } : {}),
+      headless: flags["headed"] !== true,
+    });
+    console.log(JSON.stringify(redactFillReportForArtifact(liveReport), null, 2));
+    if (execute && liveReport.verify && !liveReport.verify.passed) {
+      process.exitCode = 2;
+    }
+    return;
+  }
 
   // Prefer real public-profile.json; do not invent sponsorship answers
   const profile = loadPublicProfile();

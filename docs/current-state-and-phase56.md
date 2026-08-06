@@ -91,7 +91,7 @@ A lower level never promotes a feature to a higher level.
 | Greenhouse redirect-off-host handling | Done | Untrusted final host → `GREENHOUSE_APPLICATION_UNAVAILABLE` (not login wall) |
 | High-confidence login-wall detection | Done | Generic nav “Login” is not enough |
 | Greenhouse fill / upload / verify | Done for fixtures | `FIXTURE_CONFIRMED` only; **`ats:fill` is fixture-only** |
-| Live Greenhouse fill | **Not shipped** | Ceiling today: missing CLI / flags path for live URL |
+| Live Greenhouse fill | Done (`ats:fill --url`) | Gate + refusal paths `UNIT_CONFIRMED`; live mutation `UNVERIFIED` |
 | Employer submit | Forbidden | Must stay impossible until a later, explicit phase |
 | Essays / demographics / invented sponsorship | Never auto | Review / skip |
 | Lever / Ashby / Workday fill | Deferred | Skip / unsupported |
@@ -221,7 +221,7 @@ Status keys for this section:
 | F | CAPTCHA high-confidence detector | Done (code) | `FIXTURE_CONFIRMED` | Unblocks E and all of Phase 6 |
 | G | Re-confirm GH live inspect on sandbox URL | **Next** (operator) | `LIVE_READ_ONLY` | Manual evidence + artifact |
 | H | JobRight resume control detect → live download CLI | Done (code) | `LIVE_MUTATION` possible | `resume:download --job`; gate + lease + confirmation shipped. Live run is the operator's |
-| I | Greenhouse live fill (`ats:fill --url` or equivalent) | Later in 5.6 | `LIVE_MUTATION` | Deterministic fields only; verify read-back; no submit |
+| I | Greenhouse live fill (`ats:fill --url`) | Done (code) | `LIVE_MUTATION` | Re-runs full identity gate on the page it mutates; no submit path exists. Live run is the operator's |
 | J1 | Phase 6a: agent-assisted adapter authoring (Lever / Ashby) | **Out of 5.6** | — | Build-time only; emits selectors for `recorder:promote`. Gated on 5.6B closing — needs one live-confirmed deterministic ATS path as the control |
 | J2 | Phase 6b: constrained agent executor (Workday), fill-only | **Out of 5.6** | — | Gated on J1 + workstream I. Verify read-back must be proven live before anything nondeterministic drives a page. No submit method |
 
@@ -281,14 +281,23 @@ npm run resume:download -- --job <jobright_job_id>
 
 ### 4.4 Greenhouse guarded live fill (later in 5.6)
 
-Only after stable live inspect:
+Shipped as `npm run ats:fill -- --url <GREENHOUSE_APPLICATION_URL>`. **Run only after G passes.**
 
-- `FORM_FILL_ENABLED=true`, `DRY_RUN=false`, `SUBMIT_ENABLED=false`
-- Fill deterministic allowlist only
-- No essays; no invented sponsorship / work auth
-- Upload verified resume when mapped; verify field values on page
-- Close without Submit
-- Target: possible `LIVE_MUTATION_CONFIRMED`
+- Plan-only by default. `--execute` requires `FORM_FILL_ENABLED=true` and `DRY_RUN=false`; `SUBMIT_ENABLED` is never consulted because no submit path exists in this command.
+- Re-runs the **full identity gate on the page it is about to mutate** — final-host navigation, blocking CAPTCHA, login wall, closed job, error page, job-id match, form present, fields > 0. `ats:inspect --url` proves a URL on its own page load; this proves the document actually in hand.
+- Fills the approved deterministic allowlist only. Essays, demographics and empty sponsorship are rejected upstream by `toApprovedFillPlan` and again by `assertExecutableApprovedEntry`.
+- Uploads only a caller-supplied resume path; verifies field values by read-back.
+- `validation_level` reaches `LIVE_MUTATION_CONFIRMED` only when verification passes — never on intent.
+- Refusals persist a report with `mutation_attempted: false` rather than only throwing.
+
+```powershell
+# 1. Plan first, always. Read the plan before enabling mutation.
+npm run ats:fill -- --url $GREENHOUSE_URL
+
+# 2. Only then, deliberately:
+$env:FORM_FILL_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
+npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
+```
 
 ### 4.5 Explicit non-goals (through and beyond 5.6 unless re-scoped)
 
