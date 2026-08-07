@@ -39,6 +39,8 @@ const envSchema = z.object({
   EMAIL_LLM_MODEL: z.string().default("gpt-5-mini"),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
+  /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
+  AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
   /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
@@ -72,6 +74,7 @@ export type AppConfig = {
   openaiApiKey: string | undefined;
   emailLlmModel: string;
   agentAuthoringEnabled: boolean;
+  agentFallbackEnabled: boolean;
   agentCdpUrl: string;
   dashboardHost: string;
   dashboardPort: number;
@@ -120,6 +123,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     openaiApiKey: parsed.OPENAI_API_KEY,
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
+    agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,

@@ -6,6 +6,7 @@
 - LinkedIn enrichment dropped by decision (MVP uses JobRight contact context only).
 - Uncertain submissions require manual `review:resolve`; there is deliberately no automatic resolution.
 - The J1 sidecar is inert without an explicit python venv; its output requires human promotion.
+- The fill healer's heuristic layer is FIXTURE_CONFIRMED; the sidecar escalation layer (`AGENT_FALLBACK_ENABLED`) is deterministic label-matching today, not an agent loop — the J2 Workday executor remains design-only (browser-use-evaluation.md).
 
 - Live JobRight feed discovery currently returns **zero cards** — every application in SQLite is fixture-derived. It now fails loud with artifacts + a review item instead of reporting success. See `docs/current-state-and-phase56.md` §2.6b.
 - Greenhouse fill is **fixture-confirmed**, not live-board-confirmed.

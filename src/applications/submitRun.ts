@@ -37,7 +37,11 @@ import {
   greenhouseVerifySubmission,
   SubmissionUncertainError,
 } from "../ats/greenhouse/submission.js";
-import { verifyPageBeforeMutation } from "../ats/greenhouse/liveFill.js";
+import {
+  failedApprovedEntries,
+  verifyPageBeforeMutation,
+} from "../ats/greenhouse/liveFill.js";
+import { healFailedFillEntries } from "../ats/greenhouse/fillHealer.js";
 import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
@@ -267,7 +271,20 @@ export async function runGreenhouseSubmission(input: {
             await greenhouseFillEssays(page, essayEntries, fieldMeta, db);
           }
           const upload = await adapter.uploadResume(page, resume.path);
-          const verify = await adapter.verify(page, approvedPlan.answers);
+          let verify = await adapter.verify(page, approvedPlan.answers);
+          // Phase 6a′: one heal pass before giving up on the click.
+          if (!verify.passed) {
+            const failed = failedApprovedEntries(approvedPlan, verify);
+            if (failed.length > 0) {
+              const heal = await healFailedFillEntries({
+                page,
+                failedEntries: failed,
+              });
+              if (heal.healed.length > 0) {
+                verify = await adapter.verify(page, approvedPlan.answers);
+              }
+            }
+          }
           if (!verify.passed || !upload.verified || fill.errors.length > 0) {
             markSubmissionFailed(
               db,

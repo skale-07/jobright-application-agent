@@ -12,6 +12,7 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "OUTLOOK_DRAFTS_ENABLED",
   "EMAIL_GENERATION_ENABLED",
   "AGENT_AUTHORING_ENABLED",
+  "AGENT_FALLBACK_ENABLED",
 ] as const;
 
 export type ControlledFillEnvKey = (typeof CONTROLLED_FILL_ENV_KEYS)[number];
