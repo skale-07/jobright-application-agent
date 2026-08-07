@@ -93,6 +93,14 @@ export function parseServiceName(value: string): ServiceName {
 
 export function parseSessionMode(value: string | undefined): SessionPersistenceMode | undefined {
   if (value === undefined) return undefined;
-  if (value === "STORAGE_STATE" || value === "PERSISTENT_CONTEXT") return value;
-  throw new Error(`Invalid session mode "${value}". Use STORAGE_STATE | PERSISTENT_CONTEXT.`);
+  if (
+    value === "STORAGE_STATE" ||
+    value === "PERSISTENT_CONTEXT" ||
+    value === "CDP_ATTACH"
+  ) {
+    return value;
+  }
+  throw new Error(
+    `Invalid session mode "${value}". Use STORAGE_STATE | PERSISTENT_CONTEXT | CDP_ATTACH.`,
+  );
 }

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import type { Browser, BrowserContext, Page } from "playwright";
 import { chromium } from "playwright";
 import { browserLaunchOptions } from "../browser/launchOptions.js";
+import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { validateAuthFromPage } from "./authValidation.js";
 import { getServiceAuthConfig } from "./serviceRegistry.js";
@@ -57,7 +58,15 @@ export class PlaywrightServiceSession implements ServiceSession {
       slowMoMs: this.slowMoMs,
     });
 
-    if (this.mode === "PERSISTENT_CONTEXT") {
+    if (this.mode === "CDP_ATTACH") {
+      // Attach to the operator's debug Chrome (scripts/start-chrome-debug-*).
+      // We do not own this browser: close() disconnects and must never kill
+      // it or close its real contexts/pages.
+      const cdpUrl = getConfig().agentCdpUrl;
+      this.browser = await chromium.connectOverCDP(cdpUrl);
+      this.context =
+        this.browser.contexts()[0] ?? (await this.browser.newContext());
+    } else if (this.mode === "PERSISTENT_CONTEXT") {
       fs.mkdirSync(cfg.persistentProfilePath, { recursive: true });
       this.context = await chromium.launchPersistentContext(cfg.persistentProfilePath, {
         ...launch,
@@ -133,6 +142,13 @@ export class PlaywrightServiceSession implements ServiceSession {
     this.context = null;
     this.browser = null;
     this.opened = false;
+    if (this.mode === "CDP_ATTACH") {
+      // Disconnect only. The context belongs to the operator's Chrome —
+      // closing it would close their real tabs. browser.close() on a
+      // connected browser disconnects without terminating the process.
+      if (browser) await browser.close().catch(() => undefined);
+      return;
+    }
     if (ctx) await ctx.close().catch(() => undefined);
     if (browser) await browser.close().catch(() => undefined);
   }

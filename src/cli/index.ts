@@ -19,6 +19,7 @@ import {
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { startDashboard } from "../dashboard/server.js";
+import { runAgentAuthoring } from "../agent/authorRun.js";
 import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
@@ -105,6 +106,8 @@ Commands:
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
   draft:verify --draft <draft_id> [--headed]
+  dashboard
+  agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -1076,6 +1079,24 @@ async function main(): Promise<void> {
       } finally {
         closeDatabase(db);
       }
+      return;
+    }
+    case "agent:author": {
+      const url = flags["url"];
+      if (typeof url !== "string") {
+        console.error("Usage: agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]");
+        console.error(
+          "Phase 6 J1 authoring sidecar. Requires AGENT_AUTHORING_ENABLED=true, the agent/ venv, and a debug Chrome (npm run chrome:debug:jobright).",
+        );
+        process.exit(2);
+        return;
+      }
+      const report = await runAgentAuthoring({
+        url,
+        ...(typeof flags["cdp"] === "string" ? { cdpUrl: flags["cdp"] } : {}),
+      });
+      console.log(JSON.stringify(report, null, 2));
+      if (report.status !== "ok") process.exitCode = 1;
       return;
     }
     case "draft:verify": {
