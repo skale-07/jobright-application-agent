@@ -41,6 +41,7 @@
     "discover": "tsx src/cli/index.ts discover",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",
+    "ats:fill-outcomes": "tsx src/cli/index.ts ats:fill-outcomes",
     "hooks:install": "git config core.hooksPath .githooks",
     "check:forbidden": "tsx scripts/check-forbidden.ts",
     "check:secrets": "tsx scripts/check-secrets-staged.ts",

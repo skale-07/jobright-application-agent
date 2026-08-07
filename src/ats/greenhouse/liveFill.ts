@@ -12,6 +12,7 @@ import type { PublicProfile } from "../../candidate/publicProfile.js";
 import { getConfig } from "../../config/index.js";
 import { logger } from "../../logging/logger.js";
 import { writeJsonAtomic } from "../../storage/atomicJson.js";
+import { recordFillRun } from "../../storage/fillOutcomes.js";
 import { GreenhouseAdapterV1 } from "./v1.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
 import { detectBlockingCaptcha, type CaptchaDetection } from "./captchaDetection.js";
@@ -150,6 +151,62 @@ export async function verifyPageBeforeMutation(
   };
 }
 
+function tryRecordFillOutcomes(
+  report: GreenhouseLiveFillReport,
+  reportRelpath: string,
+): void {
+  if (report.mode !== "executed" || !report.mutation_attempted) return;
+
+  const planEntries = (report.approved_plan?.entries ?? report.plan.entries).map(
+    (e) => {
+      const base = {
+        field_id: e.field_id,
+        label: e.label,
+        type: e.type as string,
+        canonical_field: e.canonical_field ?? null,
+        action: String(e.action),
+        value: e.value,
+        reason: e.reason,
+      };
+      if ("approved" in e && typeof (e as { approved?: boolean }).approved === "boolean") {
+        return {
+          ...base,
+          approved: (e as { approved: boolean }).approved,
+        };
+      }
+      return base;
+    },
+  );
+
+  recordFillRun({
+    mode: "executed",
+    source: "cli_url",
+    ats: report.ats,
+    job_url: report.final_url ?? report.url,
+    company: report.identity_verification?.company ?? null,
+    role: report.identity_verification?.role ?? null,
+    job_id_observed: report.identity_verification?.observedJobId ?? null,
+    mutation_attempted: report.mutation_attempted,
+    validation_level: report.validation_level,
+    fillable_count:
+      report.approved_plan?.fillable_count ?? report.plan.fillable_count,
+    skipped_count:
+      report.approved_plan?.skipped_count ?? report.plan.skipped_count,
+    report_artifact_relpath: reportRelpath,
+    notes: report.notes,
+    metadata: {
+      captcha_detection: report.captcha_detection,
+      login_wall_detection: report.login_wall_detection,
+      failure_code: report.failure_code,
+    },
+    plan_entries: planEntries,
+    fill: report.fill ?? null,
+    verify: report.verify ?? null,
+    uploads: report.uploads ?? null,
+    heal: report.heal ?? null,
+  });
+}
+
 function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
   const outDir = path.join(getConfig().artifactsDir, "ats-fill", "greenhouse-live");
   fs.mkdirSync(outDir, { recursive: true });
@@ -157,6 +214,10 @@ function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
     outDir,
     report.mode === "plan_only" ? "live-fill-plan.json" : "live-fill-report.json",
   );
+
+  // SQLite outcomes first (uses raw report values) then redacted artifact.
+  tryRecordFillOutcomes(report, path.relative(getConfig().artifactsDir, file));
+
   const redacted = {
     ...redactFillReportForArtifact(report),
     validation_level: report.validation_level,

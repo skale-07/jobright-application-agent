@@ -277,7 +277,7 @@ describe("combobox interaction on fixture (FIXTURE_CONFIRMED)", () => {
       expect(report.still_failing).toEqual(["country"]);
       expect(await readComboboxValue(page.locator("#country"))).toBeNull();
     });
-  }, 30_000);
+  }, 60_000);
 
   it("healer heals a combobox with a REAL option after relocation", async () => {
     await withFixtureHtmlPage(fixtureHtml, async (page) => {

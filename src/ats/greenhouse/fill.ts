@@ -2,6 +2,7 @@ import type { Page, Locator } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import type {
+  FieldFillMeta,
   FillResult,
   FormResetResult,
   FormVerificationResult,
@@ -132,6 +133,7 @@ export async function greenhouseFillFromPlan(
   const filled: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
+  const field_meta: FieldFillMeta[] = [];
 
   for (const entry of entries) {
     if (!isApprovedExecutable(entry)) {
@@ -186,8 +188,26 @@ export async function greenhouseFillFromPlan(
         const kind = await detectControlKind(loc);
         if (kind === "native_select") {
           await setSelectByValueOrLabel(loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "native_select",
+            selected_option: String(entry.value),
+            match_via: "exact",
+          });
         } else {
           const result = await fillComboboxControl(page, loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "combobox",
+            selected_option: result.selectedLabel,
+            match_via: result.pickVia ?? null,
+            notes: result.notes,
+            ...(result.optionsSample
+              ? { options_sample: result.optionsSample }
+              : {}),
+          });
           if (!result.committed) {
             throw new Error(
               `combobox option not committed: ${result.notes.join("; ")}`,
@@ -198,6 +218,11 @@ export async function greenhouseFillFromPlan(
         const on = Boolean(entry.value) && entry.value !== "No";
         if (on) await loc.check();
         else await loc.uncheck();
+        field_meta.push({
+          field_id: entry.field_id,
+          canonical_field: entry.canonical_field,
+          control_kind: "text",
+        });
       } else if (type === "radio") {
         const name = meta?.name;
         const group = name
@@ -239,12 +264,28 @@ export async function greenhouseFillFromPlan(
         if (!matched) {
           throw new Error(`No radio option for "${entry.value}"`);
         }
+        field_meta.push({
+          field_id: entry.field_id,
+          canonical_field: entry.canonical_field,
+          control_kind: "text",
+        });
       } else {
         // Text-typed entries can still be combobox inner inputs live
         // (discovery saw <input>, the widget is a React-select).
         const kind = await detectControlKind(loc);
         if (kind === "combobox") {
           const result = await fillComboboxControl(page, loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "combobox",
+            selected_option: result.selectedLabel,
+            match_via: result.pickVia ?? null,
+            notes: result.notes,
+            ...(result.optionsSample
+              ? { options_sample: result.optionsSample }
+              : {}),
+          });
           if (!result.committed) {
             throw new Error(
               `combobox option not committed: ${result.notes.join("; ")}`,
@@ -252,8 +293,20 @@ export async function greenhouseFillFromPlan(
           }
         } else if (kind === "native_select") {
           await setSelectByValueOrLabel(loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "native_select",
+            selected_option: String(entry.value),
+            match_via: "exact",
+          });
         } else {
           await loc.fill(String(entry.value));
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "text",
+          });
         }
       }
       filled.push(entry.canonical_field ?? entry.field_id);
@@ -264,7 +317,7 @@ export async function greenhouseFillFromPlan(
     }
   }
 
-  return { filled, skipped, errors };
+  return { filled, skipped, errors, field_meta };
 }
 
 export async function greenhouseReadFieldValue(

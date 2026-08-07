@@ -172,8 +172,13 @@ export function detectErrorPageSignals(html: string, title: string): boolean {
 
 export function extractGreenhouseJobIdFromUrl(url: string): string | null {
   try {
-    const m = new URL(url).pathname.match(/\/jobs\/(\d+)/i);
-    return m?.[1] ?? null;
+    const u = new URL(url);
+    const pathJob = u.pathname.match(/\/jobs\/(\d+)/i);
+    if (pathJob?.[1]) return pathJob[1];
+    // Embed: ?token=<jobId> or ?gh_jid=
+    const token = u.searchParams.get("token") ?? u.searchParams.get("gh_jid");
+    if (token && /^\d+$/.test(token)) return token;
+    return null;
   } catch {
     return null;
   }
@@ -181,8 +186,17 @@ export function extractGreenhouseJobIdFromUrl(url: string): string | null {
 
 export function extractBoardTokenFromUrl(url: string): string | null {
   try {
-    const m = new URL(url).pathname.match(/^\/([a-z0-9][a-z0-9_-]*)\/jobs\//i);
-    return m?.[1] ?? null;
+    const u = new URL(url);
+    const pathBoard = u.pathname.match(
+      /^\/([a-z0-9][a-z0-9_-]*)\/jobs\//i,
+    );
+    if (pathBoard?.[1] && pathBoard[1].toLowerCase() !== "embed") {
+      return pathBoard[1];
+    }
+    // Embed: ?for=<boardToken>
+    const forParam = u.searchParams.get("for");
+    if (forParam && /^[a-z0-9][a-z0-9_-]*$/i.test(forParam)) return forParam;
+    return null;
   } catch {
     return null;
   }

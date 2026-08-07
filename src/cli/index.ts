@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import { migrate, openDatabase, closeDatabase } from "../storage/db/client.js";
+import {
+  exportFillOutcomesJsonl,
+  summarizeFillOutcomes,
+} from "../storage/fillOutcomes.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -94,6 +98,7 @@ Commands:
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
+  ats:fill-outcomes [--summary] [--export <path.jsonl>]
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -120,6 +125,10 @@ Greenhouse fill/verify/upload/reset. SUBMIT stays off.
   Plan only (default): npm run ats:fill -- --fixture greenhouse
   Execute (requires FORM_FILL_ENABLED=true DRY_RUN=false):
     npm run ats:fill -- --fixture greenhouse --execute
+
+Field-fill outcome corpus (local SQLite):
+  npm run ats:fill-outcomes -- --summary
+  npm run ats:fill-outcomes -- --export artifacts/fill-outcomes.jsonl
 
 Greenhouse live read-only inspection:
   Read-only inspection only.
@@ -964,6 +973,44 @@ async function cmdAtsFill(
   }
 }
 
+function cmdAtsFillOutcomes(
+  flags: Record<string, string | boolean>,
+): void {
+  const doSummary =
+    flags["summary"] === true ||
+    flags["export"] === undefined ||
+    flags["summary"] === "";
+  const exportPath =
+    typeof flags["export"] === "string" ? flags["export"] : undefined;
+
+  if (!doSummary && !exportPath) {
+    console.error(
+      "Usage: ats:fill-outcomes [--summary] [--export <path.jsonl>]",
+    );
+    process.exit(1);
+  }
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    if (doSummary) {
+      console.log(JSON.stringify(summarizeFillOutcomes(db), null, 2));
+    }
+    if (exportPath) {
+      const rows = exportFillOutcomesJsonl(db);
+      const abs = path.resolve(exportPath);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      const body = rows.map((r) => JSON.stringify(r)).join("\n") + (rows.length ? "\n" : "");
+      fs.writeFileSync(abs, body, "utf8");
+      console.error(
+        JSON.stringify({ exported: rows.length, path: abs }, null, 2),
+      );
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdRecorderPromote(flags: Record<string, string | boolean>): void {
   const runId = flags["run"];
   const workflow = flags["workflow"];
@@ -1030,6 +1077,9 @@ async function main(): Promise<void> {
       return;
     case "ats:fill":
       await cmdAtsFill(flags);
+      return;
+    case "ats:fill-outcomes":
+      cmdAtsFillOutcomes(flags);
       return;
     case "resume:download":
       await cmdResumeDownload(flags);

@@ -21,6 +21,10 @@ export type ComboboxFillResult = {
   committed: boolean;
   selectedLabel: string | null;
   notes: string[];
+  /** First visible options at pick time (training signal). */
+  optionsSample?: string[];
+  /** How the option was matched: exact | synonym | unique_substring | ci_exact */
+  pickVia?: string | null;
 };
 
 export type OptionPick =
@@ -513,11 +517,18 @@ export async function fillComboboxControl(
   }
 
   const pick = pickOptionLabel(options, expectedText);
+  const optionsSample = options.slice(0, 20);
   if (!pick.ok) {
     notes.push(pick.reason);
     await page.keyboard.press("Escape").catch(() => undefined);
     await loc.fill("").catch(() => undefined);
-    return { committed: false, selectedLabel: null, notes };
+    return {
+      committed: false,
+      selectedLabel: null,
+      notes,
+      optionsSample,
+      pickVia: null,
+    };
   }
 
   // Prefer role=option exact text when Playwright can resolve it; fall back to
@@ -554,5 +565,11 @@ export async function fillComboboxControl(
   } else if (committed && !committedLabel) {
     selectedLabel = stripDialCode(pick.label) || pick.label;
   }
-  return { committed, selectedLabel, notes };
+  return {
+    committed,
+    selectedLabel,
+    notes,
+    optionsSample,
+    pickVia: pick.via,
+  };
 }

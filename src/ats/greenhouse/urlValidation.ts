@@ -11,6 +11,12 @@ const ALLOWED_HOSTS = new Set([
 const JOB_PATH =
   /^\/([a-z0-9][a-z0-9_-]*)\/jobs\/(\d+)(?:\/)?$/i;
 
+/**
+ * JobRight-style embed application page:
+ * /embed/job_app?for=<boardToken>&token=<jobId>[&jr_id=...]
+ */
+const EMBED_PATH = /^\/embed\/job_app\/?$/i;
+
 export type GreenhouseUrlValidation = {
   passed: boolean;
   normalizedUrl: string | null;
@@ -39,6 +45,7 @@ function fail(
 /**
  * Validate and normalize a Greenhouse job/application URL.
  * Rejects marketing pages, non-HTTPS, credentials, unexpected hosts/ports.
+ * Accepts classic /board/jobs/id paths and JobRight embed /embed/job_app?for=&token=.
  */
 export function validateGreenhouseApplicationUrl(
   rawUrl: string,
@@ -93,6 +100,40 @@ export function validateGreenhouseApplicationUrl(
   }
   if (/^\/(about|pricing|customers|login|signup|blog)/i.test(path)) {
     return fail("Greenhouse marketing or auth path rejected");
+  }
+
+  // JobRight / partner embed application.
+  if (EMBED_PATH.test(u.pathname)) {
+    const boardToken = (u.searchParams.get("for") ?? "").trim();
+    const greenhouseJobId = (
+      u.searchParams.get("token") ??
+      u.searchParams.get("gh_jid") ??
+      ""
+    ).trim();
+    if (!/^[a-z0-9][a-z0-9_-]*$/i.test(boardToken)) {
+      return fail(
+        "Embed job_app URL missing or invalid board token (?for=...)",
+      );
+    }
+    if (!/^\d+$/.test(greenhouseJobId)) {
+      return fail(
+        "Embed job_app URL missing or invalid job id (?token=<numeric job id>)",
+      );
+    }
+    warnings.push("embed_job_app_url");
+    // Classic board/jobs path is the stable join identity for extractors.
+    const normalized = new URL(
+      `https://${host}/${boardToken}/jobs/${greenhouseJobId}`,
+    );
+    return {
+      passed: true,
+      normalizedUrl: normalized.href,
+      host,
+      boardToken,
+      greenhouseJobId,
+      warnings,
+      failureReason: null,
+    };
   }
 
   const pathMatch = u.pathname.match(JOB_PATH);
