@@ -1,10 +1,23 @@
+import type { Page } from "playwright";
 import type {
   ApplicationAdapter,
   ApplicationInspection,
   DetectionResult,
   DiscoveredField,
+  FillResult,
+  FormResetResult,
+  FormVerificationResult,
+  ResolvedApplicationAnswers,
+  UploadVerification,
 } from "../adapter.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
+import { approvedFillEntries } from "../../applications/approvedFillPlan.js";
+import {
+  ashbyFillFromPlan,
+  ashbyResetForm,
+  ashbyUploadFile,
+  ashbyVerifyFromPlan,
+} from "./fill.js";
 import { detectBlockingCaptcha } from "../greenhouse/captchaDetection.js";
 import { detectLoginWall } from "../greenhouse/loginWallDetection.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
@@ -85,9 +98,43 @@ export class AshbyAdapterV1 implements ApplicationAdapter {
     return this.lastFieldMeta;
   }
 
-  /** Referenced by fill methods arriving in the next milestone. */
-  protected assertFillAllowed(reason: string): void {
-    assertFormFillAllowed(reason);
+  async fill(
+    page: Page,
+    resolvedAnswers: ResolvedApplicationAnswers,
+  ): Promise<FillResult> {
+    assertFormFillAllowed("ashby.fill");
+    const plan = this.requireApprovedPlan();
+    void resolvedAnswers;
+    return ashbyFillFromPlan(page, approvedFillEntries(plan), this.fieldMeta());
+  }
+
+  async verify(
+    page: Page,
+    expected: ResolvedApplicationAnswers,
+  ): Promise<FormVerificationResult> {
+    const entries =
+      this.approvedPlan !== null
+        ? approvedFillEntries(this.approvedPlan)
+        : this.planEntries();
+    const filtered = entries.filter(
+      (e) =>
+        (e.action === "fill" || e.action === "FILL") &&
+        (!("approved" in e) || e.approved === true) &&
+        e.canonical_field &&
+        expected[e.canonical_field] !== undefined,
+    );
+    return ashbyVerifyFromPlan(page, filtered, this.fieldMeta());
+  }
+
+  async uploadResume(
+    page: Page,
+    resumePath: string,
+  ): Promise<UploadVerification> {
+    return ashbyUploadFile(page, "resume", resumePath);
+  }
+
+  async resetForm(page: Page): Promise<FormResetResult> {
+    return ashbyResetForm(page);
   }
 
   async detect(input: {
