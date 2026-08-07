@@ -1,0 +1,11 @@
+#!/bin/sh
+# Enforced secrets scan — the 774cc9b leak happened because check:secrets
+# was only ever run by hand. Install once with: npm run hooks:install
+echo "pre-commit: check:secrets"
+npm run --silent check:secrets || {
+  echo ""
+  echo "COMMIT BLOCKED: sensitive files present (see above)."
+  echo "Remove them from the tree/staging. Do not bypass with --no-verify"
+  echo "unless you are certain the finding is a false positive."
+  exit 1
+}

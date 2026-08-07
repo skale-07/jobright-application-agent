@@ -51,9 +51,15 @@ folder.
 cd C:\dev\jobright-application-agent
 npm install
 npx playwright install chromium
+npm run hooks:install      # REQUIRED: makes check:secrets a pre-commit hook
 npm run migrate
 npm run verify:phase5      # full local gate; expect "verify:phase5: ok"
 ```
+
+Put your real resume PDFs in `private\candidate\resumes\` (gitignored) —
+never at the repo root. The pre-commit hook blocks commits containing
+resumes, `.env` copies, editor Local History snapshots, or non-example
+profile JSON.
 
 Safe env for everything read-only (set this in each new shell):
 
@@ -149,7 +155,7 @@ Live resume generation was descoped — you keep 4–5 pre-written domain
 resumes and register the right one per application:
 
 ```powershell
-npm run materials:register -- --application <uuid> --file C:\resumes\swe.pdf --label swe
+npm run materials:register -- --application <uuid> --file private\candidate\resumes\swe.pdf --label swe
 ```
 
 Expected: JSON with `sha256` and a path under `artifacts/`; the same
@@ -171,7 +177,7 @@ Then deliberately:
 
 ```powershell
 $env:FORM_FILL_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
-npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume C:\resumes\swe.pdf
+npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume private\candidate\resumes\swe.pdf
 ```
 
 Expected: `verify.passed: true` with per-field read-back results, and

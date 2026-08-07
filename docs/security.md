@@ -1,5 +1,13 @@
 # Security
 
+## Incident log
+
+**2026-08-07 (commit 774cc9b):** VS Code's Local History extension shadow-copied `.env` (containing a live OpenAI API key) and real `public-profile.json` snapshots into `.history/`, which was neither gitignored nor matched by `check:secrets` patterns; the real resume PDF was committed alongside. Files were removed delete-forward (they remain in git history) — **the leaked key was rotated and must be treated as burned regardless.** Prevention shipped: `.history/` + `.env_*` gitignored; scan patterns extended (`.env*` non-example, `.history/`, non-example `public-profile*/answer-aliases*` JSON); `check:secrets` is now a pre-commit hook (`npm run hooks:install`, one-time).
+
+## Commit-time enforcement
+
+`npm run hooks:install` (once per clone) points git at `.githooks/`; every commit then runs `check:secrets`. Bypassing with `--no-verify` is for confirmed false positives only.
+
 ## Gitignored
 
 `private/`, `artifacts/`, `data/`, `cache/`, `traces/`, `screenshots/`, `fixtures/live-captures/`, `.env`, `*.storage.json`, `*.enc`, browser profiles.

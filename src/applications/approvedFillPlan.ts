@@ -16,6 +16,8 @@ export const SAFE_FACTUAL_CANONICALS = new Set([
   "major",
   "graduation_year",
   "graduation_month",
+  "start_year",
+  "start_month",
   "gpa",
   "linkedin_url",
   "github_url",

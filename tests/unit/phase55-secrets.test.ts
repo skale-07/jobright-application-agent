@@ -15,6 +15,38 @@ import {
 
 const workspaceRoot = process.cwd();
 
+describe("leak-774cc9b regression patterns", () => {
+  const rejected = [
+    ".history/.env_20260807093744",
+    ".history/private/candidate/public-profile_20260807094135.json",
+    ".env_20260806184410",
+    ".env.backup",
+    "backup/.env",
+    "public-profile_20260807094442.json",
+    "somewhere/public-profile.json",
+    "answer-aliases.json",
+    "Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+  ];
+  for (const file of rejected) {
+    it(`rejects ${file}`, () => {
+      expect(checkArtifactPath(file, workspaceRoot).length).toBeGreaterThan(0);
+    });
+  }
+
+  const allowed = [
+    ".env.example",
+    "private/candidate/public-profile.example.json",
+    "private/candidate/answer-aliases.example.json",
+    "src/config/env.ts",
+    "docs/operator-guide.md",
+  ];
+  for (const file of allowed) {
+    it(`allows ${file}`, () => {
+      expect(checkArtifactPath(file, workspaceRoot)).toEqual([]);
+    });
+  }
+});
+
 describe("phase55 secrets allowlist", () => {
   it("allowlists only the greenhouse synthetic resume path", () => {
     expect(isSyntheticResumeAllowlisted(SYNTHETIC_RESUME_RELATIVE_PATH)).toBe(

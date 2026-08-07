@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Combobox form (SYNTHETIC fixture mimicking Greenhouse job-boards)</title>
+<style>
+  .select__menu { border: 1px solid #999; }
+  .select__menu[hidden] { display: none; }
+  .select__option { cursor: pointer; padding: 2px; }
+  .select__placeholder { color: #888; }
+</style>
+</head>
+<body>
+  <form id="application_form">
+    <label for="first_name">First name</label>
+    <input id="first_name" name="job_application[first_name]" type="text" required />
+
+    <label for="country">Country</label>
+    <div class="select__control" data-for="country">
+      <span class="select__placeholder">Select...</span>
+      <input id="country" name="country" type="text" role="combobox"
+             aria-haspopup="listbox" aria-expanded="false" aria-autocomplete="list" />
+    </div>
+    <div class="select__menu" role="listbox" data-for="country" hidden>
+      <div class="select__option" role="option">Canada</div>
+      <div class="select__option" role="option">United Kingdom</div>
+      <div class="select__option" role="option">United States</div>
+    </div>
+
+    <label for="work_auth">Are you legally authorized to work?</label>
+    <div class="select__control" data-for="work_auth">
+      <span class="select__placeholder">Select...</span>
+      <input id="work_auth" name="work_auth" type="text" role="combobox"
+             aria-haspopup="listbox" aria-expanded="false" aria-autocomplete="list" />
+    </div>
+    <div class="select__menu" role="listbox" data-for="work_auth" hidden>
+      <div class="select__option" role="option">Yes</div>
+      <div class="select__option" role="option">No</div>
+    </div>
+
+    <label for="degree_native">Degree</label>
+    <select id="degree_native" name="degree_native">
+      <option value="">Select…</option>
+      <option value="bs">Bachelor of Science</option>
+      <option value="ba">Bachelor of Arts</option>
+    </select>
+  </form>
+
+  <script>
+    // Minimal React-select-alike: click opens the menu, typing filters,
+    // clicking an option commits it into a .select__single-value node.
+    document.querySelectorAll(".select__control").forEach((control) => {
+      const key = control.dataset.for;
+      const input = control.querySelector("input");
+      const menu = document.querySelector('.select__menu[data-for="' + key + '"]');
+      const options = Array.from(menu.querySelectorAll(".select__option"));
+
+      const open = () => { menu.hidden = false; input.setAttribute("aria-expanded", "true"); };
+      const close = () => { menu.hidden = true; input.setAttribute("aria-expanded", "false"); };
+
+      control.addEventListener("click", open);
+      input.addEventListener("input", () => {
+        open();
+        const filter = input.value.toLowerCase();
+        options.forEach((o) => {
+          o.hidden = filter !== "" && !o.textContent.toLowerCase().includes(filter);
+        });
+      });
+      input.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+
+      options.forEach((o) => {
+        o.addEventListener("click", () => {
+          let single = control.querySelector(".select__single-value");
+          if (!single) {
+            single = document.createElement("span");
+            single.className = "select__single-value";
+            control.insertBefore(single, input);
+          }
+          single.textContent = o.textContent;
+          control.querySelector(".select__placeholder").hidden = true;
+          input.value = "";
+          options.forEach((x) => (x.hidden = false));
+          close();
+        });
+      });
+    });
+  </script>
+</body>
+</html>

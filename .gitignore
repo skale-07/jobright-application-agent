@@ -5,6 +5,7 @@ dist/
 # Secrets and private local data
 .env
 .env.*
+.env_*
 !.env.example
 private/**
 !private/**/
@@ -32,6 +33,9 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+# VS Code "Local History" extension shadow-copies edited files — including
+# .env and private JSON — into this dir. Never track it.
+.history/
 
 # Python sidecar build output
 __pycache__/

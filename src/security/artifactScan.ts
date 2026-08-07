@@ -26,6 +26,12 @@ export const FORBIDDEN_ARTIFACT_NAME_PATTERNS: RegExp[] = [
   /resume\.pdf$/i,
   /cover-letter\.pdf$/i,
   /submission-receipt\.json$/i,
+  // Lessons from the 774cc9b leak: editor Local History snapshots carried a
+  // real .env (live API key) and profile PII past the old patterns.
+  /(^|\/)\.env(?!\.example$)[^/]*$/i,
+  /(^|\/)\.history\//i,
+  /(^|\/)public-profile(?!\.example\.json$)[^/]*\.json$/i,
+  /(^|\/)answer-aliases(?!\.example\.json$)[^/]*\.json$/i,
 ];
 
 export const REQUIRED_GITIGNORE_ENTRIES = [
