@@ -108,7 +108,8 @@ function degreeBucket(key: string): number {
   return -1;
 }
 
-function yesNo(v: string): "yes" | "no" | null {
+/** Entire-string yes/no only (profile short values + binary options). */
+function yesNoToken(v: string): "yes" | "no" | null {
   const n = normalize(v);
   if (["yes", "y", "true", "1"].includes(n)) return "yes";
   if (["no", "n", "false", "0"].includes(n)) return "no";
@@ -116,13 +117,109 @@ function yesNo(v: string): "yes" | "no" | null {
 }
 
 /**
+ * Leading yes/no for long EEO/OFCCP sentences:
+ * "No, I do not have a disability…" → no
+ * "Yes, I have a disability…" → yes
+ * "I do not want to answer" does not lead with yes/no → null
+ */
+function leadingYesNo(v: string): "yes" | "no" | null {
+  const n = normalize(v);
+  if (/^yes\b/.test(n)) return "yes";
+  if (/^no\b/.test(n)) return "no";
+  return null;
+}
+
+/** Decline / prefer-not-to-answer — never map bare Yes/No onto these. */
+function isDeclineOption(v: string): boolean {
+  const k = optionKey(v);
+  return (
+    /decline|prefer not|prefer not to say|do not want to answer|dont want to answer|i do not want|i dont want|not answer|do not wish|dont wish|i do not wish|i dont wish/.test(
+      k,
+    ) &&
+    // Keep disability "No, I do not have a disability…" out of decline.
+    !/\bhave a disability\b|\bhad a disability\b|\bhave not had one\b|\bdo not have a disability\b/.test(
+      k,
+    )
+  );
+}
+
+/**
+ * Match bare Yes/No to short options or long sentence options that *start*
+ * with Yes/No (word boundary). Never attaches No → "I do not want…" via
+ * substring ("not" contains "no").
+ */
+function pickYesNoOption(
+  options: string[],
+  expYn: "yes" | "no",
+): OptionPick | null {
+  const candidates = options.filter((o) => {
+    if (isDeclineOption(o)) return false;
+    if (yesNoToken(o) === expYn) return true;
+    if (leadingYesNo(o) === expYn) return true;
+    const k = optionKey(o);
+    // OFCCP veteran (does not lead with Yes/No):
+    // "I am not a protected veteran" / "I identify as one or more … protected veteran"
+    if (expYn === "no" && /not a protected veteran|i am not a protected veteran/.test(k)) {
+      return true;
+    }
+    if (
+      expYn === "yes" &&
+      /protected veteran/.test(k) &&
+      !/not a protected veteran/.test(k) &&
+      (/i identify as|i am a|classifications of a protected/.test(k) ||
+        leadingYesNo(o) === "yes")
+    ) {
+      return true;
+    }
+    return false;
+  });
+  if (candidates.length === 1 && candidates[0] !== undefined) {
+    return { ok: true, label: candidates[0], via: "synonym" };
+  }
+  if (candidates.length > 1) {
+    // Prefer short binary label when present, else first leading-yes/no
+    // sentence (OFCCP disability "No, I do not have…").
+    const bare = candidates.find((o) => yesNoToken(o) === expYn);
+    if (bare) return { ok: true, label: bare, via: "ci_exact" };
+    // Prefer disability / veteran "No, …" / "Yes, …" over other long hits.
+    const ofccpish = candidates.find((o) =>
+      /disability|veteran|protected|armed forces/i.test(o),
+    );
+    if (ofccpish) return { ok: true, label: ofccpish, via: "synonym" };
+    return {
+      ok: false,
+      reason: `ambiguous yes/no match for "${expYn}": ${candidates.slice(0, 5).join(" | ")}`,
+    };
+  }
+  return null;
+}
+
+/** Word-boundary containment — blocks "no" ⊂ "not". */
+function containsAsWord(haystack: string, needle: string): boolean {
+  if (needle.length === 0 || haystack.length === 0) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
+}
+
+/**
  * Pure option matching: exact → case-insensitive exact → dial-stripped →
- * degree synonym → yes/no → unique substring (either direction).
+ * degree synonym → yes/no (word-leading) → unique substring (either direction).
  * Values are never invented: multi-hit substring refuses.
  */
 export function pickOptionLabel(options: string[], expected: string): OptionPick {
   const exp = expected.trim();
   if (exp === "") return { ok: false, reason: "expected value is empty" };
+
+  // Operator rule: any math-ish major/discipline → prefer bare "Mathematics"
+  // over compound "Applied Mathematics & Statistics" / "Applied Math & Stats"
+  // when the board offers both (or only Mathematics).
+  if (/\bmath/i.test(exp)) {
+    const bareMath = options.find((o) => {
+      const k = optionKey(o);
+      return k === "mathematics" || normalize(o) === "mathematics";
+    });
+    if (bareMath) return { ok: true, label: bareMath, via: "synonym" };
+  }
 
   const exact = options.find((o) => o.trim() === exp);
   if (exact) return { ok: true, label: exact, via: "exact" };
@@ -134,6 +231,29 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
 
   // Country / phone-style labels: "United States" ↔ "United States +1"
   const strippedExp = optionKey(exp);
+
+  // OFCCP veteran: profile "I am not a protected veteran" (or close) → board copy
+  if (
+    /not a protected veteran|i am not a protected veteran|not a veteran/.test(
+      strippedExp,
+    )
+  ) {
+    const vetHits = options.filter((o) => {
+      if (isDeclineOption(o)) return false;
+      const k = optionKey(o);
+      return /not a protected veteran|i am not a protected veteran/.test(k);
+    });
+    if (vetHits.length === 1 && vetHits[0] !== undefined) {
+      return { ok: true, label: vetHits[0], via: "synonym" };
+    }
+    if (vetHits.length > 1) {
+      const prefer = vetHits.find((o) =>
+        /i am not a protected veteran/i.test(o),
+      );
+      if (prefer) return { ok: true, label: prefer, via: "synonym" };
+    }
+  }
+
   const dialHits = options.filter((o) => optionKey(o) === strippedExp);
   if (dialHits.length === 1 && dialHits[0] !== undefined) {
     return { ok: true, label: dialHits[0], via: "ci_exact" };
@@ -168,17 +288,103 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
     }
   }
 
-  const expYn = yesNo(exp);
+  const expYn = yesNoToken(exp);
   if (expYn) {
-    const ynHits = options.filter((o) => yesNo(o) === expYn);
-    if (ynHits.length === 1 && ynHits[0] !== undefined) {
-      return { ok: true, label: ynHits[0], via: "ci_exact" };
+    const ynPick = pickYesNoOption(options, expYn);
+    if (ynPick) {
+      if (ynPick.ok) return ynPick;
+      // Ambiguous yes/no evidence — do not fall through to substring that
+      // would re-match "not" on decline lines.
+      return ynPick;
+    }
+  }
+
+  // Gender vocabulary: operator "Man"/"Woman" ↔ board "Male"/"Female".
+  // Identity boards keep Man/Woman; binary Sex select uses Male/Female.
+  const genderMap: Record<string, string[]> = {
+    man: ["man", "male", "m"],
+    male: ["male", "man", "m"],
+    woman: ["woman", "female", "f"],
+    female: ["female", "woman", "f"],
+    "non-binary": ["non-binary", "nonbinary", "non binary"],
+    nonbinary: ["non-binary", "nonbinary", "non binary"],
+  };
+  const gKey = strippedExp;
+  const gSyns = genderMap[gKey];
+  if (gSyns) {
+    // Prefer exact token match for identity ("Man") vs binary ("Male").
+    const preferExact = options.filter((o) => optionKey(o) === gKey);
+    if (preferExact.length === 1 && preferExact[0] !== undefined) {
+      return { ok: true, label: preferExact[0], via: "synonym" };
+    }
+    const hits = options.filter((o) => {
+      const ok = optionKey(o);
+      return gSyns.some((s) => ok === s || ok.startsWith(s + " "));
+    });
+    if (hits.length === 1 && hits[0] !== undefined) {
+      return { ok: true, label: hits[0], via: "synonym" };
+    }
+  }
+
+  // Orientation: Heterosexual ↔ "Heterosexual or straight"
+  if (
+    strippedExp === "heterosexual" ||
+    strippedExp === "straight" ||
+    strippedExp === "heterosexual or straight"
+  ) {
+    const hits = options.filter((o) => {
+      const ok = optionKey(o);
+      return (
+        ok === "heterosexual" ||
+        ok === "straight" ||
+        ok.includes("heterosexual") ||
+        ok.includes("straight")
+      );
+    });
+    if (hits.length === 1 && hits[0] !== undefined) {
+      return { ok: true, label: hits[0], via: "synonym" };
+    }
+  }
+
+  // Race: profile "Asian" — pick bare "Asian" or a single non-Hispanic Asian option.
+  if (strippedExp === "asian") {
+    const exact = options.find((o) => optionKey(o) === "asian");
+    if (exact) return { ok: true, label: exact, via: "exact" };
+    const asianHits = options.filter(
+      (o) => /\basian\b/i.test(o) && !/hispanic|latino|latinx/i.test(o),
+    );
+    if (asianHits.length === 1 && asianHits[0] !== undefined) {
+      return { ok: true, label: asianHits[0], via: "synonym" };
+    }
+    // Prefer "South Asian" / "East Asian" only when that is the sole remaining hit
+    // class — never multi-pick Hispanic.
+    if (asianHits.length > 1) {
+      const prefer = asianHits.find((o) => /^asian$/i.test(o.trim()));
+      if (prefer) return { ok: true, label: prefer, via: "synonym" };
+    }
+  }
+
+  // Decline / prefer-not-to-say vocabulary (EEO questions).
+  const declineRe =
+    /decline|prefer not|do not wish|don t wish|dont wish|not answer|prefer not to say|i don t wish|i do not wish/;
+  if (declineRe.test(strippedExp)) {
+    const hits = options.filter((o) => declineRe.test(optionKey(o)));
+    if (hits.length === 1 && hits[0] !== undefined) {
+      return { ok: true, label: hits[0], via: "synonym" };
+    }
+    if (hits.length > 1) {
+      const prefer = hits.find((o) => /decline/i.test(o));
+      if (prefer) return { ok: true, label: prefer, via: "synonym" };
     }
   }
 
   const sub = options.filter((o) => {
     const ok = optionKey(o);
     if (ok.length < 2 || strippedExp.length < 2) return false;
+    // Short tokens (yes/no/us) must be whole words — "no" must not hit "not".
+    if (strippedExp.length <= 3) {
+      return containsAsWord(ok, strippedExp);
+    }
     // Prefer option that contains expected (filter refinements).
     if (ok.includes(strippedExp)) return true;
     // expected contains option only when the option is substantial —
@@ -257,6 +463,12 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
 /**
  * Whether the visible committed label matches the option we clicked.
  * Handles Greenhouse country UI collapsing "United States +1" → "+1".
+ *
+ * Note: bare +1 is shared by US/Canada/etc. We only accept dial-only
+ * display against a *country name* when the pick/label text included that
+ * dial (p.includes("+1")) — profile "United States" alone does not match
+ * "+1"; verify must use a richer committed label or the dial must be
+ * carried in the expected side (see valuesMatch phone/country helpers).
  */
 export function labelsCompatible(
   pickedLabel: string,
@@ -279,7 +491,12 @@ export function labelsCompatible(
 
   const op = optionKey(p);
   const od = optionKey(d);
-  if (op.length === 0 || od.length === 0) return false;
+  if (op.length === 0 || od.length === 0) {
+    // optionKey("+1") is empty after dial-strip; still allow collapse
+    // when the picked option string clearly carried that dial.
+    if (/^\+\d+$/.test(d) && p.includes(d)) return true;
+    return false;
+  }
   if (op === od) return true;
   if (op.length >= 2 && od.length >= 2 && (op.includes(od) || od.includes(op))) {
     return true;
@@ -333,6 +550,7 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
       getAttribute?: (n: string) => string | null;
       childNodes?: ArrayLike<{ textContent?: string | null; nodeType?: number }>;
     } | null;
+    querySelectorAll: (s: string) => ArrayLike<{ textContent: string | null }>;
     textContent: string | null;
     closest: (s: string) => ContainerEl | null;
   };
@@ -354,6 +572,23 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
       if (t) return t;
       const title = single.getAttribute?.("title");
       if (title) return title;
+    }
+
+    // Multi-select chips: only label nodes (parent multi-value doubles text).
+    const multi = shell.querySelectorAll(
+      '[class*="multi-value__label"], [class*="multiValue__label"]',
+    );
+    const chips: string[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < multi.length; i++) {
+      const t = (multi[i]?.textContent || "").replace(/\s+/g, " ").trim();
+      if (t && t !== "×" && t !== "x" && t.length > 1 && !seen.has(t)) {
+        seen.add(t);
+        chips.push(t);
+      }
+    }
+    if (chips.length > 0) {
+      return chips.join(", ");
     }
     return null;
   });
@@ -385,17 +620,27 @@ export function buildFilterCandidates(expected: string): string[] {
     const t = s.trim().slice(0, 40);
     if (t && !out.includes(t)) out.push(t);
   };
+  const lower = cleaned.toLowerCase();
+
+  // Math majors: always filter "Mathematics" first, then applied/composite strings.
+  // Live GH boards almost never list "Applied Math & Stats" as a catalogue option.
+  if (/\bmath/.test(lower)) {
+    push("Mathematics");
+    push("Math");
+  }
+  if (/\bstat/.test(lower) && !/\bmath/.test(lower)) {
+    push("Statistics");
+  }
+
   push(full);
   push(cleaned);
   if (words.length >= 3) push(words.slice(0, 3).join(" "));
   if (words.length >= 2) push(words.slice(0, 2).join(" "));
-  if (words.length >= 1) push(words[0]!);
-  // Domain-weighted probes last: Greenhouse catalogues often lack nicknames
-  // like "Applied Math & Stats" but have "Mathematics" / "Statistics…".
-  const lower = cleaned.toLowerCase();
-  if (/\bmath/.test(lower)) {
-    push("Mathematics");
-    push("Math");
+  // Skip leading "Applied" as first token for math majors — already tried Math.
+  if (words.length >= 1 && words[0]!.toLowerCase() !== "applied") {
+    push(words[0]!);
+  } else if (words.length >= 2) {
+    push(words[1]!);
   }
   if (/\bstat/.test(lower)) {
     push("Statistics");
@@ -416,6 +661,38 @@ export function buildFilterCandidates(expected: string): string[] {
   return out;
 }
 
+async function clearComboboxSelection(
+  page: Page,
+  clickTarget: Locator,
+): Promise<string[]> {
+  const notes: string[] = [];
+  // Clear-all control wipes every multi/single chip in one click.
+  const clearAll = clickTarget
+    .locator(
+      '[class*="clear-indicator"], [class*="ClearIndicator"], [aria-label*="Clear" i]',
+    )
+    .first();
+  if ((await clearAll.count().catch(() => 0)) > 0) {
+    await clearAll.click({ force: true, timeout: 2_000 }).catch(() => undefined);
+    notes.push("cleared selection via clear-indicator");
+    await page.waitForTimeout(100);
+    return notes;
+  }
+  // Multi-value remove (×) on each chip — remove until gone (cap 12).
+  for (let i = 0; i < 12; i++) {
+    const remove = clickTarget
+      .locator(
+        '[class*="multi-value__remove"], [class*="multiValue__remove"], [aria-label*="Remove" i]',
+      )
+      .first();
+    if ((await remove.count().catch(() => 0)) === 0) break;
+    await remove.click({ force: true, timeout: 1_500 }).catch(() => undefined);
+    notes.push("removed multi-value chip");
+    await page.waitForTimeout(80);
+  }
+  return notes;
+}
+
 async function openCombobox(
   page: Page,
   loc: Locator,
@@ -427,10 +704,17 @@ async function openCombobox(
     )
     .first();
   const clickTarget = (await control.count()) > 0 ? control : loc;
-  // force: inner input is often 3×20; the control div is the real hit target
+  await clickTarget.scrollIntoViewIfNeeded().catch(() => undefined);
+
+  // Wipe prior chips/selection first — Greenhouse multi-selects *append*.
+  // Without this you get Non-binary+Man, East Asian+Hispanic, Glassdoor+LinkedIn.
+  notes.push(...(await clearComboboxSelection(page, clickTarget)));
+
+  // force: inner input is often 3×20; the control div is the real hit target.
+  // Single click only — do not Escape/re-click while the menu is opening.
   await clickTarget.click({ timeout: 10_000, force: true });
   notes.push("opened via control click");
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(200);
   return { clickTarget, notes };
 }
 
@@ -547,11 +831,40 @@ export async function fillComboboxControl(
 
   await listbox
     .waitFor({ state: "hidden", timeout: 5_000 })
-    .catch(() => notes.push("listbox still visible after pick"));
-  await page.waitForTimeout(200);
+    .catch(async () => {
+      notes.push("listbox still visible after pick");
+      // Multi-select keeps the menu open; Escape commits chips and blurs filter.
+      await page.keyboard.press("Escape").catch(() => undefined);
+    });
+  // Always close residual filter focus so the next field isn't left typing residue.
+  await page.keyboard.press("Escape").catch(() => undefined);
+  await page.waitForTimeout(250);
 
-  const committedLabel = await readComboboxValue(loc);
-  const committed = labelsCompatible(pick.label, committedLabel);
+  // Re-read after menu settles (multi-value chips mount after close).
+  let committedLabel = await readComboboxValue(loc);
+  if (!committedLabel) {
+    await page.waitForTimeout(300);
+    committedLabel = await readComboboxValue(loc);
+  }
+  let committed = labelsCompatible(pick.label, committedLabel);
+  // Multi-select chips may report "LinkedIn, Other" while pick was "LinkedIn".
+  // Require the pick to appear AND refuse when unexpected second chips remain
+  // for a single-value expectation (operator fills one answer at a time).
+  if (
+    !committed &&
+    committedLabel &&
+    normalize(committedLabel).includes(normalize(pick.label))
+  ) {
+    const parts = committedLabel.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length <= 1 || parts.every((p) => labelsCompatible(pick.label, p) || normalize(p) === normalize(pick.label))) {
+      committed = true;
+      notes.push(`multi-select chip contains "${pick.label}"`);
+    } else {
+      notes.push(
+        `multi residue after clear: display shows "${committedLabel}" (wanted only "${pick.label}")`,
+      );
+    }
+  }
   if (!committed) {
     notes.push(
       `commit not confirmed: display shows ${committedLabel === null ? "placeholder" : `"${committedLabel}"`}`,
@@ -564,10 +877,12 @@ export async function fillComboboxControl(
     notes.push(`display collapsed to dial code; recording "${selectedLabel}"`);
   } else if (committed && !committedLabel) {
     selectedLabel = stripDialCode(pick.label) || pick.label;
+  } else if (committed && committedLabel) {
+    selectedLabel = committedLabel;
   }
   return {
     committed,
-    selectedLabel,
+    selectedLabel: committed ? selectedLabel : null,
     notes,
     optionsSample,
     pickVia: pick.via,

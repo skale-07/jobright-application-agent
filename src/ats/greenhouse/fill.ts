@@ -15,7 +15,6 @@ import {
   assertExecutableApprovedEntry,
   type ApprovedFillPlanEntry,
 } from "../../applications/approvedFillPlan.js";
-import { isDemographicsField } from "../../applications/essayDetector.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import {
   detectControlKind,
@@ -34,10 +33,6 @@ export type FieldMeta = {
 
 export type ExecutableFillEntry = ApprovedFillPlanEntry | FillPlanEntry;
 
-function cssEscapeIdent(id: string): string {
-  return id.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, "\\$1");
-}
-
 export function locatorForField(
   page: Page,
   entry: Pick<FillPlanEntry, "field_id" | "label"> & {
@@ -46,7 +41,10 @@ export function locatorForField(
   },
 ): Locator {
   if (entry.inputId) {
-    return page.locator(`#${cssEscapeIdent(entry.inputId)}`);
+    // Greenhouse free-text / EEO question ids are pure digits (e.g. 4010536008).
+    // Those are invalid as bare CSS `#id` — always attribute-select.
+    const escaped = entry.inputId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return page.locator(`[id="${escaped}"]`).first();
   }
   if (entry.name) {
     return page.locator(`[name="${entry.name.replace(/"/g, '\\"')}"]`).first();
@@ -91,6 +89,64 @@ async function setSelectByValueOrLabel(
   );
 }
 
+/** Digits only; used so ITI formatting ("(555) 123-4567") can match raw profile. */
+function phoneDigits(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
+function phonesMatch(expected: string, observed: string): boolean {
+  const e = phoneDigits(expected);
+  const o = phoneDigits(observed);
+  // Require a real national number fragment; refuse short codes / empty.
+  if (e.length < 7 || o.length < 7) return false;
+  return e === o || e.endsWith(o) || o.endsWith(e);
+}
+
+/**
+ * Country name from profile vs job-boards collapse to dial-only ("+1").
+ * +1 is shared by several countries — only accept US primary names for +1,
+ * and unambiguous single-country dials for the rest. Never invent Canada→US.
+ */
+function countryDialCompatible(expected: string, observed: string): boolean {
+  const dial = observed.trim();
+  if (!/^\+\d{1,4}$/.test(dial)) return false;
+  const name = expected
+    .replace(/\s*\+\d+\s*$/u, "")
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "");
+  if (name.length < 2) return false;
+
+  // Unambiguous dials (single primary country on common GH job boards).
+  const UNIQUE: Record<string, string[]> = {
+    "+44": ["united kingdom", "uk", "great britain", "england"],
+    "+91": ["india"],
+    "+61": ["australia"],
+    "+81": ["japan"],
+    "+49": ["germany"],
+    "+33": ["france"],
+    "+86": ["china"],
+    "+52": ["mexico"],
+  };
+  const unique = UNIQUE[dial];
+  if (unique) {
+    return unique.some((n) => name === n || name.includes(n) || n.includes(name));
+  }
+
+  // +1: US board defaults are almost always "United States +1". Canada is
+  // also +1 — only accept explicit US wording, never bare "North America".
+  if (dial === "+1") {
+    return (
+      name === "united states" ||
+      name === "united states of america" ||
+      name === "usa" ||
+      name === "us" ||
+      name.startsWith("united states")
+    );
+  }
+  return false;
+}
+
 function valuesMatch(expected: unknown, observed: unknown): boolean {
   if (expected === observed) return true;
   const eRaw = String(expected ?? "").trim();
@@ -106,6 +162,27 @@ function valuesMatch(expected: unknown, observed: unknown): boolean {
   if (labelsCompatible(eRaw, oRaw)) return true;
   if (labelsCompatible(oRaw, eRaw)) return true;
   if (pickOptionLabel([oRaw], eRaw).ok) return true;
+  // Multi-select readback "Man, Woman" vs expected "Man": require exclusive match.
+  if (oRaw.includes(",")) {
+    const parts = oRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (
+      parts.length > 0 &&
+      parts.every(
+        (p) =>
+          labelsCompatible(eRaw, p) ||
+          pickOptionLabel([p], eRaw).ok ||
+          phonesMatch(eRaw, p),
+      )
+    ) {
+      return true;
+    }
+  }
+  // "United States" (profile) vs "+1" (collapsed country control).
+  if (countryDialCompatible(eRaw, oRaw) || countryDialCompatible(oRaw, eRaw)) {
+    return true;
+  }
+  // ITI phone formatting vs profile digits.
+  if (phonesMatch(eRaw, oRaw)) return true;
   return false;
 }
 
@@ -156,16 +233,8 @@ export async function greenhouseFillFromPlan(
       if (entry.type === "textarea") {
         throw new Error("textarea/essay never filled");
       }
-      if (
-        isDemographicsField({
-          id: entry.field_id,
-          label: entry.label,
-          type: entry.type,
-          required: false,
-        })
-      ) {
-        throw new Error("demographics never filled");
-      }
+      // Demographics only when approved via sensitive-profile values
+      // (assertExecutableApprovedEntry already gates the allowlist).
     } catch (err) {
       errors.push(
         `${entry.field_id}: ${err instanceof Error ? err.message : String(err)}`,

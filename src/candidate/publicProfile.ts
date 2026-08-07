@@ -35,6 +35,13 @@ export const publicProfileSchema = z.object({
   work_authorization: z.string().optional().default(""),
   requires_sponsorship: z.union([z.string(), z.boolean()]).optional().default(""),
   relocation: z.string().optional().default(""),
+  /** "How did you hear about this job?" — operator fact, not invented. */
+  how_heard: z.string().optional().default(""),
+  /**
+   * Restrictive covenants / non-compete yes-no. Empty = leave blank;
+   * never invent "No" for applicants who might be bound.
+   */
+  restrictive_covenants: z.string().optional().default(""),
   employment_history: z.array(z.unknown()).optional().default([]),
   education_history: z.array(z.unknown()).optional().default([]),
 });
@@ -69,6 +76,8 @@ export function getProfileValue(
   if (canonical === "work_authorization") return profile.work_authorization;
   if (canonical === "requires_sponsorship") return profile.requires_sponsorship;
   if (canonical === "relocation") return profile.relocation;
+  if (canonical === "how_heard") return profile.how_heard;
+  if (canonical === "restrictive_covenants") return profile.restrictive_covenants;
   if (canonical === "preferred_name") return profile.preferred_name;
 
   const parts = canonical.split(".");

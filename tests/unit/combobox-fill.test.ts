@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildFilterCandidates,
   detectControlKind,
   fillComboboxControl,
   labelsCompatible,
@@ -106,6 +107,23 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
       label: "Applied Mathematics & Statistics",
     });
 
+    // Bare Mathematics always wins when present (operator rule).
+    expect(
+      pickOptionLabel(
+        [
+          "Applied Health Services",
+          "Applied Mathematics & Statistics",
+          "Mathematics",
+          "Architecture",
+        ],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Mathematics",
+      via: "synonym",
+    });
+
     // Live GH board often has bare "Mathematics" / "Statistics…", not the compound major.
     expect(
       pickOptionLabel(
@@ -127,6 +145,12 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     });
   });
 
+  it("buildFilterCandidates tries Mathematics before applied composites", () => {
+    const c = buildFilterCandidates("Applied Math & Stats");
+    expect(c[0]).toBe("Mathematics");
+    expect(c.indexOf("Mathematics")).toBeLessThan(c.indexOf("Applied Math & Stats"));
+  });
+
   it("yes/no normalization picks the right binary option", () => {
     expect(pickOptionLabel(["Yes", "No"], "true")).toMatchObject({
       ok: true,
@@ -135,6 +159,49 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(pickOptionLabel(["Yes", "No"], "0")).toMatchObject({
       ok: true,
       label: "No",
+    });
+  });
+
+  it("bare No selects OFCCP disability sentence, not decline", () => {
+    // Live sandbox failure: ambiguous "No" matched both disability No and
+    // "I do not want to answer" because "not".includes("no").
+    const disability = [
+      "Yes, I have a disability, or have had one in the past",
+      "No, I do not have a disability and have not had one in the past",
+      "I do not want to answer",
+    ];
+    expect(pickOptionLabel(disability, "No")).toMatchObject({
+      ok: true,
+      label:
+        "No, I do not have a disability and have not had one in the past",
+    });
+    expect(pickOptionLabel(disability, "Yes")).toMatchObject({
+      ok: true,
+      label: "Yes, I have a disability, or have had one in the past",
+    });
+    // Decline is only via decline-ish expected, not bare No.
+    const decline = pickOptionLabel(disability, "I do not want to answer");
+    expect(decline.ok).toBe(true);
+    if (decline.ok) {
+      expect(decline.label).toMatch(/do not want to answer/i);
+    }
+  });
+
+  it("veteran: full phrase and bare No pick non-protected veteran", () => {
+    const veteran = [
+      "I identify as one or more of the classifications of a protected veteran",
+      "I am not a protected veteran",
+      "I do not want to answer",
+    ];
+    expect(
+      pickOptionLabel(veteran, "I am not a protected veteran"),
+    ).toMatchObject({
+      ok: true,
+      label: "I am not a protected veteran",
+    });
+    expect(pickOptionLabel(veteran, "No")).toMatchObject({
+      ok: true,
+      label: "I am not a protected veteran",
     });
   });
 
@@ -156,6 +223,23 @@ describe("labelsCompatible (UNIT_CONFIRMED)", () => {
     expect(labelsCompatible("United States +1", "United States")).toBe(true);
     expect(labelsCompatible("May", "May")).toBe(true);
     expect(labelsCompatible("Yes", null)).toBe(false);
+  });
+});
+
+describe("valuesMatch country dial + phone (via greenhouseVerify fixture helpers)", () => {
+  // Imported pure path is package-private; assert through exported label rules
+  // plus a small isolated re-export surface is overkill — spot-check public
+  // labelsCompatible + pickOptionLabel already cover commit side. Profile
+  // "United States" vs "+1" is handled inside fill.ts valuesMatch; covered
+  // by live FILL_VERIFY runs rather than private-function export.
+  it("pickOptionLabel keeps US distinct from Canada under shared +1", () => {
+    const countries = ["United States +1", "Canada +1", "United Kingdom +44"];
+    expect(pickOptionLabel(countries, "United States")).toMatchObject({
+      label: "United States +1",
+    });
+    expect(pickOptionLabel(countries, "Canada")).toMatchObject({
+      label: "Canada +1",
+    });
   });
 });
 

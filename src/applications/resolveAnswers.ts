@@ -6,6 +6,10 @@ import {
   getProfileValue,
   type PublicProfile,
 } from "../candidate/publicProfile.js";
+import {
+  getSensitiveValue,
+  tryLoadSensitiveProfile,
+} from "../candidate/sensitiveProfileIO.js";
 
 export type FillPlanAction =
   | "fill"
@@ -102,14 +106,33 @@ export function buildFillPlan(
     }
 
     if (isDemographicsField(field)) {
+      const sensitive = tryLoadSensitiveProfile();
+      const demoCanon = field.canonical_field;
+      let demValue: unknown = undefined;
+      if (sensitive && demoCanon) {
+        demValue = getSensitiveValue(sensitive, demoCanon);
+      }
+      if (!sensitive || isEmptyValue(demValue)) {
+        entries.push({
+          field_id: field.id,
+          label: field.label,
+          type: field.type,
+          canonical_field: field.canonical_field,
+          action: "skip_demographics",
+          value: null,
+          reason: "Demographics deferred to sensitive-profile policy path",
+        });
+        continue;
+      }
+      answers[demoCanon] = demValue;
       entries.push({
         field_id: field.id,
         label: field.label,
         type: field.type,
-        canonical_field: field.canonical_field,
-        action: "skip_demographics",
-        value: null,
-        reason: "Demographics deferred to sensitive-profile policy path",
+        canonical_field: demoCanon,
+        action: "fill",
+        value: demValue,
+        reason: "Mapped from sensitive profile (operator-supplied)",
       });
       continue;
     }
@@ -144,7 +167,11 @@ export function buildFillPlan(
     if (field.canonical_field === "requires_sponsorship") {
       value = normalizeSponsorship(value);
     }
-    if (field.canonical_field === "graduation_year" && value != null) {
+    if (
+      (field.canonical_field === "graduation_year" ||
+        field.canonical_field === "start_year") &&
+      value != null
+    ) {
       value = String(value);
     }
 

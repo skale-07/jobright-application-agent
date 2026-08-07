@@ -158,7 +158,9 @@ export async function findFieldCandidates(
     if (best < 0.5) continue;
     const typeBonus = c.elType === fieldType ? 0.1 : 0;
     const selector = c.id
-      ? `#${c.id}`
+      ? /^[A-Za-z_][\w-]*$/.test(c.id)
+        ? `#${c.id}`
+        : `[id="${c.id.replace(/"/g, '\\"')}"]`
       : c.name
         ? `[name="${c.name}"]`
         : null;

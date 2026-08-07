@@ -1,9 +1,12 @@
 {
   "gender_identity": "",
+  "gender": "",
   "race_ethnicity": [],
   "sexual_orientation": "",
+  "hispanic_latino": "",
+  "transgender": "",
   "veteran_status": "",
   "disability_status": "",
   "self_identification_preferences": {},
-  "_note": "Real sensitive values must live in sensitive-profile.enc (Phase 2). Never commit plaintext sensitive-profile.json."
+  "_note": "Real sensitive values: fill sensitive-profile.draft.json then npm run candidate:encrypt-sensitive. Never commit plaintext with values."
 }

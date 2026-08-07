@@ -31,7 +31,29 @@ export const SAFE_FACTUAL_CANONICALS = new Set([
   "address.state",
   "address.postal_code",
   "address.country",
+  "how_heard",
+  "restrictive_covenants",
 ]);
+
+/** Operator-supplied EEO / self-ID values (sensitive profile), never invented. */
+export const SENSITIVE_FILL_CANONICALS = new Set([
+  "gender_identity",
+  "gender",
+  "race_ethnicity",
+  "sexual_orientation",
+  "hispanic_latino",
+  "transgender",
+  "veteran_status",
+  "disability_status",
+]);
+
+export function isAllowlistedCanonical(canonical: string | null | undefined): boolean {
+  if (!canonical) return false;
+  return (
+    SAFE_FACTUAL_CANONICALS.has(canonical) ||
+    SENSITIVE_FILL_CANONICALS.has(canonical)
+  );
+}
 
 export type ApprovedFillAction = "FILL" | "SKIP" | "REVIEW_REQUIRED";
 
@@ -152,6 +174,15 @@ function rejectFillCandidate(entry: FillPlanEntry): ApprovedFillPlanEntry | null
       required: false,
     })
   ) {
+    const demoCanon = entry.canonical_field;
+    if (
+      demoCanon &&
+      SENSITIVE_FILL_CANONICALS.has(demoCanon) &&
+      !isEmptyValue(entry.value)
+    ) {
+      // Value already resolved from sensitive profile — allow.
+      return null;
+    }
     return {
       field_id: entry.field_id,
       label: entry.label,
@@ -165,7 +196,7 @@ function rejectFillCandidate(entry: FillPlanEntry): ApprovedFillPlanEntry | null
   }
 
   const canonical = entry.canonical_field;
-  if (!canonical || !SAFE_FACTUAL_CANONICALS.has(canonical)) {
+  if (!canonical || !isAllowlistedCanonical(canonical)) {
     return {
       field_id: entry.field_id,
       label: entry.label,
@@ -229,13 +260,18 @@ export function assertExecutableApprovedEntry(
       label: entry.label,
       type: entry.type,
       required: false,
-    })
+    }) &&
+    !(
+      entry.canonical_field &&
+      SENSITIVE_FILL_CANONICALS.has(entry.canonical_field) &&
+      !isEmptyValue(entry.value)
+    )
   ) {
     throw new Error(`Refusing fill for ${entry.field_id}: demographics`);
   }
   if (
     !entry.canonical_field ||
-    !SAFE_FACTUAL_CANONICALS.has(entry.canonical_field)
+    !isAllowlistedCanonical(entry.canonical_field)
   ) {
     throw new Error(
       `Refusing fill for ${entry.field_id}: canonical not in safe factual allowlist`,
