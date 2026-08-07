@@ -432,7 +432,63 @@ contract rather than trusted.
 | `EMAIL_GENERATION_ENABLED` | `false` | The LLM spend surface |
 | `OUTLOOK_DRAFTS_ENABLED` | `false` | Draft creation |
 | `AGENT_AUTHORING_ENABLED` | `false` | Phase 6 J1 sidecar |
-| `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) |
+| `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) + nav agent phase |
+| `NAVIGATION_ENABLED` | `false` | Navigation: clicking Apply on JobRight (mutates applied-state) |
+| `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail readonly OTP/magic-link retrieval during nav |
 
 The banned send-style APIs have no flag — they are impossible, enforced by
-`npm run check:forbidden`.
+`npm run check:forbidden` (Outlook send identifiers AND Gmail
+send/modify/compose identifiers).
+
+## 15. Navigation (autonomous employer-URL resolution)
+
+`APPLICATION_OPENING` can resolve the employer application URL itself
+instead of dead-ending on a MANUAL review item. Three phases, each gated:
+
+1. **Deterministic (`NAVIGATION_ENABLED=true`)** — open the JobRight job
+   page, read external apply hrefs (zero mutation), else click the
+   standard Apply control and capture the popup/same-tab URL (2-click
+   cap). A captured URL that lands on a login wall is never stored — it
+   becomes the agent's starting point.
+2. **Agent (`+ AGENT_FALLBACK_ENABLED=true` + debug Chrome running)** —
+   browser-use sidecar attached to your CDP Chrome
+   (`npm run chrome:debug:jobright`). Hard rules: never fills application
+   fields, never clicks submit, stays on allowed domains, stops on
+   captcha/phone walls. Account walls use the vault
+   (`private/ats-accounts/`, created on demand); caps: 3 spawns × 25
+   steps × 180s, 8-minute total.
+3. **Gmail micro-turn (`+ GMAIL_VERIFICATION_ENABLED=true`)** — when a
+   site emails a verification code/link, the orchestrator polls your
+   mailbox readonly (10 × 6s), parses deterministically, and re-invokes
+   the agent with the code. One-time setup:
+
+```powershell
+npm run gmail:auth -- --email <mailbox> --client-id <id> --client-secret <secret>
+$env:GMAIL_VERIFICATION_ENABLED = "true"   # gmail:check reads the mailbox, so the flag gates it too
+npm run gmail:check       # read-only smoke
+Remove-Item Env:GMAIL_VERIFICATION_ENABLED
+```
+
+(Desktop-app OAuth client, scope `gmail.readonly` only — a token carrying
+any wider scope is refused before it is stored.)
+
+Run it standalone or let the pipeline call it:
+
+```powershell
+npm run nav:resolve -- --app <application_uuid>
+npm run run -- --pipeline --app <application_uuid>
+```
+
+Walls route to existing states: employer login/phone → MANUAL review;
+captcha → `CAPTCHA_REQUIRED`; budget → `FAILED_RETRYABLE`; JobRight auth
+loss → `AUTH_REQUIRED` (re-login and retry). Artifacts under
+`artifacts/navigation/<runId>/` never contain credentials, codes, or
+magic-link URLs. When nav ran in your CDP Chrome, inspection and fill
+re-attach to the same Chrome so employer cookies survive
+(`nav_session: cdp` on the job row); unreachable CDP falls back to the
+ephemeral browser.
+
+Level: everything here ships `UNIT_CONFIRMED`/`FIXTURE_CONFIRMED` (fake
+sidecars, routed fixtures, injected fetch). The first live nav run is
+yours — success is only claimed from the deterministic read-back (URL
+stored + ATS validation), never from the agent's self-report.

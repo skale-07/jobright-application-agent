@@ -13,7 +13,8 @@ Mirror of `CLAUDE.md` (repo root) — keep both files identical when editing.
   `FORM_FILL_ENABLED`, `SUBMIT_ENABLED`, `DRY_RUN`, `OUTLOOK_DRAFTS_ENABLED`,
   `EMAIL_GENERATION_ENABLED`, `AGENT_AUTHORING_ENABLED`, `AGENT_FALLBACK_ENABLED`,
   `NATIVE_AUTOFILL_ENABLED`, `JOBRIGHT_AUTOFILL_ENABLED`, `MATERIALS_DOWNLOAD_ENABLED`,
-  `LINKEDIN_ENRICHMENT_ENABLED`. Flags are enabled only in an operator's shell for a
+  `LINKEDIN_ENRICHMENT_ENABLED`, `NAVIGATION_ENABLED`, `GMAIL_VERIFICATION_ENABLED`.
+  Flags are enabled only in an operator's shell for a
   specific guarded run — never hardcoded, never defaulted on, never enabled inside tests.
 - Never write Outlook send-style APIs. `scripts/check-forbidden.ts` bans the identifiers
   (source list: `src/outlook/sendGuards.ts`); do not extend its allowlist to make code compile.

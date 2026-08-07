@@ -30,6 +30,7 @@ export interface ServiceSession {
 export class PlaywrightServiceSession implements ServiceSession {
   readonly service: ServiceName;
   readonly mode: SessionPersistenceMode;
+  private readonly cdpUrlOverride: string | undefined;
   private readonly headless: boolean;
   private readonly slowMoMs: number;
   private readonly acceptDownloads: boolean;
@@ -42,6 +43,7 @@ export class PlaywrightServiceSession implements ServiceSession {
     const cfg = getServiceAuthConfig(options.service);
     this.service = options.service;
     this.mode = options.mode ?? cfg.defaultMode;
+    this.cdpUrlOverride = options.cdpUrl;
     this.headless = options.headless ?? false;
     this.slowMoMs = options.slowMoMs ?? 50;
     this.acceptDownloads = options.acceptDownloads ?? false;
@@ -62,7 +64,7 @@ export class PlaywrightServiceSession implements ServiceSession {
       // Attach to the operator's debug Chrome (scripts/start-chrome-debug-*).
       // We do not own this browser: close() disconnects and must never kill
       // it or close its real contexts/pages.
-      const cdpUrl = getConfig().agentCdpUrl;
+      const cdpUrl = this.cdpUrlOverride ?? getConfig().agentCdpUrl;
       this.browser = await chromium.connectOverCDP(cdpUrl);
       this.context =
         this.browser.contexts()[0] ?? (await this.browser.newContext());

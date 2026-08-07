@@ -17,6 +17,14 @@ import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import {
+  probeCdpEndpoint,
+  runNavigation,
+  type NavigationReport,
+  type RunNavigationInput,
+} from "../navigation/runNavigation.js";
+import { PlaywrightServiceSession } from "../auth/serviceSession.js";
+import type { Page } from "playwright";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
@@ -61,6 +69,8 @@ export type PipelineOptions = {
   assumeYes?: boolean;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
+  /** Test seam: replaces runNavigation for offline pipeline tests. */
+  navigationRunner?: (input: RunNavigationInput) => Promise<NavigationReport>;
 };
 
 /** States the sequential driver can pick up and advance. */
@@ -79,48 +89,14 @@ const ADVANCEABLE: ApplicationState[] = [
   "EMAIL_GENERATED",
 ];
 
-export function getEmployerApplicationUrl(
-  db: Db,
-  applicationId: string,
-): string | null {
-  const row = db
-    .prepare(
-      `SELECT j.raw_json FROM jobs j
-       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
-    )
-    .get(applicationId) as { raw_json: string } | undefined;
-  if (!row) return null;
-  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  const url = raw["employer_application_url"];
-  return typeof url === "string" && url.length > 0 ? url : null;
-}
-
-/** Persist the employer ATS URL on the job so submit and re-runs find it. */
-export function setEmployerApplicationUrl(
-  db: Db,
-  applicationId: string,
-  url: string,
-): void {
-  const detected = detectAtsFromUrl(url);
-  if (detected.ats === null) {
-    throw new Error(`Refusing to store employer URL: ${detected.failureReason}`);
-  }
-  const row = db
-    .prepare(
-      `SELECT j.id, j.raw_json FROM jobs j
-       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
-    )
-    .get(applicationId) as { id: string; raw_json: string } | undefined;
-  if (!row) throw new Error(`Unknown application: ${applicationId}`);
-  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  raw["employer_application_url"] = detected.normalizedUrl;
-  raw["employer_application_ats"] = detected.ats;
-  db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
-    JSON.stringify(raw),
-    new Date().toISOString(),
-    row.id,
-  );
-}
+export {
+  getEmployerApplicationUrl,
+  setEmployerApplicationUrl,
+} from "../applications/employerUrl.js";
+import {
+  getEmployerApplicationUrl,
+  setEmployerApplicationUrl,
+} from "../applications/employerUrl.js";
 
 type StepContext = {
   db: Db;
@@ -129,11 +105,132 @@ type StepContext = {
   options: PipelineOptions;
 };
 
+/**
+ * Route a navigation run that ended on a wall into the state machine.
+ * jobright_auth already got its review item + AUTH_REQUIRED transition via
+ * handleAuthExpiry inside runNavigation.
+ */
+function routeNavigationWall(
+  db: Db,
+  applicationId: string,
+  nav: NavigationReport,
+  runId: string,
+): StepOutcome {
+  switch (nav.wall) {
+    case "jobright_auth":
+      return {
+        to: null,
+        note: "JobRight authentication required for navigation",
+        stop: "review",
+      };
+    case "auth":
+    case "phone_otp": {
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "MANUAL",
+        title: "Navigation blocked by employer identity wall",
+        payload: {
+          wall: nav.wall,
+          nav_run_id: nav.run_id,
+          report_path: nav.report_path ?? null,
+        },
+      });
+      return { to: null, note: `navigation blocked: ${nav.wall}`, stop: "review" };
+    }
+    case "captcha": {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "CAPTCHA_REQUIRED",
+        reason: "navigation: blocking CAPTCHA on the employer path",
+        runId,
+        route: "CAPTCHA_REQUIRED",
+      });
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "CAPTCHA_REQUIRED",
+        title: "Navigation blocked by CAPTCHA",
+        payload: { nav_run_id: nav.run_id },
+      });
+      return { to: "CAPTCHA_REQUIRED", note: "navigation captcha", stop: "review" };
+    }
+    default: {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "FAILED_RETRYABLE",
+        reason: `navigation unresolved (${nav.wall})`,
+        runId,
+      });
+      return {
+        to: "FAILED_RETRYABLE",
+        note: `navigation unresolved: ${nav.wall}`,
+        stop: "review",
+      };
+    }
+  }
+}
+
 type StepOutcome = {
   to: ApplicationState | null;
   note: string;
   stop?: PipelineStop;
 };
+
+/** nav_session recorded by storeResolvedEmployerUrl ("cdp" | "ephemeral"). */
+function getNavSessionKind(db: Db, applicationId: string): string | null {
+  const row = db
+    .prepare(
+      `SELECT j.raw_json FROM jobs j
+       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+    )
+    .get(applicationId) as { raw_json: string } | undefined;
+  if (!row) return null;
+  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+  return typeof raw["nav_session"] === "string"
+    ? (raw["nav_session"] as string)
+    : null;
+}
+
+/**
+ * Session handoff (nav N6): when navigation ran in the operator's CDP
+ * Chrome, attach to the same Chrome so employer cookies survive into
+ * inspection/fill. Nobody owns that Chrome: this attaches, hands the
+ * caller a page, and disconnects — falling back to the ephemeral path on
+ * any unreachable/attach error.
+ */
+async function withNavHandoffPage<T>(
+  ctx: StepContext,
+  fn: (page: Page | null) => Promise<T>,
+): Promise<T> {
+  const cfg = getConfig();
+  const kind = getNavSessionKind(ctx.db, ctx.app.id);
+  if (kind !== "cdp" || !(await probeCdpEndpoint(cfg.agentCdpUrl))) {
+    return fn(null);
+  }
+  // The catch guards ONLY attach/open/newPage — an error thrown by the
+  // caller's work must propagate, never silently re-run on the ephemeral
+  // path (a live fill re-executed twice would double-mutate the form).
+  let session: PlaywrightServiceSession | null = null;
+  let page: Page | null = null;
+  try {
+    session = new PlaywrightServiceSession({
+      service: "jobright",
+      mode: "CDP_ATTACH",
+      skipAuthValidation: true,
+    });
+    await session.open();
+    page = await session.newPage({ purpose: "nav-handoff" });
+  } catch {
+    if (session) await session.close().catch(() => undefined);
+    session = null;
+    page = null;
+  }
+  if (!page) return fn(null);
+  try {
+    return await fn(page);
+  } finally {
+    if (session) await session.close().catch(() => undefined);
+  }
+}
 
 async function fetchEmployerPageHtml(
   ctx: StepContext,
@@ -146,15 +243,25 @@ async function fetchEmployerPageHtml(
       title: "fixture",
     };
   }
-  return withPublicUrlPage(
-    url,
-    async (page) => ({
-      html: await page.content(),
-      finalUrl: page.url(),
-      title: await page.title().catch(() => ""),
-    }),
-    { headless: ctx.options.headless ?? true },
-  );
+  return withNavHandoffPage(ctx, async (handoff) => {
+    if (handoff) {
+      await handoff.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      return {
+        html: await handoff.content(),
+        finalUrl: handoff.url(),
+        title: await handoff.title().catch(() => ""),
+      };
+    }
+    return withPublicUrlPage(
+      url,
+      async (page) => ({
+        html: await page.content(),
+        finalUrl: page.url(),
+        title: await page.title().catch(() => ""),
+      }),
+      { headless: ctx.options.headless ?? true },
+    );
+  });
 }
 
 /**
@@ -353,12 +460,28 @@ async function step(
     case "APPLICATION_OPENING": {
       const url = getEmployerApplicationUrl(db, app.id);
       if (!url) {
+        if (cfg.navigationEnabled) {
+          const nav = await (ctx.options.navigationRunner ?? runNavigation)({
+            db,
+            applicationId: app.id,
+            headless: ctx.options.headless ?? true,
+          });
+          if (nav.resolved_url) {
+            // Stored by runNavigation; the next iteration of this same case
+            // validates and advances (self-transition is legal).
+            return {
+              to: null,
+              note: `nav resolved employer URL via ${nav.method} (${nav.resolved_ats ?? "unsupported ats"})`,
+            };
+          }
+          return routeNavigationWall(db, app.id, nav, runId);
+        }
         upsertOpenReviewItem(db, {
           applicationId: app.id,
           kind: "MANUAL",
           title: "Employer application URL unknown",
           payload: {
-            hint: `npm run run -- --pipeline --app ${app.id} --url <GREENHOUSE_APPLICATION_URL>`,
+            hint: `npm run run -- --pipeline --app ${app.id} --url <ATS_APPLICATION_URL>`,
           },
         });
         return {
@@ -521,31 +644,45 @@ async function step(
             stop: "gate",
           };
         }
-        if (detected.ats !== "greenhouse") {
-          const liveReport = await runAtsLiveFill({
-            binding: ATS_BINDINGS[detected.ats],
-            url,
-            execute: true,
-            headless: ctx.options.headless ?? false,
-          });
-          if (!liveReport.gate.ok) {
+        const filled = await withNavHandoffPage(ctx, async (handoff) => {
+          if (detected.ats !== "greenhouse") {
+            const liveReport = await runAtsLiveFill({
+              binding: ATS_BINDINGS[detected.ats],
+              url,
+              execute: true,
+              headless: ctx.options.headless ?? false,
+              ...(handoff ? { existingPage: handoff } : {}),
+            });
+            if (!liveReport.gate.ok) {
+              return {
+                gateFailure: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
+                verifyPassed: false,
+                detail: "",
+              };
+            }
             return {
-              to: null,
-              note: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
-              stop: "gate",
+              gateFailure: null,
+              verifyPassed: liveReport.verify?.passed === true,
+              detail: `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
             };
           }
-          verifyPassed = liveReport.verify?.passed === true;
-          detail = `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
-        } else {
           const liveReport = await runGreenhouseLiveFill({
             url,
             execute: true,
             headless: ctx.options.headless ?? false,
+            ...(handoff ? { existingPage: handoff } : {}),
           });
-          verifyPassed = liveReport.verify?.passed === true;
-          detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+          return {
+            gateFailure: null,
+            verifyPassed: liveReport.verify?.passed === true,
+            detail: `live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
+          };
+        });
+        if (filled.gateFailure) {
+          return { to: null, note: filled.gateFailure, stop: "gate" };
         }
+        verifyPassed = filled.verifyPassed;
+        detail = filled.detail;
       }
 
       transitionApplication(db, {
