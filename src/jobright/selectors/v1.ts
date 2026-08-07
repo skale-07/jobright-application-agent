@@ -6,7 +6,7 @@
  * Contacts workflows are intentionally incomplete in v1 (weak captures).
  */
 
-export const JOBRIGHT_SELECTOR_REGISTRY_VERSION = 1;
+export const JOBRIGHT_SELECTOR_REGISTRY_VERSION = 2;
 
 export const jobrightSelectorsV1 = {
   urls: {
@@ -54,6 +54,21 @@ export const jobrightSelectorsV1 = {
     coverLetterText: '[class*="cover-letter-editor"] .ProseMirror',
     resumeAlignSubmit: '[class*="resume-align-submit-button"]',
     skillTag: '[class*="skill-tag"]',
+  },
+
+  /**
+   * Navigation layer (N-series). UNVERIFIED_SELECTOR status: authored from
+   * captures, not yet promoted by a live nav run.
+   */
+  navigation: {
+    /** Anchors pointing at known ATS hosts — read hrefs, don't just count. */
+    externalAtsAnchors:
+      'a[href*="greenhouse.io"], a[href*="lever.co"], a[href*="myworkdayjobs"], a[href*="ashbyhq.com"]',
+    /** Fallback: any external https anchor opening a new tab. */
+    externalAnyAnchor: 'a[target="_blank"][href^="https://"]',
+    /** Standard Apply (NOT "Apply with Autofill" — that is JobRight's own flow). */
+    standardApplyRole: /^apply$/i,
+    status: "UNVERIFIED_SELECTOR" as const,
   },
 
   /** Partial — do not treat as production-complete */

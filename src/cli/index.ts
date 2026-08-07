@@ -18,6 +18,7 @@ import { runAtsSubmission } from "../applications/submitRun.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { runNavigation } from "../navigation/runNavigation.js";
 import { waitForRenderedContent } from "../ats/shared/preMutationGate.js";
 import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
 import { leverSelectorsV1 } from "../ats/lever/selectors.js";
@@ -118,6 +119,7 @@ Commands:
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
   submit --application <uuid> [--headed] [--yes]
+  nav:resolve --app <uuid> [--headed]   Resolve employer URL from JobRight (NAVIGATION_ENABLED)
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
@@ -717,6 +719,33 @@ async function cmdRunPipeline(
   }
 }
 
+/** Navigation: resolve the employer application URL from the JobRight page. */
+async function cmdNavResolve(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const app = flags["app"];
+  if (typeof app !== "string") {
+    console.error(
+      "Usage: nav:resolve --app <application_uuid> [--headed]  (requires NAVIGATION_ENABLED=true)",
+    );
+    process.exit(1);
+  }
+  resetConfigCache();
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runNavigation({
+      db,
+      applicationId: app,
+      headless: flags["headed"] !== true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+    if (!report.resolved_url) process.exitCode = 2;
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 /** Phase 7: human-approved submission. All gates live in runAtsSubmission. */
 async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void> {
   const application = flags["application"];
@@ -1261,6 +1290,9 @@ async function main(): Promise<void> {
       return;
     case "submit":
       await cmdSubmit(flags);
+      return;
+    case "nav:resolve":
+      await cmdNavResolve(flags);
       return;
     case "review":
       cmdReview();

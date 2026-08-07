@@ -42,14 +42,12 @@ export function restoreControlledFillEnv(snapshot: ControlledFillEnv): void {
   resetConfigCache();
 }
 
-export function applyControlledFillEnv(values: {
-  FORM_FILL_ENABLED: string;
-  DRY_RUN: string;
-  SUBMIT_ENABLED: string;
-}): void {
-  process.env.FORM_FILL_ENABLED = values.FORM_FILL_ENABLED;
-  process.env.DRY_RUN = values.DRY_RUN;
-  process.env.SUBMIT_ENABLED = values.SUBMIT_ENABLED;
+export function applyControlledFillEnv(
+  values: Partial<Record<ControlledFillEnvKey, string>>,
+): void {
+  for (const [key, value] of Object.entries(values)) {
+    if (value !== undefined) process.env[key] = value;
+  }
   resetConfigCache();
 }
 

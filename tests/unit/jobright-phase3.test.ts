@@ -24,8 +24,8 @@ const feedFixture = path.join(
 );
 
 describe("jobright phase3", () => {
-  it("exposes selector registry version 1", () => {
-    expect(JOBRIGHT_SELECTOR_REGISTRY_VERSION).toBe(1);
+  it("exposes selector registry version 2", () => {
+    expect(JOBRIGHT_SELECTOR_REGISTRY_VERSION).toBe(2);
   });
 
   it("parses job cards from captured feed HTML", () => {
@@ -134,7 +134,7 @@ describe("discovery from fixture", () => {
       feedHtmlPath: feedFixture,
       maxJobs: 5,
     });
-    expect(report.selector_registry_version).toBe(1);
+    expect(report.selector_registry_version).toBe(2);
     expect(report.jobs_inspected).toBeGreaterThan(0);
     expect(report.jobs_eligible + report.jobs_filtered_out).toBe(
       report.jobs_inspected,

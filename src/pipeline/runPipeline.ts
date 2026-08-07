@@ -17,6 +17,11 @@ import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import {
+  runNavigation,
+  type NavigationReport,
+  type RunNavigationInput,
+} from "../navigation/runNavigation.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
@@ -61,6 +66,8 @@ export type PipelineOptions = {
   assumeYes?: boolean;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
+  /** Test seam: replaces runNavigation for offline pipeline tests. */
+  navigationRunner?: (input: RunNavigationInput) => Promise<NavigationReport>;
 };
 
 /** States the sequential driver can pick up and advance. */
@@ -128,6 +135,70 @@ type StepContext = {
   runId: string;
   options: PipelineOptions;
 };
+
+/**
+ * Route a navigation run that ended on a wall into the state machine.
+ * jobright_auth already got its review item + AUTH_REQUIRED transition via
+ * handleAuthExpiry inside runNavigation.
+ */
+function routeNavigationWall(
+  db: Db,
+  applicationId: string,
+  nav: NavigationReport,
+  runId: string,
+): StepOutcome {
+  switch (nav.wall) {
+    case "jobright_auth":
+      return {
+        to: null,
+        note: "JobRight authentication required for navigation",
+        stop: "review",
+      };
+    case "auth":
+    case "phone_otp": {
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "MANUAL",
+        title: "Navigation blocked by employer identity wall",
+        payload: {
+          wall: nav.wall,
+          nav_run_id: nav.run_id,
+          report_path: nav.report_path ?? null,
+        },
+      });
+      return { to: null, note: `navigation blocked: ${nav.wall}`, stop: "review" };
+    }
+    case "captcha": {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "CAPTCHA_REQUIRED",
+        reason: "navigation: blocking CAPTCHA on the employer path",
+        runId,
+        route: "CAPTCHA_REQUIRED",
+      });
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "CAPTCHA_REQUIRED",
+        title: "Navigation blocked by CAPTCHA",
+        payload: { nav_run_id: nav.run_id },
+      });
+      return { to: "CAPTCHA_REQUIRED", note: "navigation captcha", stop: "review" };
+    }
+    default: {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "FAILED_RETRYABLE",
+        reason: `navigation unresolved (${nav.wall})`,
+        runId,
+      });
+      return {
+        to: "FAILED_RETRYABLE",
+        note: `navigation unresolved: ${nav.wall}`,
+        stop: "review",
+      };
+    }
+  }
+}
 
 type StepOutcome = {
   to: ApplicationState | null;
@@ -353,12 +424,28 @@ async function step(
     case "APPLICATION_OPENING": {
       const url = getEmployerApplicationUrl(db, app.id);
       if (!url) {
+        if (cfg.navigationEnabled) {
+          const nav = await (ctx.options.navigationRunner ?? runNavigation)({
+            db,
+            applicationId: app.id,
+            headless: ctx.options.headless ?? true,
+          });
+          if (nav.resolved_url) {
+            // Stored by runNavigation; the next iteration of this same case
+            // validates and advances (self-transition is legal).
+            return {
+              to: null,
+              note: `nav resolved employer URL via ${nav.method} (${nav.resolved_ats ?? "unsupported ats"})`,
+            };
+          }
+          return routeNavigationWall(db, app.id, nav, runId);
+        }
         upsertOpenReviewItem(db, {
           applicationId: app.id,
           kind: "MANUAL",
           title: "Employer application URL unknown",
           payload: {
-            hint: `npm run run -- --pipeline --app ${app.id} --url <GREENHOUSE_APPLICATION_URL>`,
+            hint: `npm run run -- --pipeline --app ${app.id} --url <ATS_APPLICATION_URL>`,
           },
         });
         return {

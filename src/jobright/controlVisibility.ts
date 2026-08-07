@@ -117,9 +117,7 @@ export async function inspectJobRightControlVisibility(
   const resume_generation_status_visible = skill_tag_count > 0;
 
   const atsLinkCount = await page
-    .locator(
-      'a[href*="greenhouse.io"], a[href*="lever.co"], a[href*="myworkdayjobs"], a[href*="ashbyhq.com"]',
-    )
+    .locator(jobrightSelectorsV1.navigation.externalAtsAnchors)
     .count()
     .catch(() => 0);
   const external_apply_visible = atsLinkCount > 0;
