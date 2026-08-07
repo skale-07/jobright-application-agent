@@ -40,6 +40,8 @@ export type ServiceAuthConfig = {
 export type ServiceSessionOptions = {
   service: ServiceName;
   mode?: SessionPersistenceMode;
+  /** CDP_ATTACH only: attach to this endpoint instead of AGENT_CDP_URL. */
+  cdpUrl?: string;
   headless?: boolean;
   slowMoMs?: number;
   /** Recorder / download workflows */

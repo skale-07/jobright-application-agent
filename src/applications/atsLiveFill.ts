@@ -74,6 +74,12 @@ export async function runAtsLiveFill(input: {
    * is demoted — a fixture-served page is never live evidence.
    */
   fixtureHtml?: string;
+  /**
+   * Session handoff (nav N6): run on this page — typically a CDP-attached
+   * page whose cookies survive from navigation. The caller owns its
+   * lifetime; this runner navigates it but never closes it.
+   */
+  existingPage?: Page;
 }): Promise<AtsLiveFillReport> {
   const { binding } = input;
   const report: AtsLiveFillReport = {
@@ -116,6 +122,15 @@ export async function runAtsLiveFill(input: {
   const runInPage = async (
     fn: (page: Page) => Promise<AtsLiveFillReport>,
   ): Promise<AtsLiveFillReport> => {
+    if (input.existingPage) {
+      const page = input.existingPage;
+      report.notes.push("session: handoff (caller-owned page, not closed here)");
+      await page.goto(detected.normalizedUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      return fn(page);
+    }
     if (input.fixtureHtml !== undefined) {
       const html = input.fixtureHtml;
       return withFixtureHtmlPage("<html><body></body></html>", async (page) => {

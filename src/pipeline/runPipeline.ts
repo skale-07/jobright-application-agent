@@ -18,10 +18,13 @@ import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import {
+  probeCdpEndpoint,
   runNavigation,
   type NavigationReport,
   type RunNavigationInput,
 } from "../navigation/runNavigation.js";
+import { PlaywrightServiceSession } from "../auth/serviceSession.js";
+import type { Page } from "playwright";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
@@ -206,6 +209,56 @@ type StepOutcome = {
   stop?: PipelineStop;
 };
 
+/** nav_session recorded by storeResolvedEmployerUrl ("cdp" | "ephemeral"). */
+function getNavSessionKind(db: Db, applicationId: string): string | null {
+  const row = db
+    .prepare(
+      `SELECT j.raw_json FROM jobs j
+       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+    )
+    .get(applicationId) as { raw_json: string } | undefined;
+  if (!row) return null;
+  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+  return typeof raw["nav_session"] === "string"
+    ? (raw["nav_session"] as string)
+    : null;
+}
+
+/**
+ * Session handoff (nav N6): when navigation ran in the operator's CDP
+ * Chrome, attach to the same Chrome so employer cookies survive into
+ * inspection/fill. Nobody owns that Chrome: this attaches, hands the
+ * caller a page, and disconnects — falling back to the ephemeral path on
+ * any unreachable/attach error.
+ */
+async function withNavHandoffPage<T>(
+  ctx: StepContext,
+  fn: (page: Page | null) => Promise<T>,
+): Promise<T> {
+  const cfg = getConfig();
+  const kind = getNavSessionKind(ctx.db, ctx.app.id);
+  if (kind !== "cdp" || !(await probeCdpEndpoint(cfg.agentCdpUrl))) {
+    return fn(null);
+  }
+  let session: PlaywrightServiceSession | null = null;
+  try {
+    session = new PlaywrightServiceSession({
+      service: "jobright",
+      mode: "CDP_ATTACH",
+      skipAuthValidation: true,
+    });
+    await session.open();
+    const page = await session.newPage({ purpose: "nav-handoff" });
+    return await fn(page);
+  } catch {
+    if (session) await session.close().catch(() => undefined);
+    session = null;
+    return fn(null);
+  } finally {
+    if (session) await session.close().catch(() => undefined);
+  }
+}
+
 async function fetchEmployerPageHtml(
   ctx: StepContext,
   url: string,
@@ -217,15 +270,25 @@ async function fetchEmployerPageHtml(
       title: "fixture",
     };
   }
-  return withPublicUrlPage(
-    url,
-    async (page) => ({
-      html: await page.content(),
-      finalUrl: page.url(),
-      title: await page.title().catch(() => ""),
-    }),
-    { headless: ctx.options.headless ?? true },
-  );
+  return withNavHandoffPage(ctx, async (handoff) => {
+    if (handoff) {
+      await handoff.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      return {
+        html: await handoff.content(),
+        finalUrl: handoff.url(),
+        title: await handoff.title().catch(() => ""),
+      };
+    }
+    return withPublicUrlPage(
+      url,
+      async (page) => ({
+        html: await page.content(),
+        finalUrl: page.url(),
+        title: await page.title().catch(() => ""),
+      }),
+      { headless: ctx.options.headless ?? true },
+    );
+  });
 }
 
 /**
@@ -608,31 +671,45 @@ async function step(
             stop: "gate",
           };
         }
-        if (detected.ats !== "greenhouse") {
-          const liveReport = await runAtsLiveFill({
-            binding: ATS_BINDINGS[detected.ats],
-            url,
-            execute: true,
-            headless: ctx.options.headless ?? false,
-          });
-          if (!liveReport.gate.ok) {
+        const filled = await withNavHandoffPage(ctx, async (handoff) => {
+          if (detected.ats !== "greenhouse") {
+            const liveReport = await runAtsLiveFill({
+              binding: ATS_BINDINGS[detected.ats],
+              url,
+              execute: true,
+              headless: ctx.options.headless ?? false,
+              ...(handoff ? { existingPage: handoff } : {}),
+            });
+            if (!liveReport.gate.ok) {
+              return {
+                gateFailure: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
+                verifyPassed: false,
+                detail: "",
+              };
+            }
             return {
-              to: null,
-              note: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
-              stop: "gate",
+              gateFailure: null,
+              verifyPassed: liveReport.verify?.passed === true,
+              detail: `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
             };
           }
-          verifyPassed = liveReport.verify?.passed === true;
-          detail = `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
-        } else {
           const liveReport = await runGreenhouseLiveFill({
             url,
             execute: true,
             headless: ctx.options.headless ?? false,
+            ...(handoff ? { existingPage: handoff } : {}),
           });
-          verifyPassed = liveReport.verify?.passed === true;
-          detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+          return {
+            gateFailure: null,
+            verifyPassed: liveReport.verify?.passed === true,
+            detail: `live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
+          };
+        });
+        if (filled.gateFailure) {
+          return { to: null, note: filled.gateFailure, stop: "gate" };
         }
+        verifyPassed = filled.verifyPassed;
+        detail = filled.detail;
       }
 
       transitionApplication(db, {

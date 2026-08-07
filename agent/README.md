@@ -50,3 +50,17 @@ npm run chrome:debug:jobright
 
 The sidecar attaches to `http://127.0.0.1:9222`; it never launches or kills a
 browser.
+
+## Navigate task (nav layer)
+
+`task_type: "navigate"` — reach the employer application form from a
+JobRight job page or an intermediate wall. Contract in
+`src/agent/contract.ts` (`agentNavigate*Schema`); implementation in
+`jobright_agent/navigate.py`. Attaches to the operator's CDP Chrome
+(never launches one). Hard rules: never fill application-form fields,
+never click submit (report `wall:"submit_risk"`), stay on
+`allowed_domains` (audited mechanically from history), stop on
+captcha/phone walls, `needs_input` + `need` for email verification (the
+Node orchestrator services it via the readonly Gmail tool and re-invokes
+with `resume`). Credentials, when provided, arrive on stdin only and ride
+browser-use's `sensitive_data` seam; they must never be printed.

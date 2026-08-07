@@ -245,6 +245,12 @@ export async function runGreenhouseLiveFill(input: {
   resumePath?: string;
   coverLetterPath?: string;
   headless?: boolean;
+  /**
+   * Session handoff (nav N6): run on this page — typically CDP-attached so
+   * cookies survive from navigation. Caller owns its lifetime; this runner
+   * navigates it but never closes it.
+   */
+  existingPage?: Page;
 }): Promise<GreenhouseLiveFillReport> {
   const urlValidation = validateGreenhouseApplicationUrl(input.url);
   const base: GreenhouseLiveFillReport = {
@@ -293,8 +299,24 @@ export async function runGreenhouseLiveFill(input: {
     assertFormFillAllowed("greenhouse.liveFill");
   }
 
-  return withPublicUrlPage(
-    urlValidation.normalizedUrl ?? input.url,
+  const runInPage = async (
+    fn: (page: Page) => Promise<GreenhouseLiveFillReport>,
+  ): Promise<GreenhouseLiveFillReport> => {
+    if (input.existingPage) {
+      const page = input.existingPage;
+      base.notes.push("session: handoff (caller-owned page, not closed here)");
+      await page.goto(urlValidation.normalizedUrl ?? input.url, {
+        waitUntil: "domcontentloaded",
+        timeout: 60_000,
+      });
+      return fn(page);
+    }
+    return withPublicUrlPage(urlValidation.normalizedUrl ?? input.url, fn, {
+      headless: input.headless ?? false,
+    });
+  };
+
+  return runInPage(
     async (page) => {
       const gate = await verifyPageBeforeMutation(
         page,
@@ -436,6 +458,5 @@ export async function runGreenhouseLiveFill(input: {
           : "UNVERIFIED";
       return persist(base);
     },
-    { headless: input.headless ?? false },
   );
 }
