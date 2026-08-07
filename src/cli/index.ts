@@ -18,6 +18,8 @@ import {
 } from "../pipeline/runPipeline.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
+import { startDashboard } from "../dashboard/server.js";
+import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient } from "../contacts/emailLlm.js";
@@ -186,45 +188,16 @@ function cmdMigrate(): void {
 }
 
 function cmdReport(): void {
-  const config = getConfig();
   const db = openDatabase();
   try {
     migrate(db);
-    const apps = db
-      .prepare(`SELECT state, COUNT(*) AS n FROM applications GROUP BY state`)
-      .all();
-    const openReviews = listOpenReviewItems(db);
-    const sessions = listServiceSessionRows(db);
-    const services = ["jobright", "linkedin", "outlook"] as const;
-    const auth = services.map((service) => {
-      const cfg = getServiceAuthConfig(service);
-      const readiness = describeSessionReadiness(service, cfg.defaultMode);
-      const row = sessions.find((s) => s.service === service);
-      return {
-        service,
-        mode: cfg.defaultMode,
-        ready: readiness.ready,
-        detail: readiness.detail,
-        last_status: row?.last_status ?? null,
-        last_validated_at: row?.last_validated_at ?? null,
-      };
-    });
-    const captureSummary = summarizeLiveCaptures();
+    // Shared with the dashboard (src/dashboard/reportData.ts) so the two
+    // can never disagree; live_captures stays CLI-only.
     console.log(
       JSON.stringify(
         {
-          database: config.databasePath,
-          rollout_stage: deriveRolloutStage(config),
-          dry_run: config.dryRun,
-          form_fill_enabled: config.formFillEnabled,
-          submit_enabled: config.submitEnabled,
-          outlook_drafts_enabled: config.outlookDraftsEnabled,
-          email_send_enabled: config.emailSendEnabled,
-          applications_by_state: apps,
-          open_review_items: openReviews.length,
-          auth,
-          sensitive_profile: sensitiveProfileStatus(),
-          live_captures: captureSummary,
+          ...buildReportSummary(db),
+          live_captures: summarizeLiveCaptures(),
         },
         null,
         2,
@@ -1142,9 +1115,15 @@ async function main(): Promise<void> {
       );
       process.exit(2);
       break;
-    case "dashboard":
-      notImplemented("dashboard (Phase 13)");
-      break;
+    case "dashboard": {
+      const db = openDatabase();
+      migrate(db);
+      const { url } = await startDashboard({ db });
+      console.log(`Dashboard (read-only): ${url}`);
+      console.log("Ctrl+C to stop.");
+      // Keep the process alive; the server holds the event loop open.
+      return;
+    }
     case "retry": {
       const db = openDatabase();
       try {
