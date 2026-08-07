@@ -137,6 +137,64 @@ Add to [validation-levels.md](./validation-levels.md) when this lands:
 
 Without this, agent self-reports silently inflate confidence, which is the precise failure the ladder exists to prevent.
 
+## J2 design — agent fallback (approved direction)
+
+The architecture is **fallback, not agent-first**: deterministic code runs
+every time; the agent consumes the *named failure states* the pipeline
+already emits. Two features, built in this order:
+
+### Model A — selector healer (Phase 6a′, IMPLEMENTED)
+
+When fill read-back fails, before parking in `AMBIGUOUS_FIELD` /
+refusing the submit click:
+
+1. **In-process heuristic** (always on, deterministic): rescan the live
+   page for the field by label evidence (`label[for]`, aria-label,
+   placeholder, name, id; token-overlap scoring), retry through the normal
+   fill path, re-verify by read-back. `src/ats/greenhouse/fillHealer.ts`.
+2. **Sidecar escalation** (gated by `AGENT_FALLBACK_ENABLED=false`,
+   budgeted per pass): `locate_field` task with the page HTML; ranked
+   candidates come back through the zod contract; the retry and the verify
+   stay deterministic. `src/agent/locateField.ts` +
+   `agent/jobright_agent/author.py`.
+3. Give up → exactly the pre-healer behavior (review item, human).
+
+Values re-pass `assertExecutableApprovedEntry` on **every** retry — the
+healer relocates fields, it never chooses values. Note the current sidecar
+pass is deterministic label-similarity, not an agent loop: 6a′ builds the
+*escalation seam*; the J2 executor plugs a richer task type into the same
+contract.
+
+### Model B — Workday executor (Phase 6c, NOT built)
+
+A fourth adapter behind the existing `ApplicationAdapter` interface:
+
+| Method | Who |
+|---|---|
+| `detect` / `inspect` | Deterministic (URL patterns exist in `unsupported.ts`) |
+| `fill` | Sidecar agent loop: wizard navigation + fill from the approved plan |
+| `verify` | Deterministic-as-possible: sidecar DOM read-back + per-page screenshots + human confirmation |
+| `submit` | **Absent.** The agent's final act is to *point at* the submit control; a `runWorkdaySubmission` sibling keeps the full M3 stack — lease, PENDING row, idempotency, confirmation prompt, one click by deterministic code, receipt verification |
+
+Routing: gate on → Workday URLs take the agent path *before* the
+`UNSUPPORTED_ATS` park (which stays a dead end); gate off → parks exactly
+as today.
+
+Invariants: escalation is one-way and bounded (step/time/call caps,
+persisted attempt counter); agent self-reports carry no validation level;
+plan values cross into the agent loop only via browser-use's sensitive-data
+placeholder mechanism (pin its 0.13.7 behavior in the spike); essays,
+demographics, sponsorship never enter the agent's hands; the agent has no
+submit-shaped action in its `Tools` registry — structural, not prompt-level.
+Account creation and CAPTCHA remain human gates. Artifacts per attempt
+(task, step log, screenshots, DOM extract) under `artifacts/agent-fallback/`.
+
+Sequencing gate unchanged: earn live levels on the deterministic Greenhouse
+path first (the control), then 6b = Workday read-only wizard census via the
+authoring mode, then 6c. Cost framing: ~15–40 LLM calls per Workday
+application — fine as "unlocks jobs currently dropped entirely," wrong as a
+default path.
+
 ## Red lines
 
 - No agent-initiated Submit, in any phase.

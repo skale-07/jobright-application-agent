@@ -104,6 +104,7 @@ A lower level never promotes a feature to a higher level.
 | Lever / Ashby / Workday fill | Deferred | Skip / unsupported (Phase 6 J1 authoring aid exists) |
 | Dashboard (Phase 13) | Built | Read-only, 127.0.0.1 only, GET-only; `UNIT_CONFIRMED` |
 | Phase 6 J1 authoring sidecar + CDP_ATTACH | Built, inert | Gate + contract `UNIT_CONFIRMED`; venv is an explicit operator step |
+| Phase 6a′ fill healer (heuristic + gated sidecar escalation) | Built | Heuristic heal `FIXTURE_CONFIRMED`; sidecar layer behind `AGENT_FALLBACK_ENABLED`; J2 executor design-only |
 | Phase 6 autofill compare | Not in tree | Stash only (operator's machine) |
 
 ### 2.3 CLI that matters today

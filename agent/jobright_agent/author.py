@@ -40,6 +40,19 @@ def main() -> None:
     if task.get("task_version") != 1:
         _fail(f"unsupported task_version: {task.get('task_version')!r}")
         return
+
+    task_type = task.get("task_type", "author")
+    if task_type == "locate_field":
+        # HTML-payload analysis — stdlib only, no browser, no browser-use.
+        try:
+            print(json.dumps(_locate_field(task)))
+        except Exception as exc:  # noqa: BLE001
+            _fail(f"locate_field failed: {exc}")
+        return
+    if task_type != "author":
+        _fail(f"unsupported task_type: {task_type!r}")
+        return
+
     url = task.get("url")
     cdp_url = task.get("cdp_url")
     if not isinstance(url, str) or not isinstance(cdp_url, str):
@@ -111,6 +124,94 @@ async def _author(task: dict) -> dict:
         "status": "ok",
         "field_candidates": candidates,
         "warnings": warnings,
+    }
+
+
+_CONTROL_RE = None  # compiled lazily
+
+
+def _normalize(text: str) -> set[str]:
+    import re
+
+    return {t for t in re.split(r"[^a-z0-9]+", text.lower()) if len(t) > 1}
+
+
+def _locate_field(task: dict) -> dict:
+    """Rank form controls in the supplied HTML by label similarity.
+
+    Deterministic token-overlap scoring — the escalation seam, not an agent
+    loop. A future J2 task type may put browser-use's semantic matching
+    behind the same contract; the TS side treats both identically.
+    """
+    import re
+
+    label = task.get("field_label")
+    field_type = task.get("field_type", "text")
+    html = task.get("html")
+    if not isinstance(label, str) or not isinstance(html, str):
+        raise ValueError("locate_field requires field_label and html strings")
+
+    wanted = _normalize(label)
+    if not wanted:
+        raise ValueError("field_label has no comparable tokens")
+
+    tag_re = re.compile(r"<(input|textarea|select)\b([^>]*)>", re.I)
+    attr_re = re.compile(r'([a-zA-Z-]+)\s*=\s*"([^"]*)"')
+
+    # label[for] map for better evidence
+    label_for: dict[str, str] = {}
+    for m in re.finditer(r'<label\b[^>]*for="([^"]+)"[^>]*>([\s\S]*?)</label>', html, re.I):
+        label_for[m.group(1)] = re.sub(r"<[^>]+>", " ", m.group(2)).strip()
+
+    candidates = []
+    for m in tag_re.finditer(html):
+        tag = m.group(1).lower()
+        attrs = dict(attr_re.findall(m.group(2)))
+        if attrs.get("type", "").lower() in ("hidden", "submit", "button", "image"):
+            continue
+        el_type = (
+            "textarea" if tag == "textarea"
+            else "select" if tag == "select"
+            else attrs.get("type", "text").lower()
+        )
+        evidence_parts = [
+            label_for.get(attrs.get("id", ""), ""),
+            attrs.get("aria-label", ""),
+            attrs.get("placeholder", ""),
+            attrs.get("name", ""),
+            attrs.get("id", ""),
+        ]
+        tokens: set[str] = set()
+        for part in evidence_parts:
+            tokens |= _normalize(part)
+        if not tokens:
+            continue
+        overlap = len(wanted & tokens) / len(wanted)
+        type_bonus = 0.15 if el_type == str(field_type).lower() else 0.0
+        score = round(min(1.0, overlap + type_bonus), 3)
+        if score < 0.34:
+            continue
+        selectors = []
+        if attrs.get("id"):
+            selectors.append("#" + attrs["id"])
+        if attrs.get("name"):
+            selectors.append(f'[name="{attrs["name"]}"]')
+        if attrs.get("aria-label"):
+            selectors.append(f'[aria-label="{attrs["aria-label"]}"]')
+        if not selectors:
+            continue
+        candidates.append({
+            "label": label,
+            "type": el_type,
+            "selector_candidates": selectors,
+            "confidence": score,
+        })
+
+    candidates.sort(key=lambda c: c["confidence"], reverse=True)
+    return {
+        "status": "ok",
+        "field_candidates": candidates[:5],
+        "warnings": [] if candidates else [f"no candidates scored >= 0.34 for {label!r}"],
     }
 
 

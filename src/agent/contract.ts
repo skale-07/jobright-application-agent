@@ -7,6 +7,7 @@ import { z } from "zod";
  */
 export const agentAuthoringTaskSchema = z.object({
   task_version: z.literal(1),
+  task_type: z.literal("author").default("author"),
   url: z.string().url(),
   cdp_url: z.string().url(),
   allowed_domains: z.array(z.string()).min(1),
@@ -14,6 +15,23 @@ export const agentAuthoringTaskSchema = z.object({
 });
 
 export type AgentAuthoringTask = z.infer<typeof agentAuthoringTaskSchema>;
+
+/**
+ * Phase 6a′ escalation: locate one field in page HTML supplied in the task.
+ * HTML-payload based — no browser, no CDP, no LLM. The same seam a future
+ * Workday agent loop (J2) plugs into with a richer task type.
+ */
+export const agentLocateFieldTaskSchema = z.object({
+  task_version: z.literal(1),
+  task_type: z.literal("locate_field"),
+  field_label: z.string().min(1),
+  field_type: z.string().min(1),
+  /** Page HTML, capped by the caller. */
+  html: z.string().min(1).max(600_000),
+  timeout_ms: z.number().int().positive().max(120_000),
+});
+
+export type AgentLocateFieldTask = z.infer<typeof agentLocateFieldTaskSchema>;
 
 export const agentFieldCandidateSchema = z.object({
   label: z.string(),

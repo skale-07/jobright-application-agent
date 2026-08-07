@@ -15,6 +15,8 @@ import { GreenhouseAdapterV1 } from "./v1.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
 import { detectBlockingCaptcha, type CaptchaDetection } from "./captchaDetection.js";
 import { detectLoginWall, type LoginWallDetection } from "./loginWallDetection.js";
+import { healFailedFillEntries, type HealReport } from "./fillHealer.js";
+import type { ApprovedFillPlanEntry } from "../../applications/approvedFillPlan.js";
 import { verifyFinalNavigation } from "./finalNavigation.js";
 import {
   detectClosedJobSignals,
@@ -34,7 +36,25 @@ export type GreenhouseLiveFillReport = ApplicationFillReport & {
   login_wall_detection: LoginWallDetection | null;
   failure_code: string | null;
   mutation_attempted: boolean;
+  /** Phase 6a′ heal pass, present when read-back verification failed. */
+  heal?: HealReport;
 };
+
+/** Approved FILL entries whose read-back verification failed. */
+export function failedApprovedEntries(
+  approvedPlan: { entries: ApprovedFillPlanEntry[] },
+  verify: { fields: Array<{ canonical_field: string; match: boolean }> },
+): ApprovedFillPlanEntry[] {
+  const failed = new Set(
+    verify.fields.filter((f) => !f.match).map((f) => f.canonical_field),
+  );
+  return approvedPlan.entries.filter(
+    (e) =>
+      e.approved &&
+      e.action === "FILL" &&
+      failed.has(e.canonical_field ?? e.field_id),
+  );
+}
 
 export class GreenhouseLiveFillError extends Error {
   readonly report: GreenhouseLiveFillReport;
@@ -249,6 +269,23 @@ export async function runGreenhouseLiveFill(input: {
       }
       if (uploads.length > 0) base.uploads = uploads;
       base.verify = await adapter.verify(page, approvedPlan.answers);
+
+      // Phase 6a′: heal read-back failures (heuristic always; sidecar only
+      // behind AGENT_FALLBACK_ENABLED), then re-verify deterministically.
+      if (!base.verify.passed) {
+        const failed = failedApprovedEntries(approvedPlan, base.verify);
+        if (failed.length > 0) {
+          const heal = await healFailedFillEntries({ page, failedEntries: failed });
+          base.heal = heal;
+          base.notes.push(
+            `heal pass: ${heal.healed.length}/${heal.attempted} recovered` +
+              (heal.sidecar_used ? " (sidecar consulted)" : ""),
+          );
+          if (heal.healed.length > 0) {
+            base.verify = await adapter.verify(page, approvedPlan.answers);
+          }
+        }
+      }
 
       base.notes.push("submit never called — no submit path exists in this command");
       base.validation_level = base.verify.passed

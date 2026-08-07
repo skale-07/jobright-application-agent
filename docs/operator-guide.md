@@ -182,6 +182,14 @@ and demographics are skipped by policy; sponsorship is never invented.
 `verify` on specific fields = custom widgets; `validation_level` stays
 `UNVERIFIED` and nothing downstream will submit it.
 
+**Selector healing (automatic):** when read-back fails on a field, a
+deterministic heal pass rescans the page by label evidence and retries once
+— the report's `heal` block shows what recovered. With
+`AGENT_FALLBACK_ENABLED=true` a failed heuristic additionally consults the
+sidecar (`locate_field`, HTML-based, budgeted); candidates are still
+retried and re-verified deterministically. Values always come from the
+approved plan — healing relocates fields, never chooses answers.
+
 ## 6. Essays
 
 If inspection flagged essay questions the application parks in
@@ -403,6 +411,7 @@ contract rather than trusted.
 | `EMAIL_GENERATION_ENABLED` | `false` | The LLM spend surface |
 | `OUTLOOK_DRAFTS_ENABLED` | `false` | Draft creation |
 | `AGENT_AUTHORING_ENABLED` | `false` | Phase 6 J1 sidecar |
+| `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) |
 
 The banned send-style APIs have no flag — they are impossible, enforced by
 `npm run check:forbidden`.

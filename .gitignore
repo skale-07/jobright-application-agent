@@ -32,3 +32,8 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# Python sidecar build output
+__pycache__/
+agent/.venv/
+*.pyc
