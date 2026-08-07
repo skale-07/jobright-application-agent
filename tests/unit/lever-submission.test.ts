@@ -56,6 +56,15 @@ describe("Lever submission (M3)", () => {
       ).toBe("confirmed");
     });
 
+    it("an error body at the /thanks URL is error_page, never a fabricated receipt", () => {
+      expect(
+        detectSubmissionUncertainty(
+          "<html><body><h1>Oops! Something went wrong (500)</h1><p>page not found</p></body></html>",
+          THANKS_URL,
+        ),
+      ).toBe("error_page");
+    });
+
     it("classifies the application form as still_on_form", () => {
       expect(detectSubmissionUncertainty(fixtureHtml("lever"), APPLY_URL)).toBe(
         "still_on_form",

@@ -42,11 +42,13 @@ export function detectSubmissionUncertainty(
   ) {
     return "confirmed";
   }
-  if (isThanksUrl(finalUrl)) {
-    return "confirmed";
-  }
+  // Error signals BEFORE the URL-only signal: an error body served at the
+  // /thanks URL must never yield a fabricated receipt.
   if (detectErrorPageSignals(html, "")) {
     return "error_page";
+  }
+  if (isThanksUrl(finalUrl)) {
+    return "confirmed";
   }
   if (leverSelectorsV1.formMarkers.test(html)) {
     return "still_on_form";
@@ -79,9 +81,11 @@ export async function leverSubmit(page: Page): Promise<SubmissionAttempt> {
   }
   await control.click();
   notes.push("submit control clicked");
+  // waitForLoadState resolves instantly on the already-loaded document —
+  // wait for the actual /thanks navigation, tolerating in-page confirms.
   await page
-    .waitForLoadState("domcontentloaded", { timeout: 30_000 })
-    .catch(() => notes.push("no navigation after click"));
+    .waitForURL(/\/thanks\/?$/i, { timeout: 15_000 })
+    .catch(() => notes.push("no /thanks navigation after click"));
   await page.waitForTimeout(1500);
   return { clicked: true, notes };
 }

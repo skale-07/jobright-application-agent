@@ -68,6 +68,28 @@ describe("Ashby submission (M6)", () => {
       ).toBe("unknown");
     });
 
+    it("confirms success even when SPA script blobs still carry _systemfield_ strings", () => {
+      // Review finding: the broad formMarkers hit embedded JSON, which
+      // would have classified every real success still_on_form forever.
+      const successWithScripts =
+        fixtureHtml("ashby-confirmation").replace(
+          "</body>",
+          `<script>window.__appData = {"fields":[{"name":"_systemfield_name"}]};</script></body>`,
+        );
+      expect(
+        detectSubmissionUncertainty(successWithScripts, APPLICATION_URL),
+      ).toBe("confirmed");
+      // A rendered input, by contrast, keeps it still_on_form.
+      const successWithRenderedForm =
+        fixtureHtml("ashby-confirmation").replace(
+          "</body>",
+          `<input name="_systemfield_name" type="text"></body>`,
+        );
+      expect(
+        detectSubmissionUncertainty(successWithRenderedForm, APPLICATION_URL),
+      ).toBe("still_on_form");
+    });
+
     it("extracts the confirmation identifier", () => {
       expect(
         extractApplicationIdentifier(fixtureHtml("ashby-confirmation")),

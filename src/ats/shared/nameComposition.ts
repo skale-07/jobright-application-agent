@@ -86,9 +86,14 @@ export function composeFullName(
   const first = (profile.legal_name.first ?? "").trim();
   const last = (profile.legal_name.last ?? "").trim();
   const composed = `${first} ${last}`.trim();
-  const answers = { ...plan.answers };
   let changed = false;
 
+  // plan.answers is deliberately NOT rewritten: it is keyed by canonical
+  // and shared — a form carrying BOTH a discrete first-name field and a
+  // full-name field would otherwise verify the discrete field against the
+  // composed value forever. Verification compares per-entry values, and
+  // the answers map only gates which entries verify, so the source value
+  // stays correct for every entry.
   const entries: ApprovedFillPlanEntry[] = plan.entries.map((entry) => {
     const isTarget =
       entry.canonical_field === "legal_name.first" &&
@@ -102,7 +107,6 @@ export function composeFullName(
 
     changed = true;
     if (first === "" || last === "") {
-      delete answers["legal_name.first"];
       return {
         ...entry,
         action: "REVIEW_REQUIRED" as const,
@@ -111,14 +115,13 @@ export function composeFullName(
         reason: DEMOTED_REASON,
       };
     }
-    answers["legal_name.first"] = composed;
     return { ...entry, value: composed, reason: COMPOSED_REASON };
   });
 
   if (!changed) return plan;
   return {
     entries,
-    answers,
+    answers: plan.answers,
     fillable_count: entries.filter((e) => e.approved).length,
     skipped_count: entries.filter((e) => e.action === "SKIP").length,
     review_required_count: entries.filter((e) => e.action === "REVIEW_REQUIRED")

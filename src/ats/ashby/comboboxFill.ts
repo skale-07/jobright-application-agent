@@ -1,5 +1,5 @@
 import type { Locator, Page } from "playwright";
-import { pickOptionLabel } from "../greenhouse/comboboxFill.js";
+import { labelsCompatible, pickOptionLabel } from "../greenhouse/comboboxFill.js";
 import { ashbySelectorsV1 } from "./selectors.js";
 
 /**
@@ -103,11 +103,20 @@ export async function fillAshbyCombobox(
     return { committed: false, selectedLabel: null, notes };
   }
 
-  const option = page
-    .locator(ashbySelectorsV1.combobox.option)
+  // Exact accessible-name match first — substring hasText would happily
+  // click "Not sure" when the pick is "No".
+  let option = page
+    .getByRole("option", { name: pick.label, exact: true })
     .filter({ visible: true })
-    .filter({ hasText: pick.label })
     .first();
+  if ((await option.count()) === 0) {
+    option = page
+      .locator(ashbySelectorsV1.combobox.option)
+      .filter({ visible: true })
+      .filter({ hasText: pick.label })
+      .first();
+    notes.push("exact option name not found; substring fallback");
+  }
   await option.click({ timeout: 5_000 });
   notes.push(`picked "${pick.label}" (${pick.via})`);
 
@@ -118,8 +127,7 @@ export async function fillAshbyCombobox(
 
   const committedLabel = await readAshbyComboboxValue(loc);
   const committed =
-    committedLabel !== null &&
-    committedLabel.toLowerCase().includes(pick.label.toLowerCase().slice(0, 40));
+    committedLabel !== null && labelsCompatible(pick.label, committedLabel);
   if (!committed) {
     notes.push(
       `commit not confirmed: display shows ${committedLabel === null ? "placeholder" : `"${committedLabel}"`}`,

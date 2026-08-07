@@ -62,10 +62,11 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
   },
   lever: {
     id: "lever",
-    gate: (page) =>
+    gate: (page, _employerUrl, normalizedUrl) =>
       verifyPageBeforeMutationGeneric(page, {
         isTrustedHost: isTrustedLeverHost,
         formMarkers: leverSelectorsV1.formMarkers,
+        ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
     submit: (page) => leverSubmit(page),
     verifySubmission: (page, opts) => leverVerifySubmission(page, opts),
@@ -74,10 +75,13 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
   },
   ashby: {
     id: "ashby",
-    gate: (page) =>
+    gate: (page, _employerUrl, normalizedUrl) =>
       verifyPageBeforeMutationGeneric(page, {
         isTrustedHost: isTrustedAshbyHost,
-        formMarkers: ashbySelectorsV1.formMarkers,
+        // Rendered controls only — script blobs must not count as a form,
+        // and the render wait needs a marker that appears only post-render.
+        formMarkers: ashbySelectorsV1.renderedFormMarkers,
+        ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
     submit: (page) => ashbySubmit(page),
     verifySubmission: (page, opts) => ashbyVerifySubmission(page, opts),

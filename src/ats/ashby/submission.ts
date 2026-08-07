@@ -28,16 +28,19 @@ export function detectSubmissionUncertainty(
   finalUrl: string,
 ): SubmissionPageClassification {
   void finalUrl;
+  // renderedFormMarkers, not the broad formMarkers: the SPA's script/JSON
+  // blobs keep "_systemfield_" strings after a successful submit, and a
+  // real success must not classify still_on_form forever.
   if (
     ashbySelectorsV1.confirmationMarkers.test(html) &&
-    !ashbySelectorsV1.formMarkers.test(html)
+    !ashbySelectorsV1.renderedFormMarkers.test(html)
   ) {
     return "confirmed";
   }
   if (detectErrorPageSignals(html, "")) {
     return "error_page";
   }
-  if (ashbySelectorsV1.formMarkers.test(html)) {
+  if (ashbySelectorsV1.renderedFormMarkers.test(html)) {
     return "still_on_form";
   }
   return "unknown";

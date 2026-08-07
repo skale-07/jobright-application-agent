@@ -75,6 +75,18 @@ const FULL_NAME_MATCHERS: Record<string, FullNameFieldMatcher> = {
   ashby: ashbyFullNameMatcher,
 };
 
+/**
+ * Fixtures runAtsFixtureFill will execute against ("essay" is a
+ * greenhouse-form fixture used by the human-essay path). The CLI imports
+ * this — one list, no drift.
+ */
+export const FILLABLE_FIXTURE_NAMES: readonly string[] = [
+  "greenhouse",
+  "essay",
+  "lever",
+  "ashby",
+];
+
 export type ApplicationFillReport = {
   mode: "plan_only" | "executed";
   ats: string;
@@ -246,11 +258,9 @@ export async function runAtsFixtureFill(
     includeHumanEssays?: { db: Db; applicationId: string };
   },
 ): Promise<ApplicationFillReport> {
-  // "essay" is a Greenhouse-form fixture too — used by the human-essay path.
-  const fillableFixtures = ["greenhouse", "essay", "lever", "ashby"];
-  if (!fillableFixtures.includes(name)) {
+  if (!FILLABLE_FIXTURE_NAMES.includes(name)) {
     throw new Error(
-      `Execute/fill fixtures are limited to ${fillableFixtures.join("/")} (got "${name}"). Use ats:inspect for other fixtures.`,
+      `Execute/fill fixtures are limited to ${FILLABLE_FIXTURE_NAMES.join("/")} (got "${name}"). Use ats:inspect for other fixtures.`,
     );
   }
   const fixture = loadAtsFixture(name);

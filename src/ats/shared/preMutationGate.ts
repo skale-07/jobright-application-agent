@@ -22,15 +22,49 @@ export type GenericPreMutationGateResult = {
   reason: string | null;
 };
 
+/**
+ * Poll page content until the marker matches or the deadline passes —
+ * SPAs (Ashby) render the form well after domcontentloaded, so a single
+ * immediate read would classify every live page as form-less. Bounded:
+ * at most timeoutMs / intervalMs reads.
+ */
+export async function waitForRenderedContent(
+  page: Page,
+  marker: RegExp,
+  timeoutMs = 10_000,
+  intervalMs = 500,
+): Promise<string> {
+  const deadline = Date.now() + timeoutMs;
+  let html = await page.content();
+  while (!marker.test(html) && Date.now() < deadline) {
+    await page.waitForTimeout(intervalMs);
+    html = await page.content();
+  }
+  return html;
+}
+
 export async function verifyPageBeforeMutationGeneric(
   page: Page,
   options: {
     isTrustedHost: (url: string) => boolean;
     formMarkers: RegExp;
+    /**
+     * Validated posting URL. When set, the final pathname must match it —
+     * a redirect to a different posting (closed job → board page, another
+     * job's form) must not be filled. Weaker than greenhouse's identity
+     * gate but preserves the same invariant the URL can carry.
+     */
+    expectedUrl?: string;
+    renderTimeoutMs?: number;
   },
 ): Promise<GenericPreMutationGateResult> {
+  const html0 = await waitForRenderedContent(
+    page,
+    options.formMarkers,
+    options.renderTimeoutMs ?? 10_000,
+  );
   const finalUrl = page.url();
-  const html = await page.content();
+  const html = html0;
   const title = await page.title().catch(() => "");
 
   const fail = (
@@ -50,6 +84,23 @@ export async function verifyPageBeforeMutationGeneric(
       "UNTRUSTED_FINAL_HOST",
       `navigation ended on an untrusted host: ${finalUrl}`,
     );
+  }
+  if (options.expectedUrl) {
+    try {
+      const finalPath = new URL(finalUrl).pathname.replace(/\/+$/, "");
+      const expectedPath = new URL(options.expectedUrl).pathname.replace(
+        /\/+$/,
+        "",
+      );
+      if (finalPath !== expectedPath) {
+        return fail(
+          "POSTING_MISMATCH",
+          `final path ${finalPath} is not the validated posting ${expectedPath} — redirected posting is never filled`,
+        );
+      }
+    } catch {
+      return fail("POSTING_MISMATCH", "final URL could not be parsed");
+    }
   }
   const loginWall = detectLoginWall({ finalUrl, html, title });
   if (loginWall.detected) {

@@ -166,13 +166,36 @@ describe("enqueueJobRightJobs (UNIT_CONFIRMED)", () => {
     expect(raw["employer_application_ats"]).toBe("lever");
   });
 
-  it("refuses an unsupported employer URL at ingestion (W3)", () => {
+  it("stores an unsupported-ATS https URL verbatim for pipeline routing (W3/W7)", () => {
+    // The pipeline routes these to UNSUPPORTED_ATS + review item — the
+    // tracked path. Only malformed URLs are refused at ingestion.
     const id = "6a76229767a1ad0bc53c8e92";
     const report = enqueueJobRightJobs(db, [id], {
       employerApplicationUrl: "https://careers.example.com/apply/123",
     });
-    expect(report.failed).toBe(1);
-    expect(report.applications[0]!.ok).toBe(false);
-    expect(report.applications[0]!.error).toMatch(/employer URL rejected/);
+    expect(report.enqueued).toBe(1);
+    const jobId = report.applications[0]!.job_db_id!;
+    const raw = JSON.parse(
+      (
+        db.prepare(`SELECT raw_json FROM jobs WHERE id = ?`).get(jobId) as {
+          raw_json: string;
+        }
+      ).raw_json,
+    ) as Record<string, unknown>;
+    expect(raw["employer_application_url"]).toBe(
+      "https://careers.example.com/apply/123",
+    );
+    expect(raw["employer_application_ats"]).toBeNull();
+  });
+
+  it("refuses malformed or non-https employer URLs at ingestion (W7)", () => {
+    const id = "6a76229767a1ad0bc53c8e93";
+    for (const bad of ["not a url", "http://jobs.lever.co/acme/x", "javascript:alert(1)"]) {
+      const report = enqueueJobRightJobs(db, [id], {
+        employerApplicationUrl: bad,
+      });
+      expect(report.failed).toBe(1);
+      expect(report.applications[0]!.error).toMatch(/employer URL rejected/);
+    }
   });
 });

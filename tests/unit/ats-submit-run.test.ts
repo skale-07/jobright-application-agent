@@ -97,6 +97,24 @@ describe("generic pre-mutation gate (W4, FIXTURE_CONFIRMED)", () => {
   );
 
   it(
+    "refuses a redirect to a different posting on the same trusted host",
+    async () => {
+      const otherPosting =
+        "https://jobs.lever.co/acme/ffffffff-0000-1111-2222-333344445555/apply";
+      await withRoutedPage(fixtureHtml("lever"), otherPosting, async (page) => {
+        const gate = await ATS_BINDINGS.lever.gate(
+          page,
+          LEVER_URL,
+          LEVER_URL,
+        );
+        expect(gate.ok).toBe(false);
+        expect(gate.failureCode).toBe("POSTING_MISMATCH");
+      });
+    },
+    45_000,
+  );
+
+  it(
     "refuses an untrusted final host even with a lever-looking form",
     async () => {
       const url = "https://careers.evil.example.com/acme/apply";

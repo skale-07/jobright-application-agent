@@ -25,8 +25,16 @@ export const ashbySelectorsV1 = {
     selectedValue: "[class*='__selected'], [data-selected-label]",
     placeholder: /^(select|select an option|start typing|search)(\.{3}|…)?$/i,
   },
-  /** Rendered-DOM form presence (matches nothing on the unrendered shell). */
+  /** Broad detection markers — may also hit script/JSON blobs. */
   formMarkers: /_systemfield_|ashby-application-form|role=["']radiogroup["']/i,
+  /**
+   * Rendered form controls ONLY (attribute syntax inside a tag — embedded
+   * JSON like {"name":"_systemfield_name"} does not match). Used where a
+   * script blob must not count as "the form is still here": the
+   * post-submit classifier and the live form-present gate.
+   */
+  renderedFormMarkers:
+    /<(input|textarea|select)[^>]*_systemfield_|<div[^>]*role=["']radiogroup["']|<form[^>]*>[\s\S]*?<input/i,
   loginMarkers: /sign in to apply|log in to apply/i,
   /** In-page success panel — Ashby does not navigate on submit. */
   confirmationMarkers:

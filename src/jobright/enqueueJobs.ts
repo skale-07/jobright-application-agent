@@ -162,13 +162,22 @@ export function enqueueOneJobRightJob(
   const role = options.role?.trim() || "Unknown role (manual enqueue)";
   const jobPath = new URL(parsed.job_url).pathname;
 
-  // Validate the employer URL at ingestion — previously stored verbatim and
-  // only rejected much later by the pipeline's URL gate.
+  // Employer URL policy at ingestion: a supported-ATS URL is normalized and
+  // tagged; a well-formed https URL on an UNSUPPORTED ATS is stored
+  // verbatim so the pipeline can route it to UNSUPPORTED_ATS with a review
+  // item (the tracked path — hard-rejecting here would silently drop those
+  // applications); only malformed / non-https URLs are refused outright.
   let employerUrl: string | undefined;
-  let employerAts: string | undefined;
+  let employerAts: string | null | undefined;
   if (options.employerApplicationUrl) {
-    const detected = detectAtsFromUrl(options.employerApplicationUrl);
-    if (detected.ats === null) {
+    const rawUrl = options.employerApplicationUrl.trim();
+    let parsedUrl: URL | null = null;
+    try {
+      parsedUrl = new URL(rawUrl);
+    } catch {
+      parsedUrl = null;
+    }
+    if (!parsedUrl || parsedUrl.protocol !== "https:") {
       return {
         input: parsed.jobright_job_id,
         ok: false,
@@ -178,10 +187,11 @@ export function enqueueOneJobRightJob(
         application_id: null,
         state: null,
         dedupe_kind: null,
-        error: `employer URL rejected: ${detected.failureReason}`,
+        error: `employer URL rejected: not a well-formed https URL (${rawUrl.slice(0, 64)})`,
       };
     }
-    employerUrl = detected.normalizedUrl;
+    const detected = detectAtsFromUrl(rawUrl);
+    employerUrl = detected.ats === null ? rawUrl : detected.normalizedUrl;
     employerAts = detected.ats;
   }
 

@@ -18,6 +18,9 @@ import { runAtsSubmission } from "../applications/submitRun.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { waitForRenderedContent } from "../ats/shared/preMutationGate.js";
+import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
+import { leverSelectorsV1 } from "../ats/lever/selectors.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
 import {
@@ -80,7 +83,10 @@ import {
 import { GREENHOUSE_ADAPTER_VERSION } from "../ats/greenhouse/v1.js";
 import { LEVER_ADAPTER_VERSION } from "../ats/lever/v1.js";
 import { ASHBY_ADAPTER_VERSION } from "../ats/ashby/v1.js";
-import { runAtsFixtureFill } from "../applications/applicationFiller.js";
+import {
+  FILLABLE_FIXTURE_NAMES,
+  runAtsFixtureFill,
+} from "../applications/applicationFiller.js";
 import { redactFillReportForArtifact } from "../applications/fillReportRedaction.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { resetConfigCache } from "../config/index.js";
@@ -532,13 +538,18 @@ async function cmdAtsInspect(
     const detected = detectAtsFromUrl(url);
     if (detected.ats !== null && detected.ats !== "greenhouse") {
       // Lever/Ashby: fetch the rendered DOM read-only, then run the same
-      // offline inspection used for --html. No greenhouse machinery.
+      // offline inspection used for --html. Ashby is a SPA — wait for
+      // rendered form controls, not just domcontentloaded.
+      const renderMarker =
+        detected.ats === "ashby"
+          ? ashbySelectorsV1.renderedFormMarkers
+          : leverSelectorsV1.formMarkers;
       const report = await withPublicUrlPage(
         detected.normalizedUrl,
         async (page) =>
           inspectApplicationHtml({
             url: page.url(),
-            html: await page.content(),
+            html: await waitForRenderedContent(page, renderMarker),
             title: await page.title().catch(() => ""),
           }),
         { headless: !flags["headed"] },
@@ -1047,13 +1058,12 @@ async function cmdAtsFill(
 ): Promise<void> {
   const fixture = flags["fixture"];
   const url = flags["url"];
-  const FILL_FIXTURES = ["greenhouse", "essay", "lever", "ashby"];
   if (
     typeof url !== "string" &&
-    !(typeof fixture === "string" && FILL_FIXTURES.includes(fixture))
+    !(typeof fixture === "string" && FILLABLE_FIXTURE_NAMES.includes(fixture))
   ) {
     console.error(
-      `Usage: ats:fill --fixture <${FILL_FIXTURES.join("|")}> [--execute] [--resume path] [--cover path] [--reset]`,
+      `Usage: ats:fill --fixture <${FILLABLE_FIXTURE_NAMES.join("|")}> [--execute] [--resume path] [--cover path] [--reset]`,
     );
     console.error(
       "   or: ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]",

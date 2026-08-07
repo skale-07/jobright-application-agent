@@ -61,15 +61,6 @@ export type AtsLiveFillReport = {
   report_path?: string;
 };
 
-export class AtsLiveFillError extends Error {
-  readonly report: AtsLiveFillReport;
-  constructor(message: string, report: AtsLiveFillReport) {
-    super(message);
-    this.name = "AtsLiveFillError";
-    this.report = report;
-  }
-}
-
 export async function runAtsLiveFill(input: {
   binding: AtsBinding;
   url: string;

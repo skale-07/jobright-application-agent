@@ -203,7 +203,9 @@ describe("Lever adapter M1 (UNIT_CONFIRMED)", () => {
       expect(nameEntry.canonical_field).toBe("legal_name.first");
       expect(nameEntry.value).toBe("Ada Lovelace");
       expect(nameEntry.reason).toMatch(/composed legal_name\.first \+ legal_name\.last/);
-      expect(composed.answers["legal_name.first"]).toBe("Ada Lovelace");
+      // The shared answers map keeps the SOURCE value — a discrete
+      // first-name field on the same form must still verify against "Ada".
+      expect(composed.answers["legal_name.first"]).toBe("Ada");
       expect(() => assertExecutableApprovedEntry(nameEntry)).not.toThrow();
     });
 
@@ -260,7 +262,6 @@ describe("Lever adapter M1 (UNIT_CONFIRMED)", () => {
       expect(nameEntry.action).toBe("REVIEW_REQUIRED");
       expect(nameEntry.approved).toBe(false);
       expect(nameEntry.value).toBeNull();
-      expect(composed.answers["legal_name.first"]).toBeUndefined();
       expect(() => assertExecutableApprovedEntry(nameEntry)).toThrow(/not approved/);
     });
 
