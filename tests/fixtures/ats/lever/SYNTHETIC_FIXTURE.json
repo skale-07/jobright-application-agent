@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_dom",
+  "note": "Hand-authored on Lever's public form conventions (name/email/phone/org, urls[...], cards[uuid][fieldN], eeo[...], data-qa buttons). NOT captured from a live page — selectors proven against this fixture are FIXTURE_CONFIRMED at most. Replace with sanitized live capture via a guarded ats:inspect run before any live milestone.",
+  "personal_data": "none — Ada Lovelace convention, no real values"
+}
