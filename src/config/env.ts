@@ -31,6 +31,16 @@ const envSchema = z.object({
   NATIVE_AUTOFILL_ENABLED: boolFromEnv.default(false),
   /** Phase 5.6H: generating/downloading a resume mutates JobRight. Fail closed. */
   MATERIALS_DOWNLOAD_ENABLED: boolFromEnv.default(false),
+  /** Outreach email generation calls the OpenAI API (spend). Fail closed. */
+  EMAIL_GENERATION_ENABLED: boolFromEnv.default(false),
+  /** OpenAI key for outreach generation only. Never logged or artifacted. */
+  OPENAI_API_KEY: z.string().optional(),
+  /** Operator-confirmed OpenAI model id for outreach generation. */
+  EMAIL_LLM_MODEL: z.string().default("gpt-5-mini"),
+  /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
+  AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
+  /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
+  AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
   DASHBOARD_PORT: z.coerce.number().int().positive().default(8788),
   CANDIDATE_DATA_KEY_NAME: z
@@ -57,6 +67,12 @@ export type AppConfig = {
   jobrightAutofillEnabled: boolean;
   nativeAutofillEnabled: boolean;
   materialsDownloadEnabled: boolean;
+  emailGenerationEnabled: boolean;
+  /** Present only when the operator configured it; consumers must not log it. */
+  openaiApiKey: string | undefined;
+  emailLlmModel: string;
+  agentAuthoringEnabled: boolean;
+  agentCdpUrl: string;
   dashboardHost: string;
   dashboardPort: number;
   candidateDataKeyName: string;
@@ -100,6 +116,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     jobrightAutofillEnabled: parsed.JOBRIGHT_AUTOFILL_ENABLED,
     nativeAutofillEnabled: parsed.NATIVE_AUTOFILL_ENABLED,
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
+    emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
+    openaiApiKey: parsed.OPENAI_API_KEY,
+    emailLlmModel: parsed.EMAIL_LLM_MODEL,
+    agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
+    agentCdpUrl: parsed.AGENT_CDP_URL,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
     candidateDataKeyName: parsed.CANDIDATE_DATA_KEY_NAME,

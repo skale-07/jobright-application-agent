@@ -1,11 +1,17 @@
 import { afterEach, beforeEach } from "vitest";
 import { resetConfigCache } from "../../src/config/index.js";
 
-/** Env keys that affect form-fill / submit guards. */
+/** Env keys that affect form-fill / submit / feature gates. */
 export const CONTROLLED_FILL_ENV_KEYS = [
   "FORM_FILL_ENABLED",
   "DRY_RUN",
   "SUBMIT_ENABLED",
+  "SUBMIT_REQUIRES_LOCAL_CONFIRMATION",
+  "MAX_UNATTENDED_SUBMISSIONS_PER_RUN",
+  "MATERIALS_DOWNLOAD_ENABLED",
+  "OUTLOOK_DRAFTS_ENABLED",
+  "EMAIL_GENERATION_ENABLED",
+  "AGENT_AUTHORING_ENABLED",
 ] as const;
 
 export type ControlledFillEnvKey = (typeof CONTROLLED_FILL_ENV_KEYS)[number];
@@ -46,6 +52,11 @@ export function applyControlledFillEnv(values: {
 
 /** Fail-closed defaults for inspection / Phase 4. */
 export function applySafeFillEnv(): void {
+  // Ambient shell values for the wider gate set must not leak either;
+  // deleting them falls back to each flag's fail-closed default.
+  for (const key of CONTROLLED_FILL_ENV_KEYS) {
+    delete process.env[key];
+  }
   applyControlledFillEnv({
     FORM_FILL_ENABLED: "false",
     DRY_RUN: "true",
