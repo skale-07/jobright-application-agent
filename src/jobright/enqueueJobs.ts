@@ -12,6 +12,7 @@ import {
   validateJobRightInspectionUrl,
 } from "./jobInspectionUrl.js";
 import { extractJobIdFromUrl } from "./jobDetails.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 
 /**
  * Manual enqueue of JobRight jobs by detail URL or bare hex job id.
@@ -161,6 +162,29 @@ export function enqueueOneJobRightJob(
   const role = options.role?.trim() || "Unknown role (manual enqueue)";
   const jobPath = new URL(parsed.job_url).pathname;
 
+  // Validate the employer URL at ingestion — previously stored verbatim and
+  // only rejected much later by the pipeline's URL gate.
+  let employerUrl: string | undefined;
+  let employerAts: string | undefined;
+  if (options.employerApplicationUrl) {
+    const detected = detectAtsFromUrl(options.employerApplicationUrl);
+    if (detected.ats === null) {
+      return {
+        input: parsed.jobright_job_id,
+        ok: false,
+        jobright_job_id: parsed.jobright_job_id,
+        job_url: parsed.job_url,
+        job_db_id: null,
+        application_id: null,
+        state: null,
+        dedupe_kind: null,
+        error: `employer URL rejected: ${detected.failureReason}`,
+      };
+    }
+    employerUrl = detected.normalizedUrl;
+    employerAts = detected.ats;
+  }
+
   const raw: Record<string, unknown> = {
     source: "manual_enqueue",
     jobright_job_id: parsed.jobright_job_id,
@@ -168,8 +192,9 @@ export function enqueueOneJobRightJob(
     job_path: jobPath,
     enqueued_at: new Date().toISOString(),
   };
-  if (options.employerApplicationUrl) {
-    raw["employer_application_url"] = options.employerApplicationUrl;
+  if (employerUrl) {
+    raw["employer_application_url"] = employerUrl;
+    raw["employer_application_ats"] = employerAts;
   }
 
   const job = upsertJobByFingerprint(db, {
@@ -183,13 +208,14 @@ export function enqueueOneJobRightJob(
 
   // If row already had richer company/role, don't overwrite with placeholders
   // in a follow-up path — upsert already merged. Re-merge employer URL into raw.
-  if (options.employerApplicationUrl) {
+  if (employerUrl) {
     try {
       const existingRaw = db
         .prepare(`SELECT raw_json FROM jobs WHERE id = ?`)
         .get(job.id) as { raw_json: string };
       const prev = JSON.parse(existingRaw.raw_json) as Record<string, unknown>;
-      prev["employer_application_url"] = options.employerApplicationUrl;
+      prev["employer_application_url"] = employerUrl;
+      prev["employer_application_ats"] = employerAts;
       prev["job_url"] = prev["job_url"] ?? parsed.job_url;
       prev["job_path"] = prev["job_path"] ?? jobPath;
       prev["jobright_job_id"] = parsed.jobright_job_id;

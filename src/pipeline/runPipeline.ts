@@ -16,7 +16,7 @@ import { openEssayReviewItem } from "../applications/essayAnswers.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runGreenhouseSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
-import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
@@ -99,11 +99,9 @@ export function setEmployerApplicationUrl(
   applicationId: string,
   url: string,
 ): void {
-  const validation = validateGreenhouseApplicationUrl(url);
-  if (!validation.passed) {
-    throw new Error(
-      `Refusing to store employer URL: ${validation.failureReason}`,
-    );
+  const detected = detectAtsFromUrl(url);
+  if (detected.ats === null) {
+    throw new Error(`Refusing to store employer URL: ${detected.failureReason}`);
   }
   const row = db
     .prepare(
@@ -113,7 +111,8 @@ export function setEmployerApplicationUrl(
     .get(applicationId) as { id: string; raw_json: string } | undefined;
   if (!row) throw new Error(`Unknown application: ${applicationId}`);
   const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  raw["employer_application_url"] = validation.normalizedUrl ?? url;
+  raw["employer_application_url"] = detected.normalizedUrl;
+  raw["employer_application_ats"] = detected.ats;
   db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
     JSON.stringify(raw),
     new Date().toISOString(),
@@ -366,12 +365,12 @@ async function step(
           stop: "review",
         };
       }
-      const validation = validateGreenhouseApplicationUrl(url);
-      if (!validation.passed) {
+      const detected = detectAtsFromUrl(url);
+      if (detected.ats === null) {
         transitionApplication(db, {
           applicationId: app.id,
           nextState: "UNSUPPORTED_ATS",
-          reason: `pipeline: employer URL not a supported ATS (${validation.failureReason})`,
+          reason: `pipeline: employer URL not a supported ATS (${detected.failureReason})`,
           runId,
           route: "UNSUPPORTED_ATS",
         });
@@ -379,17 +378,17 @@ async function step(
           applicationId: app.id,
           kind: "UNSUPPORTED_ATS",
           title: "Employer ATS unsupported in V1",
-          payload: { url, reason: validation.failureReason },
+          payload: { url, reason: detected.failureReason },
         });
         return { to: "UNSUPPORTED_ATS", note: "unsupported ATS", stop: "review" };
       }
       transitionApplication(db, {
         applicationId: app.id,
         nextState: "ATS_DETECTION",
-        reason: "pipeline: Greenhouse URL validated",
+        reason: `pipeline: ${detected.ats} URL validated`,
         runId,
       });
-      return { to: "ATS_DETECTION", note: "Greenhouse URL validated" };
+      return { to: "ATS_DETECTION", note: `${detected.ats} URL validated` };
     }
 
     case "ATS_DETECTION": {
@@ -511,6 +510,22 @@ async function step(
         const url = getEmployerApplicationUrl(db, app.id);
         if (!url) {
           return { to: null, note: "employer URL missing at fill stage", stop: "gate" };
+        }
+        const detected = detectAtsFromUrl(url);
+        if (detected.ats === null) {
+          return {
+            to: null,
+            note: `employer URL no longer validates: ${detected.failureReason}`,
+            stop: "gate",
+          };
+        }
+        if (detected.ats !== "greenhouse") {
+          // Replaced by the shared guarded live fill in the next milestone.
+          return {
+            to: null,
+            note: `${detected.ats} live fill not yet wired — fixture-mode only for now`,
+            stop: "gate",
+          };
         }
         const liveReport = await runGreenhouseLiveFill({
           url,

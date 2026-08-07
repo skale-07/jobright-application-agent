@@ -109,6 +109,26 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     ).toThrow(/Refusing to store/);
   });
 
+  it("accepts lever and ashby employer URLs through the multi-ATS gate (W3)", () => {
+    const appId = seed();
+    setEmployerApplicationUrl(
+      db,
+      appId,
+      "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    );
+    expect(getEmployerApplicationUrl(db, appId)).toBe(
+      "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+    );
+    setEmployerApplicationUrl(
+      db,
+      appId,
+      "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab",
+    );
+    expect(getEmployerApplicationUrl(db, appId)).toBe(
+      "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+    );
+  });
+
   it("stops at materials with a MANUAL review item when no resume registered", async () => {
     const appId = seed();
     const report = await runPipeline({ db, applicationId: appId });

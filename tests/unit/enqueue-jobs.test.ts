@@ -142,5 +142,37 @@ describe("enqueueJobRightJobs (UNIT_CONFIRMED)", () => {
       ).raw_json,
     ) as Record<string, unknown>;
     expect(raw["employer_application_url"]).toBe(gh);
+    expect(raw["employer_application_ats"]).toBe("greenhouse");
+  });
+
+  it("accepts a lever employer URL, normalizing to /apply (W3)", () => {
+    const id = "6a76229767a1ad0bc53c8e91";
+    const report = enqueueJobRightJobs(db, [id], {
+      employerApplicationUrl:
+        "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    });
+    expect(report.enqueued).toBe(1);
+    const jobId = report.applications[0]!.job_db_id!;
+    const raw = JSON.parse(
+      (
+        db.prepare(`SELECT raw_json FROM jobs WHERE id = ?`).get(jobId) as {
+          raw_json: string;
+        }
+      ).raw_json,
+    ) as Record<string, unknown>;
+    expect(raw["employer_application_url"]).toBe(
+      "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+    );
+    expect(raw["employer_application_ats"]).toBe("lever");
+  });
+
+  it("refuses an unsupported employer URL at ingestion (W3)", () => {
+    const id = "6a76229767a1ad0bc53c8e92";
+    const report = enqueueJobRightJobs(db, [id], {
+      employerApplicationUrl: "https://careers.example.com/apply/123",
+    });
+    expect(report.failed).toBe(1);
+    expect(report.applications[0]!.ok).toBe(false);
+    expect(report.applications[0]!.error).toMatch(/employer URL rejected/);
   });
 });
