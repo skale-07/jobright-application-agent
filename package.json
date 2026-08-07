@@ -41,6 +41,7 @@
     "discover": "tsx src/cli/index.ts discover",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",
+    "hooks:install": "git config core.hooksPath .githooks",
     "check:forbidden": "tsx scripts/check-forbidden.ts",
     "check:secrets": "tsx scripts/check-secrets-staged.ts",
     "verify:phase1": "npm run typecheck && npm run test && npm run migrate && npm run check:forbidden && npm run cli -- --help",
