@@ -16,6 +16,8 @@ import { openEssayReviewItem } from "../applications/essayAnswers.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
+import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
@@ -520,20 +522,30 @@ async function step(
           };
         }
         if (detected.ats !== "greenhouse") {
-          // Replaced by the shared guarded live fill in the next milestone.
-          return {
-            to: null,
-            note: `${detected.ats} live fill not yet wired — fixture-mode only for now`,
-            stop: "gate",
-          };
+          const liveReport = await runAtsLiveFill({
+            binding: ATS_BINDINGS[detected.ats],
+            url,
+            execute: true,
+            headless: ctx.options.headless ?? false,
+          });
+          if (!liveReport.gate.ok) {
+            return {
+              to: null,
+              note: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
+              stop: "gate",
+            };
+          }
+          verifyPassed = liveReport.verify?.passed === true;
+          detail = `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+        } else {
+          const liveReport = await runGreenhouseLiveFill({
+            url,
+            execute: true,
+            headless: ctx.options.headless ?? false,
+          });
+          verifyPassed = liveReport.verify?.passed === true;
+          detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
         }
-        const liveReport = await runGreenhouseLiveFill({
-          url,
-          execute: true,
-          headless: ctx.options.headless ?? false,
-        });
-        verifyPassed = liveReport.verify?.passed === true;
-        detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
       }
 
       transitionApplication(db, {
