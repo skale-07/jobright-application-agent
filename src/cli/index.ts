@@ -22,6 +22,7 @@ import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { runJobrightResumeDownload } from "../jobright/resumeDownloadRun.js";
+import { registerResumeMaterial } from "../jobright/materialsRegister.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { JOBRIGHT_SELECTOR_REGISTRY_VERSION } from "../jobright/selectors/v1.js";
 import {
@@ -68,6 +69,7 @@ Commands:
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
   resume:download --job <jobright_job_id> [--yes] [--headless]
+  materials:register --application <uuid> --file <path.pdf> [--label domain]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -437,6 +439,34 @@ async function cmdAtsInspect(
   process.exit(1);
 }
 
+function cmdMaterialsRegister(flags: Record<string, string | boolean>): void {
+  const application = flags["application"];
+  const file = flags["file"];
+  if (typeof application !== "string" || typeof file !== "string") {
+    console.error(
+      "Usage: materials:register --application <uuid> --file <path.pdf> [--label domain]",
+    );
+    console.error(
+      "Registers a pre-written domain resume as this application's verified resume material.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const result = registerResumeMaterial({
+      db,
+      applicationId: application,
+      filePath: file,
+      ...(typeof flags["label"] === "string" ? { label: flags["label"] } : {}),
+    });
+    console.log(JSON.stringify(result, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 async function cmdResumeDownload(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
@@ -588,6 +618,9 @@ async function main(): Promise<void> {
       return;
     case "resume:download":
       await cmdResumeDownload(flags);
+      return;
+    case "materials:register":
+      cmdMaterialsRegister(flags);
       return;
     case "run":
       if (flags["dry-run"] || getConfig().dryRun) {
