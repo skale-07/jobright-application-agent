@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_rendered_dom",
+  "note": "Hand-authored as ALREADY-RENDERED Ashby DOM (_systemfield_* inputs, portal listbox combobox, aria-pressed button groups) with ~40 lines of inline JS standing in for the React widgets. Ashby is a SPA — a real static fetch returns an unrendered shell (see ../ashby-shell). NOT captured from a live page; FIXTURE_CONFIRMED ceiling. Replace with a sanitized rendered-DOM capture before any live milestone.",
+  "personal_data": "none — Ada Lovelace convention, no real values"
+}

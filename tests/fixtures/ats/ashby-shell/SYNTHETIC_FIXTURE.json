@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_dom",
+  "note": "Unrendered Ashby SPA shell — what a static fetch of jobs.ashbyhq.com returns. Exercises the shell-detection warning path.",
+  "personal_data": "none"
+}

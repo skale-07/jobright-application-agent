@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme — Software Engineer — Application</title>
+  <style>
+    [role="listbox"][hidden] { display: none; }
+    .dropzone input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+  <div class="ashby-application-form">
+    <form>
+      <div class="ashby-application-form-field-entry">
+        <label for="_systemfield_name">Full name *</label>
+        <input id="_systemfield_name" name="_systemfield_name" type="text" aria-required="true" required>
+      </div>
+
+      <div class="ashby-application-form-field-entry">
+        <label for="_systemfield_email">Email *</label>
+        <input id="_systemfield_email" name="_systemfield_email" type="email" aria-required="true" required>
+      </div>
+
+      <div class="ashby-application-form-field-entry">
+        <label for="_systemfield_phone">Phone</label>
+        <input id="_systemfield_phone" name="_systemfield_phone" type="tel">
+      </div>
+
+      <div class="ashby-application-form-field-entry dropzone">
+        <span>Drag and drop your resume here, or click to browse</span>
+        <input id="_systemfield_resume" name="_systemfield_resume" type="file" aria-label="Resume" aria-required="true" required>
+      </div>
+
+      <div class="ashby-application-form-field-entry">
+        <label for="aaaa1111-bbbb-cccc-dddd-eeee00001111">How did you hear about us?</label>
+        <input id="aaaa1111-bbbb-cccc-dddd-eeee00001111" name="aaaa1111-bbbb-cccc-dddd-eeee00001111" type="text">
+      </div>
+
+      <div class="ashby-application-form-field-entry">
+        <div class="ashby-select" id="country-select">
+          <span class="ashby-select__selected" data-selected-label="">Select...</span>
+          <input id="dddd4444-eeee-ffff-0000-111122223333" name="dddd4444-eeee-ffff-0000-111122223333"
+                 role="combobox" aria-label="Country" aria-haspopup="listbox" aria-expanded="false"
+                 autocomplete="off" type="text">
+        </div>
+      </div>
+
+      <h4 id="lbl-workauth">Are you legally authorized to work in the United States? *</h4>
+      <div role="radiogroup" aria-labelledby="lbl-workauth" aria-required="true"
+           data-field-id="c0ffee00-1111-2222-3333-444455556666">
+        <button type="button" aria-pressed="false">Yes</button>
+        <button type="button" aria-pressed="false">No</button>
+      </div>
+
+      <h4 id="lbl-gender">Gender identity (voluntary self-identification)</h4>
+      <div role="radiogroup" aria-labelledby="lbl-gender"
+           data-field-id="eeee5555-6666-7777-8888-99990000aaaa">
+        <button type="button" aria-pressed="false">Man</button>
+        <button type="button" aria-pressed="false">Woman</button>
+        <button type="button" aria-pressed="false">Decline to self-identify</button>
+      </div>
+
+      <div class="ashby-application-form-field-entry">
+        <label for="bbbb2222-cccc-dddd-eeee-ffff00002222">Why do you want to work at Acme?</label>
+        <textarea id="bbbb2222-cccc-dddd-eeee-ffff00002222" name="bbbb2222-cccc-dddd-eeee-ffff00002222"></textarea>
+      </div>
+
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+
+  <!-- Portal-rendered listbox, Ashby-style: sibling of the form root. -->
+  <div role="listbox" id="country-listbox" hidden>
+    <div role="option">United States</div>
+    <div role="option">Canada</div>
+    <div role="option">United Kingdom</div>
+  </div>
+
+  <script>
+    // Minimal Ashby-alike widgets. Combobox: the input carries only
+    // transient filter text (it LIES about commitment, like the real
+    // React control); the committed value lives in the sibling
+    // .ashby-select__selected node. Button groups: aria-pressed moves on
+    // click, one pressed per group.
+    (function () {
+      var input = document.getElementById("dddd4444-eeee-ffff-0000-111122223333");
+      var listbox = document.getElementById("country-listbox");
+      var selected = document.querySelector("#country-select .ashby-select__selected");
+
+      function openList() {
+        listbox.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+      }
+      input.addEventListener("focus", openList);
+      input.addEventListener("click", openList);
+      input.addEventListener("input", function () {
+        openList();
+        var filter = input.value.toLowerCase();
+        listbox.querySelectorAll('[role="option"]').forEach(function (opt) {
+          opt.hidden = filter !== "" && opt.textContent.toLowerCase().indexOf(filter) === -1;
+        });
+      });
+      listbox.addEventListener("click", function (ev) {
+        var opt = ev.target.closest('[role="option"]');
+        if (!opt) return;
+        selected.textContent = opt.textContent.trim();
+        selected.setAttribute("data-selected-label", opt.textContent.trim());
+        input.value = "";
+        listbox.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        listbox.querySelectorAll('[role="option"]').forEach(function (o) { o.hidden = false; });
+      });
+
+      document.querySelectorAll('[role="radiogroup"]').forEach(function (group) {
+        group.addEventListener("click", function (ev) {
+          var btn = ev.target.closest("button");
+          if (!btn) return;
+          group.querySelectorAll("button").forEach(function (b) {
+            b.setAttribute("aria-pressed", "false");
+          });
+          btn.setAttribute("aria-pressed", "true");
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
