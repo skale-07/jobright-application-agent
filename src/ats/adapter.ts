@@ -58,7 +58,13 @@ export type FieldFillMeta = {
   field_id: string;
   /** Canonical when known — helps join verify rows. */
   canonical_field?: string | null;
-  control_kind?: "text" | "combobox" | "native_select" | "file" | "unknown";
+  control_kind?:
+    | "text"
+    | "combobox"
+    | "native_select"
+    | "button_group"
+    | "file"
+    | "unknown";
   selected_option?: string | null;
   /** Option match path: exact | synonym | unique_substring | ci_exact */
   match_via?: string | null;

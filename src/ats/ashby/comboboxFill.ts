@@ -19,6 +19,8 @@ export type AshbyComboboxFillResult = {
   committed: boolean;
   selectedLabel: string | null;
   notes: string[];
+  /** How pickOptionLabel matched, for fill-outcome telemetry. */
+  pickVia?: string | null;
 };
 
 /** Committed display text, or null while the placeholder is showing. */
@@ -123,5 +125,5 @@ export async function fillAshbyCombobox(
       `commit not confirmed: display shows ${committedLabel === null ? "placeholder" : `"${committedLabel}"`}`,
     );
   }
-  return { committed, selectedLabel: committedLabel, notes };
+  return { committed, selectedLabel: committedLabel, notes, pickVia: pick.via };
 }

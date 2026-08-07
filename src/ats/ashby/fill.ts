@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Locator, Page } from "playwright";
 import type {
+  FieldFillMeta,
   FillResult,
   FormResetResult,
   FormVerificationResult,
@@ -151,6 +152,7 @@ export async function ashbyFillFromPlan(
   const filled = [...base.filled];
   const skipped = [...base.skipped];
   const errors = [...base.errors];
+  const field_meta: FieldFillMeta[] = [...(base.field_meta ?? [])];
 
   for (const entry of comboboxEntries) {
     try {
@@ -167,6 +169,14 @@ export async function ashbyFillFromPlan(
         entryLocator(page, entry, fieldMeta),
         entry.value,
       );
+      field_meta.push({
+        field_id: entry.field_id,
+        canonical_field: entry.canonical_field,
+        control_kind: "combobox",
+        selected_option: result.selectedLabel,
+        match_via: result.pickVia ?? null,
+        notes: result.notes,
+      });
       if (!result.committed) {
         throw new Error(
           `combobox option not committed: ${result.notes.join("; ")}`,
@@ -214,6 +224,13 @@ export async function ashbyFillFromPlan(
         throw new Error("located element is not a button group");
       }
       const result = await fillButtonGroup(group, entry.value);
+      field_meta.push({
+        field_id: entry.field_id,
+        canonical_field: entry.canonical_field,
+        control_kind: "button_group",
+        selected_option: result.selectedLabel,
+        notes: result.notes,
+      });
       if (!result.committed) {
         throw new Error(
           `button group option not committed: ${result.notes.join("; ")}`,
@@ -227,7 +244,7 @@ export async function ashbyFillFromPlan(
     }
   }
 
-  return { filled, skipped, errors };
+  return { filled, skipped, errors, field_meta };
 }
 
 export async function ashbyVerifyFromPlan(

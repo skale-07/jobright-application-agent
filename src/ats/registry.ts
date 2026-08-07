@@ -1,14 +1,18 @@
 import type { ApplicationAdapter, DetectionResult } from "./adapter.js";
 import { GreenhouseAdapterV1 } from "./greenhouse/v1.js";
+import { LeverAdapterV1 } from "./lever/v1.js";
+import { AshbyAdapterV1 } from "./ashby/v1.js";
 import { GenericAdapterV1 } from "./generic.js";
 import { UnsupportedAtsAdapter } from "./unsupported.js";
 
 const greenhouse = new GreenhouseAdapterV1();
+const lever = new LeverAdapterV1();
+const ashby = new AshbyAdapterV1();
 const generic = new GenericAdapterV1();
 const unsupported = new UnsupportedAtsAdapter();
 
 export function listAdapters(): ApplicationAdapter[] {
-  return [unsupported, greenhouse, generic];
+  return [unsupported, greenhouse, lever, ashby, generic];
 }
 
 export async function detectAts(input: {
@@ -25,6 +29,17 @@ export async function detectAts(input: {
   const g = await greenhouse.detect(input);
   if (g.matched && g.confidence >= 0.5) {
     return { adapter: greenhouse, detection: g };
+  }
+
+  // Lever/Ashby before generic: generic matches any <form> at 0.4.
+  const l = await lever.detect(input);
+  if (l.matched && l.confidence >= 0.5) {
+    return { adapter: lever, detection: l };
+  }
+
+  const a = await ashby.detect(input);
+  if (a.matched && a.confidence >= 0.5) {
+    return { adapter: ashby, detection: a };
   }
 
   const gen = await generic.detect(input);

@@ -81,10 +81,17 @@ export class LeverAdapterV1 implements ApplicationAdapter {
    * composition (legal_name.first + legal_name.last → "First Last")
    * cannot be skipped by any caller.
    */
-  setApprovedFillPlan(plan: ApprovedFillPlan, profile: PublicProfile): void {
+  setApprovedFillPlan(plan: ApprovedFillPlan, profile?: PublicProfile): void {
+    // profile is optional only for cross-ATS call-shape parity — Lever
+    // cannot fill without it (full-name composition), so fail closed.
+    if (!profile) {
+      throw new Error(
+        "Lever fill requires the public profile for full-name composition — pass profile to setApprovedFillPlan",
+      );
+    }
     // Resolve field_id (often the input's id) back to its name attribute so
     // the matcher's fieldNames work even when id ≠ name. Requires
-    // setFillContext to have run first, as the tests and future wiring do.
+    // setFillContext to have run first, as the tests and wiring do.
     this.approvedPlan = composeFullName(
       plan,
       profile,

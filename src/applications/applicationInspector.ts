@@ -77,7 +77,9 @@ export async function inspectApplicationHtml(input: {
     notes.push(
       `${unmappedRequired.length} required field(s) unmapped to answer aliases`,
     );
-  } else if (inspection.ats === "greenhouse" || inspection.ats === "generic") {
+  } else if (
+    ["greenhouse", "lever", "ashby", "generic"].includes(inspection.ats)
+  ) {
     route = "ready_for_fill_later";
     notes.push(
       "Mapped enough for a future fill phase — FORM_FILL stays off in Phase 4",
