@@ -6,6 +6,8 @@ Local Chromium-based application processor: JobRight discovery → materials →
 
 Not a general autonomous browser agent. Deterministic adapters, approved candidate context, human essays, verified submissions.
 
+**The LLM boundary:** exactly one — outreach email generation (`src/contacts/emailGenerate.ts`, OpenAI, gated by `EMAIL_GENERATION_ENABLED`, output deterministically re-validated). No LLM ever touches form answers, essays, demographics, sponsorship, or any ATS interaction.
+
 ## Location
 
 Project root: `C:\dev\jobright-application-agent` (outside OneDrive).

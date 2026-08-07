@@ -92,12 +92,19 @@ A lower level never promotes a feature to a higher level.
 | High-confidence login-wall detection | Done | Generic nav “Login” is not enough |
 | Greenhouse fill / upload / verify | Done | `FIXTURE_CONFIRMED` on fixtures; live path shipped (next row) |
 | Live Greenhouse fill | Done (`ats:fill --url`) | Gate + refusal paths `UNIT_CONFIRMED`; live mutation `UNVERIFIED` |
-| Employer submit | Forbidden | Must stay impossible until a later, explicit phase |
-| Essays / demographics / invented sponsorship | Never auto | Review / skip |
-| Lever / Ashby / Workday fill | Deferred | Skip / unsupported |
-| Outlook send / LinkedIn enrichment | Deferred | Scaffold only |
-| Dashboard | Not started | — |
-| Phase 6 autofill compare | Not in tree | Stash only |
+| Employer submit (Phase 7) | **Built, gated** (`submit`) | Gate matrix + receipt path `UNIT/FIXTURE_CONFIRMED`; live `UNVERIFIED`. Per-submission human confirmation; uncertain → review, auto-resubmit blocked |
+| Essay workflow (Phase 8, `resume-essay`) | Built | Human-written only; ESSAY_HUMAN fill path `FIXTURE_CONFIRMED`; main fill still hard-rejects textarea |
+| Pipeline driver (`run --pipeline`) + `retry` | Built | Fixture walk QUEUED→READY_TO_SUBMIT `FIXTURE_CONFIRMED`; stops on review items; submit boundary explicit |
+| `materials:register` (domain resumes) | Built | `UNIT_CONFIRMED`; replaces descoped live generation |
+| Contacts extraction | Built | Parser `FIXTURE_CONFIRMED`; selectors synthetic, live `UNVERIFIED` |
+| Outreach email generation (OpenAI) | Built, gated | The ONLY LLM boundary. Stub-client path `UNIT_CONFIRMED`; deterministic post-validation; REJECTED never drafts |
+| Outlook drafts (Phase 12) | Built, gated | Draft vocabulary only; composer/gates `UNIT_CONFIRMED`; live Outlook `UNVERIFIED`; dispatching mail remains impossible (check:forbidden) |
+| LinkedIn enrichment | **Dropped by decision** | Outreach uses JobRight context only; revisit post-MVP |
+| Demographics / invented sponsorship | Never auto | Review / skip |
+| Lever / Ashby / Workday fill | Deferred | Skip / unsupported (Phase 6 J1 authoring aid exists) |
+| Dashboard (Phase 13) | Built | Read-only, 127.0.0.1 only, GET-only; `UNIT_CONFIRMED` |
+| Phase 6 J1 authoring sidecar + CDP_ATTACH | Built, inert | Gate + contract `UNIT_CONFIRMED`; venv is an explicit operator step |
+| Phase 6 autofill compare | Not in tree | Stash only (operator's machine) |
 
 ### 2.3 CLI that matters today
 
@@ -133,9 +140,18 @@ login (JobRight)
   → stop  (no submit, no outreach)
 ```
 
-There is **no** closed loop: SQLite application → live ATS fill → verified submission.
+The closed loop now exists in code and is `FIXTURE_CONFIRMED` end to end:
 
-As of the current commit the missing CLIs exist (`resume:download --job`, `ats:fill --url`), so the remaining gap in 5.6 is **live evidence**, not engineering. Every 5.6 workstream that can be closed without a browser on a real page is closed; see §5.
+```text
+discover → materials:register → inspect → ats:fill → resume-essay
+  → submit (gated, human-confirmed, receipt-verified)
+  → contacts:extract → email:generate (LLM, validated) → draft:create/verify
+```
+
+Driven stepwise or via `run --pipeline`. See [operator-guide.md](./operator-guide.md)
+for the full walkthrough. The remaining gap is **live evidence** at every
+step past the fixture boundary — plus §2.6b (live discovery) which blocks
+live jobs entering the funnel at all.
 
 ### 2.5 Safety model (still binding)
 
