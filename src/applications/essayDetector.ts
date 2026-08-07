@@ -33,6 +33,18 @@ export function classifyEssayFields(fields: DiscoveredField[]): EssayClassificat
       };
     }
 
+    // EEO / self-ID selects often say "How would you describe your gender…".
+    // That must not hit the "describe" essay hint before demographics handling.
+    if (isDemographicsField(f)) {
+      return {
+        field_id: f.id,
+        label: f.label,
+        is_essay: false,
+        reasons: [],
+        estimated_min_words: null,
+      };
+    }
+
     if (f.type === "textarea") {
       reasons.push("textarea");
       isEssay = true;
@@ -88,7 +100,7 @@ export function isDemographicsField(field: DiscoveredField): boolean {
   const n = normalizeFieldLabel(
     `${field.label} ${field.name ?? ""} ${field.inputId ?? ""}`,
   );
-  return /gender|race|ethnicity|veteran|disability|hispanic|eeo|equal opportunity|decline to (self-)?identify/.test(
+  return /gender|race|ethnicity|veteran|disability|hispanic|latino|transgender|eeo|equal opportunity|decline to (self-)?identify|sexual orientation/.test(
     n,
   );
 }

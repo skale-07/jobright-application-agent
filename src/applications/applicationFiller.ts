@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getConfig } from "../config/index.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
+import { recordFillRun } from "../storage/fillOutcomes.js";
 import { loadAnswerAliases } from "../candidate/answerAliases.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import type { PublicProfile } from "../candidate/publicProfile.js";
@@ -202,6 +203,54 @@ function persistFillReport(
     outDir,
     report.mode === "plan_only" ? "fill-plan.json" : "fill-report.json",
   );
+
+  if (report.mode === "executed") {
+    const planEntries = (
+      report.approved_plan?.entries ?? report.plan.entries
+    ).map((e) => {
+      const base = {
+        field_id: e.field_id,
+        label: e.label,
+        type: e.type as string,
+        canonical_field: e.canonical_field ?? null,
+        action: String(e.action),
+        value: e.value,
+        reason: e.reason,
+      };
+      if (
+        "approved" in e &&
+        typeof (e as { approved?: boolean }).approved === "boolean"
+      ) {
+        return {
+          ...base,
+          approved: (e as { approved: boolean }).approved,
+        };
+      }
+      return base;
+    });
+    recordFillRun({
+      mode: "executed",
+      source: "fixture",
+      ats: report.ats,
+      job_url: report.url,
+      mutation_attempted: true,
+      validation_level: report.verify?.passed
+        ? "FIXTURE_CONFIRMED"
+        : "UNVERIFIED",
+      fillable_count:
+        report.approved_plan?.fillable_count ?? report.plan.fillable_count,
+      skipped_count:
+        report.approved_plan?.skipped_count ?? report.plan.skipped_count,
+      report_artifact_relpath: path.relative(cfg.artifactsDir, reportPath),
+      notes: report.notes,
+      plan_entries: planEntries,
+      fill: report.fill ?? null,
+      verify: report.verify ?? null,
+      uploads: report.uploads ?? null,
+      heal: null,
+    });
+  }
+
   const redacted = redactFillReportForArtifact({
     ...report,
     written_at: new Date().toISOString(),

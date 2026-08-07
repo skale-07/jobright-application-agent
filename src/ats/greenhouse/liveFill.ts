@@ -10,7 +10,9 @@ import { redactFillReportForArtifact } from "../../applications/fillReportRedact
 import { withPublicUrlPage } from "../../browser/fixtureSession.js";
 import type { PublicProfile } from "../../candidate/publicProfile.js";
 import { getConfig } from "../../config/index.js";
+import { logger } from "../../logging/logger.js";
 import { writeJsonAtomic } from "../../storage/atomicJson.js";
+import { recordFillRun } from "../../storage/fillOutcomes.js";
 import { GreenhouseAdapterV1 } from "./v1.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
 import { detectBlockingCaptcha, type CaptchaDetection } from "./captchaDetection.js";
@@ -149,6 +151,62 @@ export async function verifyPageBeforeMutation(
   };
 }
 
+function tryRecordFillOutcomes(
+  report: GreenhouseLiveFillReport,
+  reportRelpath: string,
+): void {
+  if (report.mode !== "executed" || !report.mutation_attempted) return;
+
+  const planEntries = (report.approved_plan?.entries ?? report.plan.entries).map(
+    (e) => {
+      const base = {
+        field_id: e.field_id,
+        label: e.label,
+        type: e.type as string,
+        canonical_field: e.canonical_field ?? null,
+        action: String(e.action),
+        value: e.value,
+        reason: e.reason,
+      };
+      if ("approved" in e && typeof (e as { approved?: boolean }).approved === "boolean") {
+        return {
+          ...base,
+          approved: (e as { approved: boolean }).approved,
+        };
+      }
+      return base;
+    },
+  );
+
+  recordFillRun({
+    mode: "executed",
+    source: "cli_url",
+    ats: report.ats,
+    job_url: report.final_url ?? report.url,
+    company: report.identity_verification?.company ?? null,
+    role: report.identity_verification?.role ?? null,
+    job_id_observed: report.identity_verification?.observedJobId ?? null,
+    mutation_attempted: report.mutation_attempted,
+    validation_level: report.validation_level,
+    fillable_count:
+      report.approved_plan?.fillable_count ?? report.plan.fillable_count,
+    skipped_count:
+      report.approved_plan?.skipped_count ?? report.plan.skipped_count,
+    report_artifact_relpath: reportRelpath,
+    notes: report.notes,
+    metadata: {
+      captcha_detection: report.captcha_detection,
+      login_wall_detection: report.login_wall_detection,
+      failure_code: report.failure_code,
+    },
+    plan_entries: planEntries,
+    fill: report.fill ?? null,
+    verify: report.verify ?? null,
+    uploads: report.uploads ?? null,
+    heal: report.heal ?? null,
+  });
+}
+
 function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
   const outDir = path.join(getConfig().artifactsDir, "ats-fill", "greenhouse-live");
   fs.mkdirSync(outDir, { recursive: true });
@@ -156,6 +214,10 @@ function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
     outDir,
     report.mode === "plan_only" ? "live-fill-plan.json" : "live-fill-report.json",
   );
+
+  // SQLite outcomes first (uses raw report values) then redacted artifact.
+  tryRecordFillOutcomes(report, path.relative(getConfig().artifactsDir, file));
+
   const redacted = {
     ...redactFillReportForArtifact(report),
     validation_level: report.validation_level,
@@ -274,17 +336,32 @@ export async function runGreenhouseLiveFill(input: {
       assertFormFillAllowed("greenhouse.liveFill.execute");
       base.mutation_attempted = true;
 
+      // Order: fill fields → verify/heal → upload last → freeze.
+      // Combobox work re-renders job-boards and can wipe a pristine-zone
+      // attach if we uploaded first; leave file inputs until values stick.
+      logger.info("live fill: applying approved field plan", {
+        service: "greenhouse",
+        action: "fill",
+        metadata: {
+          fillable_count: approvedPlan.fillable_count,
+          answer_keys: Object.keys(approvedPlan.answers),
+        },
+      });
       base.fill = await adapter.fill(page, approvedPlan.answers);
-      const uploads = [];
-      if (input.resumePath) {
-        uploads.push(await adapter.uploadResume(page, input.resumePath));
-      }
-      if (input.coverLetterPath) {
-        uploads.push(
-          await adapter.uploadCoverLetter(page, input.coverLetterPath),
-        );
-      }
-      if (uploads.length > 0) base.uploads = uploads;
+      logger.info("live fill: field plan applied", {
+        service: "greenhouse",
+        action: "fill",
+        metadata: {
+          filled: base.fill.filled.length,
+          skipped: base.fill.skipped.length,
+          errors: base.fill.errors.length,
+        },
+      });
+
+      logger.info("live fill: verifying field read-back", {
+        service: "greenhouse",
+        action: "verify",
+      });
       base.verify = await adapter.verify(page, approvedPlan.answers);
 
       // Phase 6a′: heal read-back failures (heuristic always; sidecar only
@@ -316,10 +393,43 @@ export async function runGreenhouseLiveFill(input: {
         }
       }
 
-      base.notes.push("submit never called — no submit path exists in this command");
-      base.validation_level = base.verify.passed
-        ? "LIVE_MUTATION_CONFIRMED"
-        : "UNVERIFIED";
+      // Upload only after comboboxes are settled — no further field mutation.
+      const uploads = [];
+      if (input.resumePath) {
+        logger.info("live fill: uploading resume", {
+          service: "greenhouse",
+          action: "upload",
+        });
+        uploads.push(await adapter.uploadResume(page, input.resumePath));
+      }
+      if (input.coverLetterPath) {
+        logger.info("live fill: uploading cover letter", {
+          service: "greenhouse",
+          action: "upload",
+        });
+        uploads.push(
+          await adapter.uploadCoverLetter(page, input.coverLetterPath),
+        );
+      }
+      if (uploads.length > 0) {
+        base.uploads = uploads;
+        const bad = uploads.filter((u) => !u.verified);
+        if (bad.length > 0) {
+          base.notes.push(
+            `upload not verified after fill: ${bad.map((u) => u.field).join(", ")}`,
+          );
+        }
+      }
+
+      base.notes.push(
+        "frozen after fill→verify→upload — no further field mutation; submit never called",
+      );
+      const uploadsOk =
+        !base.uploads?.length || base.uploads.every((u) => u.verified);
+      base.validation_level =
+        base.verify.passed && uploadsOk
+          ? "LIVE_MUTATION_CONFIRMED"
+          : "UNVERIFIED";
       return persist(base);
     },
     { headless: input.headless ?? false },

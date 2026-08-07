@@ -54,10 +54,24 @@ export type FormResetResult = {
 
 export type ResolvedApplicationAnswers = Record<string, unknown>;
 
+export type FieldFillMeta = {
+  field_id: string;
+  /** Canonical when known — helps join verify rows. */
+  canonical_field?: string | null;
+  control_kind?: "text" | "combobox" | "native_select" | "file" | "unknown";
+  selected_option?: string | null;
+  /** Option match path: exact | synonym | unique_substring | ci_exact */
+  match_via?: string | null;
+  notes?: string[];
+  options_sample?: string[];
+};
+
 export type FillResult = {
   filled: string[];
   skipped: string[];
   errors: string[];
+  /** Per-field interaction metadata (combobox picks, control kinds). */
+  field_meta?: FieldFillMeta[];
 };
 
 export type UploadVerification = {

@@ -2,6 +2,7 @@ import type { Page, Locator } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
 import type {
+  FieldFillMeta,
   FillResult,
   FormResetResult,
   FormVerificationResult,
@@ -14,13 +15,15 @@ import {
   assertExecutableApprovedEntry,
   type ApprovedFillPlanEntry,
 } from "../../applications/approvedFillPlan.js";
-import { isDemographicsField } from "../../applications/essayDetector.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import {
   detectControlKind,
   fillComboboxControl,
+  labelsCompatible,
+  pickOptionLabel,
   readComboboxValue,
 } from "./comboboxFill.js";
+import { logger } from "../../logging/logger.js";
 
 export type FieldMeta = {
   name?: string;
@@ -30,10 +33,6 @@ export type FieldMeta = {
 
 export type ExecutableFillEntry = ApprovedFillPlanEntry | FillPlanEntry;
 
-function cssEscapeIdent(id: string): string {
-  return id.replace(/([ !"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, "\\$1");
-}
-
 export function locatorForField(
   page: Page,
   entry: Pick<FillPlanEntry, "field_id" | "label"> & {
@@ -42,7 +41,10 @@ export function locatorForField(
   },
 ): Locator {
   if (entry.inputId) {
-    return page.locator(`#${cssEscapeIdent(entry.inputId)}`);
+    // Greenhouse free-text / EEO question ids are pure digits (e.g. 4010536008).
+    // Those are invalid as bare CSS `#id` — always attribute-select.
+    const escaped = entry.inputId.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return page.locator(`[id="${escaped}"]`).first();
   }
   if (entry.name) {
     return page.locator(`[name="${entry.name.replace(/"/g, '\\"')}"]`).first();
@@ -87,13 +89,100 @@ async function setSelectByValueOrLabel(
   );
 }
 
+/** Digits only; used so ITI formatting ("(555) 123-4567") can match raw profile. */
+function phoneDigits(s: string): string {
+  return s.replace(/\D/g, "");
+}
+
+function phonesMatch(expected: string, observed: string): boolean {
+  const e = phoneDigits(expected);
+  const o = phoneDigits(observed);
+  // Require a real national number fragment; refuse short codes / empty.
+  if (e.length < 7 || o.length < 7) return false;
+  return e === o || e.endsWith(o) || o.endsWith(e);
+}
+
+/**
+ * Country name from profile vs job-boards collapse to dial-only ("+1").
+ * +1 is shared by several countries — only accept US primary names for +1,
+ * and unambiguous single-country dials for the rest. Never invent Canada→US.
+ */
+function countryDialCompatible(expected: string, observed: string): boolean {
+  const dial = observed.trim();
+  if (!/^\+\d{1,4}$/.test(dial)) return false;
+  const name = expected
+    .replace(/\s*\+\d+\s*$/u, "")
+    .trim()
+    .toLowerCase()
+    .replace(/['']/g, "");
+  if (name.length < 2) return false;
+
+  // Unambiguous dials (single primary country on common GH job boards).
+  const UNIQUE: Record<string, string[]> = {
+    "+44": ["united kingdom", "uk", "great britain", "england"],
+    "+91": ["india"],
+    "+61": ["australia"],
+    "+81": ["japan"],
+    "+49": ["germany"],
+    "+33": ["france"],
+    "+86": ["china"],
+    "+52": ["mexico"],
+  };
+  const unique = UNIQUE[dial];
+  if (unique) {
+    return unique.some((n) => name === n || name.includes(n) || n.includes(name));
+  }
+
+  // +1: US board defaults are almost always "United States +1". Canada is
+  // also +1 — only accept explicit US wording, never bare "North America".
+  if (dial === "+1") {
+    return (
+      name === "united states" ||
+      name === "united states of america" ||
+      name === "usa" ||
+      name === "us" ||
+      name.startsWith("united states")
+    );
+  }
+  return false;
+}
+
 function valuesMatch(expected: unknown, observed: unknown): boolean {
   if (expected === observed) return true;
-  const e = String(expected).trim().toLowerCase();
-  const o = String(observed).trim().toLowerCase();
+  const eRaw = String(expected ?? "").trim();
+  const oRaw = String(observed ?? "").trim();
+  if (eRaw === "" || oRaw === "") return eRaw === oRaw && eRaw !== "";
+  const e = eRaw.toLowerCase();
+  const o = oRaw.toLowerCase();
   if (e === o) return true;
   if (e === "yes" && ["yes", "y", "true", "1"].includes(o)) return true;
   if (e === "no" && ["no", "n", "false", "0"].includes(o)) return true;
+  // Combobox displays may be truncated / dial-code-only ("United States" → "+1")
+  // or taxonomy-shifted ("Bachelor of Science" → "Bachelor's Degree").
+  if (labelsCompatible(eRaw, oRaw)) return true;
+  if (labelsCompatible(oRaw, eRaw)) return true;
+  if (pickOptionLabel([oRaw], eRaw).ok) return true;
+  // Multi-select readback "Man, Woman" vs expected "Man": require exclusive match.
+  if (oRaw.includes(",")) {
+    const parts = oRaw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (
+      parts.length > 0 &&
+      parts.every(
+        (p) =>
+          labelsCompatible(eRaw, p) ||
+          pickOptionLabel([p], eRaw).ok ||
+          phonesMatch(eRaw, p),
+      )
+    ) {
+      return true;
+    }
+  }
+  // "United States" (profile) vs "+1" (collapsed country control).
+  if (countryDialCompatible(eRaw, oRaw) || countryDialCompatible(oRaw, eRaw)) {
+    return true;
+  }
+  // ITI phone formatting vs profile digits.
+  if (phonesMatch(eRaw, oRaw)) return true;
   return false;
 }
 
@@ -121,6 +210,7 @@ export async function greenhouseFillFromPlan(
   const filled: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
+  const field_meta: FieldFillMeta[] = [];
 
   for (const entry of entries) {
     if (!isApprovedExecutable(entry)) {
@@ -143,16 +233,8 @@ export async function greenhouseFillFromPlan(
       if (entry.type === "textarea") {
         throw new Error("textarea/essay never filled");
       }
-      if (
-        isDemographicsField({
-          id: entry.field_id,
-          label: entry.label,
-          type: entry.type,
-          required: false,
-        })
-      ) {
-        throw new Error("demographics never filled");
-      }
+      // Demographics only when approved via sensitive-profile values
+      // (assertExecutableApprovedEntry already gates the allowlist).
     } catch (err) {
       errors.push(
         `${entry.field_id}: ${err instanceof Error ? err.message : String(err)}`,
@@ -175,8 +257,26 @@ export async function greenhouseFillFromPlan(
         const kind = await detectControlKind(loc);
         if (kind === "native_select") {
           await setSelectByValueOrLabel(loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "native_select",
+            selected_option: String(entry.value),
+            match_via: "exact",
+          });
         } else {
           const result = await fillComboboxControl(page, loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "combobox",
+            selected_option: result.selectedLabel,
+            match_via: result.pickVia ?? null,
+            notes: result.notes,
+            ...(result.optionsSample
+              ? { options_sample: result.optionsSample }
+              : {}),
+          });
           if (!result.committed) {
             throw new Error(
               `combobox option not committed: ${result.notes.join("; ")}`,
@@ -187,6 +287,11 @@ export async function greenhouseFillFromPlan(
         const on = Boolean(entry.value) && entry.value !== "No";
         if (on) await loc.check();
         else await loc.uncheck();
+        field_meta.push({
+          field_id: entry.field_id,
+          canonical_field: entry.canonical_field,
+          control_kind: "text",
+        });
       } else if (type === "radio") {
         const name = meta?.name;
         const group = name
@@ -228,12 +333,28 @@ export async function greenhouseFillFromPlan(
         if (!matched) {
           throw new Error(`No radio option for "${entry.value}"`);
         }
+        field_meta.push({
+          field_id: entry.field_id,
+          canonical_field: entry.canonical_field,
+          control_kind: "text",
+        });
       } else {
         // Text-typed entries can still be combobox inner inputs live
         // (discovery saw <input>, the widget is a React-select).
         const kind = await detectControlKind(loc);
         if (kind === "combobox") {
           const result = await fillComboboxControl(page, loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "combobox",
+            selected_option: result.selectedLabel,
+            match_via: result.pickVia ?? null,
+            notes: result.notes,
+            ...(result.optionsSample
+              ? { options_sample: result.optionsSample }
+              : {}),
+          });
           if (!result.committed) {
             throw new Error(
               `combobox option not committed: ${result.notes.join("; ")}`,
@@ -241,8 +362,20 @@ export async function greenhouseFillFromPlan(
           }
         } else if (kind === "native_select") {
           await setSelectByValueOrLabel(loc, entry.value);
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "native_select",
+            selected_option: String(entry.value),
+            match_via: "exact",
+          });
         } else {
           await loc.fill(String(entry.value));
+          field_meta.push({
+            field_id: entry.field_id,
+            canonical_field: entry.canonical_field,
+            control_kind: "text",
+          });
         }
       }
       filled.push(entry.canonical_field ?? entry.field_id);
@@ -253,7 +386,7 @@ export async function greenhouseFillFromPlan(
     }
   }
 
-  return { filled, skipped, errors };
+  return { filled, skipped, errors, field_meta };
 }
 
 export async function greenhouseReadFieldValue(
@@ -362,6 +495,92 @@ export async function greenhouseVerifyFromPlan(
   };
 }
 
+/**
+ * Resolve the file input on job-boards / classic Greenhouse forms.
+ * Prefer id-based inputs (job-boards has no name=). Search all frames.
+ * Hidden / visually-hidden is OK — setInputFiles only needs attached.
+ */
+export async function resolveGreenhouseFileInput(
+  page: Page,
+  kind: "resume" | "cover_letter",
+): Promise<Locator> {
+  const preferId = kind === "resume" ? "resume" : "cover_letter";
+  const keywords =
+    kind === "resume" ? (["resume", "cv"] as const) : (["cover"] as const);
+
+  // Prefer main frame + id (job-boards: #resume / #cover_letter, no name=).
+  // Use short-lived waits; callers re-resolve immediately before mutate.
+  const main = page.mainFrame();
+  const frames = [main, ...page.frames().filter((f) => f !== main)];
+
+  for (const frame of frames) {
+    const byId = frame.locator(`input[type="file"]#${preferId}`);
+    if ((await byId.count().catch(() => 0)) > 0) {
+      await byId.first().waitFor({ state: "attached", timeout: 5_000 });
+      return byId.first();
+    }
+
+    for (const kw of keywords) {
+      const byAttr = frame.locator(
+        `input[type="file"][name*="${kw}" i], input[type="file"][id*="${kw}" i]`,
+      );
+      if ((await byAttr.count().catch(() => 0)) > 0) {
+        await byAttr.first().waitFor({ state: "attached", timeout: 5_000 });
+        return byAttr.first();
+      }
+    }
+  }
+
+  // Fall back: index among form file inputs (job-boards: resume then cover).
+  for (const frame of frames) {
+    const files = frame.locator("input[type='file']");
+    const n = await files.count().catch(() => 0);
+    if (n === 0) continue;
+    for (let i = 0; i < n; i++) {
+      const loc = files.nth(i);
+      const id = ((await loc.getAttribute("id")) ?? "").toLowerCase();
+      const name = ((await loc.getAttribute("name")) ?? "").toLowerCase();
+      const looksCover = /cover/.test(id) || /cover/.test(name);
+      const looksResume =
+        /resume|cv/.test(id) || /resume|cv/.test(name) || (!looksCover && i === 0);
+      if (kind === "resume" && looksResume && !looksCover) {
+        await loc.waitFor({ state: "attached", timeout: 5_000 });
+        return loc;
+      }
+      if (kind === "cover_letter" && (looksCover || i === 1)) {
+        await loc.waitFor({ state: "attached", timeout: 5_000 });
+        return loc;
+      }
+    }
+  }
+
+  const inventory = await inventoryFileInputs(page);
+  throw new Error(
+    `Greenhouse ${kind} file input not found (waited for attached). ` +
+      `Saw ${inventory.length} input[type=file]: ${JSON.stringify(inventory)}`,
+  );
+}
+
+async function inventoryFileInputs(
+  page: Page,
+): Promise<Array<{ frame: string; id: string | null; name: string | null }>> {
+  const out: Array<{ frame: string; id: string | null; name: string | null }> =
+    [];
+  for (const frame of page.frames()) {
+    const handles = frame.locator("input[type='file']");
+    const n = await handles.count().catch(() => 0);
+    for (let i = 0; i < n; i++) {
+      const h = handles.nth(i);
+      out.push({
+        frame: frame.url(),
+        id: await h.getAttribute("id"),
+        name: await h.getAttribute("name"),
+      });
+    }
+  }
+  return out;
+}
+
 export async function greenhouseUploadFile(
   page: Page,
   kind: "resume" | "cover_letter",
@@ -380,32 +599,98 @@ export async function greenhouseUploadFile(
     };
   }
   const stat = fs.statSync(abs);
-  const selector =
-    kind === "resume"
-      ? greenhouseSelectorsV1.resume
-      : greenhouseSelectorsV1.coverLetter;
-  const input = page.locator(selector).first();
-  await input.setInputFiles(abs);
-  const files = await input.evaluate(
-    (el: { files?: ArrayLike<{ name: string; size: number }> | null }) => {
-      const list = el.files ? Array.from(el.files) : [];
-      return list.map((f) => ({ name: f.name, size: f.size }));
-    },
-  );
+  logger.info(`greenhouse upload: resolving ${kind} input`, {
+    service: "greenhouse",
+    action: "upload",
+    metadata: { kind, size_bytes: stat.size },
+  });
+
+  // Escape open menus before upload. Job-boards unmounts #resume after a
+  // successful setInputFiles and shows a filename chip — verify must treat
+  // that pattern as success, not re-resolve fail.
   const filename = path.basename(abs);
-  const verified =
-    files.some((f) => f.name === filename) ||
-    files.some((f) => f.size === stat.size);
-  return {
-    field: kind,
-    path: abs,
-    filename,
-    size_bytes: stat.size,
-    verified,
-    evidence: verified
-      ? `input files: ${JSON.stringify(files)}`
-      : `upload not reflected; input files: ${JSON.stringify(files)}`,
-  };
+  const preferId = kind === "resume" ? "resume" : "cover_letter";
+  try {
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.waitForTimeout(100);
+
+    const input = await resolveGreenhouseFileInput(page, kind);
+    // Hidden / visually-hidden is intentional — do not click "Attach" (OS dialog).
+    await input.setInputFiles(abs, { timeout: 15_000 });
+
+    // Same locator, immediately — element may already be mid-unmount.
+    let files: Array<{ name: string; size: number }> = [];
+    try {
+      files = await input.evaluate(
+        (el: { files?: ArrayLike<{ name: string; size: number }> | null }) => {
+          const list = el.files ? Array.from(el.files) : [];
+          return list.map((f) => ({ name: f.name, size: f.size }));
+        },
+        { timeout: 2_000 },
+      );
+    } catch {
+      files = [];
+    }
+
+    const inputFilesMatch =
+      files.some((f) => f.name === filename) ||
+      files.some((f) => f.size === stat.size);
+
+    await page.waitForTimeout(350);
+    const stillAttached =
+      (await page
+        .locator(`input[type="file"]#${preferId}`)
+        .count()
+        .catch(() => 0)) > 0;
+
+    const stem = filename.replace(/\.[^.]+$/, "");
+    const bodyText = await page.locator("body").innerText().catch(() => "");
+    const chipVisible =
+      bodyText.includes(filename) ||
+      (stem.length >= 12 && bodyText.includes(stem.slice(0, 24)));
+
+    // setInputFiles threw above if it failed. On GH job-boards, success often
+    // unmounts the input and shows a chip; either signal is enough.
+    const ok =
+      inputFilesMatch || chipVisible || (!stillAttached && files.length === 0);
+
+    logger.info(`greenhouse upload: ${kind} complete`, {
+      service: "greenhouse",
+      action: "upload",
+      metadata: {
+        verified: ok,
+        file_count: files.length,
+        still_attached: stillAttached,
+        chip_visible: chipVisible,
+      },
+    });
+    return {
+      field: kind,
+      path: abs,
+      filename,
+      size_bytes: stat.size,
+      verified: ok,
+      evidence: `input files: ${JSON.stringify(files)}; stillAttached=${stillAttached}; chip=${chipVisible}`,
+    };
+  } catch (err) {
+    const inventory = await inventoryFileInputs(page).catch(() => []);
+    logger.info(`greenhouse upload: ${kind} failed`, {
+      service: "greenhouse",
+      action: "upload",
+      metadata: {
+        error: err instanceof Error ? err.message : String(err),
+        inventory,
+      },
+    });
+    return {
+      field: kind,
+      path: abs,
+      filename,
+      size_bytes: stat.size,
+      verified: false,
+      evidence: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 export async function greenhouseResetForm(page: Page): Promise<FormResetResult> {

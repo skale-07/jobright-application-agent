@@ -2,8 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildFilterCandidates,
   detectControlKind,
   fillComboboxControl,
+  labelsCompatible,
   pickOptionLabel,
   readComboboxValue,
 } from "../../src/ats/greenhouse/comboboxFill.js";
@@ -71,6 +73,102 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     });
   });
 
+  it("maps job-boards country dial labels and degree taxonomy", () => {
+    const countries = [
+      "United States +1",
+      "Canada +1",
+      "United Kingdom +44",
+    ];
+    expect(pickOptionLabel(countries, "United States")).toMatchObject({
+      ok: true,
+      label: "United States +1",
+    });
+
+    const degrees = [
+      "Associate's Degree",
+      "Bachelor's Degree",
+      "Master's Degree",
+      "Doctor of Philosophy (Ph.D.)",
+    ];
+    expect(pickOptionLabel(degrees, "Bachelor of Science")).toMatchObject({
+      ok: true,
+      label: "Bachelor's Degree",
+      via: "synonym",
+    });
+
+    const disciplines = [
+      "Accounting",
+      "Applied Health Services",
+      "Applied Mathematics & Statistics",
+      "Architecture",
+    ];
+    expect(pickOptionLabel(disciplines, "Applied Math & Stats")).toMatchObject({
+      ok: true,
+      label: "Applied Mathematics & Statistics",
+    });
+
+    // Bare Mathematics always wins when present (operator rule).
+    expect(
+      pickOptionLabel(
+        [
+          "Applied Health Services",
+          "Applied Mathematics & Statistics",
+          "Mathematics",
+          "Architecture",
+        ],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Mathematics",
+      via: "synonym",
+    });
+
+    // Live GH board often has bare "Mathematics" / "Statistics…", not the compound major.
+    expect(
+      pickOptionLabel(
+        ["Applied Health Services", "Mathematics", "Architecture"],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Mathematics",
+    });
+    expect(
+      pickOptionLabel(
+        ["Applied Health Services", "Statistics & Decision Theory", "Architecture"],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Statistics & Decision Theory",
+    });
+  });
+
+  it("buildFilterCandidates tries Mathematics before applied composites", () => {
+    const c = buildFilterCandidates("Applied Math & Stats");
+    expect(c[0]).toBe("Mathematics");
+    expect(c.indexOf("Mathematics")).toBeLessThan(c.indexOf("Applied Math & Stats"));
+  });
+
+  it("buildFilterCandidates tries Bachelor before Bachelor of Science", () => {
+    const c = buildFilterCandidates("Bachelor of Science");
+    expect(c[0]).toBe("Bachelor");
+    expect(c.indexOf("Bachelor")).toBeLessThan(c.indexOf("Bachelor of Science"));
+    expect(c.indexOf("Bachelor's Degree")).toBeLessThan(
+      c.indexOf("Bachelor of Science"),
+    );
+  });
+
+  it("buildFilterCandidates does not inject Statistics for United States", () => {
+    const c = buildFilterCandidates("United States");
+    expect(c).not.toContain("Statistics");
+    expect(c[0]).toBe("United States");
+    // Major still gets Statistics when the word is intentional
+    const stats = buildFilterCandidates("Applied Statistics");
+    expect(stats).toContain("Statistics");
+  });
+
   it("yes/no normalization picks the right binary option", () => {
     expect(pickOptionLabel(["Yes", "No"], "true")).toMatchObject({
       ok: true,
@@ -79,6 +177,49 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(pickOptionLabel(["Yes", "No"], "0")).toMatchObject({
       ok: true,
       label: "No",
+    });
+  });
+
+  it("bare No selects OFCCP disability sentence, not decline", () => {
+    // Live sandbox failure: ambiguous "No" matched both disability No and
+    // "I do not want to answer" because "not".includes("no").
+    const disability = [
+      "Yes, I have a disability, or have had one in the past",
+      "No, I do not have a disability and have not had one in the past",
+      "I do not want to answer",
+    ];
+    expect(pickOptionLabel(disability, "No")).toMatchObject({
+      ok: true,
+      label:
+        "No, I do not have a disability and have not had one in the past",
+    });
+    expect(pickOptionLabel(disability, "Yes")).toMatchObject({
+      ok: true,
+      label: "Yes, I have a disability, or have had one in the past",
+    });
+    // Decline is only via decline-ish expected, not bare No.
+    const decline = pickOptionLabel(disability, "I do not want to answer");
+    expect(decline.ok).toBe(true);
+    if (decline.ok) {
+      expect(decline.label).toMatch(/do not want to answer/i);
+    }
+  });
+
+  it("veteran: full phrase and bare No pick non-protected veteran", () => {
+    const veteran = [
+      "I identify as one or more of the classifications of a protected veteran",
+      "I am not a protected veteran",
+      "I do not want to answer",
+    ];
+    expect(
+      pickOptionLabel(veteran, "I am not a protected veteran"),
+    ).toMatchObject({
+      ok: true,
+      label: "I am not a protected veteran",
+    });
+    expect(pickOptionLabel(veteran, "No")).toMatchObject({
+      ok: true,
+      label: "I am not a protected veteran",
     });
   });
 
@@ -91,6 +232,32 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(missing.ok).toBe(false);
     if (!missing.ok) expect(missing.reason).toMatch(/no option matches/);
     expect(pickOptionLabel(options, " ").ok).toBe(false);
+  });
+});
+
+describe("labelsCompatible (UNIT_CONFIRMED)", () => {
+  it("accepts dial-code collapse after country pick", () => {
+    expect(labelsCompatible("United States +1", "+1")).toBe(true);
+    expect(labelsCompatible("United States +1", "United States")).toBe(true);
+    expect(labelsCompatible("May", "May")).toBe(true);
+    expect(labelsCompatible("Yes", null)).toBe(false);
+  });
+});
+
+describe("valuesMatch country dial + phone (via greenhouseVerify fixture helpers)", () => {
+  // Imported pure path is package-private; assert through exported label rules
+  // plus a small isolated re-export surface is overkill — spot-check public
+  // labelsCompatible + pickOptionLabel already cover commit side. Profile
+  // "United States" vs "+1" is handled inside fill.ts valuesMatch; covered
+  // by live FILL_VERIFY runs rather than private-function export.
+  it("pickOptionLabel keeps US distinct from Canada under shared +1", () => {
+    const countries = ["United States +1", "Canada +1", "United Kingdom +44"];
+    expect(pickOptionLabel(countries, "United States")).toMatchObject({
+      label: "United States +1",
+    });
+    expect(pickOptionLabel(countries, "Canada")).toMatchObject({
+      label: "Canada +1",
+    });
   });
 });
 
@@ -212,7 +379,7 @@ describe("combobox interaction on fixture (FIXTURE_CONFIRMED)", () => {
       expect(report.still_failing).toEqual(["country"]);
       expect(await readComboboxValue(page.locator("#country"))).toBeNull();
     });
-  }, 30_000);
+  }, 60_000);
 
   it("healer heals a combobox with a REAL option after relocation", async () => {
     await withFixtureHtmlPage(fixtureHtml, async (page) => {

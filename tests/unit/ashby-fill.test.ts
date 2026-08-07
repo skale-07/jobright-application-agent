@@ -11,6 +11,7 @@ import {
   fillButtonGroup,
   readButtonGroupValue,
 } from "../../src/ats/ashby/buttonGroupFill.js";
+import { readAshbyComboboxValue } from "../../src/ats/ashby/comboboxFill.js";
 import { annotateFullNameField } from "../../src/ats/shared/nameComposition.js";
 import { mapDiscoveredFields } from "../../src/applications/fieldNormalization.js";
 import { buildFillPlan } from "../../src/applications/resolveAnswers.js";
@@ -127,6 +128,11 @@ describe("Ashby fill/upload/verify (M5)", () => {
             "United States",
           );
           expect(await page.locator(COUNTRY_INPUT).inputValue()).toBe("");
+          // Pin the committed-value read path itself (guards the
+          // placeholder filter and shell resolution in ashby/comboboxFill).
+          expect(
+            await readAshbyComboboxValue(page.locator(COUNTRY_INPUT)),
+          ).toBe("United States");
           // Work-auth group pressed "Yes"; demographics group untouched.
           expect(
             await page

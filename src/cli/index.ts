@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import { migrate, openDatabase, closeDatabase } from "../storage/db/client.js";
+import {
+  exportFillOutcomesJsonl,
+  summarizeFillOutcomes,
+} from "../storage/fillOutcomes.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -47,6 +51,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
+import { enqueueJobRightJobs } from "../jobright/enqueueJobs.js";
 import { runJobrightResumeDownload } from "../jobright/resumeDownloadRun.js";
 import { registerResumeMaterial } from "../jobright/materialsRegister.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
@@ -89,11 +94,13 @@ Commands:
   record-jobright [--workflow <name>] [--all] [--derive-fixtures]
   recorder:promote --run <runId> --workflow <name> [--force]
   discover [--fixture] [--max-jobs N] [--probe-detail]
+  enqueue --jobright <url|id> [--jobright ...] [--file path] [--employer-url <greenhouse-url>]
   inspect --job <jobright_job_id> [--application <uuid>] [--fixture] [--save-diagnostics]
   ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
+  ats:fill-outcomes [--summary] [--export <path.jsonl>]
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -120,6 +127,10 @@ Greenhouse fill/verify/upload/reset. SUBMIT stays off.
   Plan only (default): npm run ats:fill -- --fixture greenhouse
   Execute (requires FORM_FILL_ENABLED=true DRY_RUN=false):
     npm run ats:fill -- --fixture greenhouse --execute
+
+Field-fill outcome corpus (local SQLite):
+  npm run ats:fill-outcomes -- --summary
+  npm run ats:fill-outcomes -- --export artifacts/fill-outcomes.jsonl
 
 Greenhouse live read-only inspection:
   Read-only inspection only.
@@ -301,6 +312,101 @@ async function cmdDiscover(
     headless: false,
   });
   console.log(JSON.stringify(report, null, 2));
+}
+
+/**
+ * Collect repeated --jobright / --url values (parseArgs only keeps the last).
+ * Also reads optional --file (one ref per line).
+ */
+function collectEnqueueRefs(argv: string[]): {
+  refs: string[];
+  employerUrl: string | undefined;
+  filePath: string | undefined;
+} {
+  const refs: string[] = [];
+  let employerUrl: string | undefined;
+  let filePath: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a) continue;
+    if (
+      (a === "--jobright" || a === "--url" || a === "--job") &&
+      argv[i + 1] &&
+      !argv[i + 1]!.startsWith("--")
+    ) {
+      refs.push(argv[i + 1]!);
+      i++;
+      continue;
+    }
+    if (a === "--employer-url" && argv[i + 1] && !argv[i + 1]!.startsWith("--")) {
+      employerUrl = argv[i + 1];
+      i++;
+      continue;
+    }
+    if (a === "--file" && argv[i + 1] && !argv[i + 1]!.startsWith("--")) {
+      filePath = argv[i + 1];
+      i++;
+      continue;
+    }
+  }
+  return { refs, employerUrl, filePath };
+}
+
+function cmdEnqueue(): void {
+  // Skip command name; argv is full process args in main — pass rest from caller
+  const raw = process.argv.slice(3);
+  const { refs: flagRefs, employerUrl, filePath } = collectEnqueueRefs(raw);
+  const refs = [...flagRefs];
+
+  if (filePath) {
+    const abs = path.resolve(filePath);
+    if (!fs.existsSync(abs)) {
+      console.error(`File not found: ${abs}`);
+      process.exit(2);
+      return;
+    }
+    refs.push(
+      ...fs
+        .readFileSync(abs, "utf8")
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0 && !l.startsWith("#")),
+    );
+  }
+
+  if (refs.length === 0) {
+    console.error(`Usage:
+  enqueue --jobright <jobright-url-or-id> [--jobright ...]
+  enqueue --jobright <id> --employer-url <greenhouse-apply-url>
+  enqueue --file jobs.txt
+
+Each line in jobs.txt is a JobRight detail URL or bare hex job id.
+Prints application UUID(s) — required for materials:register / submit.`);
+    process.exit(2);
+    return;
+  }
+
+  if (employerUrl && refs.length > 1) {
+    console.error(
+      "Refusing --employer-url with multiple JobRight refs (one Greenhouse apply URL cannot map to many jobs).",
+    );
+    process.exit(2);
+    return;
+  }
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = enqueueJobRightJobs(db, refs, {
+      ...(employerUrl ? { employerApplicationUrl: employerUrl } : {}),
+    });
+    console.log(JSON.stringify(report, null, 2));
+    if (report.failed > 0 || report.blocked > 0) {
+      process.exitCode = report.enqueued + report.reused > 0 ? 3 : 1;
+    }
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 async function cmdInspect(
@@ -964,6 +1070,44 @@ async function cmdAtsFill(
   }
 }
 
+function cmdAtsFillOutcomes(
+  flags: Record<string, string | boolean>,
+): void {
+  const doSummary =
+    flags["summary"] === true ||
+    flags["export"] === undefined ||
+    flags["summary"] === "";
+  const exportPath =
+    typeof flags["export"] === "string" ? flags["export"] : undefined;
+
+  if (!doSummary && !exportPath) {
+    console.error(
+      "Usage: ats:fill-outcomes [--summary] [--export <path.jsonl>]",
+    );
+    process.exit(1);
+  }
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    if (doSummary) {
+      console.log(JSON.stringify(summarizeFillOutcomes(db), null, 2));
+    }
+    if (exportPath) {
+      const rows = exportFillOutcomesJsonl(db);
+      const abs = path.resolve(exportPath);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      const body = rows.map((r) => JSON.stringify(r)).join("\n") + (rows.length ? "\n" : "");
+      fs.writeFileSync(abs, body, "utf8");
+      console.error(
+        JSON.stringify({ exported: rows.length, path: abs }, null, 2),
+      );
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdRecorderPromote(flags: Record<string, string | boolean>): void {
   const runId = flags["run"];
   const workflow = flags["workflow"];
@@ -1022,6 +1166,9 @@ async function main(): Promise<void> {
     case "discover":
       await cmdDiscover(flags);
       return;
+    case "enqueue":
+      cmdEnqueue();
+      return;
     case "inspect":
       await cmdInspect(flags);
       return;
@@ -1030,6 +1177,9 @@ async function main(): Promise<void> {
       return;
     case "ats:fill":
       await cmdAtsFill(flags);
+      return;
+    case "ats:fill-outcomes":
+      cmdAtsFillOutcomes(flags);
       return;
     case "resume:download":
       await cmdResumeDownload(flags);

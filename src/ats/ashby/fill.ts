@@ -15,10 +15,18 @@ import {
 import {
   greenhouseFillFromPlan,
   greenhouseVerifyFromPlan,
+  locatorForField,
   type ExecutableFillEntry,
   type FieldMeta,
 } from "../greenhouse/fill.js";
-import { pickOptionLabel } from "../greenhouse/comboboxFill.js";
+import {
+  detectControlKind,
+  pickOptionLabel,
+} from "../greenhouse/comboboxFill.js";
+import {
+  fillAshbyCombobox,
+  readAshbyComboboxValue,
+} from "./comboboxFill.js";
 import {
   detectButtonGroup,
   fillButtonGroup,
@@ -27,15 +35,19 @@ import {
 import { ashbySelectorsV1 } from "./selectors.js";
 
 /**
- * Ashby fill executor. Radio-typed entries are Ashby button groups
- * (role=radiogroup + <button> children — the generic executor's radio
- * branch expects input[type=radio] and cannot handle them); everything
- * else delegates to the generic executor in ../greenhouse/fill.ts, whose
- * combobox path already commits and reads back correctly against Ashby's
- * role-based portal listbox DOM. The full guard chain
- * (assertFormFillAllowed → assertExecutableApprovedEntry, which rejects
- * textarea/demographics/unapproved) runs on the button-group path here and
- * inside the generic executor for the rest.
+ * Ashby fill executor. Three-way dispatch:
+ * - radio-typed entries are Ashby button groups (role=radiogroup +
+ *   <button> children — the generic executor's radio branch expects
+ *   input[type=radio] and cannot handle them) → ./buttonGroupFill.ts;
+ * - live combobox-kind controls → ./comboboxFill.ts, because the
+ *   greenhouse combobox reader keys on React-select shells and cannot see
+ *   Ashby's committed-value display node (span[class*="__selected"]);
+ * - everything else delegates to the generic executor in
+ *   ../greenhouse/fill.ts.
+ * The full guard chain (assertFormFillAllowed →
+ * assertExecutableApprovedEntry, which rejects textarea/demographics/
+ * unapproved) runs on both local paths here and inside the generic
+ * executor for the rest.
  */
 
 function isApprovedExecutable(
@@ -77,6 +89,45 @@ function isRadioEntry(
   return (fieldMeta.get(entry.field_id)?.type ?? entry.type) === "radio";
 }
 
+function entryLocator(
+  page: Page,
+  entry: ExecutableFillEntry,
+  fieldMeta: Map<string, FieldMeta>,
+) {
+  const meta = fieldMeta.get(entry.field_id);
+  return locatorForField(page, {
+    field_id: entry.field_id,
+    label: entry.label,
+    ...(meta?.name ? { name: meta.name } : {}),
+    ...(meta?.inputId ? { inputId: meta.inputId } : {}),
+  });
+}
+
+/** Live probe: only text/select-typed entries can be combobox widgets. */
+async function isComboboxEntry(
+  page: Page,
+  entry: ExecutableFillEntry,
+  fieldMeta: Map<string, FieldMeta>,
+): Promise<boolean> {
+  const type = fieldMeta.get(entry.field_id)?.type ?? entry.type;
+  if (type !== "text" && type !== "select") return false;
+  try {
+    return (
+      (await detectControlKind(entryLocator(page, entry, fieldMeta))) ===
+      "combobox"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isVerifiableFill(entry: ExecutableFillEntry): boolean {
+  return (
+    (entry.action === "fill" || entry.action === "FILL") &&
+    (!("approved" in entry) || entry.approved === true)
+  );
+}
+
 export async function ashbyFillFromPlan(
   page: Page,
   entries: ExecutableFillEntry[],
@@ -85,12 +136,49 @@ export async function ashbyFillFromPlan(
   assertFormFillAllowed("ashby.fill");
 
   const groupEntries = entries.filter((e) => isRadioEntry(e, fieldMeta));
-  const otherEntries = entries.filter((e) => !isRadioEntry(e, fieldMeta));
+  const rest = entries.filter((e) => !isRadioEntry(e, fieldMeta));
+  const comboboxEntries: ExecutableFillEntry[] = [];
+  const delegateEntries: ExecutableFillEntry[] = [];
+  for (const e of rest) {
+    if (isApprovedExecutable(e) && (await isComboboxEntry(page, e, fieldMeta))) {
+      comboboxEntries.push(e);
+    } else {
+      delegateEntries.push(e);
+    }
+  }
 
-  const base = await greenhouseFillFromPlan(page, otherEntries, fieldMeta);
+  const base = await greenhouseFillFromPlan(page, delegateEntries, fieldMeta);
   const filled = [...base.filled];
   const skipped = [...base.skipped];
   const errors = [...base.errors];
+
+  for (const entry of comboboxEntries) {
+    try {
+      assertExecutableApprovedEntry(entry as ApprovedFillPlanEntry);
+    } catch (err) {
+      errors.push(
+        `${entry.field_id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      continue;
+    }
+    try {
+      const result = await fillAshbyCombobox(
+        page,
+        entryLocator(page, entry, fieldMeta),
+        entry.value,
+      );
+      if (!result.committed) {
+        throw new Error(
+          `combobox option not committed: ${result.notes.join("; ")}`,
+        );
+      }
+      filled.push(entry.canonical_field ?? entry.field_id);
+    } catch (err) {
+      errors.push(
+        `${entry.field_id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
 
   for (const entry of groupEntries) {
     if (!isApprovedExecutable(entry)) {
@@ -148,11 +236,47 @@ export async function ashbyVerifyFromPlan(
   fieldMeta: Map<string, FieldMeta>,
 ): Promise<FormVerificationResult> {
   const groupEntries = entries.filter((e) => isRadioEntry(e, fieldMeta));
-  const otherEntries = entries.filter((e) => !isRadioEntry(e, fieldMeta));
+  const rest = entries.filter((e) => !isRadioEntry(e, fieldMeta));
+  const comboboxEntries: ExecutableFillEntry[] = [];
+  const delegateEntries: ExecutableFillEntry[] = [];
+  for (const e of rest) {
+    if (isVerifiableFill(e) && (await isComboboxEntry(page, e, fieldMeta))) {
+      comboboxEntries.push(e);
+    } else {
+      delegateEntries.push(e);
+    }
+  }
 
-  const base = await greenhouseVerifyFromPlan(page, otherEntries, fieldMeta);
+  const base = await greenhouseVerifyFromPlan(page, delegateEntries, fieldMeta);
   const fields = [...base.fields];
   const warnings = [...base.warnings];
+
+  for (const entry of comboboxEntries) {
+    const canonical = entry.canonical_field ?? entry.field_id;
+    try {
+      const observed = await readAshbyComboboxValue(
+        entryLocator(page, entry, fieldMeta),
+      );
+      const match =
+        observed !== null && pickOptionLabel([observed], String(entry.value)).ok;
+      fields.push({
+        canonical_field: canonical,
+        expected: entry.value,
+        observed,
+        match,
+      });
+    } catch (err) {
+      warnings.push(
+        `verify ${canonical}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      fields.push({
+        canonical_field: canonical,
+        expected: entry.value,
+        observed: null,
+        match: false,
+      });
+    }
+  }
 
   const fillable = groupEntries.filter(
     (e) =>

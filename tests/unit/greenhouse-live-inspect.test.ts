@@ -263,6 +263,27 @@ describe("Greenhouse URL validation (UNIT_CONFIRMED)", () => {
       ).passed,
     ).toBe(false);
   });
+
+  it("accepts JobRight embed job_app URLs (?for= + ?token=)", () => {
+    const r = validateGreenhouseApplicationUrl(
+      "https://job-boards.greenhouse.io/embed/job_app?for=thenuclearcompany&jr_id=abc&token=5383171008&utm_source=jobright",
+    );
+    expect(r.passed).toBe(true);
+    expect(r.boardToken).toBe("thenuclearcompany");
+    expect(r.greenhouseJobId).toBe("5383171008");
+    expect(r.normalizedUrl).toBe(
+      "https://job-boards.greenhouse.io/thenuclearcompany/jobs/5383171008",
+    );
+    expect(r.warnings).toContain("embed_job_app_url");
+  });
+
+  it("rejects embed without token", () => {
+    expect(
+      validateGreenhouseApplicationUrl(
+        "https://job-boards.greenhouse.io/embed/job_app?for=acme",
+      ).passed,
+    ).toBe(false);
+  });
 });
 
 describe("Greenhouse identity (UNIT_CONFIRMED)", () => {
