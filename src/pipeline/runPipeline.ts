@@ -14,7 +14,7 @@ import { createAutomationRun, completeAutomationRun } from "../queue/automationR
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { openEssayReviewItem } from "../applications/essayAnswers.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
-import { runGreenhouseSubmission } from "../applications/submitRun.js";
+import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
@@ -55,7 +55,7 @@ export type PipelineOptions = {
   fixtureHtmlPath?: string;
   /** Delegate READY_TO_SUBMIT to the (fully gated) submission path. */
   submit?: boolean;
-  /** Forwarded to runGreenhouseSubmission for unattended runs. */
+  /** Forwarded to runAtsSubmission for unattended runs. */
   assumeYes?: boolean;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
@@ -569,7 +569,7 @@ async function step(
 
     case "FIELD_VERIFICATION": {
       // Reached via the essay path (resume-essay). The binding pre-click
-      // verification happens inside runGreenhouseSubmission on the live page;
+      // verification happens inside runAtsSubmission on the live page;
       // this stage records readiness only.
       transitionApplication(db, {
         applicationId: app.id,
@@ -589,7 +589,7 @@ async function step(
           stop: "submit_boundary",
         };
       }
-      const result = await runGreenhouseSubmission({
+      const result = await runAtsSubmission({
         db,
         applicationId: app.id,
         headless: ctx.options.headless ?? false,

@@ -14,7 +14,7 @@ import {
   saveHumanEssayAnswer,
   unansweredEssayFieldKeys,
 } from "../applications/essayAnswers.js";
-import { runGreenhouseSubmission } from "../applications/submitRun.js";
+import { runAtsSubmission } from "../applications/submitRun.js";
 import {
   retryFailedApplications,
   runPipeline,
@@ -677,7 +677,7 @@ async function cmdRunPipeline(
   }
 }
 
-/** Phase 7: human-approved submission. All gates live in runGreenhouseSubmission. */
+/** Phase 7: human-approved submission. All gates live in runAtsSubmission. */
 async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void> {
   const application = flags["application"];
   if (typeof application !== "string") {
@@ -691,7 +691,7 @@ async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void>
   const db = openDatabase();
   try {
     migrate(db);
-    const report = await runGreenhouseSubmission({
+    const report = await runAtsSubmission({
       db,
       applicationId: application,
       headless: flags["headed"] !== true,
