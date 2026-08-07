@@ -244,6 +244,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
             phase_trace: [],
             agent: null,
             gmail: null,
+            need: null,
             session: "ephemeral",
             notes: [],
           };
@@ -276,6 +277,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           phase_trace: [],
           agent: null,
           gmail: null,
+          need: null,
           session: "ephemeral",
           notes: [],
         }),
@@ -308,6 +310,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           phase_trace: [],
           agent: null,
           gmail: null,
+          need: null,
           session: "ephemeral",
           notes: [],
         }),

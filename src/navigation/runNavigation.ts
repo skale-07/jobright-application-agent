@@ -18,8 +18,35 @@ import {
   clickApplyAndCaptureExternalUrl,
   readExternalApplyHrefs,
 } from "../jobright/navigateToEmployer.js";
+import { navigateViaSidecar } from "../agent/navigate.js";
+import type { AgentNavigateResult } from "../agent/contract.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
+
+/** Hosts the nav agent may traverse in addition to the job page's own. */
+const KNOWN_ATS_HOSTS = [
+  "boards.greenhouse.io",
+  "job-boards.greenhouse.io",
+  "greenhouse.io",
+  "jobs.lever.co",
+  "jobs.eu.lever.co",
+  "jobs.ashbyhq.com",
+];
+
+/** Bounded reachability probe for the operator's CDP Chrome. */
+export async function probeCdpEndpoint(cdpUrl: string): Promise<boolean> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2_000);
+    const res = await fetch(new URL("/json/version", cdpUrl), {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 export type NavigationWall =
   | "none"
@@ -54,6 +81,8 @@ export type NavigationReport = {
   phase_trace: NavigationPhaseTrace[];
   agent: { turns_used: number; steps_used: number; domains_visited: string[] } | null;
   gmail: { polls_used: number; matched_message_id: string | null } | null;
+  /** Present when the agent paused on an email-verification wall. */
+  need: AgentNavigateResult["need"] | null;
   session: "cdp" | "ephemeral";
   notes: string[];
   report_path?: string;
@@ -75,6 +104,10 @@ export type RunNavigationInput = {
   sessionOverride?: NavSession;
   /** Test seam: replaces the JobRight page URL goto target check. */
   skipAuthLossCheck?: boolean;
+  /** Test seam: fake sidecar for the agent phase. */
+  agentCommandOverride?: { command: string; args: string[] };
+  /** Test seam: force the agent-phase availability decision. */
+  agentPhaseOverride?: boolean;
 };
 
 const TOTAL_WALLCLOCK_MS = 8 * 60_000;
@@ -106,6 +139,7 @@ export async function runNavigation(
     phase_trace: [],
     agent: null,
     gmail: null,
+    need: null,
     session: "ephemeral",
     notes: [],
   };
@@ -118,10 +152,19 @@ export async function runNavigation(
   }
   report.jobright_job_id = resolved.target.jobrightJobId;
 
+  // Agent phase (N3) needs the operator's CDP Chrome; when it's available,
+  // phases A/B run in the SAME Chrome so the agent continues seamlessly.
+  const cfg0 = getConfig();
+  const agentPhasePossible =
+    input.agentPhaseOverride ??
+    (cfg0.agentFallbackEnabled && (await probeCdpEndpoint(cfg0.agentCdpUrl)));
+  if (agentPhasePossible) report.session = "cdp";
+
   const session: NavSession =
     input.sessionOverride ??
     new PlaywrightServiceSession({
       service: "jobright",
+      ...(agentPhasePossible ? { mode: "CDP_ATTACH" as const } : {}),
       headless: input.headless ?? true,
       slowMoMs: 40,
     });
@@ -188,12 +231,6 @@ export async function runNavigation(
     const html = await page.content();
     const finalUrl = page.url();
     const title = await page.title().catch(() => "");
-    const loginWall = detectLoginWall({ finalUrl, html, title });
-    if (loginWall.detected) {
-      report.wall = "auth";
-      report.phase_trace.push({ phase: "B_apply_click", outcome: "login wall" });
-      return persist(report);
-    }
     const captcha = detectBlockingCaptcha({
       finalUrl,
       html,
@@ -206,13 +243,111 @@ export async function runNavigation(
       report.phase_trace.push({ phase: "B_apply_click", outcome: "blocking captcha" });
       return persist(report);
     }
+    const loginWall = detectLoginWall({ finalUrl, html, title });
+    if (loginWall.detected) {
+      report.phase_trace.push({ phase: "B_apply_click", outcome: "login wall" });
+      if (!agentPhasePossible) {
+        report.wall = "auth";
+        return persist(report);
+      }
+      // The agent phase can attempt the wall (sign-in / account flow).
+    } else {
+      report.phase_trace.push({
+        phase: "B_apply_click",
+        outcome: "unresolved by deterministic phases",
+      });
+    }
 
-    report.wall = "budget";
-    report.phase_trace.push({
-      phase: "B_apply_click",
-      outcome: "unresolved (agent phase lands in N3)",
-    });
-    return persist(report);
+    // Phase C — agent (guarded by AGENT_FALLBACK_ENABLED + reachable CDP).
+    if (!agentPhasePossible) {
+      report.wall = "budget";
+      return persist(report);
+    }
+    if (Date.now() > deadline) {
+      report.wall = "budget";
+      return persist(report);
+    }
+
+    const startUrl =
+      finalUrl && finalUrl !== "about:blank" ? finalUrl : resolved.target.jobUrl;
+    const allowedDomains = Array.from(
+      new Set(
+        [
+          "jobright.ai",
+          ...KNOWN_ATS_HOSTS,
+          ...(startUrl.startsWith("https://")
+            ? [new URL(startUrl).hostname]
+            : []),
+        ].slice(0, 20),
+      ),
+    );
+
+    try {
+      const agentResult = await navigateViaSidecar({
+        task: {
+          task_version: 1,
+          task_type: "navigate",
+          goal: "Reach the employer's job-application form page for this posting, starting from the current page.",
+          start_url: startUrl,
+          cdp_url: cfg0.agentCdpUrl,
+          allowed_domains: allowedDomains,
+          max_steps: 25,
+          timeout_ms: Math.max(
+            30_000,
+            Math.min(180_000, deadline - Date.now()),
+          ),
+          credentials: { available: false },
+          gmail_available: false,
+          resume: undefined,
+        },
+        ...(input.agentCommandOverride
+          ? { commandOverride: input.agentCommandOverride }
+          : {}),
+      });
+      report.agent = {
+        turns_used: 1,
+        steps_used: agentResult.steps_used,
+        domains_visited: agentResult.domains_visited,
+      };
+      report.notes.push(...agentResult.notes.map((n) => `agent: ${n}`));
+      if (agentResult.status === "ok" && agentResult.final_url) {
+        report.phase_trace.push({
+          phase: "C_agent",
+          outcome: "resolved",
+          evidence: new URL(agentResult.final_url).hostname,
+        });
+        return resolveAndPersist(
+          report,
+          db,
+          applicationId,
+          agentResult.final_url,
+          "agent",
+        );
+      }
+      if (agentResult.status === "needs_input") {
+        // Gmail micro-turn lands in N4; until then this is a review wall.
+        report.need = agentResult.need ?? null;
+        report.wall = "auth";
+        report.phase_trace.push({
+          phase: "C_agent",
+          outcome: "needs email verification (gmail micro-turn lands in N4)",
+        });
+        return persist(report);
+      }
+      report.wall = agentResult.wall === "none" ? "budget" : agentResult.wall;
+      report.phase_trace.push({
+        phase: "C_agent",
+        outcome: `wall: ${report.wall}`,
+      });
+      return persist(report);
+    } catch (err) {
+      report.notes.push(
+        `agent phase failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      report.wall = "budget";
+      report.phase_trace.push({ phase: "C_agent", outcome: "error" });
+      return persist(report);
+    }
   } finally {
     await session.close().catch(() => undefined);
   }
