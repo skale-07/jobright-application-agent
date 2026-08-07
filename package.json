@@ -20,6 +20,15 @@
     "retry": "tsx src/cli/index.ts retry",
     "resume:essay": "tsx src/cli/index.ts resume-essay",
     "resume:download": "tsx src/cli/index.ts resume:download",
+    "materials:register": "tsx src/cli/index.ts materials:register",
+    "submit": "tsx src/cli/index.ts submit",
+    "review": "tsx src/cli/index.ts review",
+    "review:resolve": "tsx src/cli/index.ts review:resolve",
+    "contacts:extract": "tsx src/cli/index.ts contacts:extract",
+    "email:generate": "tsx src/cli/index.ts email:generate",
+    "draft:create": "tsx src/cli/index.ts draft:create",
+    "draft:verify": "tsx src/cli/index.ts draft:verify",
+    "agent:author": "tsx src/cli/index.ts agent:author",
     "report": "tsx src/cli/index.ts report",
     "login:jobright": "tsx src/cli/index.ts login --service jobright",
     "login:jobright:cdp": "tsx src/cli/index.ts login --service jobright --cdp http://127.0.0.1:9222",
@@ -44,6 +53,7 @@
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.5.0",
+    "openai": "^7.4.0",
     "playwright": "^1.61.1",
     "zod": "^3.25.67"
   },

@@ -2,7 +2,33 @@
 import { migrate, openDatabase, closeDatabase } from "../storage/db/client.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
-import { listOpenReviewItems } from "../queue/reviewItems.js";
+import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
+import { getApplication, transitionApplication } from "../queue/stateMachine.js";
+import {
+  ESSAY_REVIEW_TITLE,
+  listHumanEssayAnswers,
+  saveHumanEssayAnswer,
+  unansweredEssayFieldKeys,
+} from "../applications/essayAnswers.js";
+import { runGreenhouseSubmission } from "../applications/submitRun.js";
+import {
+  retryFailedApplications,
+  runPipeline,
+  setEmployerApplicationUrl,
+} from "../pipeline/runPipeline.js";
+import { runContactsExtraction } from "../contacts/extractContacts.js";
+import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
+import { startDashboard } from "../dashboard/server.js";
+import { runAgentAuthoring } from "../agent/authorRun.js";
+import { buildReportSummary } from "../dashboard/reportData.js";
+import { listContacts } from "../contacts/repository.js";
+import { generateEmailForContact } from "../contacts/emailGenerate.js";
+import { OpenAiEmailClient } from "../contacts/emailLlm.js";
+import {
+  getLatestUncertainSubmission,
+  markSubmissionFailed,
+  markSubmissionVerified,
+} from "../queue/submissionsRepo.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -22,6 +48,7 @@ import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { runJobrightResumeDownload } from "../jobright/resumeDownloadRun.js";
+import { registerResumeMaterial } from "../jobright/materialsRegister.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { JOBRIGHT_SELECTOR_REGISTRY_VERSION } from "../jobright/selectors/v1.js";
 import {
@@ -68,6 +95,19 @@ Commands:
   ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
   ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
   resume:download --job <jobright_job_id> [--yes] [--headless]
+  materials:register --application <uuid> --file <path.pdf> [--label domain]
+  resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
+  submit --application <uuid> [--headed] [--yes]
+  review
+  review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
+  run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
+  retry
+  contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
+  email:generate --application <uuid> [--contact <id>] [--persona <id>]
+  draft:create --application <uuid> --contact <contact_id> [--headed]
+  draft:verify --draft <draft_id> [--headed]
+  dashboard
+  agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -151,45 +191,16 @@ function cmdMigrate(): void {
 }
 
 function cmdReport(): void {
-  const config = getConfig();
   const db = openDatabase();
   try {
     migrate(db);
-    const apps = db
-      .prepare(`SELECT state, COUNT(*) AS n FROM applications GROUP BY state`)
-      .all();
-    const openReviews = listOpenReviewItems(db);
-    const sessions = listServiceSessionRows(db);
-    const services = ["jobright", "linkedin", "outlook"] as const;
-    const auth = services.map((service) => {
-      const cfg = getServiceAuthConfig(service);
-      const readiness = describeSessionReadiness(service, cfg.defaultMode);
-      const row = sessions.find((s) => s.service === service);
-      return {
-        service,
-        mode: cfg.defaultMode,
-        ready: readiness.ready,
-        detail: readiness.detail,
-        last_status: row?.last_status ?? null,
-        last_validated_at: row?.last_validated_at ?? null,
-      };
-    });
-    const captureSummary = summarizeLiveCaptures();
+    // Shared with the dashboard (src/dashboard/reportData.ts) so the two
+    // can never disagree; live_captures stays CLI-only.
     console.log(
       JSON.stringify(
         {
-          database: config.databasePath,
-          rollout_stage: deriveRolloutStage(config),
-          dry_run: config.dryRun,
-          form_fill_enabled: config.formFillEnabled,
-          submit_enabled: config.submitEnabled,
-          outlook_drafts_enabled: config.outlookDraftsEnabled,
-          email_send_enabled: config.emailSendEnabled,
-          applications_by_state: apps,
-          open_review_items: openReviews.length,
-          auth,
-          sensitive_profile: sensitiveProfileStatus(),
-          live_captures: captureSummary,
+          ...buildReportSummary(db),
+          live_captures: summarizeLiveCaptures(),
         },
         null,
         2,
@@ -437,6 +448,440 @@ async function cmdAtsInspect(
   process.exit(1);
 }
 
+/** Post-submit: extract JobRight contacts for one application. */
+async function cmdContactsExtract(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error(
+      "Usage: contacts:extract --application <uuid> [--fixture <html-path>] [--headed]",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runContactsExtraction({
+      db,
+      applicationId: application,
+      ...(typeof flags["fixture"] === "string"
+        ? { fixtureHtmlPath: flags["fixture"] }
+        : {}),
+      headless: flags["headed"] !== true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Outreach generation (the only LLM boundary in this codebase).
+ * Prints the generated email for inspection; the Outlook Drafts folder is
+ * the final human review surface.
+ */
+async function cmdEmailGenerate(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error(
+      "Usage: email:generate --application <uuid> [--contact <id>] [--persona <id>]",
+    );
+    console.error(
+      "Requires EMAIL_GENERATION_ENABLED=true and OPENAI_API_KEY in .env.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const contacts = listContacts(db, application);
+    const targets =
+      typeof flags["contact"] === "string"
+        ? contacts.filter((c) => c.id === flags["contact"])
+        : contacts;
+    if (targets.length === 0) {
+      console.error(
+        "No matching contacts — run contacts:extract first (or check --contact id).",
+      );
+      process.exit(1);
+      return;
+    }
+    const client = new OpenAiEmailClient();
+    const results = [];
+    for (const contact of targets) {
+      results.push(
+        await generateEmailForContact({
+          db,
+          applicationId: application,
+          contactId: contact.id,
+          client,
+          ...(typeof flags["persona"] === "string"
+            ? { personaId: flags["persona"] }
+            : {}),
+        }),
+      );
+    }
+    console.log(JSON.stringify(results, null, 2));
+    if (results.some((r) => r.validation_status === "REJECTED")) {
+      process.exitCode = 3;
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/** Phase 7+: sequential pipeline driver. Submission stays behind its own gates. */
+async function cmdRunPipeline(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const app = typeof flags["app"] === "string" ? flags["app"] : undefined;
+    const url = typeof flags["url"] === "string" ? flags["url"] : undefined;
+    if (url) {
+      if (!app) {
+        console.error("--url requires --app <uuid> to know which job it belongs to");
+        process.exit(2);
+        return;
+      }
+      setEmployerApplicationUrl(db, app, url);
+      console.log(`Stored employer application URL for ${app}`);
+    }
+    const report = await runPipeline({
+      db,
+      ...(app ? { applicationId: app } : {}),
+      maxApplications:
+        typeof flags["max"] === "string" ? Number(flags["max"]) : 1,
+      headless: flags["headed"] !== true,
+      ...(typeof flags["fixture-html"] === "string"
+        ? { fixtureHtmlPath: flags["fixture-html"] }
+        : {}),
+      submit: flags["submit"] === true,
+      assumeYes: flags["yes"] === true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/** Phase 7: human-approved submission. All gates live in runGreenhouseSubmission. */
+async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error("Usage: submit --application <uuid> [--headed] [--yes]");
+    console.error(
+      "Requires FORM_FILL_ENABLED=true DRY_RUN=false SUBMIT_ENABLED=true.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runGreenhouseSubmission({
+      db,
+      applicationId: application,
+      headless: flags["headed"] !== true,
+      assumeYes: flags["yes"] === true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+    if (report.outcome !== "SUBMITTED_VERIFIED") {
+      process.exitCode = report.outcome === "UNCERTAIN" ? 3 : 1;
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+function cmdReview(): void {
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const items = listOpenReviewItems(db);
+    console.log(
+      JSON.stringify(
+        items.map((i) => ({
+          id: i.id,
+          kind: i.kind,
+          application_id: i.application_id,
+          title: i.title,
+          created_at: i.created_at,
+          payload: JSON.parse(i.payload_json),
+        })),
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Operator resolution of an uncertain submission.
+ * --outcome submitted      : receipt confirmed to exist → SUBMITTED
+ * --outcome not-submitted  : confirmed nothing went through; --requeue for retry
+ */
+function cmdReviewResolve(flags: Record<string, string | boolean>): void {
+  const id = flags["id"];
+  const outcome = flags["outcome"];
+  if (
+    typeof id !== "string" ||
+    (outcome !== "submitted" && outcome !== "not-submitted")
+  ) {
+    console.error(
+      "Usage: review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const item = listOpenReviewItems(db).find((i) => i.id === id);
+    if (!item) {
+      console.error(`No open review item with id ${id}`);
+      process.exit(1);
+      return;
+    }
+    if (item.kind !== "UNCERTAIN_SUBMISSION" || !item.application_id) {
+      console.error(
+        `review:resolve currently handles UNCERTAIN_SUBMISSION items only (got ${item.kind})`,
+      );
+      process.exit(1);
+      return;
+    }
+    const applicationId = item.application_id;
+    const uncertain = getLatestUncertainSubmission(db, applicationId);
+
+    if (outcome === "submitted") {
+      if (uncertain) {
+        markSubmissionVerified(db, uncertain.id, {
+          submitted: true,
+          submitted_at: new Date().toISOString(),
+          confirmation_url: "operator://review-resolve",
+          confirmation_text: "Operator confirmed receipt exists",
+          application_identifier: null,
+          screenshot_path: uncertain.screenshot_path ?? "",
+        });
+      }
+      transitionApplication(db, {
+        applicationId,
+        nextState: "SUBMITTED",
+        reason: "operator confirmed submission receipt (review:resolve)",
+      });
+      resolveReviewItem(db, id, { outcome: "submitted", by: "review:resolve" });
+      console.log(
+        JSON.stringify({ resolved: id, outcome, state: "SUBMITTED" }, null, 2),
+      );
+      return;
+    }
+
+    // not-submitted
+    if (uncertain) {
+      markSubmissionFailed(
+        db,
+        uncertain.id,
+        "operator confirmed nothing was submitted",
+      );
+    }
+    transitionApplication(db, {
+      applicationId,
+      nextState: "FAILED_RETRYABLE",
+      reason: "operator confirmed no submission occurred (review:resolve)",
+    });
+    if (flags["requeue"] === true) {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "QUEUED",
+        reason: "operator requeue after uncertain resolution",
+      });
+    }
+    resolveReviewItem(db, id, {
+      outcome: "not-submitted",
+      requeued: flags["requeue"] === true,
+      by: "review:resolve",
+    });
+    console.log(
+      JSON.stringify(
+        {
+          resolved: id,
+          outcome,
+          state: flags["requeue"] === true ? "QUEUED" : "FAILED_RETRYABLE",
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Phase 8: human-authored essay answers for ATS-form free-text questions.
+ * Distinct from outreach email generation — essays are never machine-written.
+ */
+function cmdResumeEssay(flags: Record<string, string | boolean>): void {
+  const application = flags["application"];
+  const field = flags["field"];
+  const file = flags["file"];
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+
+    // List mode: what still needs writing.
+    if (typeof application !== "string") {
+      const items = listOpenReviewItems(db).filter(
+        (i) => i.kind === "ESSAY",
+      );
+      const apps = db
+        .prepare(
+          `SELECT a.id, a.state, j.company, j.role FROM applications a
+           JOIN jobs j ON j.id = a.job_id
+           WHERE a.state = 'ESSAY_REQUIRED'`,
+        )
+        .all() as Array<{
+        id: string;
+        state: string;
+        company: string;
+        role: string;
+      }>;
+      console.log(
+        JSON.stringify(
+          {
+            essay_required_applications: apps,
+            open_essay_review_items: items.map((i) => ({
+              id: i.id,
+              application_id: i.application_id,
+              essays: JSON.parse(i.payload_json),
+            })),
+            usage:
+              "resume-essay --application <uuid> --field <field_id> --file <answer.txt>",
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+
+    if (typeof field !== "string" || typeof file !== "string") {
+      console.error(
+        "Usage: resume-essay --application <uuid> --field <field_id> --file <answer.txt>",
+      );
+      process.exit(2);
+      return;
+    }
+
+    const app = getApplication(db, application);
+    if (!app) {
+      console.error(`Unknown application: ${application}`);
+      process.exit(1);
+      return;
+    }
+
+    const abs = path.resolve(file);
+    if (!fs.existsSync(abs)) {
+      console.error(`Answer file not found: ${abs}`);
+      process.exit(1);
+      return;
+    }
+    const text = fs.readFileSync(abs, "utf8");
+    const saved = saveHumanEssayAnswer(db, {
+      applicationId: application,
+      fieldKey: field,
+      text,
+      sourceFile: abs,
+    });
+
+    // When every essay the review item asked for has an answer, resolve it
+    // and move the application back toward verification.
+    const essayItems = listOpenReviewItems(db).filter(
+      (i) => i.kind === "ESSAY" && i.application_id === application,
+    );
+    let resolved = false;
+    let remaining: string[] = [];
+    for (const item of essayItems) {
+      remaining = unansweredEssayFieldKeys(db, application, item);
+      if (remaining.length === 0) {
+        resolveReviewItem(db, item.id, {
+          resolved_by: "resume-essay",
+          answers: listHumanEssayAnswers(db, application).map((a) => ({
+            field_key: a.field_key,
+            chars: a.text.length,
+          })),
+        });
+        resolved = true;
+      }
+    }
+    if (
+      resolved &&
+      getApplication(db, application)?.state === "ESSAY_REQUIRED"
+    ) {
+      transitionApplication(db, {
+        applicationId: application,
+        nextState: "FIELD_VERIFICATION",
+        reason: "all essay answers provided via resume-essay",
+      });
+    }
+
+    console.log(
+      JSON.stringify(
+        {
+          answer_id: saved.id,
+          field_key: field,
+          chars: text.trim().length,
+          review_item_title: ESSAY_REVIEW_TITLE,
+          review_resolved: resolved,
+          unanswered_fields: remaining,
+          application_state: getApplication(db, application)?.state,
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+function cmdMaterialsRegister(flags: Record<string, string | boolean>): void {
+  const application = flags["application"];
+  const file = flags["file"];
+  if (typeof application !== "string" || typeof file !== "string") {
+    console.error(
+      "Usage: materials:register --application <uuid> --file <path.pdf> [--label domain]",
+    );
+    console.error(
+      "Registers a pre-written domain resume as this application's verified resume material.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const result = registerResumeMaterial({
+      db,
+      applicationId: application,
+      filePath: file,
+      ...(typeof flags["label"] === "string" ? { label: flags["label"] } : {}),
+    });
+    console.log(JSON.stringify(result, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 async function cmdResumeDownload(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
@@ -589,22 +1034,131 @@ async function main(): Promise<void> {
     case "resume:download":
       await cmdResumeDownload(flags);
       return;
+    case "materials:register":
+      cmdMaterialsRegister(flags);
+      return;
+    case "submit":
+      await cmdSubmit(flags);
+      return;
+    case "review":
+      cmdReview();
+      return;
+    case "review:resolve":
+      cmdReviewResolve(flags);
+      return;
+    case "contacts:extract":
+      await cmdContactsExtract(flags);
+      return;
+    case "email:generate":
+      await cmdEmailGenerate(flags);
+      return;
+    case "draft:create": {
+      const application = flags["application"];
+      const contact = flags["contact"];
+      if (typeof application !== "string" || typeof contact !== "string") {
+        console.error(
+          "Usage: draft:create --application <uuid> --contact <contact_id> [--headed]",
+        );
+        console.error(
+          "Requires OUTLOOK_DRAFTS_ENABLED=true and DRY_RUN=false. Drafts only — nothing is ever dispatched.",
+        );
+        process.exit(2);
+        return;
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const report = await createOutlookDraft({
+          db,
+          applicationId: application,
+          contactId: contact,
+          headless: flags["headed"] !== true,
+        });
+        console.log(JSON.stringify(report, null, 2));
+        if (report.status !== "SAVED") process.exitCode = 1;
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
+    case "agent:author": {
+      const url = flags["url"];
+      if (typeof url !== "string") {
+        console.error("Usage: agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]");
+        console.error(
+          "Phase 6 J1 authoring sidecar. Requires AGENT_AUTHORING_ENABLED=true, the agent/ venv, and a debug Chrome (npm run chrome:debug:jobright).",
+        );
+        process.exit(2);
+        return;
+      }
+      const report = await runAgentAuthoring({
+        url,
+        ...(typeof flags["cdp"] === "string" ? { cdpUrl: flags["cdp"] } : {}),
+      });
+      console.log(JSON.stringify(report, null, 2));
+      if (report.status !== "ok") process.exitCode = 1;
+      return;
+    }
+    case "draft:verify": {
+      const draft = flags["draft"];
+      if (typeof draft !== "string") {
+        console.error("Usage: draft:verify --draft <draft_id> [--headed]");
+        process.exit(2);
+        return;
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const report = await verifyOutlookDraft({
+          db,
+          draftId: draft,
+          headless: flags["headed"] !== true,
+        });
+        console.log(JSON.stringify(report, null, 2));
+        if (!report.verified) process.exitCode = 1;
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
     case "run":
+      if (flags["pipeline"]) {
+        await cmdRunPipeline(flags);
+        return;
+      }
+      // Historical behavior: bare `run` under DRY_RUN aliases discovery.
       if (flags["dry-run"] || getConfig().dryRun) {
         await cmdDiscover({ ...flags, fixture: flags["fixture"] ?? false });
         return;
       }
-      notImplemented("live run with submit (later phases; SUBMIT_ENABLED required)");
+      console.error(
+        "Use `run --pipeline [--app <uuid>] [--max N] [--submit]` to advance applications.",
+      );
+      process.exit(2);
       break;
-    case "dashboard":
-      notImplemented("dashboard (Phase 13)");
-      break;
-    case "retry":
-      notImplemented("retry (Phase 7+)");
-      break;
+    case "dashboard": {
+      const db = openDatabase();
+      migrate(db);
+      const { url } = await startDashboard({ db });
+      console.log(`Dashboard (read-only): ${url}`);
+      console.log("Ctrl+C to stop.");
+      // Keep the process alive; the server holds the event loop open.
+      return;
+    }
+    case "retry": {
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const results = retryFailedApplications(db);
+        console.log(JSON.stringify({ retried: results }, null, 2));
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
     case "resume-essay":
-      notImplemented("resume-essay (Phase 8)");
-      break;
+      cmdResumeEssay(flags);
+      return;
     default:
       console.error(`Unknown command: ${command}`);
       printHelp();

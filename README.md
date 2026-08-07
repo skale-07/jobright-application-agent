@@ -6,11 +6,11 @@ Local deterministic Playwright application processor (JobRight → ATS → Outlo
 
 ## Phase status
 
-**Phase 5.5 complete** (Phases 0–5 integrated and hardened). **Phase 5.6 in progress** (live validation). Phase 6 not started.
+**Phases 0–13 engineering complete** at `UNIT/FIXTURE_CONFIRMED`: discovery → materials → inspect → fill → essays → **gated submit** → contacts → **LLM outreach** → **Outlook drafts** → dashboard, plus the inert Phase 6 J1 authoring sidecar. Live validation is stepwise and operator-driven.
 
-**Single status + direction doc:** [docs/current-state-and-phase56.md](docs/current-state-and-phase56.md)
+**Start here:** [docs/operator-guide.md](docs/operator-guide.md) — the end-to-end walkthrough.
 
-Also: [docs/phase55-remediation.md](docs/phase55-remediation.md) · Phase 6 candidate eval: [docs/browser-use-evaluation.md](docs/browser-use-evaluation.md).
+Status + direction: [docs/current-state-and-phase56.md](docs/current-state-and-phase56.md) · Limitations: [docs/known-limitations.md](docs/known-limitations.md) · Phase 6 eval: [docs/browser-use-evaluation.md](docs/browser-use-evaluation.md).
 
 ## Quick start
 

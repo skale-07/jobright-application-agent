@@ -1,4 +1,11 @@
-# Known limitations (Phase 5.5)
+# Known limitations
+
+- Submit, essays, pipeline, contacts, outreach generation, Outlook drafts, dashboard and the J1 sidecar are all `UNIT/FIXTURE_CONFIRMED` only — **no live evidence for any of them yet**. The operator earns live levels stepwise per [operator-guide.md](./operator-guide.md).
+- Contacts and Outlook selector registries are built from **synthetic** fixtures (recorder captures were too weak); expect first-run corrections against the real DOMs. Outlook's DOM churns — `draft:verify` is the acceptance check, not selector optimism.
+- Outreach generation trusts the deterministic validator, not the model — but validated text can still be mediocre. The Drafts folder review is load-bearing; nothing dispatches mail regardless.
+- LinkedIn enrichment dropped by decision (MVP uses JobRight contact context only).
+- Uncertain submissions require manual `review:resolve`; there is deliberately no automatic resolution.
+- The J1 sidecar is inert without an explicit python venv; its output requires human promotion.
 
 - Live JobRight feed discovery currently returns **zero cards** — every application in SQLite is fixture-derived. It now fails loud with artifacts + a review item instead of reporting success. See `docs/current-state-and-phase56.md` §2.6b.
 - Greenhouse fill is **fixture-confirmed**, not live-board-confirmed.

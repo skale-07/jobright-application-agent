@@ -2,7 +2,11 @@ import type { Page } from "playwright";
 
 export type ServiceName = "jobright" | "linkedin" | "outlook";
 
-export type SessionPersistenceMode = "STORAGE_STATE" | "PERSISTENT_CONTEXT";
+export type SessionPersistenceMode =
+  | "STORAGE_STATE"
+  | "PERSISTENT_CONTEXT"
+  /** Attach to an operator-started debug Chrome over CDP (Phase 6 J1). */
+  | "CDP_ATTACH";
 
 export type AuthStatus =
   | "AUTHENTICATED"

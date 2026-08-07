@@ -158,7 +158,14 @@ const ALLOWED: Partial<Record<ApplicationState, readonly ApplicationState[]>> = 
     "FAILED_RETRYABLE",
     "FAILED_FINAL",
   ],
-  SUBMISSION_VERIFICATION_FAILED: ["FAILED_FINAL"],
+  // Operator resolution of an uncertain submission (review:resolve):
+  // → SUBMITTED when the receipt is confirmed to exist;
+  // → FAILED_RETRYABLE when confirmed nothing was submitted (explicit re-queue).
+  SUBMISSION_VERIFICATION_FAILED: [
+    "SUBMITTED",
+    "FAILED_RETRYABLE",
+    "FAILED_FINAL",
+  ],
   CONTACTS_EXTRACTING: [
     "CONTACTS_EXTRACTED",
     "FAILED_RETRYABLE",

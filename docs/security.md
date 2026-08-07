@@ -17,7 +17,11 @@ Bind `127.0.0.1` only. Do not expose publicly.
 
 ## Outlook
 
-No production `sendEmail`. Only `createDraft` / `verifyDraft` (stubs until Phase 12). `npm run check:forbidden` fails if send paths appear.
+No production `sendEmail` — ever. Drafts only: `createOutlookDraft` / `verifyOutlookDraft` (Phase 12, built) write into the mailbox Drafts folder; sending is the operator's manual act in Outlook. `npm run check:forbidden` fails the build if send paths appear in code or docs.
+
+## Outreach LLM boundary
+
+Outreach email generation is the only LLM call in the codebase (OpenAI, `EMAIL_GENERATION_ENABLED` + `OPENAI_API_KEY` gated). The key lives in `.env` (gitignored), is covered by log redaction, and is never written to artifacts. Generated text is deterministically re-validated; rejected output cannot become a draft.
 
 ## Checks
 

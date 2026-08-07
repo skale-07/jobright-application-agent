@@ -1,5 +1,5 @@
 const SENSITIVE_KEY_PATTERN =
-  /(password|token|cookie|authorization|storage.?state|ssn|race|ethnicity|gender|sexual|disability|veteran|phone|address|email_body|access_token|requires_sponsorship|sponsorship|work_authorization)/i;
+  /(password|token|cookie|authorization|storage.?state|ssn|race|ethnicity|gender|sexual|disability|veteran|phone|address|email_body|access_token|requires_sponsorship|sponsorship|work_authorization|api.?key|openai)/i;
 
 export function redactValue(key: string, value: unknown): unknown {
   if (SENSITIVE_KEY_PATTERN.test(key)) {

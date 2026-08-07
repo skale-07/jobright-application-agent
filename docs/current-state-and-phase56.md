@@ -90,14 +90,21 @@ A lower level never promotes a feature to a higher level.
 | Greenhouse `ats:inspect --url` live read-only | Done (5.6B) | Code + unit fixtures; live depends on host/CAPTCHA gates (see open issues) |
 | Greenhouse redirect-off-host handling | Done | Untrusted final host → `GREENHOUSE_APPLICATION_UNAVAILABLE` (not login wall) |
 | High-confidence login-wall detection | Done | Generic nav “Login” is not enough |
-| Greenhouse fill / upload / verify | Done for fixtures | `FIXTURE_CONFIRMED` only; **`ats:fill` is fixture-only** |
+| Greenhouse fill / upload / verify | Done | `FIXTURE_CONFIRMED` on fixtures; live path shipped (next row) |
 | Live Greenhouse fill | Done (`ats:fill --url`) | Gate + refusal paths `UNIT_CONFIRMED`; live mutation `UNVERIFIED` |
-| Employer submit | Forbidden | Must stay impossible until a later, explicit phase |
-| Essays / demographics / invented sponsorship | Never auto | Review / skip |
-| Lever / Ashby / Workday fill | Deferred | Skip / unsupported |
-| Outlook send / LinkedIn enrichment | Deferred | Scaffold only |
-| Dashboard | Not started | — |
-| Phase 6 autofill compare | Not in tree | Stash only |
+| Employer submit (Phase 7) | **Built, gated** (`submit`) | Gate matrix + receipt path `UNIT/FIXTURE_CONFIRMED`; live `UNVERIFIED`. Per-submission human confirmation; uncertain → review, auto-resubmit blocked |
+| Essay workflow (Phase 8, `resume-essay`) | Built | Human-written only; ESSAY_HUMAN fill path `FIXTURE_CONFIRMED`; main fill still hard-rejects textarea |
+| Pipeline driver (`run --pipeline`) + `retry` | Built | Fixture walk QUEUED→READY_TO_SUBMIT `FIXTURE_CONFIRMED`; stops on review items; submit boundary explicit |
+| `materials:register` (domain resumes) | Built | `UNIT_CONFIRMED`; replaces descoped live generation |
+| Contacts extraction | Built | Parser `FIXTURE_CONFIRMED`; selectors synthetic, live `UNVERIFIED` |
+| Outreach email generation (OpenAI) | Built, gated | The ONLY LLM boundary. Stub-client path `UNIT_CONFIRMED`; deterministic post-validation; REJECTED never drafts |
+| Outlook drafts (Phase 12) | Built, gated | Draft vocabulary only; composer/gates `UNIT_CONFIRMED`; live Outlook `UNVERIFIED`; dispatching mail remains impossible (check:forbidden) |
+| LinkedIn enrichment | **Dropped by decision** | Outreach uses JobRight context only; revisit post-MVP |
+| Demographics / invented sponsorship | Never auto | Review / skip |
+| Lever / Ashby / Workday fill | Deferred | Skip / unsupported (Phase 6 J1 authoring aid exists) |
+| Dashboard (Phase 13) | Built | Read-only, 127.0.0.1 only, GET-only; `UNIT_CONFIRMED` |
+| Phase 6 J1 authoring sidecar + CDP_ATTACH | Built, inert | Gate + contract `UNIT_CONFIRMED`; venv is an explicit operator step |
+| Phase 6 autofill compare | Not in tree | Stash only (operator's machine) |
 
 ### 2.3 CLI that matters today
 
@@ -113,6 +120,9 @@ npm run ats:inspect -- --url <GREENHOUSE_APPLICATION_URL> [--headed]
 npm run ats:inspect -- --html <path> --url <url>
 npm run ats:fill -- --fixture greenhouse            # plan only
 npm run ats:fill -- --fixture greenhouse --execute  # FORM_FILL_ENABLED + DRY_RUN=false; SUBMIT stays false
+npm run ats:fill -- --url <GREENHOUSE_APPLICATION_URL>            # live plan only
+npm run ats:fill -- --url <URL> --execute --headed --resume <path>  # live fill; no submit path exists
+npm run resume:download -- --job <jobright_job_id>  # descoped; inert unless MATERIALS_DOWNLOAD_ENABLED=true
 npm run report
 npm run run -- --dry-run [--fixture]                # discovery-oriented; no ATS submit
 ```
@@ -126,13 +136,22 @@ login (JobRight)
   → discover (feed → SQLite)
   → inspect --job (JobRight detail, read-only)
   → ats:inspect --url (Greenhouse form inventory + proposed plan, no values)
-  → ats:fill --fixture greenhouse   [lab only]
-  → stop  (no live fill CLI, no submit, no resume-download CLI, no outreach)
+  → ats:fill --url (live plan, then guarded --execute)
+  → stop  (no submit, no outreach)
 ```
 
-There is **no** closed loop: SQLite application → live ATS fill → verified submission.
+The closed loop now exists in code and is `FIXTURE_CONFIRMED` end to end:
 
-As of the current commit the missing CLIs exist (`resume:download --job`, `ats:fill --url`), so the remaining gap in 5.6 is **live evidence**, not engineering. Every 5.6 workstream that can be closed without a browser on a real page is closed; see §5.
+```text
+discover → materials:register → inspect → ats:fill → resume-essay
+  → submit (gated, human-confirmed, receipt-verified)
+  → contacts:extract → email:generate (LLM, validated) → draft:create/verify
+```
+
+Driven stepwise or via `run --pipeline`. See [operator-guide.md](./operator-guide.md)
+for the full walkthrough. The remaining gap is **live evidence** at every
+step past the fixture boundary — plus §2.6b (live discovery) which blocks
+live jobs entering the funnel at all.
 
 ### 2.5 Safety model (still binding)
 
@@ -185,7 +204,7 @@ Discriminator: run `npx tsx scripts/diag-jobright-feed.ts` and read `cards_selec
 
 Goals:
 
-1. Prove real JobRight pages for read-only inspection (and later guarded resume download).
+1. Prove real JobRight pages for read-only inspection. (Guarded resume download was descoped — §4.3.)
 2. Prove real Greenhouse application pages for read-only field inventory + proposed fill plan.
 3. Optionally prove **guarded** live Greenhouse fill with `SUBMIT_ENABLED=false`.
 4. Never promote “fixture green” to “live green” without evidence.
@@ -219,7 +238,7 @@ Status keys for this section:
 | C | JobRight live feed discover + queue | **Failing live** | `LIVE_READ_ONLY` | Returns 0 cards; fixture path fine. See §2.6b |
 | C′ | Diagnose + fix live discovery | **Next** | Unblocks the closed loop | Run diag script; then fix per `cards_selector_attached` |
 | D | JobRight stored-job inspect (`inspect --job`) | Done (code + live path) | `LIVE_READ_ONLY` | No feed search; SQLite → detail URL |
-| E | Greenhouse live `ats:inspect --url` | Partial | `LIVE_READ_ONLY` | Redirect/login fixed; CAPTCHA false positive open |
+| E | Greenhouse live `ats:inspect --url` | Done (code) | `LIVE_READ_ONLY` | Redirect/login/CAPTCHA all fixed; awaiting live confirmation via G |
 | F | CAPTCHA high-confidence detector | Done (code) | `FIXTURE_CONFIRMED` | Unblocks E and all of Phase 6 |
 | G | Re-confirm GH live inspect on sandbox URL | **Next** (operator) | `LIVE_READ_ONLY` | Manual evidence + artifact |
 | H | JobRight resume control detect → live download CLI | Done (code) | `LIVE_MUTATION` possible | `resume:download --job`; gate + lease + confirmation shipped. Live run is the operator's |
@@ -248,7 +267,10 @@ Engineering for 1 and 2 is done; both now need an **operator** on the Windows bo
    → confirm captcha_detection.dormant_markers is populated and
      captcha_detected is false on a normal board page
 
-3. Only then: resume CLI and/or live fill (H then I)
+3. [OPERATOR] Only after 2 passes: guarded live Greenhouse fill (I)
+   npm run ats:fill -- --url $GREENHOUSE_URL          # read the plan first
+   → then --execute deliberately; see §4.4
+   (H, resume download, is descoped — §4.3)
 ```
 
 Steps 1 and 2 are independent: `ats:inspect --url` takes a URL directly and does not depend on discovery. Run whichever is convenient first. The **product** is blocked on 1 — there is no closed loop while live discovery yields nothing.
@@ -259,7 +281,11 @@ Preferred GH sandbox (integration board, not a stealth employer hit):
 https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003
 ```
 
-### 4.3 JobRight live resume (later in 5.6)
+### 4.3 JobRight live resume — DESCOPED
+
+> **Descoped (operator decision).** JobRight resume generation will not be live-validated. A small set of pre-written domain-targeted resumes replaces it: the "Improve My Resume" control is often absent live, per-job generation adds a mutation and a failure class per application, and a static variant is strictly more predictable. `ats:fill --url --resume <path>` already accepts a file path, so nothing downstream depends on generation.
+>
+> The CLI below stays in the tree. It is inert: `MATERIALS_DOWNLOAD_ENABLED` defaults to `false`, so it cannot run by accident. Revisit only if per-job tailoring becomes worth a live mutation.
 
 Shipped as `npm run resume:download -- --job <jobright_job_id>`:
 
@@ -281,7 +307,7 @@ $env:MATERIALS_DOWNLOAD_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLE
 npm run resume:download -- --job <jobright_job_id>
 ```
 
-### 4.4 Greenhouse guarded live fill (later in 5.6)
+### 4.4 Greenhouse guarded live fill — shipped; run after G
 
 Shipped as `npm run ats:fill -- --url <GREENHOUSE_APPLICATION_URL>`. **Run only after G passes.**
 
@@ -320,7 +346,7 @@ npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
 - [x] Live identity + control visibility can pass for at least one stored job (manual)
 - [x] Empty live feed fails loud with artifacts + review item instead of reporting success (code + unit)
 - [ ] Live feed discovery returns ≥1 card (C′ — currently failing, §2.6b)
-- [ ] Resume generate/download proven live (optional stretch of 5.6, not same as inspect)
+- [~] Resume generate/download proven live — **descoped**, see §4.3
 
 `inspect --job` resolves a stored URL from SQLite, so its checkbox stands independently of C′.
 
@@ -336,7 +362,7 @@ npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume <path>
 ### Phase 5.6 mutation (optional extension)
 
 - [x] JobRight resume download CLI shipped with gate + lease + confirmation (`UNIT_CONFIRMED`)
-- [ ] JobRight resume live evidence **or** documented block (controls absent) — operator
+- [~] JobRight resume live evidence — **descoped by decision**, not pending. See §4.3.
 - [x] Greenhouse live fill path shipped with pre-mutation identity gate (`UNIT_CONFIRMED`)
 - [ ] Greenhouse live fill evidence with submit still off — operator
 

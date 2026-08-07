@@ -2,7 +2,7 @@
 
 Evaluation of [browser-use](https://github.com/browser-use/browser-use) as a layer for employer ATS application filling.
 
-**Status: evaluation only. Nothing here is implemented. No capability in this document is above `UNVERIFIED`.**
+**Status update:** the `CDP_ATTACH` session-mode prerequisite and the J1 authoring scaffold are now **implemented** (`agent/` + `src/agent/`, inert behind `AGENT_AUTHORING_ENABLED=false`; see [operator-guide.md](./operator-guide.md) §14). The current authoring pass is deterministic DOM reading — no agent loop, no LLM call. J2 (constrained executor) remains unimplemented and gated as described below. Live authoring runs are `UNVERIFIED`.
 
 See also: [validation-levels.md](./validation-levels.md), [architecture.md](./architecture.md), [known-limitations.md](./known-limitations.md).
 

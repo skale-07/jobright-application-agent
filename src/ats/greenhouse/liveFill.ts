@@ -49,8 +49,9 @@ export class GreenhouseLiveFillError extends Error {
  * Re-run the full read-only safety gate on the page we are about to mutate.
  * inspectGreenhouseApplication proves a URL on its own page load; this proves
  * the page actually in hand, so nothing is typed into an unverified document.
+ * Exported for the Phase 7 submission path, which must pass the same gate.
  */
-async function verifyPageBeforeMutation(
+export async function verifyPageBeforeMutation(
   page: Page,
   requestedUrl: string,
   normalizedUrl: string | null,
