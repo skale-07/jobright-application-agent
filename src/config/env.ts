@@ -31,6 +31,10 @@ const envSchema = z.object({
   NATIVE_AUTOFILL_ENABLED: boolFromEnv.default(false),
   /** Phase 5.6H: generating/downloading a resume mutates JobRight. Fail closed. */
   MATERIALS_DOWNLOAD_ENABLED: boolFromEnv.default(false),
+  /** Nav clicks Apply on live JobRight (mutates applied-state). Fail closed. */
+  NAVIGATION_ENABLED: boolFromEnv.default(false),
+  /** Gmail readonly OTP/magic-link retrieval during navigation. Fail closed. */
+  GMAIL_VERIFICATION_ENABLED: boolFromEnv.default(false),
   /** Outreach email generation calls the OpenAI API (spend). Fail closed. */
   EMAIL_GENERATION_ENABLED: boolFromEnv.default(false),
   /** OpenAI key for outreach generation only. Never logged or artifacted. */
@@ -69,6 +73,8 @@ export type AppConfig = {
   jobrightAutofillEnabled: boolean;
   nativeAutofillEnabled: boolean;
   materialsDownloadEnabled: boolean;
+  navigationEnabled: boolean;
+  gmailVerificationEnabled: boolean;
   emailGenerationEnabled: boolean;
   /** Present only when the operator configured it; consumers must not log it. */
   openaiApiKey: string | undefined;
@@ -119,6 +125,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     jobrightAutofillEnabled: parsed.JOBRIGHT_AUTOFILL_ENABLED,
     nativeAutofillEnabled: parsed.NATIVE_AUTOFILL_ENABLED,
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
+    navigationEnabled: parsed.NAVIGATION_ENABLED,
+    gmailVerificationEnabled: parsed.GMAIL_VERIFICATION_ENABLED,
     emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
     openaiApiKey: parsed.OPENAI_API_KEY,
     emailLlmModel: parsed.EMAIL_LLM_MODEL,

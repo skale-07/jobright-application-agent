@@ -49,6 +49,13 @@ def main() -> None:
         except Exception as exc:  # noqa: BLE001
             _fail(f"locate_field failed: {exc}")
         return
+    if task_type == "navigate":
+        # Navigation results are navigate-shaped (see agentNavigateResultSchema)
+        # — never the field-candidate shape _fail() emits.
+        from . import navigate
+
+        navigate.run(task)
+        return
     if task_type != "author":
         _fail(f"unsupported task_type: {task_type!r}")
         return

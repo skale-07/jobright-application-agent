@@ -1,10 +1,9 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
 import {
   agentAuthoringResultSchema,
   agentLocateFieldTaskSchema,
   type AgentLocateFieldTask,
 } from "./contract.js";
+import { runSidecarTask } from "./sidecarRunner.js";
 import type { FieldCandidate } from "../ats/greenhouse/fillHealer.js";
 
 const HTML_CAP = 500_000;
@@ -33,33 +32,11 @@ export async function locateFieldViaSidecar(input: {
     timeout_ms: input.timeoutMs ?? 30_000,
   });
 
-  const { command, args } = input.commandOverride ?? {
-    command: "python",
-    args: ["-m", "jobright_agent.author"],
-  };
-
-  const stdout = await new Promise<string>((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: path.join(process.cwd(), "agent"),
-      stdio: ["pipe", "pipe", "pipe"],
-      timeout: task.timeout_ms + 15_000,
-    });
-    let out = "";
-    let err = "";
-    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
-    child.stderr.on("data", (d: Buffer) => (err += d.toString()));
-    child.on("error", (e) =>
-      reject(new Error(`sidecar spawn failed: ${e.message}`)),
-    );
-    child.on("close", () => {
-      if (out.trim().length > 0) resolve(out);
-      else
-        reject(
-          new Error(`sidecar produced no output. stderr: ${err.slice(0, 300)}`),
-        );
-    });
-    child.stdin.write(JSON.stringify(task));
-    child.stdin.end();
+  const stdout = await runSidecarTask({
+    task,
+    timeoutMs: task.timeout_ms,
+    graceMs: 15_000,
+    ...(input.commandOverride ? { commandOverride: input.commandOverride } : {}),
   });
 
   const result = agentAuthoringResultSchema.parse(JSON.parse(stdout.trim()));

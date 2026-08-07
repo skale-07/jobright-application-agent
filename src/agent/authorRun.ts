@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -12,6 +11,7 @@ import {
   type AgentAuthoringResult,
   type AgentAuthoringTask,
 } from "./contract.js";
+import { runSidecarTask } from "./sidecarRunner.js";
 
 /** Phase 6 J1 stays inert unless the operator flips the flag. */
 export function assertAgentAuthoringAllowed(): void {
@@ -67,31 +67,11 @@ export async function runAgentAuthoring(input: {
     timeout_ms: input.timeoutMs ?? 60_000,
   });
 
-  const { command, args } = input.commandOverride ?? {
-    command: "python",
-    args: ["-m", "jobright_agent.author"],
-  };
-
-  const stdout = await new Promise<string>((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd: path.join(process.cwd(), "agent"),
-      stdio: ["pipe", "pipe", "pipe"],
-      timeout: task.timeout_ms + 30_000,
-    });
-    let out = "";
-    let err = "";
-    child.stdout.on("data", (d: Buffer) => (out += d.toString()));
-    child.stderr.on("data", (d: Buffer) => (err += d.toString()));
-    child.on("error", (e) =>
-      reject(new Error(`sidecar spawn failed: ${e.message}`)),
-    );
-    child.on("close", () => {
-      // Non-zero exits still carry a machine-readable result on stdout.
-      if (out.trim().length > 0) resolve(out);
-      else reject(new Error(`sidecar produced no output. stderr: ${err.slice(0, 400)}`));
-    });
-    child.stdin.write(JSON.stringify(task));
-    child.stdin.end();
+  const stdout = await runSidecarTask({
+    task,
+    timeoutMs: task.timeout_ms,
+    graceMs: 30_000,
+    ...(input.commandOverride ? { commandOverride: input.commandOverride } : {}),
   });
 
   const report: AuthoringRunReport = {
