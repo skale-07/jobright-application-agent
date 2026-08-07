@@ -16,6 +16,10 @@ import {
   runPipeline,
   setEmployerApplicationUrl,
 } from "../pipeline/runPipeline.js";
+import { runContactsExtraction } from "../contacts/extractContacts.js";
+import { listContacts } from "../contacts/repository.js";
+import { generateEmailForContact } from "../contacts/emailGenerate.js";
+import { OpenAiEmailClient } from "../contacts/emailLlm.js";
 import {
   getLatestUncertainSubmission,
   markSubmissionFailed,
@@ -94,6 +98,8 @@ Commands:
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
   retry
+  contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
+  email:generate --application <uuid> [--contact <id>] [--persona <id>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -461,6 +467,93 @@ async function cmdAtsInspect(
     "Requires DRY_RUN=true, FORM_FILL_ENABLED=false, SUBMIT_ENABLED=false.",
   );
   process.exit(1);
+}
+
+/** Post-submit: extract JobRight contacts for one application. */
+async function cmdContactsExtract(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error(
+      "Usage: contacts:extract --application <uuid> [--fixture <html-path>] [--headed]",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runContactsExtraction({
+      db,
+      applicationId: application,
+      ...(typeof flags["fixture"] === "string"
+        ? { fixtureHtmlPath: flags["fixture"] }
+        : {}),
+      headless: flags["headed"] !== true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Outreach generation (the only LLM boundary in this codebase).
+ * Prints the generated email for inspection; the Outlook Drafts folder is
+ * the final human review surface.
+ */
+async function cmdEmailGenerate(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error(
+      "Usage: email:generate --application <uuid> [--contact <id>] [--persona <id>]",
+    );
+    console.error(
+      "Requires EMAIL_GENERATION_ENABLED=true and OPENAI_API_KEY in .env.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const contacts = listContacts(db, application);
+    const targets =
+      typeof flags["contact"] === "string"
+        ? contacts.filter((c) => c.id === flags["contact"])
+        : contacts;
+    if (targets.length === 0) {
+      console.error(
+        "No matching contacts — run contacts:extract first (or check --contact id).",
+      );
+      process.exit(1);
+      return;
+    }
+    const client = new OpenAiEmailClient();
+    const results = [];
+    for (const contact of targets) {
+      results.push(
+        await generateEmailForContact({
+          db,
+          applicationId: application,
+          contactId: contact.id,
+          client,
+          ...(typeof flags["persona"] === "string"
+            ? { personaId: flags["persona"] }
+            : {}),
+        }),
+      );
+    }
+    console.log(JSON.stringify(results, null, 2));
+    if (results.some((r) => r.validation_status === "REJECTED")) {
+      process.exitCode = 3;
+    }
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /** Phase 7+: sequential pipeline driver. Submission stays behind its own gates. */
@@ -973,6 +1066,12 @@ async function main(): Promise<void> {
       return;
     case "review:resolve":
       cmdReviewResolve(flags);
+      return;
+    case "contacts:extract":
+      await cmdContactsExtract(flags);
+      return;
+    case "email:generate":
+      await cmdEmailGenerate(flags);
       return;
     case "run":
       if (flags["pipeline"]) {

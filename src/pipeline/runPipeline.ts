@@ -19,6 +19,8 @@ import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
+import { describeSessionReadiness } from "../auth/serviceSession.js";
+import { runContactsExtraction } from "../contacts/extractContacts.js";
 
 export const MAX_ATTEMPTS = 3;
 
@@ -55,6 +57,8 @@ export type PipelineOptions = {
   submit?: boolean;
   /** Forwarded to runGreenhouseSubmission for unattended runs. */
   assumeYes?: boolean;
+  /** Fixture HTML for the contacts page — offline post-submit walk. */
+  contactsFixtureHtmlPath?: string;
 };
 
 /** States the sequential driver can pick up and advance. */
@@ -69,6 +73,8 @@ const ADVANCEABLE: ApplicationState[] = [
   "FIELD_VERIFICATION",
   "READY_TO_SUBMIT",
   "SUBMITTED",
+  "CONTACTS_EXTRACTED",
+  "EMAIL_GENERATED",
 ];
 
 export function getEmployerApplicationUrl(
@@ -586,14 +592,74 @@ async function step(
     }
 
     case "SUBMITTED": {
-      // Post-submit chain (contacts → outreach → drafts) arrives in M5/M6.
-      transitionApplication(db, {
+      // Post-submit: contact extraction needs a JobRight session (or a
+      // fixture). When neither is available, complete rather than fail —
+      // the operator can run contacts:extract manually later is NOT possible
+      // once COMPLETED, so we stop instead when a session might exist.
+      const readiness = describeSessionReadiness("jobright", "STORAGE_STATE");
+      if (!ctx.options.contactsFixtureHtmlPath && !readiness.ready) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "COMPLETED",
+          reason: "pipeline: no jobright session for contacts — completing",
+          runId,
+        });
+        return {
+          to: "COMPLETED",
+          note: "completed (no jobright session for contact extraction)",
+        };
+      }
+      const contactsReport = await runContactsExtraction({
+        db,
         applicationId: app.id,
-        nextState: "COMPLETED",
-        reason: "pipeline: post-submit features not yet enabled — completing",
-        runId,
+        ...(ctx.options.contactsFixtureHtmlPath
+          ? { fixtureHtmlPath: ctx.options.contactsFixtureHtmlPath }
+          : {}),
+        headless: ctx.options.headless ?? true,
       });
-      return { to: "COMPLETED", note: "completed (post-submit features pending)" };
+      return {
+        to: contactsReport.end_state as ApplicationState,
+        note: `contacts extracted: ${contactsReport.extracted}`,
+      };
+    }
+
+    case "CONTACTS_EXTRACTED": {
+      if (!cfg.emailGenerationEnabled || !cfg.openaiApiKey) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "COMPLETED",
+          reason: "pipeline: outreach generation disabled — completing",
+          runId,
+        });
+        return {
+          to: "COMPLETED",
+          note: "completed (EMAIL_GENERATION_ENABLED off — run email:generate manually if desired)",
+        };
+      }
+      return {
+        to: null,
+        note: "outreach generation runs via email:generate (per-contact, operator-reviewed)",
+        stop: "gate",
+      };
+    }
+
+    case "EMAIL_GENERATED": {
+      // Draft creation (M6) is operator-driven via draft:create; the pipeline
+      // completes here. The Outlook Drafts folder is the review surface.
+      if (!cfg.outlookDraftsEnabled) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "COMPLETED",
+          reason: "pipeline: drafts disabled — completing",
+          runId,
+        });
+        return { to: "COMPLETED", note: "completed (OUTLOOK_DRAFTS_ENABLED off)" };
+      }
+      return {
+        to: null,
+        note: "validated email ready — create the draft via draft:create",
+        stop: "gate",
+      };
     }
 
     default:

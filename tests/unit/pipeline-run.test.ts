@@ -209,11 +209,36 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     );
   });
 
-  it("SUBMITTED falls through to COMPLETED while post-submit features are pending", async () => {
+  it("SUBMITTED completes when no jobright session exists for contacts", async () => {
     const appId = seed("SUBMITTED");
     const report = await runPipeline({ db, applicationId: appId });
     expect(getApplication(db, appId)?.state).toBe("COMPLETED");
-    expect(report.applications[0]?.steps[0]?.note).toMatch(/post-submit/);
+    expect(report.applications[0]?.steps[0]?.note).toMatch(
+      /no jobright session/,
+    );
+  });
+
+  it("SUBMITTED extracts fixture contacts, then gates on outreach generation flag", async () => {
+    const appId = seed("SUBMITTED");
+    const contactsFixture = path.join(
+      process.cwd(),
+      "tests",
+      "fixtures",
+      "jobright",
+      "contacts",
+      "dom.sanitized.html",
+    );
+    // EMAIL_GENERATION_ENABLED is off (safe env) → CONTACTS_EXTRACTED
+    // falls through to COMPLETED.
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      contactsFixtureHtmlPath: contactsFixture,
+    });
+    expect(getApplication(db, appId)?.state).toBe("COMPLETED");
+    const notes = report.applications[0]!.steps.map((s) => s.note).join(" | ");
+    expect(notes).toMatch(/contacts extracted: 3/);
+    expect(notes).toMatch(/EMAIL_GENERATION_ENABLED off/);
   });
 });
 

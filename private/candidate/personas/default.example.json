@@ -1,0 +1,25 @@
+{
+  "persona_id": "default",
+  "headline": "Rising sophomore at Johns Hopkins studying Applied Math & Statistics and Economics",
+  "education": {
+    "school": "Johns Hopkins University",
+    "class_year": 2029,
+    "majors": ["Applied Mathematics & Statistics", "Economics"]
+  },
+  "projects": [
+    {
+      "name": "REPLACE_PROJECT_ONE",
+      "summary": "One-sentence description of what you built and what it does.",
+      "tools": ["Python", "PyTorch"],
+      "relevance_tags": ["ml", "modeling"]
+    },
+    {
+      "name": "REPLACE_PROJECT_TWO",
+      "summary": "Second strong proof point — evaluation, infrastructure, or product work.",
+      "tools": ["TypeScript", "SQLite"],
+      "relevance_tags": ["infra", "automation"]
+    }
+  ],
+  "skills": ["Python", "TypeScript", "statistics", "data analysis"],
+  "interests": ["quantitative research", "ML systems"]
+}
