@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Page } from "playwright";
 import type {
   ApplicationAdapter,
@@ -8,8 +10,11 @@ import type {
   FormResetResult,
   FormVerificationResult,
   ResolvedApplicationAnswers,
+  SubmissionAttempt,
+  SubmissionReceipt,
   UploadVerification,
 } from "../adapter.js";
+import { getConfig } from "../../config/index.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { approvedFillEntries } from "../../applications/approvedFillPlan.js";
 import {
@@ -18,6 +23,7 @@ import {
   ashbyUploadFile,
   ashbyVerifyFromPlan,
 } from "./fill.js";
+import { ashbySubmit, ashbyVerifySubmission } from "./submission.js";
 import { detectBlockingCaptcha } from "../greenhouse/captchaDetection.js";
 import { detectLoginWall } from "../greenhouse/loginWallDetection.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
@@ -135,6 +141,21 @@ export class AshbyAdapterV1 implements ApplicationAdapter {
 
   async resetForm(page: Page): Promise<FormResetResult> {
     return ashbyResetForm(page);
+  }
+
+  async submit(page: Page): Promise<SubmissionAttempt> {
+    return ashbySubmit(page);
+  }
+
+  async verifySubmission(page: Page): Promise<SubmissionReceipt> {
+    const screenshotPath = path.join(
+      getConfig().artifactsDir,
+      "ats-submit",
+      "ashby",
+      `receipt-${Date.now()}.png`,
+    );
+    fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
+    return ashbyVerifySubmission(page, { screenshotPath });
   }
 
   async detect(input: {
