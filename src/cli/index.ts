@@ -12,6 +12,11 @@ import {
 } from "../applications/essayAnswers.js";
 import { runGreenhouseSubmission } from "../applications/submitRun.js";
 import {
+  retryFailedApplications,
+  runPipeline,
+  setEmployerApplicationUrl,
+} from "../pipeline/runPipeline.js";
+import {
   getLatestUncertainSubmission,
   markSubmissionFailed,
   markSubmissionVerified,
@@ -87,6 +92,8 @@ Commands:
   submit --application <uuid> [--headed] [--yes]
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
+  run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
+  retry
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -454,6 +461,42 @@ async function cmdAtsInspect(
     "Requires DRY_RUN=true, FORM_FILL_ENABLED=false, SUBMIT_ENABLED=false.",
   );
   process.exit(1);
+}
+
+/** Phase 7+: sequential pipeline driver. Submission stays behind its own gates. */
+async function cmdRunPipeline(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const app = typeof flags["app"] === "string" ? flags["app"] : undefined;
+    const url = typeof flags["url"] === "string" ? flags["url"] : undefined;
+    if (url) {
+      if (!app) {
+        console.error("--url requires --app <uuid> to know which job it belongs to");
+        process.exit(2);
+        return;
+      }
+      setEmployerApplicationUrl(db, app, url);
+      console.log(`Stored employer application URL for ${app}`);
+    }
+    const report = await runPipeline({
+      db,
+      ...(app ? { applicationId: app } : {}),
+      maxApplications:
+        typeof flags["max"] === "string" ? Number(flags["max"]) : 1,
+      headless: flags["headed"] !== true,
+      ...(typeof flags["fixture-html"] === "string"
+        ? { fixtureHtmlPath: flags["fixture-html"] }
+        : {}),
+      submit: flags["submit"] === true,
+      assumeYes: flags["yes"] === true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 /** Phase 7: human-approved submission. All gates live in runGreenhouseSubmission. */
@@ -932,18 +975,34 @@ async function main(): Promise<void> {
       cmdReviewResolve(flags);
       return;
     case "run":
+      if (flags["pipeline"]) {
+        await cmdRunPipeline(flags);
+        return;
+      }
+      // Historical behavior: bare `run` under DRY_RUN aliases discovery.
       if (flags["dry-run"] || getConfig().dryRun) {
         await cmdDiscover({ ...flags, fixture: flags["fixture"] ?? false });
         return;
       }
-      notImplemented("live run with submit (later phases; SUBMIT_ENABLED required)");
+      console.error(
+        "Use `run --pipeline [--app <uuid>] [--max N] [--submit]` to advance applications.",
+      );
+      process.exit(2);
       break;
     case "dashboard":
       notImplemented("dashboard (Phase 13)");
       break;
-    case "retry":
-      notImplemented("retry (Phase 7+)");
-      break;
+    case "retry": {
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const results = retryFailedApplications(db);
+        console.log(JSON.stringify({ retried: results }, null, 2));
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
     case "resume-essay":
       cmdResumeEssay(flags);
       return;

@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
 import type { Db } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
@@ -149,7 +148,11 @@ export async function runGreenhouseSubmission(input: {
     return report;
   }
 
-  const runId = `submit-${randomUUID()}`;
+  // application_events.run_id references automation_runs(id); reuse the
+  // caller's batch run (pipeline) or create our own row for this submission.
+  const runId =
+    input.automationRunId ??
+    createAutomationRun(db, { stage: "submit" }).id;
   acquireLease(db, {
     resourceType: "application",
     resourceId: `${applicationId}:submit`,
@@ -224,10 +227,7 @@ export async function runGreenhouseSubmission(input: {
             "Press Enter to fill and SUBMIT this application, Ctrl+C to abort... ",
           );
         } else {
-          const automationRunId =
-            input.automationRunId ??
-            createAutomationRun(db, { stage: "submit", metadata: { runId } }).id;
-          if (!tryConsumeUnattendedSubmission(db, automationRunId)) {
+          if (!tryConsumeUnattendedSubmission(db, runId)) {
             markSubmissionFailed(db, pending.id, "unattended cap reached");
             failIdempotencyKey(db, idemKey, "unattended_cap");
             report.outcome = "REFUSED";
