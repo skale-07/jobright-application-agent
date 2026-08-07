@@ -16,6 +16,11 @@ import {
 } from "../../applications/approvedFillPlan.js";
 import { isDemographicsField } from "../../applications/essayDetector.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
+import {
+  detectControlKind,
+  fillComboboxControl,
+  readComboboxValue,
+} from "./comboboxFill.js";
 
 export type FieldMeta = {
   name?: string;
@@ -165,7 +170,19 @@ export async function greenhouseFillFromPlan(
       });
       const type = meta?.type ?? entry.type;
       if (type === "select") {
-        await setSelectByValueOrLabel(loc, entry.value);
+        // Offline discovery types both native selects and React-select
+        // comboboxes as "select"; only the live element tells them apart.
+        const kind = await detectControlKind(loc);
+        if (kind === "native_select") {
+          await setSelectByValueOrLabel(loc, entry.value);
+        } else {
+          const result = await fillComboboxControl(page, loc, entry.value);
+          if (!result.committed) {
+            throw new Error(
+              `combobox option not committed: ${result.notes.join("; ")}`,
+            );
+          }
+        }
       } else if (type === "checkbox") {
         const on = Boolean(entry.value) && entry.value !== "No";
         if (on) await loc.check();
@@ -212,7 +229,21 @@ export async function greenhouseFillFromPlan(
           throw new Error(`No radio option for "${entry.value}"`);
         }
       } else {
-        await loc.fill(String(entry.value));
+        // Text-typed entries can still be combobox inner inputs live
+        // (discovery saw <input>, the widget is a React-select).
+        const kind = await detectControlKind(loc);
+        if (kind === "combobox") {
+          const result = await fillComboboxControl(page, loc, entry.value);
+          if (!result.committed) {
+            throw new Error(
+              `combobox option not committed: ${result.notes.join("; ")}`,
+            );
+          }
+        } else if (kind === "native_select") {
+          await setSelectByValueOrLabel(loc, entry.value);
+        } else {
+          await loc.fill(String(entry.value));
+        }
       }
       filled.push(entry.canonical_field ?? entry.field_id);
     } catch (err) {
@@ -248,6 +279,14 @@ export async function greenhouseReadFieldValue(
   const type = await loc.getAttribute("type");
   if (type === "checkbox" || type === "radio") {
     return loc.isChecked();
+  }
+  // Combobox inner inputs: inputValue() is the transient filter text and
+  // LIES about commitment — read the committed display instead, null while
+  // the placeholder shows. A half-open menu now verifies false.
+  const kind = await detectControlKind(loc);
+  if (kind === "combobox") {
+    const committed = await readComboboxValue(loc);
+    return { value: committed ?? "", label: committed ?? "" };
   }
   return loc.inputValue();
 }

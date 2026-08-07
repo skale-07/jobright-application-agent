@@ -1,14 +1,49 @@
 {
-  "legal_name.first": ["First name", "Legal first name", "Given name"],
-  "legal_name.last": ["Last name", "Legal last name", "Surname", "Family name"],
-  "email": ["Email", "Email address", "E-mail"],
-  "phone": ["Phone", "Phone number", "Mobile", "Cell"],
-  "school": ["School", "University", "College", "Current school"],
+  "legal_name.first": [
+    "First name",
+    "Legal first name",
+    "Given name"
+  ],
+  "legal_name.last": [
+    "Last name",
+    "Legal last name",
+    "Surname",
+    "Family name"
+  ],
+  "email": [
+    "Email",
+    "Email address",
+    "E-mail"
+  ],
+  "phone": [
+    "Phone",
+    "Phone number",
+    "Mobile",
+    "Cell"
+  ],
+  "school": [
+    "School",
+    "University",
+    "College",
+    "Current school"
+  ],
   "graduation_year": [
     "Graduation year",
     "Expected graduation date",
     "Anticipated completion",
     "Expected graduation"
+  ],
+  "start_year": [
+    "Start year",
+    "Education start year",
+    "Start date year",
+    "From (year)"
+  ],
+  "start_month": [
+    "Start month",
+    "Education start month",
+    "Start date month",
+    "From (month)"
   ],
   "requires_sponsorship": [
     "Will you now or in the future require sponsorship?",

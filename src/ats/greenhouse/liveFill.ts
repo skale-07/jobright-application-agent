@@ -16,6 +16,7 @@ import { greenhouseSelectorsV1 } from "./selectors.js";
 import { detectBlockingCaptcha, type CaptchaDetection } from "./captchaDetection.js";
 import { detectLoginWall, type LoginWallDetection } from "./loginWallDetection.js";
 import { healFailedFillEntries, type HealReport } from "./fillHealer.js";
+import { verifyResumePdfFile } from "../../jobright/resumeDownload.js";
 import type { ApprovedFillPlanEntry } from "../../applications/approvedFillPlan.js";
 import { verifyFinalNavigation } from "./finalNavigation.js";
 import {
@@ -209,6 +210,22 @@ export async function runGreenhouseLiveFill(input: {
     );
   }
 
+  // Resume preflight — hard error before any browser opens, regardless of
+  // gates, so a wrong path is the FIRST thing the operator sees, not a
+  // soft `verified:false` after the form is nearly complete.
+  if (input.resumePath) {
+    const abs = path.resolve(input.resumePath);
+    const check = verifyResumePdfFile(abs);
+    if (!check.verified) {
+      base.failure_code = "RESUME_FILE_INVALID";
+      base.notes.push(`resume preflight failed: ${abs} — ${check.evidence}`);
+      throw new GreenhouseLiveFillError(
+        `Resume file failed preflight: ${abs} — ${check.evidence}`,
+        persist(base),
+      );
+    }
+  }
+
   // Fail before opening a browser if flags are wrong.
   if (input.execute) {
     assertFormFillAllowed("greenhouse.liveFill");
@@ -273,17 +290,29 @@ export async function runGreenhouseLiveFill(input: {
       // Phase 6a′: heal read-back failures (heuristic always; sidecar only
       // behind AGENT_FALLBACK_ENABLED), then re-verify deterministically.
       if (!base.verify.passed) {
-        const failed = failedApprovedEntries(approvedPlan, base.verify);
-        if (failed.length > 0) {
-          const heal = await healFailedFillEntries({ page, failedEntries: failed });
+        const failedBefore = failedApprovedEntries(approvedPlan, base.verify);
+        if (failedBefore.length > 0) {
+          const heal = await healFailedFillEntries({
+            page,
+            failedEntries: failedBefore,
+          });
           base.heal = heal;
+          // Always re-verify and derive the note from FINAL truth: fields
+          // that actually flipped fail→pass — never from the heal report's
+          // own claims (the 774cc9b-era "8/8 recovered" lie).
+          base.verify = await adapter.verify(page, approvedPlan.answers);
+          const failedAfter = new Set(
+            failedApprovedEntries(approvedPlan, base.verify).map(
+              (e) => e.field_id,
+            ),
+          );
+          const recovered = failedBefore.filter(
+            (e) => !failedAfter.has(e.field_id),
+          ).length;
           base.notes.push(
-            `heal pass: ${heal.healed.length}/${heal.attempted} recovered` +
+            `heal pass: recovered ${recovered}/${failedBefore.length}; final verify passed: ${base.verify.passed}` +
               (heal.sidecar_used ? " (sidecar consulted)" : ""),
           );
-          if (heal.healed.length > 0) {
-            base.verify = await adapter.verify(page, approvedPlan.answers);
-          }
         }
       }
 

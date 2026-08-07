@@ -45,6 +45,7 @@ import { healFailedFillEntries } from "../ats/greenhouse/fillHealer.js";
 import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
+import { verifyResumePdfFile } from "../jobright/resumeDownload.js";
 import {
   ensureApplicationArtifactDirs,
   writeJsonAtomic,
@@ -149,6 +150,12 @@ export async function runGreenhouseSubmission(input: {
   if (!resume) {
     report.reason =
       "No verified resume material — run materials:register (or resume:download) first";
+    return report;
+  }
+  // The file may have moved or been corrupted since registration.
+  const resumeOnDisk = verifyResumePdfFile(resume.path);
+  if (!resumeOnDisk.verified) {
+    report.reason = `Registered resume failed on-disk verification: ${resume.path} — ${resumeOnDisk.evidence}. Re-run materials:register.`;
     return report;
   }
 

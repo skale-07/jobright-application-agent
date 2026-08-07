@@ -25,6 +25,9 @@ export const publicProfileSchema = z.object({
   additional_fields_of_study: z.array(z.string()).optional().default([]),
   graduation_month: z.string().optional().default(""),
   graduation_year: z.union([z.number(), z.string(), z.null()]).optional(),
+  /** Education start (optional; empty = field skipped, never invented). */
+  start_month: z.string().optional().default(""),
+  start_year: z.union([z.number(), z.string(), z.null()]).optional(),
   gpa: z.union([z.number(), z.string(), z.null()]).optional(),
   linkedin_url: z.string().optional().default(""),
   github_url: z.string().optional().default(""),
@@ -57,6 +60,8 @@ export function getProfileValue(
   if (canonical === "major") return profile.major;
   if (canonical === "graduation_year") return profile.graduation_year;
   if (canonical === "graduation_month") return profile.graduation_month;
+  if (canonical === "start_year") return profile.start_year;
+  if (canonical === "start_month") return profile.start_month;
   if (canonical === "gpa") return profile.gpa;
   if (canonical === "linkedin_url") return profile.linkedin_url;
   if (canonical === "github_url") return profile.github_url;
