@@ -7,6 +7,13 @@ import { loadAnswerAliases } from "../candidate/answerAliases.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import type { PublicProfile } from "../candidate/publicProfile.js";
 import { GreenhouseAdapterV1 } from "../ats/greenhouse/v1.js";
+import { LeverAdapterV1, leverFullNameMatcher } from "../ats/lever/v1.js";
+import { AshbyAdapterV1, ashbyFullNameMatcher } from "../ats/ashby/v1.js";
+import {
+  annotateFullNameField,
+  type FullNameFieldMatcher,
+} from "../ats/shared/nameComposition.js";
+import { detectAts } from "../ats/registry.js";
 import { mapDiscoveredFields } from "./fieldNormalization.js";
 import { buildFillPlan } from "./resolveAnswers.js";
 import { toApprovedFillPlan } from "./approvedFillPlan.js";
@@ -18,10 +25,55 @@ import {
 import { withFixtureHtmlPage } from "../browser/fixtureSession.js";
 import { redactFillReportForArtifact } from "./fillReportRedaction.js";
 import type { Db } from "../storage/db/client.js";
-import type { FillResult } from "../ats/adapter.js";
+import type {
+  ApplicationAdapter,
+  DiscoveredField,
+  FillResult,
+  FormResetResult,
+  FormVerificationResult,
+  ResolvedApplicationAnswers,
+  UploadVerification,
+} from "../ats/adapter.js";
+import type { Page } from "playwright";
+import type { FillPlanEntry } from "./resolveAnswers.js";
+import type { ApprovedFillPlan } from "./approvedFillPlan.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
 import { buildHumanEssayEntries } from "./essayFill.js";
 import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
+
+/**
+ * The three fill-capable adapters all carry this surface (the base
+ * ApplicationAdapter interface leaves fill methods optional because
+ * generic/unsupported adapters lack them).
+ */
+export type FillCapableAdapter = ApplicationAdapter & {
+  setFillContext(entries: FillPlanEntry[], fields: DiscoveredField[]): void;
+  setApprovedFillPlan(plan: ApprovedFillPlan, profile?: PublicProfile): void;
+  fill(page: Page, answers: ResolvedApplicationAnswers): Promise<FillResult>;
+  verify(
+    page: Page,
+    expected: ResolvedApplicationAnswers,
+  ): Promise<FormVerificationResult>;
+  uploadResume(page: Page, resumePath: string): Promise<UploadVerification>;
+  resetForm(page: Page): Promise<FormResetResult>;
+  uploadCoverLetter?(
+    page: Page,
+    coverLetterPath: string,
+  ): Promise<UploadVerification>;
+};
+
+/** Fresh instance per run — the registry's singletons must not carry plan state. */
+const FILLABLE_ADAPTERS: Record<string, () => FillCapableAdapter> = {
+  greenhouse: () => new GreenhouseAdapterV1(),
+  lever: () => new LeverAdapterV1(),
+  ashby: () => new AshbyAdapterV1(),
+};
+
+/** Single full-name fields need annotation before planning (see nameComposition). */
+const FULL_NAME_MATCHERS: Record<string, FullNameFieldMatcher> = {
+  lever: leverFullNameMatcher,
+  ashby: ashbyFullNameMatcher,
+};
 
 export type ApplicationFillReport = {
   mode: "plan_only" | "executed";
@@ -29,12 +81,12 @@ export type ApplicationFillReport = {
   url: string;
   plan: ReturnType<typeof buildFillPlan>;
   approved_plan?: ReturnType<typeof toApprovedFillPlan>;
-  fill?: Awaited<ReturnType<GreenhouseAdapterV1["fill"]>>;
+  fill?: FillResult;
   /** Human-authored essay answers only; absent when none were provided. */
   essay_fill?: FillResult;
-  verify?: Awaited<ReturnType<GreenhouseAdapterV1["verify"]>>;
-  uploads?: Awaited<ReturnType<GreenhouseAdapterV1["uploadResume"]>>[];
-  reset?: Awaited<ReturnType<GreenhouseAdapterV1["resetForm"]>>;
+  verify?: FormVerificationResult;
+  uploads?: UploadVerification[];
+  reset?: FormResetResult;
   submit_attempted: false;
   notes: string[];
   report_path?: string;
@@ -45,27 +97,40 @@ export async function planApplicationFill(input: {
   html: string;
   profile?: PublicProfile;
 }): Promise<{
-  adapter: GreenhouseAdapterV1;
+  adapter: FillCapableAdapter;
   plan: ReturnType<typeof buildFillPlan>;
   approvedPlan: ReturnType<typeof toApprovedFillPlan>;
-  fields: Awaited<ReturnType<GreenhouseAdapterV1["discoverFields"]>>;
+  fields: DiscoveredField[];
 }> {
-  const adapter = new GreenhouseAdapterV1();
-  const detection = await adapter.detect(input);
-  if (!detection.matched) {
+  const { adapter: detected, detection } = await detectAts({
+    url: input.url,
+    html: input.html,
+  });
+  const makeAdapter = FILLABLE_ADAPTERS[detected.id];
+  if (!makeAdapter) {
     throw new Error(
-      `Phase 5 fill supports Greenhouse only — detection failed (${detection.evidence.join("; ") || "no evidence"})`,
+      `Fill supports greenhouse/lever/ashby only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
     );
   }
+  const adapter = makeAdapter();
   const fields = await adapter.discoverFields({ html: input.html });
   const aliases = loadAnswerAliases();
-  const mapped = mapDiscoveredFields(fields, aliases);
+  const nameMatcher = FULL_NAME_MATCHERS[adapter.id];
+  const mapped = nameMatcher
+    ? annotateFullNameField(mapDiscoveredFields(fields, aliases), nameMatcher)
+    : mapDiscoveredFields(fields, aliases);
   const profile = input.profile ?? loadPublicProfile();
   const plan = buildFillPlan(mapped, profile);
   const approvedPlan = toApprovedFillPlan(plan.entries);
   adapter.setFillContext(plan.entries, fields);
-  adapter.setApprovedFillPlan(approvedPlan);
-  return { adapter, plan, approvedPlan, fields };
+  adapter.setApprovedFillPlan(approvedPlan, profile);
+  // Lever/Ashby rewrite the plan during setApprovedFillPlan (full-name
+  // composition) — report the plan the adapter will actually execute.
+  const composed =
+    (
+      adapter as { getApprovedFillPlan?: () => ApprovedFillPlan | null }
+    ).getApprovedFillPlan?.() ?? approvedPlan;
+  return { adapter, plan, approvedPlan: composed, fields };
 }
 
 export async function runApplicationFill(input: {
@@ -111,7 +176,11 @@ export async function runApplicationFill(input: {
     if (input.includeHumanEssays) {
       const { db, applicationId } = input.includeHumanEssays;
       const essayEntries = buildHumanEssayEntries(db, applicationId, fields);
-      if (essayEntries.length > 0) {
+      if (essayEntries.length > 0 && adapter.id !== "greenhouse") {
+        notes.push(
+          `essay answers present but ${adapter.id} essay fill is not wired — left unfilled for human review`,
+        );
+      } else if (essayEntries.length > 0) {
         const fieldMeta = new Map<string, FieldMeta>(
           fields.map((f) => {
             const meta: FieldMeta = { type: f.type };
@@ -133,9 +202,15 @@ export async function runApplicationFill(input: {
       uploads.push(await adapter.uploadResume(page, input.resumePath));
     }
     if (input.coverLetterPath) {
-      uploads.push(
-        await adapter.uploadCoverLetter(page, input.coverLetterPath),
-      );
+      if (adapter.uploadCoverLetter) {
+        uploads.push(
+          await adapter.uploadCoverLetter(page, input.coverLetterPath),
+        );
+      } else {
+        notes.push(
+          `cover letter skipped — ${adapter.id} has no cover-letter file input`,
+        );
+      }
     }
     let reset;
     if (input.resetAfter) {
@@ -172,9 +247,10 @@ export async function runAtsFixtureFill(
   },
 ): Promise<ApplicationFillReport> {
   // "essay" is a Greenhouse-form fixture too — used by the human-essay path.
-  if (name !== "greenhouse" && name !== "essay") {
+  const fillableFixtures = ["greenhouse", "essay", "lever", "ashby"];
+  if (!fillableFixtures.includes(name)) {
     throw new Error(
-      `Phase 5 execute/fill fixtures are Greenhouse-only (got "${name}"). Use ats:inspect for other fixtures.`,
+      `Execute/fill fixtures are limited to ${fillableFixtures.join("/")} (got "${name}"). Use ats:inspect for other fixtures.`,
     );
   }
   const fixture = loadAtsFixture(name);
