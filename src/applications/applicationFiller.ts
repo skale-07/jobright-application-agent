@@ -16,6 +16,11 @@ import {
 } from "./atsFixtureInspect.js";
 import { withFixtureHtmlPage } from "../browser/fixtureSession.js";
 import { redactFillReportForArtifact } from "./fillReportRedaction.js";
+import type { Db } from "../storage/db/client.js";
+import type { FillResult } from "../ats/adapter.js";
+import type { FieldMeta } from "../ats/greenhouse/fill.js";
+import { buildHumanEssayEntries } from "./essayFill.js";
+import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
 
 export type ApplicationFillReport = {
   mode: "plan_only" | "executed";
@@ -24,6 +29,8 @@ export type ApplicationFillReport = {
   plan: ReturnType<typeof buildFillPlan>;
   approved_plan?: ReturnType<typeof toApprovedFillPlan>;
   fill?: Awaited<ReturnType<GreenhouseAdapterV1["fill"]>>;
+  /** Human-authored essay answers only; absent when none were provided. */
+  essay_fill?: FillResult;
   verify?: Awaited<ReturnType<GreenhouseAdapterV1["verify"]>>;
   uploads?: Awaited<ReturnType<GreenhouseAdapterV1["uploadResume"]>>[];
   reset?: Awaited<ReturnType<GreenhouseAdapterV1["resetForm"]>>;
@@ -69,9 +76,16 @@ export async function runApplicationFill(input: {
   coverLetterPath?: string;
   resetAfter?: boolean;
   artifactName?: string;
+  /**
+   * When set, textareas classified as essays are filled from human-authored
+   * application_answers rows (resume-essay). This is the only essay path;
+   * the approved plan continues to reject textareas unconditionally.
+   */
+  includeHumanEssays?: { db: Db; applicationId: string };
 }): Promise<ApplicationFillReport> {
   const notes: string[] = [];
-  const { adapter, plan, approvedPlan } = await planApplicationFill(input);
+  const { adapter, plan, approvedPlan, fields } =
+    await planApplicationFill(input);
 
   if (!input.execute) {
     notes.push("plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate");
@@ -91,6 +105,27 @@ export async function runApplicationFill(input: {
 
   return withFixtureHtmlPage(input.html, async (page) => {
     const fill = await adapter.fill(page, approvedPlan.answers);
+
+    let essayFill: FillResult | undefined;
+    if (input.includeHumanEssays) {
+      const { db, applicationId } = input.includeHumanEssays;
+      const essayEntries = buildHumanEssayEntries(db, applicationId, fields);
+      if (essayEntries.length > 0) {
+        const fieldMeta = new Map<string, FieldMeta>(
+          fields.map((f) => {
+            const meta: FieldMeta = { type: f.type };
+            if (f.name) meta.name = f.name;
+            if (f.inputId) meta.inputId = f.inputId;
+            return [f.id, meta] as const;
+          }),
+        );
+        essayFill = await greenhouseFillEssays(page, essayEntries, fieldMeta, db);
+        notes.push(
+          `human essay answers filled: ${essayFill.filled.length} (source: resume-essay)`,
+        );
+      }
+    }
+
     const verify = await adapter.verify(page, approvedPlan.answers);
     const uploads = [];
     if (input.resumePath) {
@@ -113,6 +148,7 @@ export async function runApplicationFill(input: {
       plan,
       approved_plan: approvedPlan,
       fill,
+      ...(essayFill ? { essay_fill: essayFill } : {}),
       verify,
       ...(uploads.length ? { uploads } : {}),
       ...(reset ? { reset } : {}),
@@ -131,9 +167,11 @@ export async function runAtsFixtureFill(
     resumePath?: string;
     coverLetterPath?: string;
     resetAfter?: boolean;
+    includeHumanEssays?: { db: Db; applicationId: string };
   },
 ): Promise<ApplicationFillReport> {
-  if (name !== "greenhouse") {
+  // "essay" is a Greenhouse-form fixture too — used by the human-essay path.
+  if (name !== "greenhouse" && name !== "essay") {
     throw new Error(
       `Phase 5 execute/fill fixtures are Greenhouse-only (got "${name}"). Use ats:inspect for other fixtures.`,
     );
@@ -145,6 +183,9 @@ export async function runAtsFixtureFill(
     ...(opts.profile ? { profile: opts.profile } : {}),
     ...(opts.resumePath ? { resumePath: opts.resumePath } : {}),
     ...(opts.coverLetterPath ? { coverLetterPath: opts.coverLetterPath } : {}),
+    ...(opts.includeHumanEssays
+      ? { includeHumanEssays: opts.includeHumanEssays }
+      : {}),
     resetAfter: opts.resetAfter ?? false,
     artifactName: name,
   });

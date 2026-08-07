@@ -2,7 +2,14 @@
 import { migrate, openDatabase, closeDatabase } from "../storage/db/client.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
-import { listOpenReviewItems } from "../queue/reviewItems.js";
+import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
+import { getApplication, transitionApplication } from "../queue/stateMachine.js";
+import {
+  ESSAY_REVIEW_TITLE,
+  listHumanEssayAnswers,
+  saveHumanEssayAnswer,
+  unansweredEssayFieldKeys,
+} from "../applications/essayAnswers.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -70,6 +77,7 @@ Commands:
   ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
+  resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -439,6 +447,135 @@ async function cmdAtsInspect(
   process.exit(1);
 }
 
+/**
+ * Phase 8: human-authored essay answers for ATS-form free-text questions.
+ * Distinct from outreach email generation — essays are never machine-written.
+ */
+function cmdResumeEssay(flags: Record<string, string | boolean>): void {
+  const application = flags["application"];
+  const field = flags["field"];
+  const file = flags["file"];
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+
+    // List mode: what still needs writing.
+    if (typeof application !== "string") {
+      const items = listOpenReviewItems(db).filter(
+        (i) => i.kind === "ESSAY",
+      );
+      const apps = db
+        .prepare(
+          `SELECT a.id, a.state, j.company, j.role FROM applications a
+           JOIN jobs j ON j.id = a.job_id
+           WHERE a.state = 'ESSAY_REQUIRED'`,
+        )
+        .all() as Array<{
+        id: string;
+        state: string;
+        company: string;
+        role: string;
+      }>;
+      console.log(
+        JSON.stringify(
+          {
+            essay_required_applications: apps,
+            open_essay_review_items: items.map((i) => ({
+              id: i.id,
+              application_id: i.application_id,
+              essays: JSON.parse(i.payload_json),
+            })),
+            usage:
+              "resume-essay --application <uuid> --field <field_id> --file <answer.txt>",
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
+
+    if (typeof field !== "string" || typeof file !== "string") {
+      console.error(
+        "Usage: resume-essay --application <uuid> --field <field_id> --file <answer.txt>",
+      );
+      process.exit(2);
+      return;
+    }
+
+    const app = getApplication(db, application);
+    if (!app) {
+      console.error(`Unknown application: ${application}`);
+      process.exit(1);
+      return;
+    }
+
+    const abs = path.resolve(file);
+    if (!fs.existsSync(abs)) {
+      console.error(`Answer file not found: ${abs}`);
+      process.exit(1);
+      return;
+    }
+    const text = fs.readFileSync(abs, "utf8");
+    const saved = saveHumanEssayAnswer(db, {
+      applicationId: application,
+      fieldKey: field,
+      text,
+      sourceFile: abs,
+    });
+
+    // When every essay the review item asked for has an answer, resolve it
+    // and move the application back toward verification.
+    const essayItems = listOpenReviewItems(db).filter(
+      (i) => i.kind === "ESSAY" && i.application_id === application,
+    );
+    let resolved = false;
+    let remaining: string[] = [];
+    for (const item of essayItems) {
+      remaining = unansweredEssayFieldKeys(db, application, item);
+      if (remaining.length === 0) {
+        resolveReviewItem(db, item.id, {
+          resolved_by: "resume-essay",
+          answers: listHumanEssayAnswers(db, application).map((a) => ({
+            field_key: a.field_key,
+            chars: a.text.length,
+          })),
+        });
+        resolved = true;
+      }
+    }
+    if (
+      resolved &&
+      getApplication(db, application)?.state === "ESSAY_REQUIRED"
+    ) {
+      transitionApplication(db, {
+        applicationId: application,
+        nextState: "FIELD_VERIFICATION",
+        reason: "all essay answers provided via resume-essay",
+      });
+    }
+
+    console.log(
+      JSON.stringify(
+        {
+          answer_id: saved.id,
+          field_key: field,
+          chars: text.trim().length,
+          review_item_title: ESSAY_REVIEW_TITLE,
+          review_resolved: resolved,
+          unanswered_fields: remaining,
+          application_state: getApplication(db, application)?.state,
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdMaterialsRegister(flags: Record<string, string | boolean>): void {
   const application = flags["application"];
   const file = flags["file"];
@@ -636,8 +773,8 @@ async function main(): Promise<void> {
       notImplemented("retry (Phase 7+)");
       break;
     case "resume-essay":
-      notImplemented("resume-essay (Phase 8)");
-      break;
+      cmdResumeEssay(flags);
+      return;
     default:
       console.error(`Unknown command: ${command}`);
       printHelp();
