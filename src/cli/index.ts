@@ -10,6 +10,12 @@ import {
   saveHumanEssayAnswer,
   unansweredEssayFieldKeys,
 } from "../applications/essayAnswers.js";
+import { runGreenhouseSubmission } from "../applications/submitRun.js";
+import {
+  getLatestUncertainSubmission,
+  markSubmissionFailed,
+  markSubmissionVerified,
+} from "../queue/submissionsRepo.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -78,6 +84,9 @@ Commands:
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
+  submit --application <uuid> [--headed] [--yes]
+  review
+  review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -447,6 +456,160 @@ async function cmdAtsInspect(
   process.exit(1);
 }
 
+/** Phase 7: human-approved submission. All gates live in runGreenhouseSubmission. */
+async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error("Usage: submit --application <uuid> [--headed] [--yes]");
+    console.error(
+      "Requires FORM_FILL_ENABLED=true DRY_RUN=false SUBMIT_ENABLED=true.",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runGreenhouseSubmission({
+      db,
+      applicationId: application,
+      headless: flags["headed"] !== true,
+      assumeYes: flags["yes"] === true,
+    });
+    console.log(JSON.stringify(report, null, 2));
+    if (report.outcome !== "SUBMITTED_VERIFIED") {
+      process.exitCode = report.outcome === "UNCERTAIN" ? 3 : 1;
+    }
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+function cmdReview(): void {
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const items = listOpenReviewItems(db);
+    console.log(
+      JSON.stringify(
+        items.map((i) => ({
+          id: i.id,
+          kind: i.kind,
+          application_id: i.application_id,
+          title: i.title,
+          created_at: i.created_at,
+          payload: JSON.parse(i.payload_json),
+        })),
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Operator resolution of an uncertain submission.
+ * --outcome submitted      : receipt confirmed to exist → SUBMITTED
+ * --outcome not-submitted  : confirmed nothing went through; --requeue for retry
+ */
+function cmdReviewResolve(flags: Record<string, string | boolean>): void {
+  const id = flags["id"];
+  const outcome = flags["outcome"];
+  if (
+    typeof id !== "string" ||
+    (outcome !== "submitted" && outcome !== "not-submitted")
+  ) {
+    console.error(
+      "Usage: review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]",
+    );
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const item = listOpenReviewItems(db).find((i) => i.id === id);
+    if (!item) {
+      console.error(`No open review item with id ${id}`);
+      process.exit(1);
+      return;
+    }
+    if (item.kind !== "UNCERTAIN_SUBMISSION" || !item.application_id) {
+      console.error(
+        `review:resolve currently handles UNCERTAIN_SUBMISSION items only (got ${item.kind})`,
+      );
+      process.exit(1);
+      return;
+    }
+    const applicationId = item.application_id;
+    const uncertain = getLatestUncertainSubmission(db, applicationId);
+
+    if (outcome === "submitted") {
+      if (uncertain) {
+        markSubmissionVerified(db, uncertain.id, {
+          submitted: true,
+          submitted_at: new Date().toISOString(),
+          confirmation_url: "operator://review-resolve",
+          confirmation_text: "Operator confirmed receipt exists",
+          application_identifier: null,
+          screenshot_path: uncertain.screenshot_path ?? "",
+        });
+      }
+      transitionApplication(db, {
+        applicationId,
+        nextState: "SUBMITTED",
+        reason: "operator confirmed submission receipt (review:resolve)",
+      });
+      resolveReviewItem(db, id, { outcome: "submitted", by: "review:resolve" });
+      console.log(
+        JSON.stringify({ resolved: id, outcome, state: "SUBMITTED" }, null, 2),
+      );
+      return;
+    }
+
+    // not-submitted
+    if (uncertain) {
+      markSubmissionFailed(
+        db,
+        uncertain.id,
+        "operator confirmed nothing was submitted",
+      );
+    }
+    transitionApplication(db, {
+      applicationId,
+      nextState: "FAILED_RETRYABLE",
+      reason: "operator confirmed no submission occurred (review:resolve)",
+    });
+    if (flags["requeue"] === true) {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "QUEUED",
+        reason: "operator requeue after uncertain resolution",
+      });
+    }
+    resolveReviewItem(db, id, {
+      outcome: "not-submitted",
+      requeued: flags["requeue"] === true,
+      by: "review:resolve",
+    });
+    console.log(
+      JSON.stringify(
+        {
+          resolved: id,
+          outcome,
+          state: flags["requeue"] === true ? "QUEUED" : "FAILED_RETRYABLE",
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 /**
  * Phase 8: human-authored essay answers for ATS-form free-text questions.
  * Distinct from outreach email generation — essays are never machine-written.
@@ -758,6 +921,15 @@ async function main(): Promise<void> {
       return;
     case "materials:register":
       cmdMaterialsRegister(flags);
+      return;
+    case "submit":
+      await cmdSubmit(flags);
+      return;
+    case "review":
+      cmdReview();
+      return;
+    case "review:resolve":
+      cmdReviewResolve(flags);
       return;
     case "run":
       if (flags["dry-run"] || getConfig().dryRun) {

@@ -12,4 +12,8 @@ export const greenhouseSelectorsV1 = {
   loginMarkers: /sign in|log in|create an account|create account/i,
   /** HTML-side form presence (no browser). Mirrors the `form` CSS selector. */
   formMarkers: /id=["']application_form["']|new_job_application/i,
+  /** Post-submit confirmation page (Phase 7). */
+  confirmation: "#application_confirmation, .application-confirmation",
+  confirmationMarkers:
+    /thank you for applying|application (?:has been|was) (?:submitted|received)|we have received your application/i,
 } as const;

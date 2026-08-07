@@ -15,10 +15,7 @@ import {
   type ApprovedFillPlanEntry,
 } from "../../applications/approvedFillPlan.js";
 import { isDemographicsField } from "../../applications/essayDetector.js";
-import {
-  assertFormFillAllowed,
-  assertSubmitAllowed,
-} from "../../applications/formFillGuards.js";
+import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 
 export type FieldMeta = {
   name?: string;
@@ -382,14 +379,6 @@ export async function greenhouseResetForm(page: Page): Promise<FormResetResult> 
     el.reset();
   });
   return { reset: true, notes: ["HTMLFormElement.reset() invoked"] };
-}
-
-export async function greenhouseRefuseSubmit(page: Page): Promise<never> {
-  void page;
-  assertSubmitAllowed("greenhouse.submit");
-  throw new Error(
-    "Greenhouse submit is not implemented in Phase 5 — use Phase 7 submission path",
-  );
 }
 
 export async function greenhouseVerifyAnswers(

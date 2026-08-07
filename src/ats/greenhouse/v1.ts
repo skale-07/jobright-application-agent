@@ -9,13 +9,20 @@ import type {
   FormVerificationResult,
   ResolvedApplicationAnswers,
   SubmissionAttempt,
+  SubmissionReceipt,
   UploadVerification,
 } from "../adapter.js";
+import fs from "node:fs";
+import path from "node:path";
+import { getConfig } from "../../config/index.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
 import { detectBlockingCaptcha } from "./captchaDetection.js";
 import {
+  greenhouseSubmit,
+  greenhouseVerifySubmission,
+} from "./submission.js";
+import {
   greenhouseFillFromPlan,
-  greenhouseRefuseSubmit,
   greenhouseResetForm,
   greenhouseUploadFile,
   greenhouseVerifyAnswers,
@@ -185,6 +192,17 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
   }
 
   async submit(page: Page): Promise<SubmissionAttempt> {
-    return greenhouseRefuseSubmit(page);
+    return greenhouseSubmit(page);
+  }
+
+  async verifySubmission(page: Page): Promise<SubmissionReceipt> {
+    const screenshotPath = path.join(
+      getConfig().artifactsDir,
+      "ats-submit",
+      "greenhouse",
+      `receipt-${Date.now()}.png`,
+    );
+    fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
+    return greenhouseVerifySubmission(page, { screenshotPath });
   }
 }
