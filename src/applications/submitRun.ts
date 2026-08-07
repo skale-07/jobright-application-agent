@@ -32,17 +32,11 @@ import { planApplicationFill } from "./applicationFiller.js";
 import { buildHumanEssayEntries } from "./essayFill.js";
 import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
-import {
-  greenhouseSubmit,
-  greenhouseVerifySubmission,
-  SubmissionUncertainError,
-} from "../ats/greenhouse/submission.js";
-import {
-  failedApprovedEntries,
-  verifyPageBeforeMutation,
-} from "../ats/greenhouse/liveFill.js";
+import { SubmissionUncertainError } from "../ats/shared/submissionUncertain.js";
+import { failedApprovedEntries } from "../ats/greenhouse/liveFill.js";
 import { healFailedFillEntries } from "../ats/greenhouse/fillHealer.js";
-import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { ATS_BINDINGS } from "./atsBindings.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { verifyResumePdfFile } from "../jobright/resumeDownload.js";
@@ -71,17 +65,21 @@ export type SubmissionRunReport = {
 };
 
 /**
- * Human-approved Greenhouse submission (Phase 7).
+ * Human-approved submission (Phase 7), dispatched per ATS via ATS_BINDINGS
+ * (greenhouse / lever / ashby).
  *
  * Layered defenses, in firing order:
  *   env gate (assertSubmitAllowed) → state check → lease →
- *   assertSubmissionAllowed → idempotency claim → page identity gate →
+ *   assertSubmissionAllowed → idempotency claim → per-ATS page gate
+ *   (greenhouse: full identity verification; lever/ashby: the weaker
+ *   trusted-host/login-wall/captcha/form gate — see preMutationGate.ts) →
  *   fill verify must pass → per-submission human confirmation (or persisted
  *   unattended cap) → single click → deterministic receipt verification.
- * An unverifiable outcome is UNCERTAIN: review item + idempotency 'uncertain',
- * and nothing ever re-clicks.
+ * Essays present on an ATS without a wired essay path fail closed BEFORE
+ * any mutation. An unverifiable outcome is UNCERTAIN: review item +
+ * idempotency 'uncertain', and nothing ever re-clicks.
  */
-export async function runGreenhouseSubmission(input: {
+export async function runAtsSubmission(input: {
   db: Db;
   applicationId: string;
   headless?: boolean;
@@ -105,7 +103,7 @@ export async function runGreenhouseSubmission(input: {
   };
 
   // Env gate before anything else — no browser, no DB writes when flags refuse.
-  assertSubmitAllowed("submitRun.runGreenhouseSubmission");
+  assertSubmitAllowed("submitRun.runAtsSubmission");
 
   const app = getApplication(db, applicationId);
   if (!app) {
@@ -140,11 +138,12 @@ export async function runGreenhouseSubmission(input: {
     report.reason = "No employer application URL stored for this job";
     return report;
   }
-  const urlValidation = validateGreenhouseApplicationUrl(employerUrl);
-  if (!urlValidation.passed) {
-    report.reason = `Employer URL failed Greenhouse validation: ${urlValidation.failureReason}`;
+  const detected = detectAtsFromUrl(employerUrl);
+  if (detected.ats === null) {
+    report.reason = `Employer URL failed ATS validation: ${detected.failureReason}`;
     return report;
   }
+  const binding = ATS_BINDINGS[detected.ats];
 
   const resume = getRegisteredResume(db, applicationId);
   if (!resume) {
@@ -197,13 +196,9 @@ export async function runGreenhouseSubmission(input: {
     );
 
     return await withPublicUrlPage(
-      urlValidation.normalizedUrl ?? employerUrl,
+      detected.normalizedUrl,
       async (page) => {
-        const gate = await verifyPageBeforeMutation(
-          page,
-          employerUrl,
-          urlValidation.normalizedUrl,
-        );
+        const gate = await binding.gate(page, employerUrl, detected.normalizedUrl);
         if (!gate.ok) {
           markSubmissionFailed(db, pending.id, `page gate: ${gate.failureCode}`);
           failIdempotencyKey(db, idemKey, gate.failureCode ?? "gate");
@@ -222,6 +217,44 @@ export async function runGreenhouseSubmission(input: {
           url: gate.finalUrl,
           html: gate.html,
         });
+        if (adapter.id !== binding.id) {
+          markSubmissionFailed(
+            db,
+            pending.id,
+            `ATS mismatch: URL says ${binding.id}, page detected as ${adapter.id}`,
+          );
+          failIdempotencyKey(db, idemKey, "ats_mismatch");
+          report.outcome = "FAILED_BEFORE_CLICK";
+          report.reason = `ATS mismatch: URL validated as ${binding.id} but the page detected as ${adapter.id}`;
+          return persist(report);
+        }
+
+        // Essays on an ATS without a wired essay path: fail closed BEFORE
+        // the confirmation prompt and before any page mutation, leaving the
+        // application in READY_TO_SUBMIT so it retries once essays land.
+        const essayEntries = buildHumanEssayEntries(db, applicationId, fields);
+        if (essayEntries.length > 0 && !binding.supportsEssayFill) {
+          markSubmissionFailed(
+            db,
+            pending.id,
+            `${binding.id} essay fill not wired (${essayEntries.length} essay answers present)`,
+          );
+          failIdempotencyKey(db, idemKey, "essays_not_supported");
+          const { item } = upsertOpenReviewItem(db, {
+            applicationId,
+            kind: "MANUAL",
+            title: `Essay answers exist but ${binding.id} essay fill is not wired`,
+            payload: {
+              ats: binding.id,
+              essay_count: essayEntries.length,
+              essay_fields: essayEntries.map((e) => e.field_id),
+            },
+          });
+          report.outcome = "FAILED_BEFORE_CLICK";
+          report.review_item_id = item.id;
+          report.reason = `${binding.id} essay fill is not wired — ${essayEntries.length} human essay answers would be dropped`;
+          return persist(report);
+        }
 
         // Human confirmation BEFORE any mutation of the page.
         if (cfg.submitRequiresLocalConfirmation) {
@@ -265,8 +298,7 @@ export async function runGreenhouseSubmission(input: {
         try {
           // Fill + essays + upload + verify on the gated page.
           const fill = await adapter.fill(page, approvedPlan.answers);
-          const essayEntries = buildHumanEssayEntries(db, applicationId, fields);
-          if (essayEntries.length > 0) {
+          if (essayEntries.length > 0 && binding.supportsEssayFill) {
             const fieldMeta = new Map<string, FieldMeta>(
               fields.map((f) => {
                 const meta: FieldMeta = { type: f.type };
@@ -279,8 +311,9 @@ export async function runGreenhouseSubmission(input: {
           }
           const upload = await adapter.uploadResume(page, resume.path);
           let verify = await adapter.verify(page, approvedPlan.answers);
-          // Phase 6a′: one heal pass before giving up on the click.
-          if (!verify.passed) {
+          // Phase 6a′: one heal pass before giving up on the click
+          // (greenhouse-only until the healer is proven on other ATSes).
+          if (!verify.passed && binding.supportsHealing) {
             const failed = failedApprovedEntries(approvedPlan, verify);
             if (failed.length > 0) {
               const heal = await healFailedFillEntries({
@@ -311,7 +344,7 @@ export async function runGreenhouseSubmission(input: {
             return persist(report);
           }
 
-          const attempt = await greenhouseSubmit(page);
+          const attempt = await binding.submit(page);
           if (!attempt.clicked) {
             markSubmissionFailed(db, pending.id, attempt.notes.join("; "));
             failIdempotencyKey(db, idemKey, "not_clicked");
@@ -328,7 +361,7 @@ export async function runGreenhouseSubmission(input: {
 
           // Click happened — from here every path is VERIFIED or UNCERTAIN.
           try {
-            const receipt = await greenhouseVerifySubmission(page, {
+            const receipt = await binding.verifySubmission(page, {
               screenshotPath,
             });
             markSubmissionVerified(db, pending.id, receipt);
@@ -413,7 +446,7 @@ export async function runGreenhouseSubmission(input: {
     writeJsonAtomic(out, redactObject(r as unknown as Record<string, unknown>));
     r.artifact_path = out;
     logger.info("submission run finished", {
-      service: "greenhouse",
+      service: detected.ats ?? "unknown",
       action: "submit_run",
       metadata: {
         application_id: r.application_id,
@@ -424,3 +457,6 @@ export async function runGreenhouseSubmission(input: {
     return r;
   }
 }
+
+/** @deprecated Renamed — the run dispatches per ATS now. Kept for existing callers/tests. */
+export const runGreenhouseSubmission = runAtsSubmission;

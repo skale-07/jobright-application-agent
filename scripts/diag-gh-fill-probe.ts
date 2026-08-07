@@ -4,7 +4,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 import {
   detectControlKind,
   fillComboboxControl,
@@ -33,9 +33,7 @@ async function main(): Promise<void> {
   const resume = resumeCandidates.find((p) => fs.existsSync(p));
   if (!resume) throw new Error("no resume pdf found for probe");
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForSelector("#application_form, form", { timeout: 30_000 });
   await page.waitForTimeout(2_000);
 
@@ -106,7 +104,7 @@ async function main(): Promise<void> {
   }
 
   console.log(JSON.stringify({ results, upload, resume }, null, 2));
-  await browser.close();
+  });
 }
 
 main().catch((e) => {

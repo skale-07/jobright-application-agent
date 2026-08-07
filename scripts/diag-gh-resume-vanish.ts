@@ -1,7 +1,7 @@
 /**
  * After education combobox fills, does #resume disappear?
  */
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 import { fillComboboxControl } from "../src/ats/greenhouse/comboboxFill.js";
 
 const url =
@@ -21,9 +21,7 @@ async function inventory(page: import("playwright").Page): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForTimeout(2500);
   console.log("BEFORE\n", await inventory(page));
 
@@ -56,7 +54,7 @@ async function main(): Promise<void> {
   const opts = await page.locator('[role="option"]').filter({ visible: true }).allTextContents();
   console.log("\nDiscipline filter 'Applied Math' options:", opts.slice(0, 15));
 
-  await browser.close();
+  });
 }
 
 main().catch((e) => {

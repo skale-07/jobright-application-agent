@@ -24,7 +24,7 @@ drafts only, enforced by CI-level banned-identifier checks.
 0. [One-time setup](#0-one-time-setup)
 1. [Login (JobRight via CDP, Outlook)](#1-login)
 2. [Discover jobs](#2-discover)
-3. [Inspect (JobRight detail + Greenhouse form)](#3-inspect)
+3. [Inspect (JobRight detail + ATS form: greenhouse/lever/ashby)](#3-inspect)
 4. [Register a domain resume](#4-materials)
 5. [Rehearse the fill](#5-fill)
 6. [Essays (ATS-form questions — human-written)](#6-essays)
@@ -129,19 +129,27 @@ Read-only, safe-env. JobRight detail (from SQLite, no feed search):
 npm run inspect -- --job <jobright_job_id>
 ```
 
-Greenhouse form (field inventory + proposed plan, **no values**):
+ATS form (field inventory + proposed plan, **no values**). Greenhouse,
+Lever, and Ashby URLs all dispatch automatically:
 
 ```powershell
 npm run ats:inspect -- --url https://boards.greenhouse.io/<board>/jobs/<id> --headed
+npm run ats:inspect -- --url https://jobs.lever.co/<company>/<posting-uuid>/apply
+npm run ats:inspect -- --url https://jobs.ashbyhq.com/<org>/<job-uuid>/application
 ```
 
-Expected: report with `identity_verification.passed: true`, a
+Expected (greenhouse): report with `identity_verification.passed: true`, a
 `proposed_fill_plan`, and `captcha_detected: false` on a normal board page
 (dormant CAPTCHA assets are listed under `dormant_markers` and never abort).
-Store the employer URL for the pipeline while you're at it:
+Lever/Ashby run the shared read-only inspector on the rendered DOM (no
+identity verification exists for them — see
+`docs/ats-adapters-lever-ashby.md`) and write an
+`artifacts/ats-inspect/<ats>-live/` report. Store the employer URL for the
+pipeline while you're at it (any supported ATS URL is accepted and
+normalized):
 
 ```powershell
-npm run run -- --pipeline --app <application_uuid> --url <GREENHOUSE_APPLICATION_URL>
+npm run run -- --pipeline --app <application_uuid> --url <ATS_APPLICATION_URL>
 ```
 
 **Failure modes:** `GREENHOUSE_APPLICATION_UNAVAILABLE` = employer redirect
@@ -170,14 +178,14 @@ material. Re-registering replaces the single resume slot.
 Plan first, always — read what would be typed before enabling mutation:
 
 ```powershell
-npm run ats:fill -- --url $GREENHOUSE_URL              # plan only, safe env
+npm run ats:fill -- --url $ATS_URL                     # plan only, safe env — greenhouse|lever|ashby
 ```
 
 Then deliberately:
 
 ```powershell
 $env:FORM_FILL_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="false"
-npm run ats:fill -- --url $GREENHOUSE_URL --execute --headed --resume private\candidate\resumes\swe.pdf
+npm run ats:fill -- --url $ATS_URL --execute --headed --resume private\candidate\resumes\swe.pdf
 ```
 
 Expected: `verify.passed: true` with per-field read-back results, and
@@ -226,12 +234,19 @@ npm run submit -- --application <uuid> --headed
 ```
 
 What happens, in order: prior-submission guard → registered-resume check →
-lease → PENDING submissions row → page identity gate (redirect / CAPTCHA /
-login wall / closed job / job-id match) → fill + essays + upload + read-back
+lease → PENDING submissions row → per-ATS page gate (greenhouse: full
+identity verification incl. job-id match; lever/ashby: trusted host +
+login wall + CAPTCHA + form-present — deliberately weaker, see
+`docs/ats-adapters-lever-ashby.md`) → fill + essays + upload + read-back
 verification (**must** pass or it refuses to click) → the confirmation
 prompt naming company, role, URL, attempt, resume sha256, and plan counts →
 one click → deterministic receipt verification (explicit confirmation text
 + screenshot).
+
+Lever/Ashby differences: essay answers on file for those ATSes fail closed
+BEFORE any page mutation (`FAILED_BEFORE_CLICK` + MANUAL review item — the
+essay filler isn't wired for them yet), and the selector healer is
+greenhouse-only.
 
 Expected outcomes:
 

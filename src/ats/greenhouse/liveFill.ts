@@ -402,13 +402,17 @@ export async function runGreenhouseLiveFill(input: {
         });
         uploads.push(await adapter.uploadResume(page, input.resumePath));
       }
-      if (input.coverLetterPath) {
+      if (input.coverLetterPath && adapter.uploadCoverLetter) {
         logger.info("live fill: uploading cover letter", {
           service: "greenhouse",
           action: "upload",
         });
         uploads.push(
           await adapter.uploadCoverLetter(page, input.coverLetterPath),
+        );
+      } else if (input.coverLetterPath) {
+        base.notes.push(
+          `cover letter skipped — ${adapter.id} has no cover-letter file input`,
         );
       }
       if (uploads.length > 0) {

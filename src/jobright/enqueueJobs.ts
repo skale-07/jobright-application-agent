@@ -12,6 +12,7 @@ import {
   validateJobRightInspectionUrl,
 } from "./jobInspectionUrl.js";
 import { extractJobIdFromUrl } from "./jobDetails.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 
 /**
  * Manual enqueue of JobRight jobs by detail URL or bare hex job id.
@@ -161,6 +162,39 @@ export function enqueueOneJobRightJob(
   const role = options.role?.trim() || "Unknown role (manual enqueue)";
   const jobPath = new URL(parsed.job_url).pathname;
 
+  // Employer URL policy at ingestion: a supported-ATS URL is normalized and
+  // tagged; a well-formed https URL on an UNSUPPORTED ATS is stored
+  // verbatim so the pipeline can route it to UNSUPPORTED_ATS with a review
+  // item (the tracked path — hard-rejecting here would silently drop those
+  // applications); only malformed / non-https URLs are refused outright.
+  let employerUrl: string | undefined;
+  let employerAts: string | null | undefined;
+  if (options.employerApplicationUrl) {
+    const rawUrl = options.employerApplicationUrl.trim();
+    let parsedUrl: URL | null = null;
+    try {
+      parsedUrl = new URL(rawUrl);
+    } catch {
+      parsedUrl = null;
+    }
+    if (!parsedUrl || parsedUrl.protocol !== "https:") {
+      return {
+        input: parsed.jobright_job_id,
+        ok: false,
+        jobright_job_id: parsed.jobright_job_id,
+        job_url: parsed.job_url,
+        job_db_id: null,
+        application_id: null,
+        state: null,
+        dedupe_kind: null,
+        error: `employer URL rejected: not a well-formed https URL (${rawUrl.slice(0, 64)})`,
+      };
+    }
+    const detected = detectAtsFromUrl(rawUrl);
+    employerUrl = detected.ats === null ? rawUrl : detected.normalizedUrl;
+    employerAts = detected.ats;
+  }
+
   const raw: Record<string, unknown> = {
     source: "manual_enqueue",
     jobright_job_id: parsed.jobright_job_id,
@@ -168,8 +202,9 @@ export function enqueueOneJobRightJob(
     job_path: jobPath,
     enqueued_at: new Date().toISOString(),
   };
-  if (options.employerApplicationUrl) {
-    raw["employer_application_url"] = options.employerApplicationUrl;
+  if (employerUrl) {
+    raw["employer_application_url"] = employerUrl;
+    raw["employer_application_ats"] = employerAts;
   }
 
   const job = upsertJobByFingerprint(db, {
@@ -183,13 +218,14 @@ export function enqueueOneJobRightJob(
 
   // If row already had richer company/role, don't overwrite with placeholders
   // in a follow-up path — upsert already merged. Re-merge employer URL into raw.
-  if (options.employerApplicationUrl) {
+  if (employerUrl) {
     try {
       const existingRaw = db
         .prepare(`SELECT raw_json FROM jobs WHERE id = ?`)
         .get(job.id) as { raw_json: string };
       const prev = JSON.parse(existingRaw.raw_json) as Record<string, unknown>;
-      prev["employer_application_url"] = options.employerApplicationUrl;
+      prev["employer_application_url"] = employerUrl;
+      prev["employer_application_ats"] = employerAts;
       prev["job_url"] = prev["job_url"] ?? parsed.job_url;
       prev["job_path"] = prev["job_path"] ?? jobPath;
       prev["jobright_job_id"] = parsed.jobright_job_id;

@@ -4,20 +4,16 @@ import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "./identityVerification.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
 
+// One class across all ATSes so submitRun's instanceof catch sees the
+// structured evidence no matter which adapter threw.
+export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+
 export type SubmissionPageClassification =
   | "confirmed"
   | "still_on_form"
   | "error_page"
   | "unknown";
-
-export class SubmissionUncertainError extends Error {
-  readonly evidence: Record<string, unknown>;
-  constructor(message: string, evidence: Record<string, unknown>) {
-    super(message);
-    this.name = "SubmissionUncertainError";
-    this.evidence = evidence;
-  }
-}
 
 /**
  * Pure classification of the page after a submit click.

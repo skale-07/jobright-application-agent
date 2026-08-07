@@ -1,12 +1,10 @@
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 
 const url =
   "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003";
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForTimeout(2500);
 
   const deg = page.locator("#degree--0");
@@ -46,7 +44,7 @@ async function main(): Promise<void> {
     await page.waitForTimeout(200);
   }
 
-  await browser.close();
+  });
 }
 
 main().catch((e) => {

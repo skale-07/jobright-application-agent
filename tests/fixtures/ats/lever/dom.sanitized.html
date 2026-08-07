@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme — Software Engineer — Apply</title>
+</head>
+<body>
+  <div class="main-header">
+    <a data-qa="btn-apply" href="/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply">Apply for this job</a>
+  </div>
+
+  <form id="application-form" class="application-form" action="/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply" method="post" enctype="multipart/form-data">
+    <div class="application-field">
+      <label for="resume-upload-input">Resume/CV *</label>
+      <input id="resume-upload-input" type="file" name="resume" required>
+    </div>
+
+    <div class="application-field">
+      <label for="name">Full name *</label>
+      <input id="name" type="text" name="name" required>
+    </div>
+
+    <div class="application-field">
+      <label for="email">Email *</label>
+      <input id="email" type="email" name="email" required>
+    </div>
+
+    <div class="application-field">
+      <label for="phone">Phone</label>
+      <input id="phone" type="text" name="phone">
+    </div>
+
+    <div class="application-field">
+      <label for="org">Current company</label>
+      <input id="org" type="text" name="org">
+    </div>
+
+    <div class="application-field">
+      <label for="urls-linkedin">LinkedIn URL</label>
+      <input id="urls-linkedin" type="text" name="urls[LinkedIn]">
+    </div>
+
+    <div class="application-field">
+      <label for="urls-github">GitHub URL</label>
+      <input id="urls-github" type="text" name="urls[GitHub]">
+    </div>
+
+    <div class="application-field">
+      <label for="urls-portfolio">Portfolio URL</label>
+      <input id="urls-portfolio" type="text" name="urls[Portfolio]">
+    </div>
+
+    <div class="application-question">
+      <label for="card-hearabout">How did you hear about us?</label>
+      <input id="card-hearabout" type="text" name="cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field0]">
+    </div>
+
+    <div class="application-question">
+      <label for="card-workauth">Are you legally authorized to work in the United States? *</label>
+      <select id="card-workauth" name="cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field1]" required>
+        <option value="">Select ...</option>
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </div>
+
+    <div class="application-field">
+      <label for="comments">Additional information</label>
+      <textarea id="comments" name="comments"></textarea>
+    </div>
+
+    <h4>U.S. Equal Employment Opportunity information</h4>
+    <div class="application-field">
+      <label for="eeo-gender">Gender</label>
+      <select id="eeo-gender" name="eeo[gender]">
+        <option value="">Select ...</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Decline to self-identify</option>
+      </select>
+    </div>
+    <div class="application-field">
+      <label for="eeo-race">Race</label>
+      <select id="eeo-race" name="eeo[race]">
+        <option value="">Select ...</option>
+        <option>Asian</option>
+        <option>White</option>
+        <option>Decline to self-identify</option>
+      </select>
+    </div>
+    <div class="application-field">
+      <label for="eeo-veteran">Veteran status</label>
+      <select id="eeo-veteran" name="eeo[veteran]">
+        <option value="">Select ...</option>
+        <option>I am not a veteran</option>
+        <option>Decline to self-identify</option>
+      </select>
+    </div>
+
+    <div class="h-captcha" data-sitekey="10000000-ffff-ffff-ffff-000000000001"></div>
+
+    <button data-qa="btn-submit" class="template-btn-submit" type="submit">Submit application</button>
+  </form>
+</body>
+</html>

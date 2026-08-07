@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme — Software Engineer — Application</title>
+</head>
+<body>
+  <div class="ashby-application-form">
+    <form>
+      <div class="ashby-application-form-field-entry">
+        <label for="_systemfield_name">Full name *</label>
+        <input id="_systemfield_name" name="_systemfield_name" type="text" required>
+      </div>
+      <button type="submit">Submit Application</button>
+    </form>
+  </div>
+  <script>
+    // Synthetic stand-in for Ashby's SPA submit: the success panel renders
+    // in place, the URL never changes.
+    document.querySelector('button[type="submit"]').addEventListener("click", (ev) => {
+      ev.preventDefault();
+      document.body.innerHTML =
+        '<div class="success-panel" data-testid="application-success">' +
+        "<h2>Your application has been submitted</h2>" +
+        "<p>Thank you for applying to Acme.</p>" +
+        "<p>Confirmation # AB-3315-CONF</p>" +
+        "</div>";
+    });
+  </script>
+</body>
+</html>

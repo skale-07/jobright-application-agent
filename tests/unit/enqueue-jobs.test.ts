@@ -142,5 +142,60 @@ describe("enqueueJobRightJobs (UNIT_CONFIRMED)", () => {
       ).raw_json,
     ) as Record<string, unknown>;
     expect(raw["employer_application_url"]).toBe(gh);
+    expect(raw["employer_application_ats"]).toBe("greenhouse");
+  });
+
+  it("accepts a lever employer URL, normalizing to /apply (W3)", () => {
+    const id = "6a76229767a1ad0bc53c8e91";
+    const report = enqueueJobRightJobs(db, [id], {
+      employerApplicationUrl:
+        "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    });
+    expect(report.enqueued).toBe(1);
+    const jobId = report.applications[0]!.job_db_id!;
+    const raw = JSON.parse(
+      (
+        db.prepare(`SELECT raw_json FROM jobs WHERE id = ?`).get(jobId) as {
+          raw_json: string;
+        }
+      ).raw_json,
+    ) as Record<string, unknown>;
+    expect(raw["employer_application_url"]).toBe(
+      "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+    );
+    expect(raw["employer_application_ats"]).toBe("lever");
+  });
+
+  it("stores an unsupported-ATS https URL verbatim for pipeline routing (W3/W7)", () => {
+    // The pipeline routes these to UNSUPPORTED_ATS + review item — the
+    // tracked path. Only malformed URLs are refused at ingestion.
+    const id = "6a76229767a1ad0bc53c8e92";
+    const report = enqueueJobRightJobs(db, [id], {
+      employerApplicationUrl: "https://careers.example.com/apply/123",
+    });
+    expect(report.enqueued).toBe(1);
+    const jobId = report.applications[0]!.job_db_id!;
+    const raw = JSON.parse(
+      (
+        db.prepare(`SELECT raw_json FROM jobs WHERE id = ?`).get(jobId) as {
+          raw_json: string;
+        }
+      ).raw_json,
+    ) as Record<string, unknown>;
+    expect(raw["employer_application_url"]).toBe(
+      "https://careers.example.com/apply/123",
+    );
+    expect(raw["employer_application_ats"]).toBeNull();
+  });
+
+  it("refuses malformed or non-https employer URLs at ingestion (W7)", () => {
+    const id = "6a76229767a1ad0bc53c8e93";
+    for (const bad of ["not a url", "http://jobs.lever.co/acme/x", "javascript:alert(1)"]) {
+      const report = enqueueJobRightJobs(db, [id], {
+        employerApplicationUrl: bad,
+      });
+      expect(report.failed).toBe(1);
+      expect(report.applications[0]!.error).toMatch(/employer URL rejected/);
+    }
   });
 });

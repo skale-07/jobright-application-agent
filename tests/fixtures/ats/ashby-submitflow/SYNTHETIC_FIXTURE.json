@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_rendered_dom",
+  "note": "Hand-authored click-to-confirmation flow standing in for Ashby's in-place SPA submit (no navigation, same URL). FIXTURE_CONFIRMED ceiling.",
+  "personal_data": "none"
+}

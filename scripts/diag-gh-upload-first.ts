@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 import {
   greenhouseUploadFile,
   resolveGreenhouseFileInput,
@@ -22,9 +22,7 @@ async function main(): Promise<void> {
   process.env.DRY_RUN = "false";
   if (!fs.existsSync(resume)) throw new Error("missing resume");
 
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForTimeout(2500);
 
   console.log("cold files", await inv(page));
@@ -44,7 +42,7 @@ async function main(): Promise<void> {
   }
   console.log("after degrees files", await inv(page));
 
-  await browser.close();
+  });
 }
 
 main().catch((e) => {

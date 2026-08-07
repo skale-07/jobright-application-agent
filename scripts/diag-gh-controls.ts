@@ -5,7 +5,7 @@
  * Note: page.evaluate bodies must stay free of TS toolchain helpers —
  * use string-serialized pure JS only.
  */
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 
 const url =
   process.argv[2] ??
@@ -127,9 +127,7 @@ const OPEN_STATE_FN = `() => {
 }`;
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForTimeout(4_000);
 
   // String form is an expression; IIFE so Playwright serializes the return value.
@@ -178,7 +176,7 @@ async function main(): Promise<void> {
     await page.locator('input[type="file"]').count(),
   );
 
-  await browser.close();
+  });
 }
 
 main().catch((e) => {

@@ -1,16 +1,9 @@
-import { chromium } from "playwright";
-import { browserLaunchOptions } from "../src/browser/launchOptions.js";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch(
-    browserLaunchOptions({ headless: true, channel: "chromium", slowMoMs: 0 }),
-  );
-  try {
-    const page = await browser.newPage();
-    await page.goto(
-      "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
-      { waitUntil: "domcontentloaded", timeout: 60_000 },
-    );
+  await withPublicUrlPage(
+    "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    async (page) => {
     await page.waitForTimeout(4000);
     const files = await page.evaluate(() => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,9 +38,8 @@ async function main(): Promise<void> {
       );
     });
     console.log(JSON.stringify({ count: files.length, files }, null, 2));
-  } finally {
-    await browser.close();
-  }
+    },
+  );
 }
 
 main().catch((e) => {

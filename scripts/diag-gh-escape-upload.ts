@@ -1,4 +1,4 @@
-import { chromium } from "playwright";
+import { withPublicUrlPage } from "../src/browser/fixtureSession.js";
 import { resolveGreenhouseFileInput } from "../src/ats/greenhouse/fill.js";
 
 const url =
@@ -11,9 +11,7 @@ async function inv(page: import("playwright").Page): Promise<unknown> {
 }
 
 async function main(): Promise<void> {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+  await withPublicUrlPage(url, async (page) => {
   await page.waitForTimeout(2500);
   console.log("1 cold", await inv(page));
 
@@ -54,7 +52,7 @@ async function main(): Promise<void> {
     console.log("5 still missing #resume — try re-navigation");
   }
 
-  await browser.close();
+  });
 }
 
 function pathJoinResume(): string {

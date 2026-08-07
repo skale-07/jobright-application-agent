@@ -29,6 +29,7 @@ import {
   type FieldMeta,
 } from "./fill.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
+import type { PublicProfile } from "../../candidate/publicProfile.js";
 import {
   approvedFillEntries,
   type ApprovedFillPlan,
@@ -68,8 +69,11 @@ export class GreenhouseAdapterV1 implements ApplicationAdapter {
 
   /**
    * Required before fill(). Only approved FILL entries are executed.
+   * The profile parameter exists for cross-ATS call-shape parity —
+   * Lever/Ashby need it for full-name composition; Greenhouse has separate
+   * first/last fields and ignores it.
    */
-  setApprovedFillPlan(plan: ApprovedFillPlan): void {
+  setApprovedFillPlan(plan: ApprovedFillPlan, _profile?: PublicProfile): void {
     this.approvedPlan = plan;
   }
 

@@ -14,9 +14,11 @@ import { createAutomationRun, completeAutomationRun } from "../queue/automationR
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { openEssayReviewItem } from "../applications/essayAnswers.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
-import { runGreenhouseSubmission } from "../applications/submitRun.js";
+import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
-import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidation.js";
+import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import { ATS_BINDINGS } from "../applications/atsBindings.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
@@ -55,7 +57,7 @@ export type PipelineOptions = {
   fixtureHtmlPath?: string;
   /** Delegate READY_TO_SUBMIT to the (fully gated) submission path. */
   submit?: boolean;
-  /** Forwarded to runGreenhouseSubmission for unattended runs. */
+  /** Forwarded to runAtsSubmission for unattended runs. */
   assumeYes?: boolean;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
@@ -99,11 +101,9 @@ export function setEmployerApplicationUrl(
   applicationId: string,
   url: string,
 ): void {
-  const validation = validateGreenhouseApplicationUrl(url);
-  if (!validation.passed) {
-    throw new Error(
-      `Refusing to store employer URL: ${validation.failureReason}`,
-    );
+  const detected = detectAtsFromUrl(url);
+  if (detected.ats === null) {
+    throw new Error(`Refusing to store employer URL: ${detected.failureReason}`);
   }
   const row = db
     .prepare(
@@ -113,7 +113,8 @@ export function setEmployerApplicationUrl(
     .get(applicationId) as { id: string; raw_json: string } | undefined;
   if (!row) throw new Error(`Unknown application: ${applicationId}`);
   const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  raw["employer_application_url"] = validation.normalizedUrl ?? url;
+  raw["employer_application_url"] = detected.normalizedUrl;
+  raw["employer_application_ats"] = detected.ats;
   db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
     JSON.stringify(raw),
     new Date().toISOString(),
@@ -366,12 +367,12 @@ async function step(
           stop: "review",
         };
       }
-      const validation = validateGreenhouseApplicationUrl(url);
-      if (!validation.passed) {
+      const detected = detectAtsFromUrl(url);
+      if (detected.ats === null) {
         transitionApplication(db, {
           applicationId: app.id,
           nextState: "UNSUPPORTED_ATS",
-          reason: `pipeline: employer URL not a supported ATS (${validation.failureReason})`,
+          reason: `pipeline: employer URL not a supported ATS (${detected.failureReason})`,
           runId,
           route: "UNSUPPORTED_ATS",
         });
@@ -379,17 +380,17 @@ async function step(
           applicationId: app.id,
           kind: "UNSUPPORTED_ATS",
           title: "Employer ATS unsupported in V1",
-          payload: { url, reason: validation.failureReason },
+          payload: { url, reason: detected.failureReason },
         });
         return { to: "UNSUPPORTED_ATS", note: "unsupported ATS", stop: "review" };
       }
       transitionApplication(db, {
         applicationId: app.id,
         nextState: "ATS_DETECTION",
-        reason: "pipeline: Greenhouse URL validated",
+        reason: `pipeline: ${detected.ats} URL validated`,
         runId,
       });
-      return { to: "ATS_DETECTION", note: "Greenhouse URL validated" };
+      return { to: "ATS_DETECTION", note: `${detected.ats} URL validated` };
     }
 
     case "ATS_DETECTION": {
@@ -512,13 +513,39 @@ async function step(
         if (!url) {
           return { to: null, note: "employer URL missing at fill stage", stop: "gate" };
         }
-        const liveReport = await runGreenhouseLiveFill({
-          url,
-          execute: true,
-          headless: ctx.options.headless ?? false,
-        });
-        verifyPassed = liveReport.verify?.passed === true;
-        detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+        const detected = detectAtsFromUrl(url);
+        if (detected.ats === null) {
+          return {
+            to: null,
+            note: `employer URL no longer validates: ${detected.failureReason}`,
+            stop: "gate",
+          };
+        }
+        if (detected.ats !== "greenhouse") {
+          const liveReport = await runAtsLiveFill({
+            binding: ATS_BINDINGS[detected.ats],
+            url,
+            execute: true,
+            headless: ctx.options.headless ?? false,
+          });
+          if (!liveReport.gate.ok) {
+            return {
+              to: null,
+              note: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
+              stop: "gate",
+            };
+          }
+          verifyPassed = liveReport.verify?.passed === true;
+          detail = `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+        } else {
+          const liveReport = await runGreenhouseLiveFill({
+            url,
+            execute: true,
+            headless: ctx.options.headless ?? false,
+          });
+          verifyPassed = liveReport.verify?.passed === true;
+          detail = `live fill: ${liveReport.fill?.filled.length ?? 0} filled`;
+        }
       }
 
       transitionApplication(db, {
@@ -554,7 +581,7 @@ async function step(
 
     case "FIELD_VERIFICATION": {
       // Reached via the essay path (resume-essay). The binding pre-click
-      // verification happens inside runGreenhouseSubmission on the live page;
+      // verification happens inside runAtsSubmission on the live page;
       // this stage records readiness only.
       transitionApplication(db, {
         applicationId: app.id,
@@ -574,7 +601,7 @@ async function step(
           stop: "submit_boundary",
         };
       }
-      const result = await runGreenhouseSubmission({
+      const result = await runAtsSubmission({
         db,
         applicationId: app.id,
         headless: ctx.options.headless ?? false,

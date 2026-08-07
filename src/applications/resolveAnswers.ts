@@ -112,7 +112,7 @@ export function buildFillPlan(
       if (sensitive && demoCanon) {
         demValue = getSensitiveValue(sensitive, demoCanon);
       }
-      if (!sensitive || isEmptyValue(demValue)) {
+      if (!sensitive || !demoCanon || isEmptyValue(demValue)) {
         entries.push({
           field_id: field.id,
           label: field.label,

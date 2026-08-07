@@ -11,6 +11,8 @@ export const ATS_FIXTURE_NAMES = [
   "captcha",
   "login-required",
   "workday",
+  "lever",
+  "ashby",
 ] as const;
 
 export type AtsFixtureName = (typeof ATS_FIXTURE_NAMES)[number];
