@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_dom",
+  "note": "Hand-authored click-to-confirmation flow standing in for Lever's real /thanks redirect. The inline script swaps the form for the confirmation panel so the flow is self-contained under page.setContent. FIXTURE_CONFIRMED ceiling.",
+  "personal_data": "none"
+}

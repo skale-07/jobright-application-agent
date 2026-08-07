@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme — Software Engineer — Apply</title>
+</head>
+<body>
+  <form id="application-form" class="application-form" action="/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply" method="post">
+    <div class="application-field">
+      <label for="name">Full name *</label>
+      <input id="name" type="text" name="name" required>
+    </div>
+    <button data-qa="btn-submit" class="template-btn-submit" type="submit">Submit application</button>
+  </form>
+  <script>
+    // Synthetic stand-in for Lever's post-submit redirect to /thanks:
+    // swap the form for the confirmation panel in place (no navigation,
+    // which keeps the fixture self-contained under page.setContent).
+    document.querySelector('[data-qa="btn-submit"]').addEventListener("click", (ev) => {
+      ev.preventDefault();
+      document.body.innerHTML =
+        '<div class="thanks-container">' +
+        "<h2>Application submitted</h2>" +
+        "<p>Thank you for applying to Acme.</p>" +
+        "<p>Confirmation # LV-9207-CONF</p>" +
+        "</div>";
+    });
+  </script>
+</body>
+</html>

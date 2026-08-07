@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { Page } from "playwright";
 import type {
   ApplicationAdapter,
@@ -8,8 +10,11 @@ import type {
   FormResetResult,
   FormVerificationResult,
   ResolvedApplicationAnswers,
+  SubmissionAttempt,
+  SubmissionReceipt,
   UploadVerification,
 } from "../adapter.js";
+import { getConfig } from "../../config/index.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { detectBlockingCaptcha } from "../greenhouse/captchaDetection.js";
@@ -25,6 +30,7 @@ import {
   type FieldMeta,
 } from "../greenhouse/fill.js";
 import { leverResetForm, leverUploadFile } from "./fill.js";
+import { leverSubmit, leverVerifySubmission } from "./submission.js";
 import type { PublicProfile } from "../../candidate/publicProfile.js";
 import {
   composeFullName,
@@ -171,6 +177,21 @@ export class LeverAdapterV1 implements ApplicationAdapter {
 
   async resetForm(page: Page): Promise<FormResetResult> {
     return leverResetForm(page);
+  }
+
+  async submit(page: Page): Promise<SubmissionAttempt> {
+    return leverSubmit(page);
+  }
+
+  async verifySubmission(page: Page): Promise<SubmissionReceipt> {
+    const screenshotPath = path.join(
+      getConfig().artifactsDir,
+      "ats-submit",
+      "lever",
+      `receipt-${Date.now()}.png`,
+    );
+    fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
+    return leverVerifySubmission(page, { screenshotPath });
   }
 
   async inspect(input: {
