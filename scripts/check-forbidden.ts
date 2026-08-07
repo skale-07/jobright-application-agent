@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { FORBIDDEN_OUTLOOK_IDENTIFIERS } from "../src/outlook/sendGuards.js";
+import { FORBIDDEN_GMAIL_IDENTIFIERS } from "../src/gmail/readonlyGuards.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -31,8 +32,10 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const allowlist = new Set([
   path.join(root, "src", "outlook", "sendGuards.ts"),
+  path.join(root, "src", "gmail", "readonlyGuards.ts"),
   path.join(root, "scripts", "check-forbidden.ts"),
   path.join(root, "tests", "unit", "outlook-send-guards.test.ts"),
+  path.join(root, "tests", "unit", "gmail-readonly-guards.test.ts"),
   path.join(root, "docs", "security.md"),
   path.join(root, "docs", "architecture.md"),
 ]);
@@ -51,7 +54,10 @@ const files = walk(root);
 for (const file of files) {
   if (allowlist.has(file)) continue;
   const text = fs.readFileSync(file, "utf8");
-  for (const pattern of FORBIDDEN_OUTLOOK_IDENTIFIERS) {
+  for (const pattern of [
+    ...FORBIDDEN_OUTLOOK_IDENTIFIERS,
+    ...FORBIDDEN_GMAIL_IDENTIFIERS,
+  ]) {
     if (text.includes(pattern)) {
       console.error(`FORBIDDEN pattern "${pattern}" in ${path.relative(root, file)}`);
       failed = true;

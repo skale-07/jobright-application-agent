@@ -1,0 +1,6 @@
+Welcome! Confirm your email to continue your application.
+
+https://jobs.ashbyhq.com/auth/verify?token=abc123def456
+
+Questions? Visit https://help.ashbyhq.com/contact
+Unsubscribe: https://mailer.example.com/unsubscribe/xyz

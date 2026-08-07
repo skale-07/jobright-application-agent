@@ -19,6 +19,8 @@ import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { runNavigation } from "../navigation/runNavigation.js";
+import { runGmailAuthFlow } from "../gmail/authFlow.js";
+import { GmailClient } from "../gmail/client.js";
 import { waitForRenderedContent } from "../ats/shared/preMutationGate.js";
 import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
 import { leverSelectorsV1 } from "../ats/lever/selectors.js";
@@ -120,6 +122,8 @@ Commands:
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
   submit --application <uuid> [--headed] [--yes]
   nav:resolve --app <uuid> [--headed]   Resolve employer URL from JobRight (NAVIGATION_ENABLED)
+  gmail:auth --email <mailbox> --client-id <id> --client-secret <secret>   One-time readonly OAuth
+  gmail:check                           Read-only Gmail token smoke test
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
@@ -746,6 +750,57 @@ async function cmdNavResolve(
   }
 }
 
+/** One-time Gmail readonly OAuth (verification codes/links for navigation). */
+async function cmdGmailAuth(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  resetConfigCache();
+  const clientId =
+    (typeof flags["client-id"] === "string" ? flags["client-id"] : undefined) ??
+    process.env.GMAIL_OAUTH_CLIENT_ID;
+  const clientSecret =
+    (typeof flags["client-secret"] === "string"
+      ? flags["client-secret"]
+      : undefined) ?? process.env.GMAIL_OAUTH_CLIENT_SECRET;
+  const accountEmail =
+    typeof flags["email"] === "string" ? flags["email"] : undefined;
+  if (!clientId || !clientSecret || !accountEmail) {
+    console.error(
+      "Usage: gmail:auth --email <mailbox> --client-id <id> --client-secret <secret>",
+    );
+    console.error(
+      "  (or set GMAIL_OAUTH_CLIENT_ID / GMAIL_OAUTH_CLIENT_SECRET in the shell — a Desktop-app OAuth client, scope gmail.readonly only)",
+    );
+    process.exit(1);
+  }
+  const tokenPath = await runGmailAuthFlow({
+    clientId,
+    clientSecret,
+    accountEmail,
+  });
+  console.log(`Gmail readonly token stored: ${tokenPath}`);
+}
+
+/** Read-only Gmail smoke: refresh the token and count recent messages. */
+async function cmdGmailCheck(): Promise<void> {
+  resetConfigCache();
+  const client = new GmailClient();
+  const messages = await client.searchMessages("newer_than:1d", {
+    maxResults: 5,
+  });
+  console.log(
+    JSON.stringify(
+      {
+        account: client.accountEmail,
+        recent_message_count: messages.length,
+        scope: "gmail.readonly",
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 /** Phase 7: human-approved submission. All gates live in runAtsSubmission. */
 async function cmdSubmit(flags: Record<string, string | boolean>): Promise<void> {
   const application = flags["application"];
@@ -1293,6 +1348,12 @@ async function main(): Promise<void> {
       return;
     case "nav:resolve":
       await cmdNavResolve(flags);
+      return;
+    case "gmail:auth":
+      await cmdGmailAuth(flags);
+      return;
+    case "gmail:check":
+      await cmdGmailCheck();
       return;
     case "review":
       cmdReview();

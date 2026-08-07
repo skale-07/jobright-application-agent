@@ -87,6 +87,37 @@ describe("navigation agent phase (N3)", () => {
     return app.id;
   }
 
+  async function runWithAgentAndGmail(
+    appId: string,
+    sidecar: { command: string; args: string[] },
+    gmailWaiter?: Parameters<typeof runNavigation>[0]["gmailWaiterOverride"],
+  ) {
+    const html =
+      "<html><body><h1>Some job</h1><p>description text</p></body></html>";
+    return withFixtureHtmlPage("<html><body></body></html>", async (page: Page) => {
+      await page
+        .context()
+        .route("**/*", (route) =>
+          route.fulfill({ body: html, contentType: "text/html" }),
+        );
+      const session: NavSession = {
+        open: async () => {},
+        newPage: async () => page,
+        getContext: () => page.context(),
+        close: async () => {},
+      };
+      return runNavigation({
+        db: db!,
+        applicationId: appId,
+        sessionOverride: session,
+        skipAuthLossCheck: true,
+        agentPhaseOverride: true,
+        agentCommandOverride: sidecar,
+        ...(gmailWaiter ? { gmailWaiterOverride: gmailWaiter } : {}),
+      });
+    });
+  }
+
   async function runWithAgent(
     appId: string,
     sidecar: { command: string; args: string[] },
@@ -234,6 +265,48 @@ describe("navigation agent phase (N3)", () => {
         expect(report.wall).toBe("budget");
         expect(report.notes.join(" ")).toMatch(/outside allowed domains/);
         expect(getEmployerApplicationUrl(db!, appId)).toBeNull();
+      } finally {
+        applySafeFillEnv();
+      }
+    },
+    45_000,
+  );
+
+  it(
+    "gmail micro-turn: needs_input → code retrieved → continuation resolves (FIXTURE_CONFIRMED)",
+    async () => {
+      const appId = seedApp();
+      applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+      resetConfigCache();
+      try {
+        // Turn-aware fake sidecar: first spawn (no resume) pauses on email
+        // verification; the continuation (resume present) must carry the
+        // injected code and then resolves.
+        const script = [
+          "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{",
+          "const t=JSON.parse(d);",
+          "if(t.resume){",
+          "if(t.resume.injected.code!=='482193'){console.log(JSON.stringify({status:'error',final_url:null,wall:'budget',steps_used:0,domains_visited:[],notes:['wrong code injected'],reason:'bad'}));return;}",
+          `console.log(JSON.stringify({status:'ok',final_url:'https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application',wall:'none',steps_used:2,domains_visited:['jobs.ashbyhq.com'],notes:['continuation ok']}));`,
+          "}else{",
+          "console.log(JSON.stringify({status:'needs_input',final_url:'https://jobs.ashbyhq.com/acme/login',wall:'auth',steps_used:4,domains_visited:['jobs.ashbyhq.com'],notes:[],need:{kind:'verification_email',sent_to:'candidate@example.com',requested_at:'2026-08-07T00:00:00Z'}}));",
+          "}});",
+        ].join("");
+        const report = await runWithAgentAndGmail(
+          appId,
+          { command: "node", args: ["-e", script] },
+          async () => ({
+            kind: "code",
+            code: "482193",
+            messageId: "msg-9",
+            pollsUsed: 2,
+          }),
+        );
+        expect(report.method).toBe("agent");
+        expect(report.resolved_ats).toBe("ashby");
+        expect(report.agent?.turns_used).toBe(2);
+        expect(report.gmail).toEqual({ polls_used: 2, matched_message_id: "msg-9" });
+        expect(report.notes.join(" ")).toMatch(/continuation ok/);
       } finally {
         applySafeFillEnv();
       }

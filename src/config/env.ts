@@ -110,6 +110,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       `${forbiddenSendFlag} is forbidden. Outlook supports drafts only.`,
     );
   }
+  const forbiddenGmailFlag = ["GMAIL", "SEND", "ENABLED"].join("_");
+  if (env[forbiddenGmailFlag] !== undefined) {
+    throw new Error(
+      `${forbiddenGmailFlag} is forbidden. Gmail is readonly verification only.`,
+    );
+  }
 
   return {
     nodeEnv: parsed.NODE_ENV,

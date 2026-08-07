@@ -23,6 +23,8 @@
     "materials:register": "tsx src/cli/index.ts materials:register",
     "submit": "tsx src/cli/index.ts submit",
     "nav:resolve": "tsx src/cli/index.ts nav:resolve",
+    "gmail:auth": "tsx src/cli/index.ts gmail:auth",
+    "gmail:check": "tsx src/cli/index.ts gmail:check",
     "review": "tsx src/cli/index.ts review",
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",

@@ -19,7 +19,15 @@ import {
   readExternalApplyHrefs,
 } from "../jobright/navigateToEmployer.js";
 import { navigateViaSidecar } from "../agent/navigate.js";
-import type { AgentNavigateResult } from "../agent/contract.js";
+import type {
+  AgentNavigateResult,
+  AgentNavigateTask,
+} from "../agent/contract.js";
+import { GmailClient } from "../gmail/client.js";
+import {
+  waitForVerificationEmail,
+  type VerificationWaitResult,
+} from "../gmail/waitForVerification.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 
@@ -108,7 +116,25 @@ export type RunNavigationInput = {
   agentCommandOverride?: { command: string; args: string[] };
   /** Test seam: force the agent-phase availability decision. */
   agentPhaseOverride?: boolean;
+  /** Test seam: fake Gmail verification waiter. */
+  gmailWaiterOverride?: (
+    need: NonNullable<AgentNavigateResult["need"]>,
+    allowedDomains: string[],
+  ) => Promise<VerificationWaitResult>;
 };
+
+/** Production Gmail waiter — bounded polls against the readonly client. */
+async function defaultGmailWaiter(
+  need: NonNullable<AgentNavigateResult["need"]>,
+  allowedDomains: string[],
+): Promise<VerificationWaitResult> {
+  const client = new GmailClient();
+  return waitForVerificationEmail({
+    client,
+    need,
+    extraAllowedDomains: allowedDomains,
+  });
+}
 
 const TOTAL_WALLCLOCK_MS = 8 * 60_000;
 
@@ -282,62 +308,116 @@ export async function runNavigation(
       ),
     );
 
+    // Turn loop: 1 initial spawn + up to 2 Gmail continuations.
+    const gmailAvailable = cfg0.gmailVerificationEnabled;
+    let turns = 0;
+    let totalSteps = 0;
+    const visited = new Set<string>();
+    let turnStartUrl = startUrl;
+    let resume: AgentNavigateTask["resume"];
     try {
-      const agentResult = await navigateViaSidecar({
-        task: {
-          task_version: 1,
-          task_type: "navigate",
-          goal: "Reach the employer's job-application form page for this posting, starting from the current page.",
-          start_url: startUrl,
-          cdp_url: cfg0.agentCdpUrl,
-          allowed_domains: allowedDomains,
-          max_steps: 25,
-          timeout_ms: Math.max(
-            30_000,
-            Math.min(180_000, deadline - Date.now()),
-          ),
-          credentials: { available: false },
-          gmail_available: false,
-          resume: undefined,
-        },
-        ...(input.agentCommandOverride
-          ? { commandOverride: input.agentCommandOverride }
-          : {}),
-      });
-      report.agent = {
-        turns_used: 1,
-        steps_used: agentResult.steps_used,
-        domains_visited: agentResult.domains_visited,
-      };
-      report.notes.push(...agentResult.notes.map((n) => `agent: ${n}`));
-      if (agentResult.status === "ok" && agentResult.final_url) {
-        report.phase_trace.push({
-          phase: "C_agent",
-          outcome: "resolved",
-          evidence: new URL(agentResult.final_url).hostname,
+      while (turns < 3 && Date.now() < deadline) {
+        const agentResult = await navigateViaSidecar({
+          task: {
+            task_version: 1,
+            task_type: "navigate",
+            goal: "Reach the employer's job-application form page for this posting, starting from the current page.",
+            start_url: turnStartUrl,
+            cdp_url: cfg0.agentCdpUrl,
+            allowed_domains: allowedDomains,
+            max_steps: 25,
+            timeout_ms: Math.max(
+              30_000,
+              Math.min(180_000, deadline - Date.now()),
+            ),
+            credentials: { available: false },
+            gmail_available: gmailAvailable,
+            ...(resume ? { resume } : {}),
+          },
+          ...(input.agentCommandOverride
+            ? { commandOverride: input.agentCommandOverride }
+            : {}),
         });
-        return resolveAndPersist(
-          report,
-          db,
-          applicationId,
-          agentResult.final_url,
-          "agent",
-        );
-      }
-      if (agentResult.status === "needs_input") {
-        // Gmail micro-turn lands in N4; until then this is a review wall.
-        report.need = agentResult.need ?? null;
-        report.wall = "auth";
+        turns++;
+        totalSteps += agentResult.steps_used;
+        for (const d of agentResult.domains_visited) visited.add(d);
+        report.agent = {
+          turns_used: turns,
+          steps_used: totalSteps,
+          domains_visited: [...visited],
+        };
+        report.notes.push(...agentResult.notes.map((n) => `agent[${turns}]: ${n}`));
+
+        if (agentResult.status === "ok" && agentResult.final_url) {
+          report.phase_trace.push({
+            phase: "C_agent",
+            outcome: `resolved (turn ${turns})`,
+            evidence: new URL(agentResult.final_url).hostname,
+          });
+          return resolveAndPersist(
+            report,
+            db,
+            applicationId,
+            agentResult.final_url,
+            "agent",
+          );
+        }
+
+        if (agentResult.status === "needs_input" && agentResult.need) {
+          report.need = agentResult.need;
+          const waiter = input.gmailWaiterOverride ?? defaultGmailWaiter;
+          if (!gmailAvailable && !input.gmailWaiterOverride) {
+            report.wall = "auth";
+            report.phase_trace.push({
+              phase: "C_agent",
+              outcome:
+                "needs email verification — GMAIL_VERIFICATION_ENABLED=false, human review",
+            });
+            return persist(report);
+          }
+          if (turns >= 3) break;
+          const wait = await waiter(agentResult.need, allowedDomains);
+          report.gmail = {
+            polls_used: (report.gmail?.polls_used ?? 0) + wait.pollsUsed,
+            matched_message_id:
+              wait.kind === "timeout" ? null : wait.messageId,
+          };
+          if (wait.kind === "timeout") {
+            report.wall = "auth";
+            report.phase_trace.push({
+              phase: "D_gmail",
+              outcome: "verification email not found within the poll budget",
+            });
+            return persist(report);
+          }
+          report.phase_trace.push({
+            phase: "D_gmail",
+            outcome: `verification ${wait.kind} retrieved`,
+          });
+          resume = {
+            prior_run_id: report.run_id,
+            prior_final_url:
+              agentResult.final_url ?? turnStartUrl,
+            injected:
+              wait.kind === "code"
+                ? { kind: "verification_code", code: wait.code }
+                : { kind: "magic_link", url: wait.url },
+          };
+          turnStartUrl = agentResult.final_url ?? turnStartUrl;
+          continue;
+        }
+
+        report.wall = agentResult.wall === "none" ? "budget" : agentResult.wall;
         report.phase_trace.push({
           phase: "C_agent",
-          outcome: "needs email verification (gmail micro-turn lands in N4)",
+          outcome: `wall: ${report.wall} (turn ${turns})`,
         });
         return persist(report);
       }
-      report.wall = agentResult.wall === "none" ? "budget" : agentResult.wall;
+      report.wall = "budget";
       report.phase_trace.push({
         phase: "C_agent",
-        outcome: `wall: ${report.wall}`,
+        outcome: "turn/deadline budget exhausted",
       });
       return persist(report);
     } catch (err) {
