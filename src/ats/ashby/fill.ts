@@ -20,6 +20,7 @@ import {
 } from "../greenhouse/fill.js";
 import { pickOptionLabel } from "../greenhouse/comboboxFill.js";
 import {
+  detectButtonGroup,
   fillButtonGroup,
   readButtonGroupValue,
 } from "./buttonGroupFill.js";
@@ -45,12 +46,28 @@ function isApprovedExecutable(
   );
 }
 
-function buttonGroupLocator(page: Page, fieldId: string): Locator {
-  return page
+/**
+ * Locate a button group by data-field-id, falling back to the group's
+ * accessible name (aria-label / aria-labelledby): discovery emits synthetic
+ * ids (button_group_N) for groups without data-field-id, and those never
+ * exist in the DOM — the entry's label is the stable handle then.
+ */
+async function buttonGroupLocator(
+  page: Page,
+  fieldId: string,
+  label: string,
+): Promise<Locator | null> {
+  const byId = page
     .locator(
       `${ashbySelectorsV1.buttonGroup.container}[data-field-id="${fieldId.replace(/"/g, '\\"')}"]`,
     )
     .first();
+  if ((await byId.count()) > 0) return byId;
+  const byName = page
+    .getByRole("radiogroup", { name: label, exact: false })
+    .first();
+  if ((await byName.count()) > 0) return byName;
+  return null;
 }
 
 function isRadioEntry(
@@ -99,9 +116,14 @@ export async function ashbyFillFromPlan(
       continue;
     }
     try {
-      const group = buttonGroupLocator(page, entry.field_id);
-      if ((await group.count()) === 0) {
-        throw new Error("button group not found by data-field-id");
+      const group = await buttonGroupLocator(page, entry.field_id, entry.label);
+      if (group === null) {
+        throw new Error(
+          "button group not found by data-field-id or accessible name",
+        );
+      }
+      if (!(await detectButtonGroup(group))) {
+        throw new Error("located element is not a button group");
       }
       const result = await fillButtonGroup(group, entry.value);
       if (!result.committed) {
@@ -140,7 +162,10 @@ export async function ashbyVerifyFromPlan(
   for (const entry of fillable) {
     const canonical = entry.canonical_field ?? entry.field_id;
     try {
-      const group = buttonGroupLocator(page, entry.field_id);
+      const group = await buttonGroupLocator(page, entry.field_id, entry.label);
+      if (group === null) {
+        throw new Error("button group not found");
+      }
       const observed = await readButtonGroupValue(group);
       // pickOptionLabel gives Yes/No synonym + case-insensitive equivalence.
       const match =

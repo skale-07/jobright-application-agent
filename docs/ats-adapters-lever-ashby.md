@@ -74,6 +74,25 @@ sidecar) and replace the synthetic fixtures, keeping the
 `SYNTHETIC_FIXTURE.json` markers updated. Only then can any claim climb
 past FIXTURE_CONFIRMED.
 
+## Wiring hazards called out by the review pass
+
+- `setApprovedFillPlan(plan, profile)` on Lever/Ashby takes TWO arguments
+  (the profile powers full-name composition); Greenhouse's takes one.
+  `applicationFiller.ts` calls the one-arg form — method bivariance would
+  let a naive dispatch compile and then crash at runtime. The wiring
+  dispatch must handle the signature difference explicitly.
+- `submitRun.ts` checks `instanceof` against the **greenhouse** module's
+  `SubmissionUncertainError`. Lever/Ashby share one class in
+  `src/ats/shared/submissionUncertain.ts`; reconcile the greenhouse class
+  with it at wiring or the structured evidence is dropped for these ATSes.
+- Deliberate duplication forced by the no-edits constraint, to extract into
+  `src/ats/shared/` at wiring: the URL-validator rejection battery (3
+  copies), upload/reset helpers (selector-parameterized), the
+  `isApprovedExecutable` type-guard, and the adapter plan-context plumbing
+  (a shared base class). The upload verification's name-OR-size check is
+  weak (a pre-existing same-size file counts as verified) — tighten it when
+  extracting.
+
 ## Future wiring milestone (will edit pre-existing files)
 
 - `src/ats/registry.ts`: register both adapters (order: unsupported →

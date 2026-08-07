@@ -82,7 +82,15 @@ export class LeverAdapterV1 implements ApplicationAdapter {
    * cannot be skipped by any caller.
    */
   setApprovedFillPlan(plan: ApprovedFillPlan, profile: PublicProfile): void {
-    this.approvedPlan = composeFullName(plan, profile, leverFullNameMatcher);
+    // Resolve field_id (often the input's id) back to its name attribute so
+    // the matcher's fieldNames work even when id ≠ name. Requires
+    // setFillContext to have run first, as the tests and future wiring do.
+    this.approvedPlan = composeFullName(
+      plan,
+      profile,
+      leverFullNameMatcher,
+      (fieldId) => this.lastFieldMeta.get(fieldId)?.name,
+    );
   }
 
   /** Composed plan as fill() will execute it (test/report visibility). */

@@ -222,6 +222,63 @@ describe("Ashby fill/upload/verify (M5)", () => {
   );
 
   it(
+    "locates a button group WITHOUT data-field-id via its accessible name (FIXTURE_CONFIRMED)",
+    async () => {
+      // Review finding: discovery emits synthetic ids (button_group_N) for
+      // groups lacking data-field-id; the executor must fall back to the
+      // group's accessible name instead of erroring on every attempt.
+      const html = `<!DOCTYPE html><html><body>
+        <h4 id="lbl-remote">Are you willing to work remotely?</h4>
+        <div role="radiogroup" aria-labelledby="lbl-remote">
+          <button type="button" aria-pressed="false">Yes</button>
+          <button type="button" aria-pressed="false">No</button>
+        </div>
+        <script>
+          document.querySelectorAll('[role="radiogroup"]').forEach(function (group) {
+            group.addEventListener("click", function (ev) {
+              var btn = ev.target.closest("button");
+              if (!btn) return;
+              group.querySelectorAll("button").forEach(function (b) {
+                b.setAttribute("aria-pressed", "false");
+              });
+              btn.setAttribute("aria-pressed", "true");
+            });
+          });
+        </script>
+      </body></html>`;
+      applyFixtureFillEnv();
+      try {
+        await withFixtureHtmlPage(html, async (page) => {
+          const result = await ashbyFillFromPlan(
+            page,
+            [
+              {
+                field_id: "button_group_0",
+                label: "Are you willing to work remotely?",
+                type: "radio",
+                canonical_field: "relocation",
+                action: "FILL",
+                approved: true,
+                value: "Yes",
+                reason: "test",
+              },
+            ],
+            new Map([["button_group_0", { type: "radio" as const }]]),
+          );
+          expect(result.errors).toEqual([]);
+          expect(result.filled).toContain("relocation");
+          expect(
+            await page.locator('[aria-pressed="true"]').textContent(),
+          ).toBe("Yes");
+        });
+      } finally {
+        applySafeFillEnv();
+      }
+    },
+    45_000,
+  );
+
+  it(
     "a forged demographics button-group entry is rejected before any click (FIXTURE_CONFIRMED)",
     async () => {
       applyFixtureFillEnv();

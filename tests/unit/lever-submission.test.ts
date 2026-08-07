@@ -62,6 +62,26 @@ describe("Lever submission (M3)", () => {
       );
     });
 
+    it("does NOT confirm on confirmation-like copy while the form is still present", () => {
+      // Common posting/footer copy on a page that was never submitted must
+      // not fabricate a receipt (review finding: false-confirmed pages).
+      const applyPageWithFooter =
+        fixtureHtml("lever").replace(
+          "</body>",
+          "<footer>Thank you for applying is the wrong phrase to trust: your application has been received</footer></body>",
+        );
+      expect(detectSubmissionUncertainty(applyPageWithFooter, APPLY_URL)).toBe(
+        "still_on_form",
+      );
+      // "thank you for your interest" alone is never a confirmation signal.
+      expect(
+        detectSubmissionUncertainty(
+          "<html><body><p>Thank you for your interest in Acme.</p></body></html>",
+          APPLY_URL,
+        ),
+      ).toBe("unknown");
+    });
+
     it("classifies a blank page as unknown", () => {
       expect(
         detectSubmissionUncertainty("<html><body></body></html>", APPLY_URL),

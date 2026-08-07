@@ -4,20 +4,15 @@ import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { leverSelectorsV1 } from "./selectors.js";
 
+import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+
+export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+
 export type SubmissionPageClassification =
   | "confirmed"
   | "still_on_form"
   | "error_page"
   | "unknown";
-
-export class SubmissionUncertainError extends Error {
-  readonly evidence: Record<string, unknown>;
-  constructor(message: string, evidence: Record<string, unknown>) {
-    super(message);
-    this.name = "SubmissionUncertainError";
-    this.evidence = evidence;
-  }
-}
 
 function isThanksUrl(finalUrl: string): boolean {
   try {
@@ -31,13 +26,20 @@ function isThanksUrl(finalUrl: string): boolean {
 /**
  * Pure classification of the page after a submit click. Lever redirects to
  * .../thanks on success, so the URL is a confirmation signal alongside the
- * in-page markers — everything else is not treated as success.
+ * in-page markers — everything else is not treated as success. Marker-based
+ * confirmation additionally requires the form to be GONE: confirmation-like
+ * copy on a page that still shows the form (posting text, footers, blocked
+ * submits) classifies still_on_form, erring toward a review item rather
+ * than a fabricated receipt.
  */
 export function detectSubmissionUncertainty(
   html: string,
   finalUrl: string,
 ): SubmissionPageClassification {
-  if (leverSelectorsV1.confirmationMarkers.test(html)) {
+  if (
+    leverSelectorsV1.confirmationMarkers.test(html) &&
+    !leverSelectorsV1.formMarkers.test(html)
+  ) {
     return "confirmed";
   }
   if (isThanksUrl(finalUrl)) {
@@ -99,7 +101,14 @@ export async function leverVerifySubmission(
   let classification: SubmissionPageClassification = "unknown";
   let html = "";
   while (Date.now() < deadline) {
-    html = await page.content();
+    try {
+      html = await page.content();
+    } catch {
+      // The expected /thanks navigation can destroy the execution context
+      // mid-poll — retry after it settles instead of surfacing a raw error.
+      await page.waitForTimeout(500);
+      continue;
+    }
     classification = detectSubmissionUncertainty(html, page.url());
     if (classification === "confirmed" || classification === "error_page") {
       break;

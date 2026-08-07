@@ -68,11 +68,20 @@ const DEMOTED_REASON =
  * Returns a new plan; the input is not mutated. If either name component
  * is empty the entry is demoted to REVIEW_REQUIRED (approved: false)
  * rather than filling a partial name.
+ *
+ * Plan entries only carry field_id, which is the input's id attribute when
+ * one exists — NOT necessarily its name attribute, which is what the
+ * matcher's fieldNames refer to. Callers that know the id→name mapping
+ * (adapters hold it in their FieldMeta) MUST pass resolveFieldName so an
+ * annotated field whose id differs from its name (and whose label isn't
+ * literally "Full name") is still composed instead of silently filling
+ * only the first name.
  */
 export function composeFullName(
   plan: ApprovedFillPlan,
   profile: PublicProfile,
   matches: FullNameFieldMatcher,
+  resolveFieldName?: (fieldId: string) => string | undefined,
 ): ApprovedFillPlan {
   const first = (profile.legal_name.first ?? "").trim();
   const last = (profile.legal_name.last ?? "").trim();
@@ -85,7 +94,10 @@ export function composeFullName(
       entry.canonical_field === "legal_name.first" &&
       entry.action === "FILL" &&
       entry.approved &&
-      matches({ name: entry.field_id, label: entry.label });
+      matches({
+        name: resolveFieldName?.(entry.field_id) ?? entry.field_id,
+        label: entry.label,
+      });
     if (!isTarget) return entry;
 
     changed = true;

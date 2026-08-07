@@ -282,6 +282,35 @@ describe("Lever adapter M1 (UNIT_CONFIRMED)", () => {
       expect(annotated[0]!.mapping_confidence).toBe("high");
     });
 
+    it("composes even when the input's id differs from its name attribute", async () => {
+      // Review finding: entries carry field_id = inputId, but the matcher's
+      // fieldNames refer to name attributes — the adapter resolves the
+      // mapping through FieldMeta so composition still fires.
+      const adapter = new LeverAdapterV1();
+      const fields = [
+        {
+          id: "field-7f3a",
+          label: "Name",
+          type: "text" as const,
+          required: true,
+          name: "name",
+          inputId: "field-7f3a",
+        },
+      ];
+      const mapped = annotateFullNameField(
+        mapDiscoveredFields(fields, TEST_ALIASES),
+        leverFullNameMatcher,
+      );
+      const plan = buildFillPlan(mapped, PROFILE);
+      const approved = toApprovedFillPlan(plan.entries);
+      adapter.setFillContext(plan.entries, fields);
+      adapter.setApprovedFillPlan(approved, PROFILE);
+      const composed = adapter.getApprovedFillPlan()!;
+      const entry = composed.entries.find((e) => e.field_id === "field-7f3a")!;
+      expect(entry.value).toBe("Ada Lovelace");
+      expect(entry.reason).toMatch(/composed/);
+    });
+
     it("composeFullName leaves non-matching plans untouched", () => {
       const matcher = makeFullNameMatcher({
         fieldNames: ["nonexistent"],

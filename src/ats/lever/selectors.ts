@@ -14,9 +14,11 @@ export const leverSelectorsV1 = {
   /** HTML-side form presence (no browser). */
   formMarkers:
     /data-qa=["']btn-submit["']|name=["']cards\[|class=["'][^"']*application-form/i,
-  /** Dormant vs blocking is decided by detectBlockingCaptcha, not this. */
-  hcaptchaMarkers: /h-captcha|hcaptcha\.com/i,
-  /** Post-submit confirmation (/thanks page or in-page banner). */
+  /**
+   * Post-submit confirmation (/thanks page or in-page banner). Deliberately
+   * narrow: "thank you for your interest" is common posting/footer copy on
+   * pages that were never submitted, so it is NOT a confirmation signal.
+   */
   confirmationMarkers:
-    /application submitted|thank you for (?:applying|your (?:application|interest))|your application has been received/i,
+    /application submitted|thank you for (?:applying|your application)|your application has been received/i,
 } as const;

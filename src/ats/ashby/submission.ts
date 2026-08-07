@@ -4,33 +4,34 @@ import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { ashbySelectorsV1 } from "./selectors.js";
 
+import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+
+export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+
 export type SubmissionPageClassification =
   | "confirmed"
   | "still_on_form"
   | "error_page"
   | "unknown";
 
-export class SubmissionUncertainError extends Error {
-  readonly evidence: Record<string, unknown>;
-  constructor(message: string, evidence: Record<string, unknown>) {
-    super(message);
-    this.name = "SubmissionUncertainError";
-    this.evidence = evidence;
-  }
-}
-
 /**
  * Pure classification of the page after a submit click. Ashby is a SPA:
  * success is an in-page panel and the URL does NOT change — an unchanged
  * URL is never treated as failure, only the absence of explicit
- * confirmation markers is.
+ * confirmation markers is. Confirmation additionally requires the form to
+ * be GONE: confirmation-like copy while the form still renders classifies
+ * still_on_form, erring toward a review item rather than a fabricated
+ * receipt.
  */
 export function detectSubmissionUncertainty(
   html: string,
   finalUrl: string,
 ): SubmissionPageClassification {
   void finalUrl;
-  if (ashbySelectorsV1.confirmationMarkers.test(html)) {
+  if (
+    ashbySelectorsV1.confirmationMarkers.test(html) &&
+    !ashbySelectorsV1.formMarkers.test(html)
+  ) {
     return "confirmed";
   }
   if (detectErrorPageSignals(html, "")) {
@@ -87,7 +88,14 @@ export async function ashbyVerifySubmission(
   let classification: SubmissionPageClassification = "unknown";
   let html = "";
   while (Date.now() < deadline) {
-    html = await page.content();
+    try {
+      html = await page.content();
+    } catch {
+      // A mid-poll re-render/navigation can destroy the execution context —
+      // retry after it settles instead of surfacing a raw error.
+      await page.waitForTimeout(500);
+      continue;
+    }
     classification = detectSubmissionUncertainty(html, page.url());
     if (classification === "confirmed" || classification === "error_page") {
       break;
