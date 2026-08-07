@@ -15,6 +15,11 @@ import {
   unansweredEssayFieldKeys,
 } from "../applications/essayAnswers.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import { ATS_BINDINGS } from "../applications/atsBindings.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { withPublicUrlPage } from "../browser/fixtureSession.js";
+import { writeJsonAtomic } from "../storage/atomicJson.js";
 import {
   retryFailedApplications,
   runPipeline,
@@ -73,6 +78,8 @@ import {
   inspectGreenhouseApplication,
 } from "../ats/greenhouse/liveInspect.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../ats/greenhouse/v1.js";
+import { LEVER_ADAPTER_VERSION } from "../ats/lever/v1.js";
+import { ASHBY_ADAPTER_VERSION } from "../ats/ashby/v1.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { redactFillReportForArtifact } from "../applications/fillReportRedaction.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
@@ -94,12 +101,12 @@ Commands:
   record-jobright [--workflow <name>] [--all] [--derive-fixtures]
   recorder:promote --run <runId> --workflow <name> [--force]
   discover [--fixture] [--max-jobs N] [--probe-detail]
-  enqueue --jobright <url|id> [--jobright ...] [--file path] [--employer-url <greenhouse-url>]
+  enqueue --jobright <url|id> [--jobright ...] [--file path] [--employer-url <ats-apply-url (greenhouse|lever|ashby)>]
   inspect --job <jobright_job_id> [--application <uuid>] [--fixture] [--save-diagnostics]
-  ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]
+  ats:inspect --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
-  ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]
-  ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]
+  ats:fill --fixture <greenhouse|essay|lever|ashby> [--execute] [--resume path] [--cover path] [--reset]
+  ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]
   ats:fill-outcomes [--summary] [--export <path.jsonl>]
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
@@ -150,7 +157,7 @@ JobRight stored-job inspection (deterministic; SQLite → detail URL; read-only)
     npm run inspect -- --job <jobright_job_id> --fixture
 
 JobRight selector registry: ${JOBRIGHT_SELECTOR_REGISTRY_VERSION}
-Greenhouse adapter: v${GREENHOUSE_ADAPTER_VERSION}
+ATS adapters: greenhouse v${GREENHOUSE_ADAPTER_VERSION}, lever v${LEVER_ADAPTER_VERSION}, ashby v${ASHBY_ADAPTER_VERSION}
 ATS fixtures: ${ATS_FIXTURE_NAMES.join(", ")}
 `);
 }
@@ -377,7 +384,7 @@ function cmdEnqueue(): void {
   if (refs.length === 0) {
     console.error(`Usage:
   enqueue --jobright <jobright-url-or-id> [--jobright ...]
-  enqueue --jobright <id> --employer-url <greenhouse-apply-url>
+  enqueue --jobright <id> --employer-url <ats-apply-url (greenhouse|lever|ashby)>
   enqueue --file jobs.txt
 
 Each line in jobs.txt is a JobRight detail URL or bare hex job id.
@@ -522,6 +529,28 @@ async function cmdAtsInspect(
 
   // Live read-only: URL only (no --html)
   if (typeof url === "string" && htmlPath === undefined) {
+    const detected = detectAtsFromUrl(url);
+    if (detected.ats !== null && detected.ats !== "greenhouse") {
+      // Lever/Ashby: fetch the rendered DOM read-only, then run the same
+      // offline inspection used for --html. No greenhouse machinery.
+      const report = await withPublicUrlPage(
+        detected.normalizedUrl,
+        async (page) =>
+          inspectApplicationHtml({
+            url: page.url(),
+            html: await page.content(),
+            title: await page.title().catch(() => ""),
+          }),
+        { headless: !flags["headed"] },
+      );
+      const cfg = getConfig();
+      const outDir = path.join(cfg.artifactsDir, "ats-inspect", `${detected.ats}-live`);
+      fs.mkdirSync(outDir, { recursive: true });
+      const reportPath = path.join(outDir, `inspect-${Date.now()}.json`);
+      writeJsonAtomic(reportPath, { ...report, written_at: new Date().toISOString() });
+      console.log(JSON.stringify({ report_path: reportPath, ...report }, null, 2));
+      return;
+    }
     try {
       const report = await inspectGreenhouseApplication({
         url,
@@ -540,7 +569,7 @@ async function cmdAtsInspect(
   }
 
   console.error(
-    "Usage: ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]",
+    "Usage: ats:inspect --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--headed] [--save-diagnostics]",
   );
   console.error(
     "   or: ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>",
@@ -1018,12 +1047,16 @@ async function cmdAtsFill(
 ): Promise<void> {
   const fixture = flags["fixture"];
   const url = flags["url"];
-  if (typeof url !== "string" && fixture !== "greenhouse") {
+  const FILL_FIXTURES = ["greenhouse", "essay", "lever", "ashby"];
+  if (
+    typeof url !== "string" &&
+    !(typeof fixture === "string" && FILL_FIXTURES.includes(fixture))
+  ) {
     console.error(
-      'Usage: ats:fill --fixture greenhouse [--execute] [--resume path] [--cover path] [--reset]',
+      `Usage: ats:fill --fixture <${FILL_FIXTURES.join("|")}> [--execute] [--resume path] [--cover path] [--reset]`,
     );
     console.error(
-      "   or: ats:fill --url <GREENHOUSE_APPLICATION_URL> [--execute] [--resume path] [--headed]",
+      "   or: ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]",
     );
     process.exit(1);
   }
@@ -1038,17 +1071,46 @@ async function cmdAtsFill(
     typeof flags["cover"] === "string" ? flags["cover"] : undefined;
 
   if (typeof url === "string") {
+    const detected = detectAtsFromUrl(url);
+    if (detected.ats === null) {
+      console.error(`ats:fill refused: ${detected.failureReason}`);
+      process.exit(1);
+    }
     const profileForLive = loadPublicProfile();
-    const liveReport = await runGreenhouseLiveFill({
+    if (detected.ats === "greenhouse") {
+      const liveReport = await runGreenhouseLiveFill({
+        url,
+        execute,
+        profile: profileForLive,
+        ...(resumePath ? { resumePath } : {}),
+        ...(coverPath ? { coverLetterPath: coverPath } : {}),
+        headless: flags["headed"] !== true,
+      });
+      console.log(
+        JSON.stringify(redactFillReportForArtifact(liveReport), null, 2),
+      );
+      if (execute && liveReport.verify && !liveReport.verify.passed) {
+        process.exitCode = 2;
+      }
+      return;
+    }
+    const liveReport = await runAtsLiveFill({
+      binding: ATS_BINDINGS[detected.ats],
       url,
       execute,
       profile: profileForLive,
       ...(resumePath ? { resumePath } : {}),
-      ...(coverPath ? { coverLetterPath: coverPath } : {}),
       headless: flags["headed"] !== true,
     });
-    console.log(JSON.stringify(redactFillReportForArtifact(liveReport), null, 2));
-    if (execute && liveReport.verify && !liveReport.verify.passed) {
+    if (coverPath) {
+      console.error(
+        `note: --cover ignored — ${detected.ats} has no cover-letter file input`,
+      );
+    }
+    console.log(
+      JSON.stringify(redactFillReportForArtifact(liveReport), null, 2),
+    );
+    if (execute && (!liveReport.gate.ok || !liveReport.verify?.passed)) {
       process.exitCode = 2;
     }
     return;
@@ -1057,7 +1119,7 @@ async function cmdAtsFill(
   // Prefer real public-profile.json; do not invent sponsorship answers
   const profile = loadPublicProfile();
 
-  const report = await runAtsFixtureFill("greenhouse", {
+  const report = await runAtsFixtureFill(fixture as AtsFixtureName, {
     execute,
     profile,
     ...(resumePath ? { resumePath } : {}),
