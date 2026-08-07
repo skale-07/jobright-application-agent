@@ -2,12 +2,6 @@ import { describe, expect, it } from "vitest";
 import { redactObject, maskEmail, maskPhone } from "../../src/logging/redaction.js";
 import { sanitizeHtml, sanitizeNetworkMetadata, sanitizeText } from "../../src/recorder/sanitize.js";
 import { loadConfig, resetConfigCache } from "../../src/config/index.js";
-import {
-  createDraft,
-  verifyDraft,
-  assertDraftsOnlyMode,
-  OutlookSendForbiddenError,
-} from "../../src/outlook/sendGuards.js";
 import { canTransition } from "../../src/queue/states.js";
 import { writeJsonAtomic, readJsonFile } from "../../src/storage/atomicJson.js";
 import fs from "node:fs";
@@ -96,14 +90,8 @@ describe("config safety", () => {
   });
 });
 
-describe("outlook send guards", () => {
-  it("draft helpers are stubs and drafts-only assert works", async () => {
-    await expect(createDraft({})).rejects.toThrow(/Phase 12/);
-    await expect(verifyDraft({})).rejects.toThrow(/Phase 12/);
-    expect(() => assertDraftsOnlyMode(false)).toThrow(OutlookSendForbiddenError);
-    expect(() => assertDraftsOnlyMode(true)).not.toThrow();
-  });
-});
+// Outlook guard assertions live in tests/unit/outlook-send-guards.test.ts
+// (the file the check-forbidden allowlist references).
 
 describe("state helpers", () => {
   it("allows known transitions", () => {

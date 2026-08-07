@@ -17,6 +17,7 @@ import {
   setEmployerApplicationUrl,
 } from "../pipeline/runPipeline.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
+import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient } from "../contacts/emailLlm.js";
@@ -100,6 +101,8 @@ Commands:
   retry
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
+  draft:create --application <uuid> --contact <contact_id> [--headed]
+  draft:verify --draft <draft_id> [--headed]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
 Phase 5.5: resume download orchestration, recorder promote, secrets allowlist.
@@ -1073,6 +1076,57 @@ async function main(): Promise<void> {
     case "email:generate":
       await cmdEmailGenerate(flags);
       return;
+    case "draft:create": {
+      const application = flags["application"];
+      const contact = flags["contact"];
+      if (typeof application !== "string" || typeof contact !== "string") {
+        console.error(
+          "Usage: draft:create --application <uuid> --contact <contact_id> [--headed]",
+        );
+        console.error(
+          "Requires OUTLOOK_DRAFTS_ENABLED=true and DRY_RUN=false. Drafts only — nothing is ever dispatched.",
+        );
+        process.exit(2);
+        return;
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const report = await createOutlookDraft({
+          db,
+          applicationId: application,
+          contactId: contact,
+          headless: flags["headed"] !== true,
+        });
+        console.log(JSON.stringify(report, null, 2));
+        if (report.status !== "SAVED") process.exitCode = 1;
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
+    case "draft:verify": {
+      const draft = flags["draft"];
+      if (typeof draft !== "string") {
+        console.error("Usage: draft:verify --draft <draft_id> [--headed]");
+        process.exit(2);
+        return;
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const report = await verifyOutlookDraft({
+          db,
+          draftId: draft,
+          headless: flags["headed"] !== true,
+        });
+        console.log(JSON.stringify(report, null, 2));
+        if (!report.verified) process.exitCode = 1;
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
     case "run":
       if (flags["pipeline"]) {
         await cmdRunPipeline(flags);

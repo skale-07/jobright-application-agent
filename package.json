@@ -26,6 +26,8 @@
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",
     "email:generate": "tsx src/cli/index.ts email:generate",
+    "draft:create": "tsx src/cli/index.ts draft:create",
+    "draft:verify": "tsx src/cli/index.ts draft:verify",
     "report": "tsx src/cli/index.ts report",
     "login:jobright": "tsx src/cli/index.ts login --service jobright",
     "login:jobright:cdp": "tsx src/cli/index.ts login --service jobright --cdp http://127.0.0.1:9222",

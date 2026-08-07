@@ -1,7 +1,8 @@
 /**
- * Outlook safety boundary (Phase 1).
- * Draft creation/verification arrive in Phase 12.
- * There must never be a production sendEmail / sendMail API.
+ * Outlook safety boundary.
+ * Real draft creation/verification live in draftRun.ts (draft vocabulary
+ * only). There must never be a production send-style API in this repo;
+ * FORBIDDEN_OUTLOOK_IDENTIFIERS is enforced by scripts/check-forbidden.ts.
  */
 
 export class OutlookSendForbiddenError extends Error {
@@ -9,14 +10,6 @@ export class OutlookSendForbiddenError extends Error {
     super(message);
     this.name = "OutlookSendForbiddenError";
   }
-}
-
-export async function createDraft(_args: unknown): Promise<never> {
-  throw new Error("createDraft is not implemented until Phase 12");
-}
-
-export async function verifyDraft(_args: unknown): Promise<never> {
-  throw new Error("verifyDraft is not implemented until Phase 12");
 }
 
 /** Patterns that must not appear in production source (enforced by scripts/check-forbidden.ts). */
