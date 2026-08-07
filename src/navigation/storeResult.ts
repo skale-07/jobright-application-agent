@@ -1,6 +1,6 @@
 import type { Db } from "../storage/db/client.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
-import { setEmployerApplicationUrl } from "../pipeline/runPipeline.js";
+import { setEmployerApplicationUrl } from "../applications/employerUrl.js";
 
 export type StoredEmployerUrl = {
   url: string;

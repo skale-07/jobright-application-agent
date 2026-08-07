@@ -203,7 +203,13 @@ async def _navigate(task: dict) -> dict:
     steps_used = 0
     final_text = ""
     try:
-        urls = [u for u in (history.urls() or []) if isinstance(u, str)]
+        # Only web URLs count for the domain audit — about:blank /
+        # chrome:// / data: tabs are browser furniture, not navigation.
+        urls = [
+            u
+            for u in (history.urls() or [])
+            if isinstance(u, str) and u.startswith(("http://", "https://"))
+        ]
         steps_used = len(history.history)
         final_text = str(history.final_result() or "")
     except Exception as exc:  # noqa: BLE001

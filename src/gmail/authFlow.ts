@@ -69,6 +69,11 @@ export async function runGmailAuthFlow(input: {
     );
   }
   const scopes = (body.scope ?? "").split(/\s+/).filter(Boolean);
+  if (scopes.length === 0) {
+    throw new GmailWriteForbiddenError(
+      "Token exchange returned no scope — cannot verify the grant is readonly; refusing to store.",
+    );
+  }
   const beyond = scopes.filter((s) => s !== GMAIL_READONLY_SCOPE);
   if (beyond.length > 0) {
     throw new GmailWriteForbiddenError(
@@ -80,6 +85,7 @@ export async function runGmailAuthFlow(input: {
     client_secret: input.clientSecret,
     refresh_token: body.refresh_token,
     account_email: input.accountEmail,
+    scope: GMAIL_READONLY_SCOPE,
     obtained_at: new Date().toISOString(),
   });
 }

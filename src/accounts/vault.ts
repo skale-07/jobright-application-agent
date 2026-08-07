@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomInt } from "node:crypto";
+import { createHash, randomInt } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
@@ -46,7 +46,7 @@ export function generatePassword(): string {
   const pick = (set: string): string => set[randomInt(set.length)]!;
   const chars = [pick(UPPER), pick(LOWER), pick(DIGIT), pick(SYMBOL)];
   while (chars.length < 20) {
-    chars.push(all[randomBytes(1)[0]! % all.length]!);
+    chars.push(all[randomInt(all.length)]!);
   }
   // Fisher–Yates with crypto randomness so the guaranteed classes aren't positional.
   for (let i = chars.length - 1; i > 0; i--) {

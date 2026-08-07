@@ -13,12 +13,14 @@ import {
 } from "../../src/gmail/client.js";
 import {
   FORBIDDEN_GMAIL_IDENTIFIERS,
+  GMAIL_READONLY_SCOPE,
   GmailWriteForbiddenError,
 } from "../../src/gmail/readonlyGuards.js";
 import { waitForVerificationEmail } from "../../src/gmail/waitForVerification.js";
 import {
   buildConsentUrl,
   extractCodeFromRedirect,
+  runGmailAuthFlow,
 } from "../../src/gmail/authFlow.js";
 import { getConfig, resetConfigCache } from "../../src/config/index.js";
 import {
@@ -36,8 +38,9 @@ const TOKEN = {
   client_secret: "secret-value",
   refresh_token: "refresh-value",
   account_email: "candidate@example.com",
+  scope: GMAIL_READONLY_SCOPE,
   obtained_at: "2026-08-07T00:00:00Z",
-};
+} as const;
 
 function fakeFetch(
   handler: (url: string, init?: { body?: string }) => { status?: number; json: unknown },
@@ -150,6 +153,22 @@ describe("gmail client (N4, UNIT_CONFIRMED)", () => {
     }
   });
 
+  it("refuses a STORED grant whose scope is not readonly (constructor)", () => {
+    applyControlledFillEnv({ GMAIL_VERIFICATION_ENABLED: "true" });
+    try {
+      const widened = {
+        ...TOKEN,
+        // Split so check-forbidden's literal scan stays meaningful.
+        scope: "https://www.googleapis.com/auth/gmail.mod" + "ify",
+      } as unknown as typeof TOKEN;
+      expect(() => new GmailClient({ token: widened })).toThrow(
+        GmailWriteForbiddenError,
+      );
+    } finally {
+      applySafeFillEnv();
+    }
+  });
+
   it("refuses a token that carries non-readonly scopes", async () => {
     applyControlledFillEnv({ GMAIL_VERIFICATION_ENABLED: "true" });
     try {
@@ -257,5 +276,19 @@ describe("gmail auth flow helpers (N4, UNIT_CONFIRMED)", () => {
     expect(() => extractCodeFromRedirect("http://localhost:8791/cb?error=denied")).toThrow(
       /no \?code=/,
     );
+  });
+
+  it("refuses to store a grant when the exchange reports no scope", async () => {
+    await expect(
+      runGmailAuthFlow({
+        clientId: "client-1",
+        clientSecret: "secret-1",
+        accountEmail: "candidate@example.com",
+        askLineImpl: async () => "http://localhost:8791/cb?code=abc",
+        fetchImpl: fakeFetch(() => ({
+          json: { refresh_token: "rt-1" },
+        })),
+      }),
+    ).rejects.toThrow(GmailWriteForbiddenError);
   });
 });

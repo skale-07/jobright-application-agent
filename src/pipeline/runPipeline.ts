@@ -89,48 +89,14 @@ const ADVANCEABLE: ApplicationState[] = [
   "EMAIL_GENERATED",
 ];
 
-export function getEmployerApplicationUrl(
-  db: Db,
-  applicationId: string,
-): string | null {
-  const row = db
-    .prepare(
-      `SELECT j.raw_json FROM jobs j
-       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
-    )
-    .get(applicationId) as { raw_json: string } | undefined;
-  if (!row) return null;
-  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  const url = raw["employer_application_url"];
-  return typeof url === "string" && url.length > 0 ? url : null;
-}
-
-/** Persist the employer ATS URL on the job so submit and re-runs find it. */
-export function setEmployerApplicationUrl(
-  db: Db,
-  applicationId: string,
-  url: string,
-): void {
-  const detected = detectAtsFromUrl(url);
-  if (detected.ats === null) {
-    throw new Error(`Refusing to store employer URL: ${detected.failureReason}`);
-  }
-  const row = db
-    .prepare(
-      `SELECT j.id, j.raw_json FROM jobs j
-       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
-    )
-    .get(applicationId) as { id: string; raw_json: string } | undefined;
-  if (!row) throw new Error(`Unknown application: ${applicationId}`);
-  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-  raw["employer_application_url"] = detected.normalizedUrl;
-  raw["employer_application_ats"] = detected.ats;
-  db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
-    JSON.stringify(raw),
-    new Date().toISOString(),
-    row.id,
-  );
-}
+export {
+  getEmployerApplicationUrl,
+  setEmployerApplicationUrl,
+} from "../applications/employerUrl.js";
+import {
+  getEmployerApplicationUrl,
+  setEmployerApplicationUrl,
+} from "../applications/employerUrl.js";
 
 type StepContext = {
   db: Db;
@@ -240,7 +206,11 @@ async function withNavHandoffPage<T>(
   if (kind !== "cdp" || !(await probeCdpEndpoint(cfg.agentCdpUrl))) {
     return fn(null);
   }
+  // The catch guards ONLY attach/open/newPage — an error thrown by the
+  // caller's work must propagate, never silently re-run on the ephemeral
+  // path (a live fill re-executed twice would double-mutate the form).
   let session: PlaywrightServiceSession | null = null;
+  let page: Page | null = null;
   try {
     session = new PlaywrightServiceSession({
       service: "jobright",
@@ -248,12 +218,15 @@ async function withNavHandoffPage<T>(
       skipAuthValidation: true,
     });
     await session.open();
-    const page = await session.newPage({ purpose: "nav-handoff" });
-    return await fn(page);
+    page = await session.newPage({ purpose: "nav-handoff" });
   } catch {
     if (session) await session.close().catch(() => undefined);
     session = null;
-    return fn(null);
+    page = null;
+  }
+  if (!page) return fn(null);
+  try {
+    return await fn(page);
   } finally {
     if (session) await session.close().catch(() => undefined);
   }

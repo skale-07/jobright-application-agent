@@ -56,9 +56,11 @@ export function extractMagicLink(
   options: { senderAddress: string; extraAllowedDomains?: string[] },
 ): string | null {
   const senderHost = options.senderAddress.split("@")[1] ?? "";
+  // Allowlist entries may be full hostnames (jobs.lever.co) — fold them to
+  // registrable domains so link hosts on sibling subdomains still qualify.
   const allowed = new Set(
-    [registrableDomain(senderHost), ...(options.extraAllowedDomains ?? [])]
-      .map((d) => d.toLowerCase())
+    [senderHost, ...(options.extraAllowedDomains ?? [])]
+      .map((d) => registrableDomain(d.toLowerCase()))
       .filter(Boolean),
   );
   if (allowed.size === 0) return null;

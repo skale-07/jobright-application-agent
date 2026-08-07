@@ -2,17 +2,21 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { getConfig } from "../config/index.js";
+import { GMAIL_READONLY_SCOPE } from "./readonlyGuards.js";
 
 /**
  * Refresh-token storage for the readonly Gmail client. Lives under
  * private/ (gitignored + pre-commit-enforced), written 0600. Gmail is
- * API-only — deliberately NOT a ServiceName / browser session.
+ * API-only — deliberately NOT a ServiceName / browser session. The stored
+ * grant records its scope, and the schema only admits the readonly scope —
+ * a token file claiming anything wider fails to parse at all.
  */
 const tokenFileSchema = z.object({
   client_id: z.string().min(1),
   client_secret: z.string().min(1),
   refresh_token: z.string().min(1),
   account_email: z.string().email(),
+  scope: z.literal(GMAIL_READONLY_SCOPE),
   obtained_at: z.string(),
 });
 

@@ -464,7 +464,9 @@ instead of dead-ending on a MANUAL review item. Three phases, each gated:
 
 ```powershell
 npm run gmail:auth -- --email <mailbox> --client-id <id> --client-secret <secret>
+$env:GMAIL_VERIFICATION_ENABLED = "true"   # gmail:check reads the mailbox, so the flag gates it too
 npm run gmail:check       # read-only smoke
+Remove-Item Env:GMAIL_VERIFICATION_ENABLED
 ```
 
 (Desktop-app OAuth client, scope `gmail.readonly` only — a token carrying

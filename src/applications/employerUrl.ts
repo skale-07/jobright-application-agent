@@ -1,0 +1,52 @@
+import type { Db } from "../storage/db/client.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+
+/**
+ * Employer-URL persistence on the job row. Lives outside runPipeline so
+ * navigation modules can store resolved URLs without importing the
+ * pipeline (which imports navigation — a module cycle otherwise).
+ * runPipeline re-exports both helpers for its existing callers.
+ */
+
+export function getEmployerApplicationUrl(
+  db: Db,
+  applicationId: string,
+): string | null {
+  const row = db
+    .prepare(
+      `SELECT j.raw_json FROM jobs j
+       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+    )
+    .get(applicationId) as { raw_json: string } | undefined;
+  if (!row) return null;
+  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+  const url = raw["employer_application_url"];
+  return typeof url === "string" && url.length > 0 ? url : null;
+}
+
+/** Persist the employer ATS URL on the job so submit and re-runs find it. */
+export function setEmployerApplicationUrl(
+  db: Db,
+  applicationId: string,
+  url: string,
+): void {
+  const detected = detectAtsFromUrl(url);
+  if (detected.ats === null) {
+    throw new Error(`Refusing to store employer URL: ${detected.failureReason}`);
+  }
+  const row = db
+    .prepare(
+      `SELECT j.id, j.raw_json FROM jobs j
+       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+    )
+    .get(applicationId) as { id: string; raw_json: string } | undefined;
+  if (!row) throw new Error(`Unknown application: ${applicationId}`);
+  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+  raw["employer_application_url"] = detected.normalizedUrl;
+  raw["employer_application_ats"] = detected.ats;
+  db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
+    JSON.stringify(raw),
+    new Date().toISOString(),
+    row.id,
+  );
+}

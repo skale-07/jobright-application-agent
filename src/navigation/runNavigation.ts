@@ -226,17 +226,27 @@ export async function runNavigation(
     }
     report.phase_trace.push({ phase: "open", outcome: "job page loaded" });
 
-    // Phase A — zero mutation.
+    // Phase A — zero mutation. Only a KNOWN-ATS href resolves here: the
+    // any-anchor fallback also matches footer/social links, and phase A
+    // applies none of the landing-page checks phase B does, so an
+    // arbitrary https href must never be stored as the employer URL.
     const hrefs = await readExternalApplyHrefs(page);
-    if (hrefs.length > 0 && hrefs[0]) {
+    const atsHref = hrefs.find((h) => detectAtsFromUrlSafe(h));
+    if (atsHref) {
       report.phase_trace.push({
         phase: "A_anchor_hrefs",
-        outcome: `resolved (${hrefs.length} candidates)`,
-        evidence: new URL(hrefs[0]).hostname,
+        outcome: `resolved (known ATS, ${hrefs.length} candidates)`,
+        evidence: new URL(atsHref).hostname,
       });
-      return resolveAndPersist(report, db, applicationId, hrefs[0], "anchor_href");
+      return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
     }
-    report.phase_trace.push({ phase: "A_anchor_hrefs", outcome: "no external anchors" });
+    report.phase_trace.push({
+      phase: "A_anchor_hrefs",
+      outcome:
+        hrefs.length > 0
+          ? `no known-ATS anchors (${hrefs.length} external links ignored)`
+          : "no external anchors",
+    });
 
     if (Date.now() > deadline) {
       report.wall = "budget";
@@ -475,6 +485,9 @@ export async function runNavigation(
             phase: "D_gmail",
             outcome: `verification ${wait.kind} retrieved`,
           });
+          // Codes/links are secrets: the continuation task carries them,
+          // and any echo of them must be scrubbed from the artifact.
+          secretValues.push(wait.kind === "code" ? wait.code : wait.url);
           resume = {
             prior_run_id: report.run_id,
             prior_final_url:
@@ -548,10 +561,16 @@ export async function runNavigation(
       written_at: new Date().toISOString(),
     } as unknown as Record<string, unknown>);
     // Defense in depth: even if a sidecar note echoed a credential, the
-    // literal value never reaches disk.
+    // literal value never reaches disk — scrub both the raw form and the
+    // JSON-escaped form (passwords with quotes/backslashes serialize
+    // differently than they read).
     let serialized = JSON.stringify(redacted);
     for (const secret of secretValues) {
-      if (secret) serialized = serialized.split(secret).join("[REDACTED_SECRET]");
+      if (!secret) continue;
+      const escaped = JSON.stringify(secret).slice(1, -1);
+      for (const needle of new Set([secret, escaped])) {
+        serialized = serialized.split(needle).join("[REDACTED_SECRET]");
+      }
     }
     writeJsonAtomic(outPath, JSON.parse(serialized) as Record<string, unknown>);
     r.report_path = outPath;
