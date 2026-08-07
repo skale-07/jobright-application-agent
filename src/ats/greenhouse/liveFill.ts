@@ -336,27 +336,9 @@ export async function runGreenhouseLiveFill(input: {
       assertFormFillAllowed("greenhouse.liveFill.execute");
       base.mutation_attempted = true;
 
-      // Upload first while the form shell is pristine. Live job-boards can
-      // re-render the file zone after heavy education combobox interaction.
-      const uploads = [];
-      if (input.resumePath) {
-        logger.info("live fill: uploading resume", {
-          service: "greenhouse",
-          action: "upload",
-        });
-        uploads.push(await adapter.uploadResume(page, input.resumePath));
-      }
-      if (input.coverLetterPath) {
-        logger.info("live fill: uploading cover letter", {
-          service: "greenhouse",
-          action: "upload",
-        });
-        uploads.push(
-          await adapter.uploadCoverLetter(page, input.coverLetterPath),
-        );
-      }
-      if (uploads.length > 0) base.uploads = uploads;
-
+      // Order: fill fields → verify/heal → upload last → freeze.
+      // Combobox work re-renders job-boards and can wipe a pristine-zone
+      // attach if we uploaded first; leave file inputs until values stick.
       logger.info("live fill: applying approved field plan", {
         service: "greenhouse",
         action: "fill",
@@ -411,10 +393,43 @@ export async function runGreenhouseLiveFill(input: {
         }
       }
 
-      base.notes.push("submit never called — no submit path exists in this command");
-      base.validation_level = base.verify.passed
-        ? "LIVE_MUTATION_CONFIRMED"
-        : "UNVERIFIED";
+      // Upload only after comboboxes are settled — no further field mutation.
+      const uploads = [];
+      if (input.resumePath) {
+        logger.info("live fill: uploading resume", {
+          service: "greenhouse",
+          action: "upload",
+        });
+        uploads.push(await adapter.uploadResume(page, input.resumePath));
+      }
+      if (input.coverLetterPath) {
+        logger.info("live fill: uploading cover letter", {
+          service: "greenhouse",
+          action: "upload",
+        });
+        uploads.push(
+          await adapter.uploadCoverLetter(page, input.coverLetterPath),
+        );
+      }
+      if (uploads.length > 0) {
+        base.uploads = uploads;
+        const bad = uploads.filter((u) => !u.verified);
+        if (bad.length > 0) {
+          base.notes.push(
+            `upload not verified after fill: ${bad.map((u) => u.field).join(", ")}`,
+          );
+        }
+      }
+
+      base.notes.push(
+        "frozen after fill→verify→upload — no further field mutation; submit never called",
+      );
+      const uploadsOk =
+        !base.uploads?.length || base.uploads.every((u) => u.verified);
+      base.validation_level =
+        base.verify.passed && uploadsOk
+          ? "LIVE_MUTATION_CONFIRMED"
+          : "UNVERIFIED";
       return persist(base);
     },
     { headless: input.headless ?? false },

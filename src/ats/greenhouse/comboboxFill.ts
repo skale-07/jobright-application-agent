@@ -606,6 +606,14 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
 const LISTBOX_SELECTOR = '[role="listbox"], [class*="select__menu"]';
 const OPTION_SELECTOR = '[role="option"], [class*="select__option"]';
 
+/**
+ * True for Stats / Statistics majors — not for "United States" (/\bstat/ matches
+ * the prefix of "states").
+ */
+function hasStatsMajorToken(lower: string): boolean {
+  return /\bstats?\b|\bstatistics\b|\bstatistical\b/.test(lower);
+}
+
 /** Progressive filter strings for virtualized React-select menus. */
 export function buildFilterCandidates(expected: string): string[] {
   const full = expected.trim();
@@ -622,13 +630,34 @@ export function buildFilterCandidates(expected: string): string[] {
   };
   const lower = cleaned.toLowerCase();
 
+  // Degree: type "Bachelor" / "Master" first — GH job-boards catalogue
+  // is usually "Bachelor's Degree", not "Bachelor of Science". Full
+  // profile strings still remain as later fallbacks.
+  if (/\bbachelor/.test(lower)) {
+    push("Bachelor");
+    push("Bachelor's Degree");
+  } else if (/\bmba\b/.test(lower)) {
+    push("MBA");
+  } else if (/\bmaster/.test(lower)) {
+    push("Master");
+    push("Master's Degree");
+  } else if (/\bassociate/.test(lower)) {
+    push("Associate");
+    push("Associate's Degree");
+  } else if (/\bph\.?\s*d|doctorate|doctor of philosophy/.test(lower)) {
+    push("PhD");
+    push("Doctor");
+  }
+
   // Math majors: always filter "Mathematics" first, then applied/composite strings.
   // Live GH boards almost never list "Applied Math & Stats" as a catalogue option.
   if (/\bmath/.test(lower)) {
     push("Mathematics");
     push("Math");
   }
-  if (/\bstat/.test(lower) && !/\bmath/.test(lower)) {
+  // Must NOT use /\bstat/ — it matches "States" in "United States" and
+  // briefly types "Statistics" into country comboboxes before correcting.
+  if (hasStatsMajorToken(lower) && !/\bmath/.test(lower)) {
     push("Statistics");
   }
 
@@ -642,7 +671,7 @@ export function buildFilterCandidates(expected: string): string[] {
   } else if (words.length >= 2) {
     push(words[1]!);
   }
-  if (/\bstat/.test(lower)) {
+  if (hasStatsMajorToken(lower)) {
     push("Statistics");
   }
   if (/\bcomputer|\bcs\b/.test(lower)) {

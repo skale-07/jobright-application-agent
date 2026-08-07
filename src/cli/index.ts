@@ -51,6 +51,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { liveCapturesRoot } from "../recorder/workflows.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
+import { enqueueJobRightJobs } from "../jobright/enqueueJobs.js";
 import { runJobrightResumeDownload } from "../jobright/resumeDownloadRun.js";
 import { registerResumeMaterial } from "../jobright/materialsRegister.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
@@ -93,6 +94,7 @@ Commands:
   record-jobright [--workflow <name>] [--all] [--derive-fixtures]
   recorder:promote --run <runId> --workflow <name> [--force]
   discover [--fixture] [--max-jobs N] [--probe-detail]
+  enqueue --jobright <url|id> [--jobright ...] [--file path] [--employer-url <greenhouse-url>]
   inspect --job <jobright_job_id> [--application <uuid>] [--fixture] [--save-diagnostics]
   ats:inspect --url <GREENHOUSE_APPLICATION_URL> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
@@ -310,6 +312,101 @@ async function cmdDiscover(
     headless: false,
   });
   console.log(JSON.stringify(report, null, 2));
+}
+
+/**
+ * Collect repeated --jobright / --url values (parseArgs only keeps the last).
+ * Also reads optional --file (one ref per line).
+ */
+function collectEnqueueRefs(argv: string[]): {
+  refs: string[];
+  employerUrl: string | undefined;
+  filePath: string | undefined;
+} {
+  const refs: string[] = [];
+  let employerUrl: string | undefined;
+  let filePath: string | undefined;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (!a) continue;
+    if (
+      (a === "--jobright" || a === "--url" || a === "--job") &&
+      argv[i + 1] &&
+      !argv[i + 1]!.startsWith("--")
+    ) {
+      refs.push(argv[i + 1]!);
+      i++;
+      continue;
+    }
+    if (a === "--employer-url" && argv[i + 1] && !argv[i + 1]!.startsWith("--")) {
+      employerUrl = argv[i + 1];
+      i++;
+      continue;
+    }
+    if (a === "--file" && argv[i + 1] && !argv[i + 1]!.startsWith("--")) {
+      filePath = argv[i + 1];
+      i++;
+      continue;
+    }
+  }
+  return { refs, employerUrl, filePath };
+}
+
+function cmdEnqueue(): void {
+  // Skip command name; argv is full process args in main — pass rest from caller
+  const raw = process.argv.slice(3);
+  const { refs: flagRefs, employerUrl, filePath } = collectEnqueueRefs(raw);
+  const refs = [...flagRefs];
+
+  if (filePath) {
+    const abs = path.resolve(filePath);
+    if (!fs.existsSync(abs)) {
+      console.error(`File not found: ${abs}`);
+      process.exit(2);
+      return;
+    }
+    refs.push(
+      ...fs
+        .readFileSync(abs, "utf8")
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0 && !l.startsWith("#")),
+    );
+  }
+
+  if (refs.length === 0) {
+    console.error(`Usage:
+  enqueue --jobright <jobright-url-or-id> [--jobright ...]
+  enqueue --jobright <id> --employer-url <greenhouse-apply-url>
+  enqueue --file jobs.txt
+
+Each line in jobs.txt is a JobRight detail URL or bare hex job id.
+Prints application UUID(s) — required for materials:register / submit.`);
+    process.exit(2);
+    return;
+  }
+
+  if (employerUrl && refs.length > 1) {
+    console.error(
+      "Refusing --employer-url with multiple JobRight refs (one Greenhouse apply URL cannot map to many jobs).",
+    );
+    process.exit(2);
+    return;
+  }
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = enqueueJobRightJobs(db, refs, {
+      ...(employerUrl ? { employerApplicationUrl: employerUrl } : {}),
+    });
+    console.log(JSON.stringify(report, null, 2));
+    if (report.failed > 0 || report.blocked > 0) {
+      process.exitCode = report.enqueued + report.reused > 0 ? 3 : 1;
+    }
+  } finally {
+    closeDatabase(db);
+  }
 }
 
 async function cmdInspect(
@@ -1068,6 +1165,9 @@ async function main(): Promise<void> {
       return;
     case "discover":
       await cmdDiscover(flags);
+      return;
+    case "enqueue":
+      cmdEnqueue();
       return;
     case "inspect":
       await cmdInspect(flags);

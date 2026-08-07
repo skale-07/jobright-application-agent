@@ -151,6 +151,24 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(c.indexOf("Mathematics")).toBeLessThan(c.indexOf("Applied Math & Stats"));
   });
 
+  it("buildFilterCandidates tries Bachelor before Bachelor of Science", () => {
+    const c = buildFilterCandidates("Bachelor of Science");
+    expect(c[0]).toBe("Bachelor");
+    expect(c.indexOf("Bachelor")).toBeLessThan(c.indexOf("Bachelor of Science"));
+    expect(c.indexOf("Bachelor's Degree")).toBeLessThan(
+      c.indexOf("Bachelor of Science"),
+    );
+  });
+
+  it("buildFilterCandidates does not inject Statistics for United States", () => {
+    const c = buildFilterCandidates("United States");
+    expect(c).not.toContain("Statistics");
+    expect(c[0]).toBe("United States");
+    // Major still gets Statistics when the word is intentional
+    const stats = buildFilterCandidates("Applied Statistics");
+    expect(stats).toContain("Statistics");
+  });
+
   it("yes/no normalization picks the right binary option", () => {
     expect(pickOptionLabel(["Yes", "No"], "true")).toMatchObject({
       ok: true,
