@@ -1,15 +1,30 @@
+import type { Page } from "playwright";
 import type {
   ApplicationAdapter,
   ApplicationInspection,
   DetectionResult,
   DiscoveredField,
+  FillResult,
+  FormResetResult,
+  FormVerificationResult,
+  ResolvedApplicationAnswers,
+  UploadVerification,
 } from "../adapter.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { detectBlockingCaptcha } from "../greenhouse/captchaDetection.js";
 import { detectLoginWall } from "../greenhouse/loginWallDetection.js";
 import type { FillPlanEntry } from "../../applications/resolveAnswers.js";
-import type { ApprovedFillPlan } from "../../applications/approvedFillPlan.js";
-import type { FieldMeta } from "../greenhouse/fill.js";
+import {
+  approvedFillEntries,
+  type ApprovedFillPlan,
+} from "../../applications/approvedFillPlan.js";
+import {
+  greenhouseFillFromPlan,
+  greenhouseVerifyAnswers,
+  type FieldMeta,
+} from "../greenhouse/fill.js";
+import { leverResetForm, leverUploadFile } from "./fill.js";
 import type { PublicProfile } from "../../candidate/publicProfile.js";
 import {
   composeFullName,
@@ -115,6 +130,47 @@ export class LeverAdapterV1 implements ApplicationAdapter {
 
   async discoverFields(input: { html: string }): Promise<DiscoveredField[]> {
     return discoverFieldsFromHtml(input.html);
+  }
+
+  /**
+   * Executes only approved FILL entries via the generic executor (locator by
+   * inputId → name → label; native-select/combobox/checkbox/radio/text
+   * dispatch). Lever forms are native controls throughout.
+   */
+  async fill(
+    page: Page,
+    resolvedAnswers: ResolvedApplicationAnswers,
+  ): Promise<FillResult> {
+    assertFormFillAllowed("lever.fill");
+    const plan = this.requireApprovedPlan();
+    void resolvedAnswers;
+    return greenhouseFillFromPlan(
+      page,
+      approvedFillEntries(plan),
+      this.fieldMeta(),
+    );
+  }
+
+  async verify(
+    page: Page,
+    expected: ResolvedApplicationAnswers,
+  ): Promise<FormVerificationResult> {
+    const entries =
+      this.approvedPlan !== null
+        ? approvedFillEntries(this.approvedPlan)
+        : this.planEntries();
+    return greenhouseVerifyAnswers(page, expected, entries, this.fieldMeta());
+  }
+
+  async uploadResume(
+    page: Page,
+    resumePath: string,
+  ): Promise<UploadVerification> {
+    return leverUploadFile(page, "resume", resumePath);
+  }
+
+  async resetForm(page: Page): Promise<FormResetResult> {
+    return leverResetForm(page);
   }
 
   async inspect(input: {
