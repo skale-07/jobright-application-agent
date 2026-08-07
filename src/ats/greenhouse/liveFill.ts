@@ -10,6 +10,7 @@ import { redactFillReportForArtifact } from "../../applications/fillReportRedact
 import { withPublicUrlPage } from "../../browser/fixtureSession.js";
 import type { PublicProfile } from "../../candidate/publicProfile.js";
 import { getConfig } from "../../config/index.js";
+import { logger } from "../../logging/logger.js";
 import { writeJsonAtomic } from "../../storage/atomicJson.js";
 import { GreenhouseAdapterV1 } from "./v1.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
@@ -274,17 +275,50 @@ export async function runGreenhouseLiveFill(input: {
       assertFormFillAllowed("greenhouse.liveFill.execute");
       base.mutation_attempted = true;
 
-      base.fill = await adapter.fill(page, approvedPlan.answers);
+      // Upload first while the form shell is pristine. Live job-boards can
+      // re-render the file zone after heavy education combobox interaction.
       const uploads = [];
       if (input.resumePath) {
+        logger.info("live fill: uploading resume", {
+          service: "greenhouse",
+          action: "upload",
+        });
         uploads.push(await adapter.uploadResume(page, input.resumePath));
       }
       if (input.coverLetterPath) {
+        logger.info("live fill: uploading cover letter", {
+          service: "greenhouse",
+          action: "upload",
+        });
         uploads.push(
           await adapter.uploadCoverLetter(page, input.coverLetterPath),
         );
       }
       if (uploads.length > 0) base.uploads = uploads;
+
+      logger.info("live fill: applying approved field plan", {
+        service: "greenhouse",
+        action: "fill",
+        metadata: {
+          fillable_count: approvedPlan.fillable_count,
+          answer_keys: Object.keys(approvedPlan.answers),
+        },
+      });
+      base.fill = await adapter.fill(page, approvedPlan.answers);
+      logger.info("live fill: field plan applied", {
+        service: "greenhouse",
+        action: "fill",
+        metadata: {
+          filled: base.fill.filled.length,
+          skipped: base.fill.skipped.length,
+          errors: base.fill.errors.length,
+        },
+      });
+
+      logger.info("live fill: verifying field read-back", {
+        service: "greenhouse",
+        action: "verify",
+      });
       base.verify = await adapter.verify(page, approvedPlan.answers);
 
       // Phase 6a′: heal read-back failures (heuristic always; sidecar only

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   detectControlKind,
   fillComboboxControl,
+  labelsCompatible,
   pickOptionLabel,
   readComboboxValue,
 } from "../../src/ats/greenhouse/comboboxFill.js";
@@ -71,6 +72,61 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     });
   });
 
+  it("maps job-boards country dial labels and degree taxonomy", () => {
+    const countries = [
+      "United States +1",
+      "Canada +1",
+      "United Kingdom +44",
+    ];
+    expect(pickOptionLabel(countries, "United States")).toMatchObject({
+      ok: true,
+      label: "United States +1",
+    });
+
+    const degrees = [
+      "Associate's Degree",
+      "Bachelor's Degree",
+      "Master's Degree",
+      "Doctor of Philosophy (Ph.D.)",
+    ];
+    expect(pickOptionLabel(degrees, "Bachelor of Science")).toMatchObject({
+      ok: true,
+      label: "Bachelor's Degree",
+      via: "synonym",
+    });
+
+    const disciplines = [
+      "Accounting",
+      "Applied Health Services",
+      "Applied Mathematics & Statistics",
+      "Architecture",
+    ];
+    expect(pickOptionLabel(disciplines, "Applied Math & Stats")).toMatchObject({
+      ok: true,
+      label: "Applied Mathematics & Statistics",
+    });
+
+    // Live GH board often has bare "Mathematics" / "Statistics…", not the compound major.
+    expect(
+      pickOptionLabel(
+        ["Applied Health Services", "Mathematics", "Architecture"],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Mathematics",
+    });
+    expect(
+      pickOptionLabel(
+        ["Applied Health Services", "Statistics & Decision Theory", "Architecture"],
+        "Applied Math & Stats",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Statistics & Decision Theory",
+    });
+  });
+
   it("yes/no normalization picks the right binary option", () => {
     expect(pickOptionLabel(["Yes", "No"], "true")).toMatchObject({
       ok: true,
@@ -91,6 +147,15 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(missing.ok).toBe(false);
     if (!missing.ok) expect(missing.reason).toMatch(/no option matches/);
     expect(pickOptionLabel(options, " ").ok).toBe(false);
+  });
+});
+
+describe("labelsCompatible (UNIT_CONFIRMED)", () => {
+  it("accepts dial-code collapse after country pick", () => {
+    expect(labelsCompatible("United States +1", "+1")).toBe(true);
+    expect(labelsCompatible("United States +1", "United States")).toBe(true);
+    expect(labelsCompatible("May", "May")).toBe(true);
+    expect(labelsCompatible("Yes", null)).toBe(false);
   });
 });
 

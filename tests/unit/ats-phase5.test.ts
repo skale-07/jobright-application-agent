@@ -19,6 +19,10 @@ import {
   assertSubmitAllowed,
 } from "../../src/applications/formFillGuards.js";
 import { GreenhouseAdapterV1 } from "../../src/ats/greenhouse/v1.js";
+import {
+  greenhouseUploadFile,
+  resolveGreenhouseFileInput,
+} from "../../src/ats/greenhouse/fill.js";
 import { browserLaunchOptions } from "../../src/browser/launchOptions.js";
 import {
   applyFixtureFillEnv,
@@ -127,6 +131,48 @@ describe("Phase 5 Greenhouse fill", () => {
       await expect(adapter.submit(page)).rejects.toThrow(
         /FORM_FILL_ENABLED|SUBMIT_ENABLED|not implemented|refusing/,
       );
+    } finally {
+      await page.close();
+      applySafeFillEnv();
+    }
+  });
+
+  it("uploads resume on job-boards-style inputs (id only, no name, hidden)", async () => {
+    applyFixtureFillEnv();
+    const page = await browser.newPage();
+    try {
+      const html = fs.readFileSync(
+        path.join(
+          process.cwd(),
+          "tests",
+          "fixtures",
+          "ats",
+          "greenhouse",
+          "job-boards-upload.html",
+        ),
+        "utf8",
+      );
+      await page.setContent(html);
+      const loc = await resolveGreenhouseFileInput(page, "resume");
+      expect(await loc.getAttribute("id")).toBe("resume");
+
+      const sampleResume = path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "ats",
+        "greenhouse",
+        "sample-resume.pdf",
+      );
+      if (!fs.existsSync(sampleResume)) {
+        fs.writeFileSync(
+          sampleResume,
+          "%PDF-1.1\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n",
+        );
+      }
+      const upload = await greenhouseUploadFile(page, "resume", sampleResume);
+      expect(upload.verified).toBe(true);
+      expect(upload.size_bytes).toBeGreaterThan(0);
     } finally {
       await page.close();
       applySafeFillEnv();
