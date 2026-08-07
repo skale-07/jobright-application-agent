@@ -28,8 +28,16 @@ import {
   waitForVerificationEmail,
   type VerificationWaitResult,
 } from "../gmail/waitForVerification.js";
+import { readGmailToken } from "../gmail/tokenStore.js";
+import { getAccount, getOrCreateAccount } from "../accounts/vault.js";
+import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+
+function detectAtsFromUrlSafe(url: string): boolean {
+  return detectAtsFromUrl(url).ats !== null;
+}
 
 /** Hosts the nav agent may traverse in addition to the job page's own. */
 const KNOWN_ATS_HOSTS = [
@@ -170,6 +178,9 @@ export async function runNavigation(
     notes: [],
   };
 
+  /** Values that must never reach the artifact, whatever echoes them. */
+  const secretValues: string[] = [];
+
   const resolved = getStoredJobInspectionTargetByApplicationId(db, applicationId);
   if (!resolved.ok) {
     report.wall = "budget";
@@ -238,25 +249,50 @@ export async function runNavigation(
       page,
     );
     report.notes.push(...capture.notes);
+    let capturedWallUrl: string | null = null;
     if (capture.url) {
+      // A captured URL is only "resolved" when the landing page is not a
+      // wall — an employer sign-in page must never be stored as the
+      // application URL; it becomes the agent phase's starting point.
+      const knownAts = detectAtsFromUrlSafe(capture.url);
+      const landingWall =
+        !knownAts &&
+        capture.landingHtml !== null &&
+        detectLoginWall({
+          finalUrl: capture.url,
+          html: capture.landingHtml,
+          title: capture.landingTitle ?? "",
+        }).detected;
+      if (!landingWall) {
+        report.phase_trace.push({
+          phase: "B_apply_click",
+          outcome: `resolved via ${capture.via}`,
+          evidence: new URL(capture.url).hostname,
+        });
+        return resolveAndPersist(
+          report,
+          db,
+          applicationId,
+          capture.url,
+          capture.via === "popup" ? "apply_click_popup" : "apply_click_same_tab",
+        );
+      }
+      capturedWallUrl = capture.url;
       report.phase_trace.push({
         phase: "B_apply_click",
-        outcome: `resolved via ${capture.via}`,
+        outcome: "captured URL lands on a login wall — not stored",
         evidence: new URL(capture.url).hostname,
       });
-      return resolveAndPersist(
-        report,
-        db,
-        applicationId,
-        capture.url,
-        capture.via === "popup" ? "apply_click_popup" : "apply_click_same_tab",
-      );
     }
 
     // Classify what we're stuck on (the landing page after the click flow).
-    const html = await page.content();
-    const finalUrl = page.url();
-    const title = await page.title().catch(() => "");
+    const html = capturedWallUrl
+      ? (capture.landingHtml ?? (await page.content()))
+      : await page.content();
+    const finalUrl = capturedWallUrl ?? page.url();
+    const title = capturedWallUrl
+      ? (capture.landingTitle ?? "")
+      : await page.title().catch(() => "");
     const captcha = detectBlockingCaptcha({
       finalUrl,
       html,
@@ -308,6 +344,51 @@ export async function runNavigation(
       ),
     );
 
+    // Account credentials (N5): reuse a vault entry for the wall host, or
+    // mint one when the landing page is a login wall (an account will be
+    // needed either way). Secrets ride only the in-memory task → sidecar
+    // stdin; the artifact path scrubs them (see persist).
+    const wallHost = startUrl.startsWith("https://")
+      ? new URL(startUrl).hostname
+      : null;
+    let credentials: AgentNavigateTask["credentials"] = { available: false };
+    if (wallHost && !/(^|\.)jobright\.ai$/i.test(wallHost)) {
+      const existing = getAccount(wallHost);
+      if (existing) {
+        credentials = {
+          available: true,
+          username: existing.username,
+          password: existing.password,
+        };
+        report.notes.push(`vault: existing account for ${wallHost}`);
+      } else if (loginWall.detected) {
+        const email =
+          readGmailToken()?.account_email ??
+          (() => {
+            try {
+              return loadPublicProfile().email;
+            } catch {
+              return "";
+            }
+          })();
+        if (email) {
+          const { account, created } = getOrCreateAccount(wallHost, {
+            email,
+            runId: report.run_id,
+          });
+          credentials = {
+            available: true,
+            username: account.username,
+            password: account.password,
+          };
+          report.notes.push(
+            `vault: ${created ? "created" : "loaded"} account for ${wallHost}`,
+          );
+        }
+      }
+    }
+    if (credentials.password) secretValues.push(credentials.password);
+
     // Turn loop: 1 initial spawn + up to 2 Gmail continuations.
     const gmailAvailable = cfg0.gmailVerificationEnabled;
     let turns = 0;
@@ -330,7 +411,7 @@ export async function runNavigation(
               30_000,
               Math.min(180_000, deadline - Date.now()),
             ),
-            credentials: { available: false },
+            credentials,
             gmail_available: gmailAvailable,
             ...(resume ? { resume } : {}),
           },
@@ -462,13 +543,17 @@ export async function runNavigation(
     const outDir = path.join(cfg.artifactsDir, "navigation", r.run_id);
     fs.mkdirSync(outDir, { recursive: true });
     const outPath = path.join(outDir, "report.json");
-    writeJsonAtomic(
-      outPath,
-      redactObject({
-        ...r,
-        written_at: new Date().toISOString(),
-      } as unknown as Record<string, unknown>),
-    );
+    const redacted = redactObject({
+      ...r,
+      written_at: new Date().toISOString(),
+    } as unknown as Record<string, unknown>);
+    // Defense in depth: even if a sidecar note echoed a credential, the
+    // literal value never reaches disk.
+    let serialized = JSON.stringify(redacted);
+    for (const secret of secretValues) {
+      if (secret) serialized = serialized.split(secret).join("[REDACTED_SECRET]");
+    }
+    writeJsonAtomic(outPath, JSON.parse(serialized) as Record<string, unknown>);
     r.report_path = outPath;
     logger.info("navigation run finished", {
       service: "navigation",

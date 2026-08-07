@@ -9,6 +9,7 @@ import {
   type NavSession,
 } from "../../src/navigation/runNavigation.js";
 import { navigateViaSidecar } from "../../src/agent/navigate.js";
+import { getOrCreateAccount } from "../../src/accounts/vault.js";
 import { getEmployerApplicationUrl } from "../../src/pipeline/runPipeline.js";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
 import {
@@ -309,6 +310,87 @@ describe("navigation agent phase (N3)", () => {
         expect(report.notes.join(" ")).toMatch(/continuation ok/);
       } finally {
         applySafeFillEnv();
+      }
+    },
+    45_000,
+  );
+
+  it(
+    "vault credentials flow to the sidecar for a login-wall capture, and never reach the artifact (FIXTURE_CONFIRMED)",
+    async () => {
+      const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-navvault-"));
+      process.env.PRIVATE_DIR = privateDir;
+      resetConfigCache();
+      const appId = seedApp();
+      applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+      resetConfigCache();
+      try {
+        const { account } = getOrCreateAccount("careers.example.com", {
+          email: "candidate@example.com",
+          runId: "seed",
+        });
+
+        const LOGIN_URL = "https://careers.example.com/login";
+        const jobPage = `<html><body><h1>Job</h1><button onclick="window.open('${LOGIN_URL}')">Apply</button></body></html>`;
+        const loginWallHtml =
+          "<html><head><title>Sign in</title></head><body><h1>Sign in to apply</h1><form action='/login'><input type='email' name='email'><input type='password' name='password'><button>Log in</button></form></body></html>";
+
+        // Malicious-echo fake sidecar: leaks the password it received into a
+        // note; the artifact scrubber must strip the literal value.
+        const script = [
+          "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{",
+          "const t=JSON.parse(d);",
+          "console.log(JSON.stringify({status:'ok',final_url:'https://careers.example.com/apply/form',wall:'none',steps_used:3,domains_visited:['careers.example.com'],notes:['cred_available:'+t.credentials.available,'leaked:'+(t.credentials.password||'none')]}));",
+          "});",
+        ].join("");
+
+        const report = await withFixtureHtmlPage(
+          "<html><body></body></html>",
+          async (page: Page) => {
+            await page.context().route("**/*", (route) => {
+              const url = route.request().url();
+              route.fulfill({
+                body: url.startsWith("https://careers.example.com")
+                  ? loginWallHtml
+                  : jobPage,
+                contentType: "text/html",
+              });
+            });
+            const session: NavSession = {
+              open: async () => {},
+              newPage: async () => page,
+              getContext: () => page.context(),
+              close: async () => {},
+            };
+            return runNavigation({
+              db: db!,
+              applicationId: appId,
+              sessionOverride: session,
+              skipAuthLossCheck: true,
+              agentPhaseOverride: true,
+              agentCommandOverride: { command: "node", args: ["-e", script] },
+            });
+          },
+        );
+
+        // Capture landed on a login wall → not stored as resolution; agent
+        // received the vault credential and resolved the real form URL.
+        expect(
+          report.phase_trace.some((p) => /login wall — not stored/.test(p.outcome)),
+        ).toBe(true);
+        expect(report.method).toBe("agent");
+        expect(report.resolved_url).toBe("https://careers.example.com/apply/form");
+        expect(report.notes.join(" ")).toMatch(/cred_available:true/);
+
+        // The echoed password is scrubbed from the persisted artifact.
+        const artifact = fs.readFileSync(report.report_path!, "utf8");
+        expect(artifact).not.toContain(account.password);
+        expect(artifact).toContain("[REDACTED_SECRET]");
+      } finally {
+        applySafeFillEnv();
+        delete process.env.PRIVATE_DIR;
+        resetConfigCache();
+        fs.rmSync(privateDir, { recursive: true, force: true });
       }
     },
     45_000,

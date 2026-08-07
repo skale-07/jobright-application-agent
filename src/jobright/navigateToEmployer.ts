@@ -53,6 +53,9 @@ export type ApplyClickCapture = {
   via: "popup" | "same_tab" | null;
   clicks: number;
   notes: string[];
+  /** Landing-page HTML/title so the caller can classify walls before trusting the URL. */
+  landingHtml: string | null;
+  landingTitle: string | null;
 };
 
 /**
@@ -88,7 +91,14 @@ export async function clickApplyAndCaptureExternalUrl(
           : null;
     if (target === null) {
       notes.push("no standard Apply control found");
-      return { url: null, via: null, clicks: attempt - 1, notes };
+      return {
+        url: null,
+        via: null,
+        clicks: attempt - 1,
+        notes,
+        landingHtml: null,
+        landingTitle: null,
+      };
     }
 
     const popupPromise = context
@@ -111,17 +121,40 @@ export async function clickApplyAndCaptureExternalUrl(
         .waitForLoadState("domcontentloaded", { timeout: 10_000 })
         .catch(() => notes.push("popup did not reach domcontentloaded"));
       const url = popup.url();
+      const landingHtml = await popup.content().catch(() => null);
+      const landingTitle = await popup.title().catch(() => null);
       await popup.close().catch(() => undefined);
       if (url && url !== "about:blank") {
         notes.push(`popup captured on attempt ${attempt}`);
-        return { url, via: "popup", clicks: attempt, notes };
+        return {
+          url,
+          via: "popup",
+          clicks: attempt,
+          notes,
+          landingHtml,
+          landingTitle,
+        };
       }
       notes.push("popup opened but carried no usable URL");
     } else if (await sameTabPromise) {
       notes.push(`same-tab navigation on attempt ${attempt}`);
-      return { url: page.url(), via: "same_tab", clicks: attempt, notes };
+      return {
+        url: page.url(),
+        via: "same_tab",
+        clicks: attempt,
+        notes,
+        landingHtml: await page.content().catch(() => null),
+        landingTitle: await page.title().catch(() => null),
+      };
     }
   }
   notes.push("no external URL captured after 2 attempts");
-  return { url: null, via: null, clicks: 2, notes };
+  return {
+    url: null,
+    via: null,
+    clicks: 2,
+    notes,
+    landingHtml: null,
+    landingTitle: null,
+  };
 }
