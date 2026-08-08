@@ -34,6 +34,7 @@ import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
 
 function detectAtsFromUrlSafe(url: string): boolean {
   return detectAtsFromUrl(url).ats !== null;
@@ -160,7 +161,8 @@ export async function runNavigation(
 ): Promise<NavigationReport> {
   assertNavigationAllowed("runNavigation");
   const { db, applicationId } = input;
-  const deadline = Date.now() + TOTAL_WALLCLOCK_MS;
+  const startedAt = Date.now();
+  const deadline = startedAt + TOTAL_WALLCLOCK_MS;
 
   const report: NavigationReport = {
     run_id: `nav-${randomUUID()}`,
@@ -585,6 +587,15 @@ export async function runNavigation(
     }
     writeJsonAtomic(outPath, JSON.parse(serialized) as Record<string, unknown>);
     r.report_path = outPath;
+    // Telemetry row (fail-open): joins to this artifact + logs via run_id.
+    recordNavigationAttempt(
+      {
+        report: r,
+        startUrl: resolved.ok ? resolved.target.jobUrl : null,
+        durationMs: Date.now() - startedAt,
+      },
+      { db },
+    );
     logger.info("navigation run finished", {
       service: "navigation",
       action: "nav_run",

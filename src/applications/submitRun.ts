@@ -55,6 +55,10 @@ import {
   writeJsonAtomic,
 } from "../storage/atomicJson.js";
 import { redactObject } from "../logging/redaction.js";
+import {
+  parseSubmitNotes,
+  recordSubmitAttempt,
+} from "../storage/navSubmitOutcomes.js";
 import type { SubmissionReceipt } from "../ats/adapter.js";
 import {
   buildOperatorFieldBrief,
@@ -121,6 +125,15 @@ export async function runAtsSubmission(input: {
   const { db, applicationId } = input;
   const cfg = getConfig();
   const runStartedAt = new Date().toISOString();
+  const startedMs = Date.now();
+  /** Function-scoped so persist() can flush it whatever path returned. */
+  const submitTelemetry = {
+    via: null as string | null,
+    ctaInventoryCount: null as number | null,
+    clicked: false,
+    capHit: false,
+    recoveryUsed: false,
+  };
 
   const report: SubmissionRunReport = {
     outcome: "REFUSED",
@@ -436,6 +449,13 @@ export async function runAtsSubmission(input: {
           }
 
           let attempt = await binding.submit(page, clickGate);
+          {
+            const parsed = parseSubmitNotes(attempt.notes);
+            submitTelemetry.via = parsed.via;
+            submitTelemetry.ctaInventoryCount = parsed.ctaInventoryCount;
+            submitTelemetry.clicked = attempt.clicked;
+            submitTelemetry.capHit = unattendedCapHit;
+          }
           if (
             !attempt.clicked &&
             attempt.notes.some((n) => /disabled/i.test(n))
@@ -458,6 +478,9 @@ export async function runAtsSubmission(input: {
               if (recovery.submitEnabled) {
                 attempt = await binding.submit(page, clickGate);
                 attempt.notes.unshift("submit retried after email verification");
+                submitTelemetry.recoveryUsed = true;
+                submitTelemetry.clicked = attempt.clicked;
+                submitTelemetry.capHit = unattendedCapHit;
               }
             } else if (diagnosis.verification.detected) {
               attempt.notes.push(
@@ -590,6 +613,32 @@ export async function runAtsSubmission(input: {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     writeJsonAtomic(out, redactObject(r as unknown as Record<string, unknown>));
     r.artifact_path = out;
+    // Telemetry row (fail-open): joins artifact + logs + arm row on run_id.
+    recordSubmitAttempt(
+      {
+        runId,
+        applicationId: r.application_id,
+        submissionId: r.submission_id,
+        ats: detected.ats ?? "unknown",
+        outcome: r.outcome,
+        clicked: submitTelemetry.clicked,
+        controlResolvedVia: submitTelemetry.via,
+        capHitAtClick: submitTelemetry.capHit,
+        verifyRecoveryUsed: submitTelemetry.recoveryUsed,
+        urlHost: (() => {
+          try {
+            return employerUrl ? new URL(employerUrl).hostname : null;
+          } catch {
+            return null;
+          }
+        })(),
+        reason: r.reason,
+        ctaInventoryCount: submitTelemetry.ctaInventoryCount,
+        durationMs: Date.now() - startedMs,
+        reportArtifactRelpath: r.artifact_path,
+      },
+      { db },
+    );
     logger.info("submission run finished", {
       service: detected.ats ?? "unknown",
       action: "submit_run",

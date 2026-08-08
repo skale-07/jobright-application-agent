@@ -4,6 +4,10 @@ import {
   exportFillOutcomesJsonl,
   summarizeFillOutcomes,
 } from "../storage/fillOutcomes.js";
+import {
+  exportNavigationAttemptsJsonl,
+  exportSubmitAttemptsJsonl,
+} from "../storage/navSubmitOutcomes.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -116,6 +120,7 @@ Commands:
   ats:fill --fixture <greenhouse|essay|lever|ashby> [--execute] [--resume path] [--cover path] [--reset]
   ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]
   ats:fill-outcomes [--summary] [--export <path.jsonl>]
+  training:export [--out <dir>]         Dump fill/nav/submit attempt corpora as JSONL + manifest
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -1208,6 +1213,44 @@ function cmdAtsFillOutcomes(
   }
 }
 
+function cmdTrainingExport(flags: Record<string, string | boolean>): void {
+  const outDir = path.resolve(
+    typeof flags["out"] === "string"
+      ? flags["out"]
+      : path.join("artifacts", "training", new Date().toISOString().replace(/[:.]/g, "-")),
+  );
+  const db = openDatabase();
+  try {
+    migrate(db);
+    fs.mkdirSync(outDir, { recursive: true });
+    const domains: Array<{ file: string; rows: Array<Record<string, unknown>> }> = [
+      { file: "fill-outcomes.jsonl", rows: exportFillOutcomesJsonl(db) },
+      { file: "navigation-attempts.jsonl", rows: exportNavigationAttemptsJsonl(db) },
+      { file: "submit-attempts.jsonl", rows: exportSubmitAttemptsJsonl(db) },
+    ];
+    const manifest: Record<string, unknown> = {
+      exported_at: new Date().toISOString(),
+      pii_policy:
+        "hosts, classes, fingerprints and short reasons only — raw field values, credentials and message bodies are never stored in these tables",
+      domains: {} as Record<string, number>,
+    };
+    for (const d of domains) {
+      const body =
+        d.rows.map((r) => JSON.stringify(r)).join("\n") + (d.rows.length ? "\n" : "");
+      fs.writeFileSync(path.join(outDir, d.file), body, "utf8");
+      (manifest["domains"] as Record<string, number>)[d.file] = d.rows.length;
+    }
+    fs.writeFileSync(
+      path.join(outDir, "manifest.json"),
+      JSON.stringify(manifest, null, 2) + "\n",
+      "utf8",
+    );
+    console.log(JSON.stringify({ out_dir: outDir, ...manifest }, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdRecorderPromote(flags: Record<string, string | boolean>): void {
   const runId = flags["run"];
   const workflow = flags["workflow"];
@@ -1278,6 +1321,9 @@ async function main(): Promise<void> {
     case "ats:fill":
       await cmdAtsFill(flags);
       return;
+    case "training:export":
+      cmdTrainingExport(flags);
+      break;
     case "ats:fill-outcomes":
       cmdAtsFillOutcomes(flags);
       return;
