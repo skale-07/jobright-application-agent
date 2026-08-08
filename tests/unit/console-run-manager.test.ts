@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   AlreadyRunningError,
+  defaultConsoleRunnerInvocation,
   RunManager,
   type SseFrame,
 } from "../../src/console/runManager.js";
@@ -94,6 +95,17 @@ describe("RunManager (UNIT_CONFIRMED via scripted children)", () => {
     managers.push(m);
     return m;
   }
+
+  it("default runner uses node + resolved tsx/cli (not bare .bin/tsx)", () => {
+    // Windows ENOENT (-4058) when spawning node_modules/.bin/tsx without
+    // an extension; node + tsx/cli is the portable form.
+    const inv = defaultConsoleRunnerInvocation();
+    expect(inv.command).toBe(process.execPath);
+    expect(inv.args[0]).toMatch(/tsx[/\\].*cli/i);
+    expect(inv.args[1]).toMatch(/runner\.ts$/);
+    expect(inv.command).not.toMatch(/\.bin[/\\]tsx$/i);
+    expect(fs.existsSync(inv.args[0]!)).toBe(true);
+  });
 
   it("happy path: hello gates captured, logs streamed with seqs, report demuxed, succeeded", async () => {
     const m = track(manager(tmpDir, HELLO_REPORT_SCRIPT));

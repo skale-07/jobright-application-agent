@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { createRequire } from "node:module";
 import { spawn as nodeSpawn, type ChildProcess } from "node:child_process";
 import { logger } from "../logging/logger.js";
 import { redactObject } from "../logging/redaction.js";
@@ -13,6 +14,35 @@ import {
   type FlagOptIns,
 } from "./flagCeiling.js";
 
+/**
+ * Build the OS-portable command that runs the console runner under tsx.
+ * Do not spawn `node_modules/.bin/tsx` — on Windows that path has no
+ * extension and libuv reports ENOENT (exit -4058). `node` + the resolved
+ * `tsx/cli` entry works on every platform without shell:true.
+ */
+export function defaultConsoleRunnerInvocation(): {
+  command: string;
+  args: string[];
+} {
+  const require = createRequire(import.meta.url);
+  let tsxCli: string;
+  try {
+    tsxCli = require.resolve("tsx/cli");
+  } catch {
+    // Fallback when package exports are unusual — still portable.
+    tsxCli = path.join(
+      process.cwd(),
+      "node_modules",
+      "tsx",
+      "dist",
+      "cli.mjs",
+    );
+  }
+  return {
+    command: process.execPath,
+    args: [tsxCli, path.join("src", "console", "runner.ts")],
+  };
+}
 /**
  * One child run at a time: spawn a runner process with a
  * ceiling-composed env, stream its stdout/stderr as seq-numbered log
@@ -181,10 +211,8 @@ export class RunManager {
     );
 
     const env = composeChildEnv(process.env, ceiling, input.optIns);
-    const { command, args } = this.commandOverride ?? {
-      command: path.join(process.cwd(), "node_modules", ".bin", "tsx"),
-      args: ["src/console/runner.ts"],
-    };
+    const { command, args } =
+      this.commandOverride ?? defaultConsoleRunnerInvocation();
 
     let child: ChildProcess;
     try {
@@ -330,9 +358,20 @@ export class RunManager {
     if (!ACTIVE.includes(active.record.status)) return false;
     active.record.status = "canceled";
     this.persistMeta(active.record);
-    active.child.kill("SIGTERM");
+    // Windows: kill() on an already-dead / never-spawned handle throws EINVAL.
+    try {
+      active.child.kill("SIGTERM");
+    } catch {
+      /* already gone */
+    }
     setTimeout(() => {
-      if (active.child.exitCode === null) active.child.kill("SIGKILL");
+      if (active.child.exitCode === null) {
+        try {
+          active.child.kill("SIGKILL");
+        } catch {
+          /* already gone */
+        }
+      }
     }, 10_000).unref();
     return true;
   }
