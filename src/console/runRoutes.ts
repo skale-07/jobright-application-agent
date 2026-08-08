@@ -1,9 +1,13 @@
 import type { ServerResponse } from "node:http";
+import type { Db } from "../storage/db/client.js";
+import { getArmStatus } from "../automation/armSession.js";
 import { readJsonBody } from "./body.js";
 import type { Route } from "./routes.js";
 import {
+  FORCED_SUBMIT_SAFETY,
   GATED_FLAG_KEYS,
   readCeiling,
+  type ComposeContext,
   type FlagOptIns,
   type GatedFlagKey,
 } from "./flagCeiling.js";
@@ -21,6 +25,12 @@ const KIND_MINIMUMS: Record<RunKind, { flags: GatedFlagKey[]; live_mode: boolean
   submit: { flags: ["FORM_FILL_ENABLED", "SUBMIT_ENABLED"], live_mode: true },
   pipeline: { flags: [], live_mode: false }, // flag-off pipeline is a valid dry walk
   discover: { flags: [], live_mode: false }, // feed read + enqueue, parity with the CLI
+  // Kill switch beats arm: AUTOMATION_ENABLED must be in the ceiling AND
+  // opted in, plus the fill/submit capability and live mode.
+  automation: {
+    flags: ["AUTOMATION_ENABLED", "FORM_FILL_ENABLED", "SUBMIT_ENABLED"],
+    live_mode: true,
+  },
 };
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -31,8 +41,8 @@ function json(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body, null, 2));
 }
 
-export function buildRunRoutes(deps: { runManager: RunManager }): Route[] {
-  const { runManager } = deps;
+export function buildRunRoutes(deps: { runManager: RunManager; db: Db }): Route[] {
+  const { runManager, db } = deps;
   return [
     {
       method: "GET",
@@ -42,10 +52,10 @@ export function buildRunRoutes(deps: { runManager: RunManager }): Route[] {
         json(res, 200, {
           ceiling: ceiling.flags,
           live_mode_available: ceiling.live_mode_available,
-          always_forced: {
-            SUBMIT_REQUIRES_LOCAL_CONFIRMATION: true,
-            MAX_UNATTENDED_SUBMISSIONS_PER_RUN: 0,
-          },
+          // Derived from the single source composeChildEnv uses, so the
+          // advertised policy can never drift from what runs actually get.
+          // (An armed automation run relaxes these — see the arm status.)
+          always_forced: FORCED_SUBMIT_SAFETY,
         });
       },
     },
@@ -124,12 +134,15 @@ export function buildRunRoutes(deps: { runManager: RunManager }): Route[] {
           kind !== "pipeline" &&
           kind !== "nav" &&
           kind !== "submit" &&
-          kind !== "discover"
+          kind !== "discover" &&
+          kind !== "automation"
         ) {
-          json(res, 400, { error: "kind must be pipeline | nav | submit | discover" });
+          json(res, 400, {
+            error: "kind must be pipeline | nav | submit | discover | automation",
+          });
           return;
         }
-        const params =
+        let params =
           body["params"] && typeof body["params"] === "object" && !Array.isArray(body["params"])
             ? (body["params"] as Record<string, unknown>)
             : {};
@@ -168,8 +181,38 @@ export function buildRunRoutes(deps: { runManager: RunManager }): Route[] {
           return;
         }
 
+        // The automation worker may only run against a live armed session.
+        // Re-validate the arm at spawn time (not just when it was created),
+        // and thread the arm's identity + remaining budget into the run so
+        // the child's submits draw from the arm row.
+        let context: ComposeContext | undefined;
+        if (kind === "automation") {
+          const arm = getArmStatus(db);
+          if (!arm.armed || !arm.arm_run_id) {
+            json(res, 409, {
+              error: "no armed session — arm from the console before starting the automation worker",
+            });
+            return;
+          }
+          const remainingSubmits = Math.max(0, arm.max_submits - arm.submits_used);
+          context = { unattended: { maxSubmits: remainingSubmits } };
+          params = {
+            ...params,
+            arm_run_id: arm.arm_run_id,
+            armed_until: arm.armed_until,
+            max_apps: arm.max_apps,
+            discover_max: arm.discover_max,
+            rediscover_every: arm.rediscover_every,
+          };
+        }
+
         try {
-          const record = runManager.start({ kind, params, optIns });
+          const record = runManager.start({
+            kind,
+            params,
+            optIns,
+            ...(context ? { context } : {}),
+          });
           json(res, 201, {
             run_id: record.id,
             status: record.status,

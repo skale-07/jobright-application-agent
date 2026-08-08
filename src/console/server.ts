@@ -137,7 +137,9 @@ export function createConsoleHandler(
     },
     ...buildMutationRoutes({ db: deps.db }),
     ...buildAutomationRoutes({ db: deps.db, token: deps.token }),
-    ...(deps.runManager ? buildRunRoutes({ runManager: deps.runManager }) : []),
+    ...(deps.runManager
+      ? buildRunRoutes({ runManager: deps.runManager, db: deps.db })
+      : []),
     ...(deps.gmailBroker ? buildGmailRoutes({ broker: deps.gmailBroker }) : []),
     ...(deps.extraRoutes ?? []),
   ];

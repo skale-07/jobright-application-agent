@@ -14,6 +14,7 @@ import { createApplication } from "../../src/queue/stateMachine.js";
 import { upsertJobByFingerprint } from "../../src/jobs/repository.js";
 import { upsertOpenReviewItem } from "../../src/queue/reviewItems.js";
 import { createConsoleHandler, startConsole } from "../../src/console/server.js";
+import { RunManager } from "../../src/console/runManager.js";
 import {
   checkBearerToken,
   checkHostHeader,
@@ -169,6 +170,60 @@ describe("console server (UNIT_CONFIRMED)", () => {
     // Disarm, then status is clear.
     expect((await invoke(h, "POST", "/api/automation/disarm", { token })).statusCode).toBe(200);
     expect(JSON.parse((await invoke(h, "GET", "/api/automation/status")).body).armed).toBe(false);
+  });
+
+  it("automation run is refused (403) without AUTOMATION_ENABLED, and (409) when unarmed", async () => {
+    // Needs the run routes, so build a handler WITH a RunManager. Both
+    // refusals return before any child spawns.
+    const h = createConsoleHandler({
+      db,
+      token,
+      distDir: path.join(tmpDir, "dist"),
+      artifactsDir: path.join(tmpDir, "artifacts"),
+      runManager: new RunManager({ runsDir: path.join(tmpDir, "runs") }),
+    });
+    // Kill switch / capability not opted in → 403 before anything spawns.
+    const denied = await invoke(h, "POST", "/api/runs", {
+      token,
+      body: JSON.stringify({ kind: "automation", params: {}, flags: {}, live_mode: false }),
+    });
+    expect(denied.statusCode).toBe(403);
+    expect(denied.body).toMatch(/AUTOMATION_ENABLED/);
+
+    // With the flags satisfied by the ceiling + opt-in but no armed session,
+    // the run is refused 409 (still before any spawn).
+    const prior = {
+      AUTOMATION_ENABLED: process.env.AUTOMATION_ENABLED,
+      FORM_FILL_ENABLED: process.env.FORM_FILL_ENABLED,
+      SUBMIT_ENABLED: process.env.SUBMIT_ENABLED,
+      DRY_RUN: process.env.DRY_RUN,
+    };
+    process.env.AUTOMATION_ENABLED = "true";
+    process.env.FORM_FILL_ENABLED = "true";
+    process.env.SUBMIT_ENABLED = "true";
+    process.env.DRY_RUN = "false";
+    try {
+      const unarmed = await invoke(h, "POST", "/api/runs", {
+        token,
+        body: JSON.stringify({
+          kind: "automation",
+          params: {},
+          flags: {
+            AUTOMATION_ENABLED: true,
+            FORM_FILL_ENABLED: true,
+            SUBMIT_ENABLED: true,
+          },
+          live_mode: true,
+        }),
+      });
+      expect(unarmed.statusCode).toBe(409);
+      expect(unarmed.body).toMatch(/no armed session/);
+    } finally {
+      for (const [k, v] of Object.entries(prior)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
   });
 
   it("refuses non-GET/POST methods and unauthorized POSTs", async () => {

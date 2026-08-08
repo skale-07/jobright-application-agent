@@ -11,6 +11,7 @@ import {
   composeChildEnv,
   grantedAndDenied,
   readCeiling,
+  type ComposeContext,
   type FlagOptIns,
 } from "./flagCeiling.js";
 
@@ -54,7 +55,7 @@ export function defaultConsoleRunnerInvocation(): {
  * stdin, which the child treats as decline.
  */
 
-export type RunKind = "pipeline" | "nav" | "submit" | "discover";
+export type RunKind = "pipeline" | "nav" | "submit" | "discover" | "automation";
 export type RunStatus =
   | "pending"
   | "running"
@@ -175,6 +176,8 @@ export class RunManager {
     kind: RunKind;
     params: Record<string, unknown>;
     optIns: FlagOptIns;
+    /** Only set for an armed automation run — relaxes forced submit safety. */
+    context?: ComposeContext;
   }): RunRecord {
     if (this.active && ACTIVE.includes(this.active.record.status)) {
       throw new AlreadyRunningError(this.active.record.id);
@@ -210,7 +213,7 @@ export class RunManager {
       JSON.stringify({ ...input.params, report_path: reportPath }, null, 2),
     );
 
-    const env = composeChildEnv(process.env, ceiling, input.optIns);
+    const env = composeChildEnv(process.env, ceiling, input.optIns, input.context ?? {});
     const { command, args } =
       this.commandOverride ?? defaultConsoleRunnerInvocation();
 

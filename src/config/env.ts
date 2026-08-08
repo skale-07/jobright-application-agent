@@ -59,6 +59,11 @@ const envSchema = z.object({
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
+  /**
+   * L3 kill switch. The console automation worker (unattended apply while
+   * armed) is refused unless this is set — regardless of any arm. Fail closed.
+   */
+  AUTOMATION_ENABLED: boolFromEnv.default(false),
   /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
@@ -108,6 +113,7 @@ export type AppConfig = {
   emailLlmModel: string;
   agentAuthoringEnabled: boolean;
   agentFallbackEnabled: boolean;
+  automationEnabled: boolean;
   agentCdpUrl: string;
   dashboardHost: string;
   dashboardPort: number;
@@ -175,6 +181,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
+    automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
