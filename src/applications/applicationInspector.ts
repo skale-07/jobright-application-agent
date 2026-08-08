@@ -3,8 +3,10 @@ import { detectAts } from "../ats/registry.js";
 import { isUnsupportedAtsId } from "../ats/unsupported.js";
 import { loadAnswerAliases } from "../candidate/answerAliases.js";
 import {
+  classifyEssayFields,
   essayFieldsOnly,
   isDemographicsField,
+  isEssayRequiredGateEnabled,
   type EssayClassification,
 } from "./essayDetector.js";
 import {
@@ -69,7 +71,10 @@ export async function inspectApplicationHtml(input: {
     route = "needs_human_captcha";
   } else if (inspection.account_creation_detected) {
     route = "needs_account_creation";
-  } else if (essays.some((e) => e.is_essay)) {
+  } else if (
+    isEssayRequiredGateEnabled() &&
+    essays.some((e) => e.is_essay)
+  ) {
     route = "needs_essay";
     notes.push(`${essays.filter((e) => e.is_essay).length} essay field(s) flagged`);
   } else if (unmappedRequired.length > 0) {

@@ -587,22 +587,20 @@ async function step(
           });
           return { to: "UNSUPPORTED_ATS", note: "unsupported ATS", stop: "review" };
         case "needs_essay": {
-          // Only REQUIRED essay fields block the pipeline — an optional
-          // "anything else?" textarea is not a reason to stop (it is simply
-          // left blank; essays are never auto-filled either way). The
-          // operator can disable the stop entirely with
-          // ESSAY_GATE_ENABLED=false; submit still fails closed on
-          // unanswered essays an ATS cannot fill.
+          // Reached only when ESSAY_REQUIRED_GATE_ENABLED=true (the
+          // inspector suppresses the needs_essay route otherwise). Even
+          // with the gate on, only REQUIRED essay fields block — an
+          // optional "anything else?" textarea is simply left blank
+          // (essays are never auto-filled either way).
           const essayIds = new Set(
             essayFieldsOnly(inspect.inspection.fields).map((e) => e.field_id),
           );
           const requiredEssays = inspect.inspection.fields.filter(
             (f) => essayIds.has(f.id) && f.required,
           );
-          if (!cfg.essayGateEnabled || requiredEssays.length === 0) {
-            const note = cfg.essayGateEnabled
-              ? "only optional essay fields — proceeding, leaving them blank"
-              : "essay gate disabled by operator — proceeding to fill";
+          if (requiredEssays.length === 0) {
+            const note =
+              "only optional essay fields — proceeding, leaving them blank";
             transitionApplication(db, {
               applicationId: app.id,
               nextState: "NATIVE_AUTOFILL_RUNNING",

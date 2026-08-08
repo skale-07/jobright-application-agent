@@ -13,6 +13,7 @@ import { SubmissionUncertainError as AshbySubmissionUncertainError } from "../..
 import { toApprovedFillPlan } from "../../src/applications/approvedFillPlan.js";
 import { GreenhouseAdapterV1 } from "../../src/ats/greenhouse/v1.js";
 import {
+  applyControlledFillEnv,
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
@@ -54,8 +55,10 @@ describe("ATS registry wiring (W1, UNIT_CONFIRMED)", () => {
   });
 
   it("inspector treats lever and ashby as supported (essay route, not unsupported)", async () => {
-    // Both fixtures carry an essay textarea, so needs_essay wins — the
-    // point is they no longer fall to skip_unsupported_ats/inspect_only.
+    // Both fixtures carry an essay textarea; with the essay gate on,
+    // needs_essay wins — the point is they no longer fall to
+    // skip_unsupported_ats/inspect_only.
+    applyControlledFillEnv({ ESSAY_REQUIRED_GATE_ENABLED: "true" });
     for (const name of ["lever", "ashby"] as const) {
       const report = await inspectApplicationHtml(loadAtsFixture(name));
       expect(report.inspection.ats).toBe(name);

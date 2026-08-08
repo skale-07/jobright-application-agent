@@ -140,7 +140,14 @@ const ALLOWED: Partial<Record<ApplicationState, readonly ApplicationState[]>> = 
     "FAILED_RETRYABLE",
     "FAILED_FINAL",
   ],
-  ESSAY_REQUIRED: ["FIELD_VERIFICATION", "READY_TO_SUBMIT", "FAILED_FINAL"],
+  ESSAY_REQUIRED: [
+    "FIELD_VERIFICATION",
+    "READY_TO_SUBMIT",
+    "APPLICATION_INSPECTION",
+    "NATIVE_AUTOFILL_RUNNING",
+    "FAILED_RETRYABLE",
+    "FAILED_FINAL",
+  ],
   AUTH_REQUIRED: ["APPLICATION_OPENING", "FAILED_FINAL"],
   // Operator resolution (console/CLI): the operator solved the captcha in a
   // headed session — or the wall is gone — so re-open the employer page.

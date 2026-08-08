@@ -36,12 +36,13 @@ const envSchema = z.object({
   /** Gmail readonly OTP/magic-link retrieval during navigation. Fail closed. */
   GMAIL_VERIFICATION_ENABLED: boolFromEnv.default(false),
   /**
-   * Pipeline stop at inspection when REQUIRED essay fields are detected.
-   * Default on; the operator can disable it to keep the pipeline moving
-   * (essays are still never auto-filled, and submit still fails closed on
-   * unanswered essays an ATS can't fill).
+   * Hard-stop inspection/pipeline on heuristic essay fields (`needs_essay` /
+   * `ESSAY_REQUIRED`). Default off — the label heuristics false-positive on
+   * EEO/combobox copy (e.g. "describe your race"). Free-text is still never
+   * auto-filled (textarea refusal in approvedFillPlan). When enabled, only
+   * REQUIRED essay fields stop the pipeline — optional textareas never block.
    */
-  ESSAY_GATE_ENABLED: boolFromEnv.default(true),
+  ESSAY_REQUIRED_GATE_ENABLED: boolFromEnv.default(false),
   /** Outreach email generation calls the OpenAI API (spend). Fail closed. */
   EMAIL_GENERATION_ENABLED: boolFromEnv.default(false),
   /** OpenAI key for outreach generation only. Never logged or artifacted. */
@@ -85,7 +86,7 @@ export type AppConfig = {
   materialsDownloadEnabled: boolean;
   navigationEnabled: boolean;
   gmailVerificationEnabled: boolean;
-  essayGateEnabled: boolean;
+  essayRequiredGateEnabled: boolean;
   emailGenerationEnabled: boolean;
   /** Present only when the operator configured it; consumers must not log it. */
   openaiApiKey: string | undefined;
@@ -151,7 +152,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
     navigationEnabled: parsed.NAVIGATION_ENABLED,
     gmailVerificationEnabled: parsed.GMAIL_VERIFICATION_ENABLED,
-    essayGateEnabled: parsed.ESSAY_GATE_ENABLED,
+    essayRequiredGateEnabled: parsed.ESSAY_REQUIRED_GATE_ENABLED,
     emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
     openaiApiKey: parsed.OPENAI_API_KEY,
     emailLlmModel: parsed.EMAIL_LLM_MODEL,

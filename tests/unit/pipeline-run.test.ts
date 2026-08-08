@@ -200,9 +200,10 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(getApplication(db, appId)?.state).toBe("NATIVE_AUTOFILL_RUNNING");
   }, 60_000);
 
-  it("does not stop for optional-only essay fields (proceeds to the fill gate)", async () => {
+  it("even with the essay gate ON, optional-only essay fields never block", async () => {
     const appId = seed();
     registerResumeMaterial({ db, applicationId: appId, filePath: SYNTHETIC_PDF });
+    applyControlledFillEnv({ ESSAY_REQUIRED_GATE_ENABLED: "true" });
     const report = await runPipeline({
       db,
       applicationId: appId,
@@ -215,10 +216,9 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(listOpenReviewItems(db).some((i) => i.kind === "ESSAY")).toBe(false);
   }, 60_000);
 
-  it("ESSAY_GATE_ENABLED=false skips the essay stop even for required essays", async () => {
+  it("essay gate off (default): required essays do not stop the pipeline", async () => {
     const appId = seed();
     registerResumeMaterial({ db, applicationId: appId, filePath: SYNTHETIC_PDF });
-    applyControlledFillEnv({ ESSAY_GATE_ENABLED: "false" });
     const report = await runPipeline({
       db,
       applicationId: appId,
@@ -231,6 +231,12 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
   }, 60_000);
 
   it("routes the essay fixture to ESSAY_REQUIRED and resumes after answers", async () => {
+    applyControlledFillEnv({
+      FORM_FILL_ENABLED: "true",
+      DRY_RUN: "false",
+      SUBMIT_ENABLED: "false",
+      ESSAY_REQUIRED_GATE_ENABLED: "true",
+    });
     const appId = seed();
     registerResumeMaterial({ db, applicationId: appId, filePath: SYNTHETIC_PDF });
     const first = await runPipeline({

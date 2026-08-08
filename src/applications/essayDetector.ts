@@ -1,4 +1,5 @@
 import type { DiscoveredField } from "../ats/adapter.js";
+import { getConfig } from "../config/index.js";
 import { normalizeFieldLabel } from "./fieldNormalization.js";
 
 export type EssayClassification = {
@@ -13,7 +14,17 @@ const ESSAY_LABEL_HINTS =
   /why (do )?you (want|are)|cover letter|tell us about|describe|essay|statement of|motivation|what interests you|additional information|anything else/i;
 
 /**
- * Heuristic essay detector for Stage 1 inspection.
+ * Hard-stop gate for inspection → ESSAY_REQUIRED. Off by default (see
+ * ESSAY_REQUIRED_GATE_ENABLED): heuristics false-positive too often on
+ * voluntary demographic combobox labels.
+ */
+export function isEssayRequiredGateEnabled(): boolean {
+  return getConfig().essayRequiredGateEnabled;
+}
+
+/**
+ * Heuristic essay detector. Used for proposed-plan SKIP and optional
+ * hard-stop when {@link isEssayRequiredGateEnabled} (default off).
  * Flags long textareas / high minlength / essay-ish labels.
  */
 export function classifyEssayFields(fields: DiscoveredField[]): EssayClassification[] {
