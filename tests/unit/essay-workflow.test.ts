@@ -92,27 +92,27 @@ describe("essay answers storage (UNIT_CONFIRMED)", () => {
     ).toThrow(/empty/i);
   });
 
-  it("essay review item tracks unanswered fields and upserts once", () => {
+  it("asks only for REQUIRED essays, and upserts once", () => {
     const fields = discoverFieldsFromHtml(essayFixtureHtml);
     const first = openEssayReviewItem(db, { applicationId, fields });
     const second = openEssayReviewItem(db, { applicationId, fields });
     expect(first.created).toBe(true);
     expect(second.created).toBe(false);
-    expect(first.essays.length).toBeGreaterThanOrEqual(2);
+
+    // The fixture has a required essay ("why") and an optional one
+    // ("extra"). Optional free-text is left blank by policy, so listing it
+    // would hold the item — and the application — open forever.
+    expect(first.essays.map((e) => e.field_id)).toEqual(["why"]);
 
     let remaining = unansweredEssayFieldKeys(db, applicationId, first.item);
-    expect(remaining).toContain("why");
+    expect(remaining).toEqual(["why"]);
 
     saveHumanEssayAnswer(db, {
       applicationId,
       fieldKey: "why",
       text: "Because I love the mission.",
     });
-    saveHumanEssayAnswer(db, {
-      applicationId,
-      fieldKey: "extra",
-      text: "I built a robot.",
-    });
+    // Answering the required essay alone clears the item.
     remaining = unansweredEssayFieldKeys(db, applicationId, first.item);
     expect(remaining).toEqual([]);
   });

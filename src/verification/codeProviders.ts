@@ -96,9 +96,17 @@ export function outlookCodeProvider(): FetchVerificationCode {
  */
 export async function readCodeFromMailboxPage(
   page: Page,
-  options: { requestedAt: string; maxMessages?: number },
+  options: {
+    /** Only messages at or after this instant qualify — never reuse an old code. */
+    requestedAt: string;
+    maxMessages?: number;
+    /** Slack for clock skew between the mail server and this machine. */
+    skewMs?: number;
+  },
 ): Promise<string | null> {
   const sel = outlookSelectorsV1.mail;
+  const floor =
+    new Date(options.requestedAt).getTime() - (options.skewMs ?? 120_000);
   await page
     .waitForSelector(sel.inboxListItem, { timeout: 20_000 })
     .catch(() => undefined);
@@ -110,6 +118,11 @@ export async function readCodeFromMailboxPage(
     // Only open messages that look verification-ish — never trawl the
     // whole mailbox.
     if (!/verif|code|confirm|security|one[- ]time/i.test(preview)) continue;
+    // Drop anything demonstrably older than the request: an expired code
+    // typed into the form is worse than no code (it burns the attempt).
+    if (Number.isFinite(floor) && isOlderThan(await messageTimestamp(item), floor)) {
+      continue;
+    }
     await item.click().catch(() => undefined);
     await page.waitForTimeout(800);
     const body = page.locator(sel.readingPaneBody).first();
@@ -119,4 +132,25 @@ export async function readCodeFromMailboxPage(
     if (code) return code;
   }
   return null;
+}
+
+/** Outlook stamps list rows with a datetime attribute; absent ⇒ unknown. */
+async function messageTimestamp(
+  item: ReturnType<Page["locator"]>,
+): Promise<number | null> {
+  for (const attr of ["data-datetime", "datetime", "title"]) {
+    const target = item.locator(`[${attr}]`).first();
+    // Bounded: getAttribute auto-waits for the element, and most rows will
+    // not carry most of these attributes.
+    if ((await target.count().catch(() => 0)) === 0) continue;
+    const raw = await target.getAttribute(attr, { timeout: 1000 }).catch(() => null);
+    const parsed = raw ? Date.parse(raw) : NaN;
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+/** Unknown timestamps are kept — the OTP parser is the next filter. */
+function isOlderThan(timestamp: number | null, floorMs: number): boolean {
+  return timestamp !== null && timestamp < floorMs;
 }

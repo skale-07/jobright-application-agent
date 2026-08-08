@@ -304,7 +304,9 @@ function MaterialsCard(): JSX.Element {
       setResult(
         await apiUpload("/api/materials/upload", file, {
           "x-application-id": applicationId.trim(),
-          "x-filename": file.name,
+          // Header values must be Latin-1; the server sanitizes anyway, so
+          // strip here rather than let fetch throw on an accented filename.
+          "x-filename": file.name.replace(/[^\x20-\x7E]/g, "_"),
           ...(label.trim() ? { "x-label": label.trim() } : {}),
         }),
       );

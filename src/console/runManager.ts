@@ -84,6 +84,18 @@ export class AlreadyRunningError extends Error {
 
 const RING_LIMIT = 5000;
 
+/**
+ * Run ids are minted here (`run-<uuid>`) and then arrive back as URL path
+ * params that index into the runs directory — so anything that is not
+ * exactly that shape must never reach path.join.
+ */
+const RUN_ID_PATTERN =
+  /^run-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+function isRunId(value: string): boolean {
+  return RUN_ID_PATTERN.test(value);
+}
+
 type SpawnLike = (
   command: string,
   args: string[],
@@ -203,16 +215,15 @@ export class RunManager {
     this.active = active;
 
     child.once("error", (err) => {
-      record.status = "failed";
       record.error = err.message;
-      record.ended_at = new Date().toISOString();
-      clearTimeout(active.runTimer);
-      this.persistMeta(record);
-      this.broadcast(active, {
-        event: "end",
-        data: { status: record.status, exit_code: null },
-      });
+      // Route through onExit so the active slot is released — otherwise a
+      // failed spawn would block every later run and leave subscribers on
+      // a stream that never ends.
+      this.onExit(active, null);
     });
+    // A child that dies mid-write (cancel/kill) can EPIPE on stdin; that is
+    // an expected outcome, not a reason to take the console down.
+    child.stdin?.on("error", () => undefined);
     child.once("spawn", () => {
       record.status = "running";
       record.started_at = new Date().toISOString();
@@ -228,7 +239,10 @@ export class RunManager {
     child.stderr?.on("data", (chunk: Buffer) =>
       this.onStream(active, "stderr", chunk),
     );
-    child.once("exit", (code) => this.onExit(active, code));
+    // "close" (not "exit"): it fires only after stdout/stderr have been
+    // fully drained, so a report frame written immediately before the child
+    // exits is always processed before the verdict is latched.
+    child.once("close", (code) => this.onExit(active, code));
 
     this.persistMeta(record);
     logger.info("console run started", {
@@ -241,10 +255,25 @@ export class RunManager {
 
   get(id: string): RunRecord | undefined {
     if (this.active?.record.id === id) return this.active.record;
+    if (!isRunId(id)) return undefined;
     const metaPath = path.join(this.runsDir, id, "meta.json");
     if (!fs.existsSync(metaPath)) return undefined;
     try {
       return JSON.parse(fs.readFileSync(metaPath, "utf8")) as RunRecord;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private readReportFile(id: string): unknown {
+    if (!isRunId(id)) return undefined;
+    const reportPath = path.join(this.runsDir, id, "report.json");
+    if (!fs.existsSync(reportPath)) return undefined;
+    try {
+      const parsed = JSON.parse(fs.readFileSync(reportPath, "utf8")) as unknown;
+      return typeof parsed === "object" && parsed !== null
+        ? redactObject(parsed as Record<string, unknown>)
+        : parsed;
     } catch {
       return undefined;
     }
@@ -268,6 +297,7 @@ export class RunManager {
     if (this.active?.record.id === id) {
       return this.active.logs.filter((l) => l.seq > afterSeq);
     }
+    if (!isRunId(id)) return [];
     const logsPath = path.join(this.runsDir, id, "logs.jsonl");
     if (!fs.existsSync(logsPath)) return [];
     return fs
@@ -419,12 +449,16 @@ export class RunManager {
     if (ACTIVE.includes(active.record.status)) {
       active.record.status = "running";
     }
+    // The child may already be gone (cancel/kill races the answer); a write
+    // failure just means it never received an approval, which is the safe
+    // direction.
     active.child.stdin?.write(
       serializeFrame({
         jaa_frame: "confirm_response",
         confirmation_id: pending.confirmation_id,
         accept,
       }),
+      () => undefined,
     );
     logger.info("console submit confirmation answered", {
       service: "console",
@@ -453,10 +487,20 @@ export class RunManager {
     record.ended_at = new Date().toISOString();
     record.pending_confirmation = null;
     if (ACTIVE.includes(record.status)) {
+      // The report frame is the primary signal, but the runner also writes
+      // report.json — fall back to it so a lost frame cannot turn a real
+      // success into a reported failure.
+      if (!active.reportSeen && code === 0) {
+        const fromDisk = this.readReportFile(record.id);
+        if (fromDisk !== undefined) {
+          record.report = fromDisk;
+          active.reportSeen = true;
+        }
+      }
       record.status = code === 0 && active.reportSeen ? "succeeded" : "failed";
       if (record.status === "failed" && !record.error) {
         record.error = `runner exited ${code ?? "without a code"}${
-          active.reportSeen ? "" : " and no report frame was seen"
+          active.reportSeen ? "" : " and no report was produced"
         }`;
       }
     }

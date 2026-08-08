@@ -124,7 +124,15 @@ export function openEssayReviewItem(
     fields: DiscoveredField[];
   },
 ): { item: ReviewItem; created: boolean; essays: EssayClassification[] } {
-  const essays = essayFieldsOnly(input.fields).filter((e) => e.is_essay);
+  // Only REQUIRED essay fields are asked for — optional textareas are left
+  // blank by policy, so listing them here would hold the item (and the
+  // application) open forever waiting for answers nobody owes.
+  const requiredIds = new Set(
+    input.fields.filter((f) => f.required).map((f) => f.id),
+  );
+  const essays = essayFieldsOnly(input.fields).filter(
+    (e) => e.is_essay && requiredIds.has(e.field_id),
+  );
   const { item, created } = upsertOpenReviewItem(db, {
     applicationId: input.applicationId,
     kind: "ESSAY",

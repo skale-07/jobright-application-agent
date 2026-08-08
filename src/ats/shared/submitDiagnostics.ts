@@ -25,16 +25,33 @@ export type DisabledSubmitDiagnosis = {
   summary: string;
 };
 
-const CODE_INPUT_SELECTOR = [
+/**
+ * Strong signals first — these name a one-time code unambiguously. The
+ * weak tier (anything merely containing "code") is searched only when no
+ * strong match exists, and is filtered against fields that legitimately
+ * say "code" without being one: zip/postal/area/country/referral/promo.
+ */
+const STRONG_CODE_SELECTOR = [
   'input[autocomplete="one-time-code"]',
   'input[name*="verification" i]',
   'input[id*="verification" i]',
   'input[name*="security_code" i]',
+  'input[id*="security_code" i]',
   'input[name*="otp" i]',
   'input[id*="otp" i]',
+  'input[name*="one_time" i]',
+  'input[name*="onetime" i]',
+].join(", ");
+
+const WEAK_CODE_SELECTOR = [
+  'input[name*="code" i]',
+  'input[id*="code" i]',
   'input[placeholder*="code" i]',
   'input[aria-label*="code" i]',
 ].join(", ");
+
+/** "code" fields that are never a one-time code. */
+const NOT_A_CODE = /zip|postal|post ?code|area ?code|country|dial|currency|promo|coupon|discount|referral|employee|req(uisition)?|job ?code/i;
 
 const VERIFICATION_TEXT =
   /(verification code|enter (?:the|your) code|sent (?:a|the|you a) (?:verification )?code|code (?:was |has been )?sent|security code|one[- ]time (?:code|passcode)|check your (?:email|inbox) for)/i;
@@ -49,7 +66,7 @@ export async function diagnoseDisabledSubmit(
     .evaluate(
       // Runs in the browser; DOM globals are typed locally (the repo's
       // tsconfig lib is ES2022-only, so no ambient DOM types here).
-      ({ codeSelector }) => {
+      ({ strongSelector, weakSelector }) => {
         type El = {
           getBoundingClientRect(): { width: number; height: number };
           getAttribute(name: string): string | null;
@@ -90,13 +107,33 @@ export async function diagnoseDisabledSubmit(
           ).slice(0, 120);
         };
 
-        const codeInputs = all(codeSelector)
+        const describe = (el: El): {
+          id: string | null;
+          name: string | null;
+          autocomplete: string | null;
+          strong: boolean;
+          context: string;
+        } => ({
+          id: el.id || null,
+          name: el.name || null,
+          autocomplete: el.getAttribute("autocomplete"),
+          strong: false,
+          // Everything a "is this really an OTP field" filter needs.
+          context: [
+            labelFor(el),
+            el.name ?? "",
+            el.id ?? "",
+            el.getAttribute("placeholder") ?? "",
+            el.getAttribute("aria-label") ?? "",
+          ].join(" "),
+        });
+        const strong = all(strongSelector).filter(visible).map(describe);
+        for (const s of strong) s.strong = true;
+        const weak = all(weakSelector)
           .filter(visible)
-          .map((el) => ({
-            id: el.id || null,
-            name: el.name || null,
-            autocomplete: el.getAttribute("autocomplete"),
-          }));
+          .map(describe)
+          .filter((w) => !strong.some((s) => s.id === w.id && s.name === w.name));
+        const codeInputs = [...strong, ...weak];
 
         const requiredInvalid = all(
           "input[required], select[required], textarea[required]",
@@ -132,17 +169,29 @@ export async function diagnoseDisabledSubmit(
           bodyText: (doc.body?.innerText ?? "").slice(0, 20000),
         };
       },
-      { codeSelector: CODE_INPUT_SELECTOR },
+      { strongSelector: STRONG_CODE_SELECTOR, weakSelector: WEAK_CODE_SELECTOR },
     )
     .catch(() => ({
-      codeInputs: [] as Array<{ id: string | null; name: string | null; autocomplete: string | null }>,
+      codeInputs: [] as Array<{
+        id: string | null;
+        name: string | null;
+        autocomplete: string | null;
+        strong: boolean;
+        context: string;
+      }>,
       requiredInvalid: [] as Array<{ label: string; name: string; type: string }>,
       errorNodes: [] as string[],
       bodyText: "",
     }));
 
   const textMatch = scan.bodyText.match(VERIFICATION_TEXT);
-  const first = scan.codeInputs[0];
+  // Strong matches win; weak ones ("…code…" anywhere) are accepted only
+  // after discarding fields that say "code" for other reasons, so a
+  // "Zip code" input can never become the target we type a mailbox code
+  // into.
+  const first =
+    scan.codeInputs.find((c) => c.strong) ??
+    scan.codeInputs.find((c) => !NOT_A_CODE.test(c.context));
   // A code input plus verification wording is high confidence; wording
   // alone (input not yet matched) still gets named in the summary.
   const detected = Boolean(first) && Boolean(textMatch);

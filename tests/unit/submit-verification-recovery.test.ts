@@ -102,6 +102,43 @@ describe("disabled-submit diagnostics (FIXTURE_CONFIRMED)", () => {
   );
 
   it(
+    "prefers the real OTP input over fields that merely say 'code'",
+    async () => {
+      // Zip/referral code fields come FIRST in DOM order — picking by
+      // position would type the mailbox code into the wrong box.
+      const decoys = `<html><body><form>
+        <label for="zip">Zip code *</label>
+        <input id="zip" name="zip_code" required>
+        <label for="ref">Referral code</label>
+        <input id="ref" name="referral_code" placeholder="code">
+        <p>We sent a verification code to candidate@example.com.</p>
+        <label for="otp">Verification code</label>
+        <input id="otp" name="verification_code" autocomplete="one-time-code">
+        <button type="submit" disabled>Submit</button>
+      </form></body></html>`;
+      await withFixtureHtmlPage(decoys, async (page) => {
+        const d = await diagnoseDisabledSubmit(page);
+        expect(d.verification.detected).toBe(true);
+        expect(d.verification.input_selector).toBe("#otp");
+      });
+
+      // With only a zip field and verification wording, nothing qualifies.
+      const zipOnly = `<html><body><form>
+        <p>We sent a verification code to candidate@example.com.</p>
+        <label for="zip">Zip code</label>
+        <input id="zip" name="zip_code" placeholder="code">
+        <button type="submit" disabled>Submit</button>
+      </form></body></html>`;
+      await withFixtureHtmlPage(zipOnly, async (page) => {
+        const d = await diagnoseDisabledSubmit(page);
+        expect(d.verification.detected).toBe(false);
+        expect(d.summary).toMatch(/no code input matched/);
+      });
+    },
+    45_000,
+  );
+
+  it(
     "a plain form (no verification wording) diagnoses without false positives",
     async () => {
       const plain = fs.readFileSync(
@@ -172,6 +209,29 @@ describe("email verification recovery (FIXTURE_CONFIRMED)", () => {
         expect(
           await readCodeFromMailboxPage(page, { requestedAt: new Date().toISOString() }),
         ).toBeNull();
+      });
+
+      // A code that predates the request is stale — reusing it would burn
+      // the attempt on an expired value.
+      const stale = `<html><body>
+        <div role="option">
+          <span data-datetime="2020-01-01T00:00:00Z">Jan 1</span>
+          Acme Careers — Your verification code
+        </div>
+        <div class="allowTextSelection">Your verification code is 482193.</div>
+      </body></html>`;
+      await withFixtureHtmlPage(stale, async (page) => {
+        expect(
+          await readCodeFromMailboxPage(page, {
+            requestedAt: new Date().toISOString(),
+          }),
+        ).toBeNull();
+        // The same message qualifies when the request predates it.
+        expect(
+          await readCodeFromMailboxPage(page, {
+            requestedAt: "2019-01-01T00:00:00Z",
+          }),
+        ).toBe("482193");
       });
     },
     45_000,

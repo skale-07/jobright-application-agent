@@ -255,7 +255,13 @@ export function startConsole(input: {
   });
   const server = http.createServer(handler);
   server.once("close", () => runManager.shutdown());
-  process.once("SIGINT", () => runManager.shutdown());
+  // Cancel any active child, then exit — registering a SIGINT listener
+  // suppresses Node's default terminate, so this must exit explicitly or
+  // the first Ctrl+C would appear to do nothing.
+  process.once("SIGINT", () => {
+    runManager.shutdown();
+    process.exit(130);
+  });
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(cfg.consolePort, cfg.consoleHost, () => {

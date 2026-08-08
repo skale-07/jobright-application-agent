@@ -173,7 +173,7 @@ describe("RunManager (UNIT_CONFIRMED via scripted children)", () => {
     const m = track(manager(tmpDir, `console.log("did nothing"); process.exit(0);`));
     const record = m.start({ kind: "pipeline", params: {}, optIns: {} });
     await until(() => m.get(record.id)?.status === "failed");
-    expect(m.get(record.id)!.error).toMatch(/no report frame/);
+    expect(m.get(record.id)!.error).toMatch(/no report was produced/);
   });
 
   it("one run at a time: second start throws AlreadyRunning; cancel tears down", async () => {
@@ -195,6 +195,80 @@ describe("RunManager (UNIT_CONFIRMED via scripted children)", () => {
     const record = m.start({ kind: "pipeline", params: {}, optIns: {} });
     await until(() => m.get(record.id)?.status === "timed_out" && m.get(record.id)?.ended_at !== null);
     expect(m.get(record.id)!.exit_code).not.toBe(0);
+  });
+
+  it("a report written immediately before exit is never lost to the exit race", async () => {
+    // The child writes the frame and exits in the same tick — with an
+    // "exit" listener this raced and reported a false failure.
+    const racy = `
+      const fs = require("fs");
+      const args = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+      fs.writeFileSync(args.report_path, JSON.stringify({ ok: 1 }));
+      process.stdout.write(JSON.stringify({ jaa_frame: "report", report: { ok: 1 } }) + "\\n");
+      process.exit(0);
+    `;
+    for (let i = 0; i < 5; i++) {
+      const m = track(manager(tmpDir, racy));
+      const record = m.start({ kind: "pipeline", params: {}, optIns: {} });
+      await until(() => m.get(record.id)?.ended_at != null);
+      expect(m.get(record.id)!.status, `iteration ${i}`).toBe("succeeded");
+      expect(m.get(record.id)!.report).toEqual({ ok: 1 });
+    }
+  });
+
+  it("falls back to report.json when the frame never arrives", async () => {
+    // Writes the report file but no frame — exit 0 must still succeed.
+    const fileOnly = `
+      const fs = require("fs");
+      const args = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+      fs.writeFileSync(args.report_path, JSON.stringify({ from: "disk" }));
+      process.exit(0);
+    `;
+    const m = track(manager(tmpDir, fileOnly));
+    const record = m.start({ kind: "nav", params: {}, optIns: {} });
+    await until(() => m.get(record.id)?.ended_at != null);
+    expect(m.get(record.id)!.status).toBe("succeeded");
+    expect(m.get(record.id)!.report).toEqual({ from: "disk" });
+  });
+
+  it("a failed spawn releases the active slot instead of wedging the manager", async () => {
+    const m = new RunManager({
+      runsDir: path.join(tmpDir, "runs"),
+      commandOverride: {
+        command: path.join(tmpDir, "does-not-exist"),
+        args: [],
+      },
+    });
+    track(m);
+    const record = m.start({ kind: "pipeline", params: {}, optIns: {} });
+    await until(() => m.get(record.id)?.status === "failed");
+    expect(m.activeRun).toBeNull();
+    // A later run can start — the slot was released.
+    expect(() => m.start({ kind: "nav", params: {}, optIns: {} })).not.toThrow();
+  });
+
+  it("run ids that are not run-<uuid> never reach the filesystem", () => {
+    const m = track(manager(tmpDir, HELLO_REPORT_SCRIPT));
+    for (const bad of [
+      "../../etc/passwd",
+      "run-../../secrets",
+      "..",
+      "run-not-a-uuid",
+      "",
+    ]) {
+      expect(m.get(bad), bad).toBeUndefined();
+      expect(m.logsAfter(bad, 0), bad).toEqual([]);
+    }
+  });
+
+  it("answering a confirmation after the child died does not throw", async () => {
+    const m = track(manager(tmpDir, CONFIRM_SCRIPT));
+    const record = m.start({ kind: "submit", params: {}, optIns: {} });
+    await until(() => m.get(record.id)?.status === "awaiting_confirmation");
+    m.cancel(record.id);
+    await until(() => m.get(record.id)?.ended_at != null);
+    // Stdin is gone; the write must be swallowed, not crash the console.
+    expect(() => m.confirm(record.id, "c-1", true)).not.toThrow();
   });
 
   it("logsAfter honors after_seq for the poll fallback", async () => {
