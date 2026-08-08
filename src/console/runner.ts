@@ -4,6 +4,7 @@ import { getConfig } from "../config/index.js";
 import { runPipeline } from "../pipeline/runPipeline.js";
 import { runNavigation } from "../navigation/runNavigation.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
+import { runAutomationSession } from "../automation/worker.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import {
   completeAutomationRun,
@@ -32,6 +33,10 @@ type RunnerArgs = {
   fixture_html?: string;
   submit?: boolean;
   max_jobs?: number;
+  // Automation (L3) args, injected by the run route from the arm session.
+  arm_run_id?: string;
+  discover_max?: number;
+  rediscover_every?: number;
   report_path: string;
 };
 
@@ -45,13 +50,14 @@ async function main(): Promise<void> {
     (kind !== "pipeline" &&
       kind !== "nav" &&
       kind !== "submit" &&
-      kind !== "discover") ||
+      kind !== "discover" &&
+      kind !== "automation") ||
     argsFlag !== "--args" ||
     !argsPath
   ) {
     emit({
       jaa_frame: "error",
-      message: "usage: runner <pipeline|nav|submit|discover> --args <file>",
+      message: "usage: runner <pipeline|nav|submit|discover|automation> --args <file>",
     });
     process.exit(2);
     return;
@@ -99,6 +105,17 @@ async function main(): Promise<void> {
         db,
         applicationId: args.application_id,
         headless: !args.headed,
+      });
+    } else if (kind === "automation") {
+      if (!args.arm_run_id) throw new Error("automation requires arm_run_id");
+      report = await runAutomationSession({
+        db,
+        armRunId: args.arm_run_id,
+        headless: !args.headed,
+        ...(args.discover_max !== undefined ? { discoverMax: args.discover_max } : {}),
+        ...(args.rediscover_every !== undefined
+          ? { rediscoverEvery: args.rediscover_every }
+          : {}),
       });
     } else if (kind === "discover") {
       // Discovery opens its own DB and enqueues to QUEUED; it throws on an

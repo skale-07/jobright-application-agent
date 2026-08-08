@@ -78,6 +78,14 @@ export type PipelineOptions = {
   contactsFixtureHtmlPath?: string;
   /** Test seam: replaces runNavigation for offline pipeline tests. */
   navigationRunner?: (input: RunNavigationInput) => Promise<NavigationReport>;
+  /**
+   * Shared automation run to attribute this walk to instead of minting a
+   * fresh one. The L3 worker passes its arm-session row here so every
+   * submit across every app in the session consumes from the ONE arm
+   * budget (not a per-app cap). When set, the caller owns the row's
+   * lifecycle — runPipeline neither creates nor completes it.
+   */
+  automationRunId?: string;
 };
 
 /** States the sequential driver can pick up and advance. */
@@ -282,9 +290,12 @@ export async function runPipeline(
 ): Promise<PipelineReport> {
   const { db } = options;
   // application_events.run_id references automation_runs(id): the run row IS
-  // the run id used for transitions.
-  const automationRun = createAutomationRun(db, { stage: "pipeline" });
-  const runId = automationRun.id;
+  // the run id used for transitions. A caller-supplied automationRunId (the
+  // L3 worker's arm row) is used verbatim and NOT completed here; otherwise
+  // we mint and complete our own row.
+  const ownsRun = !options.automationRunId;
+  const runId =
+    options.automationRunId ?? createAutomationRun(db, { stage: "pipeline" }).id;
 
   const candidates = options.applicationId
     ? [options.applicationId]
@@ -305,11 +316,11 @@ export async function runPipeline(
   try {
     for (const applicationId of candidates) {
       report.applications.push(
-        await runOneApplication({ db, applicationId, runId, options, automationRunId: automationRun.id }),
+        await runOneApplication({ db, applicationId, runId, options, automationRunId: runId }),
       );
     }
   } finally {
-    completeAutomationRun(db, automationRun.id);
+    if (ownsRun) completeAutomationRun(db, runId);
   }
 
   logger.info("pipeline run complete", {
