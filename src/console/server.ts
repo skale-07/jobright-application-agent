@@ -23,6 +23,8 @@ import {
 import { checkBearerToken, checkHostHeader, generateBootToken } from "./security.js";
 import { buildMutationRoutes } from "./mutations.js";
 import { buildRunRoutes } from "./runRoutes.js";
+import { buildGmailRoutes } from "./gmailRoutes.js";
+import { GmailAuthBroker } from "./gmailAuthBroker.js";
 import { RunManager } from "./runManager.js";
 import { findRoute, type Route } from "./routes.js";
 import { serveStatic } from "./staticFiles.js";
@@ -45,7 +47,8 @@ export type ConsoleDeps = {
   distDir: string;
   artifactsDir: string;
   runManager?: RunManager;
-  /** Later milestones extend the handler with mutation routes. */
+  gmailBroker?: GmailAuthBroker;
+  /** Escape hatch for tests that need a route the console does not ship. */
   extraRoutes?: Route[];
 };
 
@@ -132,6 +135,7 @@ export function createConsoleHandler(
     },
     ...buildMutationRoutes({ db: deps.db }),
     ...(deps.runManager ? buildRunRoutes({ runManager: deps.runManager }) : []),
+    ...(deps.gmailBroker ? buildGmailRoutes({ broker: deps.gmailBroker }) : []),
     ...(deps.extraRoutes ?? []),
   ];
 
@@ -247,6 +251,7 @@ export function startConsole(input: {
     distDir,
     artifactsDir: cfg.artifactsDir,
     runManager,
+    gmailBroker: new GmailAuthBroker(),
   });
   const server = http.createServer(handler);
   server.once("close", () => runManager.shutdown());

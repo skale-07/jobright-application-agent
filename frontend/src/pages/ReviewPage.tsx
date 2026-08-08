@@ -4,9 +4,10 @@ import type { ReviewItemView } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { JsonView } from "../components/JsonView";
+import { ReviewActionPanel } from "../components/ReviewActionPanel";
 
 export function ReviewPage(): JSX.Element {
-  const { data, error, loading } = usePoll<ReviewItemView[]>(
+  const { data, error, loading, refresh } = usePoll<ReviewItemView[]>(
     () => apiGet<ReviewItemView[]>("/api/review-items"),
     5000,
   );
@@ -69,6 +70,7 @@ export function ReviewPage(): JSX.Element {
                   <JsonView value={item.payload} label="payload" />
                 </div>
               ) : null}
+              <ReviewActionPanel item={item} onResolved={refresh} />
             </div>
           ))}
         </div>
