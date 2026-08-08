@@ -13,6 +13,7 @@ import { createApplication, getApplication } from "../../src/queue/stateMachine.
 import { upsertJobByFingerprint } from "../../src/jobs/repository.js";
 import { registerResumeMaterial } from "../../src/jobright/materialsRegister.js";
 import { setEmployerApplicationUrl } from "../../src/pipeline/runPipeline.js";
+import { createAutomationRun } from "../../src/queue/automationRuns.js";
 import {
   defaultTtyConfirm,
   formatTtyConfirmation,
@@ -252,6 +253,43 @@ describe("web-confirm decline path (FIXTURE_CONFIRMED via routed lever fixture)"
         .get(appId) as { n: number };
       expect(submitting.n).toBe(1);
       expect(report.outcome).not.toBe("REFUSED");
+    },
+    120_000,
+  );
+
+  it(
+    "unattended without --yes refuses WITHOUT burning a budget slot (ordering fix)",
+    async () => {
+      const database = freshDb();
+      const appId = seedReadyApp(database);
+      // Unattended mode: confirmation off, a cap of 1 available.
+      applyControlledFillEnv({
+        FORM_FILL_ENABLED: "true",
+        DRY_RUN: "false",
+        SUBMIT_ENABLED: "true",
+        SUBMIT_REQUIRES_LOCAL_CONFIRMATION: "false",
+        MAX_UNATTENDED_SUBMISSIONS_PER_RUN: "1",
+      });
+      const run = createAutomationRun(database, { stage: "submit" });
+
+      const report = await runAtsSubmission({
+        db: database,
+        applicationId: appId,
+        automationRunId: run.id,
+        // no assumeYes → must refuse before consuming the slot
+      });
+
+      expect(report.outcome).toBe("REFUSED");
+      expect(report.reason).toMatch(/--yes/);
+      // The budget counter must be untouched — the whole point of the fix.
+      const counter = (
+        database
+          .prepare(
+            `SELECT unattended_submissions_count AS c FROM automation_runs WHERE id = ?`,
+          )
+          .get(run.id) as { c: number }
+      ).c;
+      expect(counter).toBe(0);
     },
     120_000,
   );

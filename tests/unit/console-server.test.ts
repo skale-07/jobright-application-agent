@@ -140,6 +140,37 @@ describe("console server (UNIT_CONFIRMED)", () => {
     }
   });
 
+  it("automation arm/disarm are bearer-gated; status is a tokenless read", async () => {
+    const h = handler();
+    // Status reads without a token.
+    const s0 = await invoke(h, "GET", "/api/automation/status");
+    expect(s0.statusCode).toBe(200);
+    expect(JSON.parse(s0.body).armed).toBe(false);
+
+    // Arm requires the token.
+    expect((await invoke(h, "POST", "/api/automation/arm")).statusCode).toBe(401);
+
+    const armed = await invoke(h, "POST", "/api/automation/arm", {
+      token,
+      body: JSON.stringify({ duration_minutes: 30, max_submits: 3, max_apps: 4 }),
+    });
+    expect(armed.statusCode).toBe(200);
+    const armedBody = JSON.parse(armed.body);
+    expect(armedBody.armed).toBe(true);
+    expect(armedBody.max_submits).toBe(3);
+
+    // Second arm while armed → 409.
+    const again = await invoke(h, "POST", "/api/automation/arm", {
+      token,
+      body: JSON.stringify({}),
+    });
+    expect(again.statusCode).toBe(409);
+
+    // Disarm, then status is clear.
+    expect((await invoke(h, "POST", "/api/automation/disarm", { token })).statusCode).toBe(200);
+    expect(JSON.parse((await invoke(h, "GET", "/api/automation/status")).body).armed).toBe(false);
+  });
+
   it("refuses non-GET/POST methods and unauthorized POSTs", async () => {
     const h = handler();
     for (const method of ["PUT", "DELETE", "PATCH"]) {

@@ -39,6 +39,7 @@ drafts only, enforced by CI-level banned-identifier checks.
 15. [Navigation (autonomous employer-URL resolution)](#15-navigation)
 16. [Operator console (web UI)](#16-operator-console-web-ui)
 17. [When Submit stays greyed out](#17-when-submit-stays-greyed-out)
+18. [L3 — armed unattended sessions (contract)](#18-l3--armed-unattended-sessions-contract)
 
 Essays (§6) vs outreach emails (§10) are different things: essays are
 free-text questions **on the employer's application form**, always written
@@ -647,3 +648,48 @@ Level: `FIXTURE_CONFIRMED` against a fixture form that disables Submit
 until a six-digit code is entered. The Outlook mailbox selectors are
 synthetic and `UNVERIFIED` against a real inbox; the Gmail path reuses the
 parser already used by navigation.
+
+## 18. L3 — armed unattended sessions (contract)
+
+L3 lets the console click Submit **without a per-application confirmation**,
+but only inside a **timed, capped, operator-armed session**. This section
+is the contract; the runbook (prerequisites, "watch the first hour") lands
+with the worker loop.
+
+**Arming.** From the console you arm a session: a duration (clamped 15–240
+minutes, default 120) and caps — max submits (default 10) and max apps
+attempted (default 25). Arming is bearer-token-gated like every console
+mutation. The armed session is a single `automation_runs` row (stage
+`l3_session`); its unattended-submission budget is that row's persisted,
+atomically-consumed counter, so **disarming makes further submission
+structurally impossible** and a crash cannot reset the count.
+
+**Disarm is the default.** A console **restart is always disarmed** (stale
+sessions are swept on boot), the session **auto-disarms at its expiry**, and
+you can disarm at any time. Only one session may be armed at once — arming
+while armed is refused; disarm first.
+
+**What arming does and does not change.** Arming removes exactly one thing:
+the human-confirmation *transport* for submits made by the armed worker.
+Every other gate is unchanged — the env triple (`FORM_FILL_ENABLED`,
+`SUBMIT_ENABLED`, `DRY_RUN=false`), the prior-submission check, the ATS page
+identity gate, the approved-plan policy (essays and demographics are still
+never auto-filled), and the pre-click fill/upload/verify check all still
+run. Nothing is force-clicked.
+
+**Walls still park, the queue still moves.** CAPTCHA, phone OTP,
+unrecoverable auth, unsupported ATS, and missing materials park the
+application (review item) and the session moves to the next one — exactly as
+today, just unattended.
+
+**Outreach stays drafts-only.** Nothing in L3 sends mail. Contacts
+extraction, email *generation*, and Outlook *draft* creation may run after a
+verified submit when their flags are set, and never send — the send bans in
+`src/outlook/sendGuards.ts` and the forbidden-identifier check are untouched.
+
+**Kill switch.** `AUTOMATION_ENABLED=false` (fail-closed, default) refuses
+the automation worker regardless of any arm.
+
+Hard-stop codes that park an app and continue the queue: `CAPTCHA_REQUIRED`,
+`AUTH_REQUIRED` (non-OTP / no mailbox recovery), phone OTP, `UNSUPPORTED_ATS`,
+missing materials, and budget/attempt exhaustion.

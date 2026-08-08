@@ -4,6 +4,10 @@ import { getConfig } from "../config/index.js";
 import { runPipeline } from "../pipeline/runPipeline.js";
 import { runNavigation } from "../navigation/runNavigation.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import {
+  completeAutomationRun,
+  createAutomationRun,
+} from "../queue/automationRuns.js";
 import { createStdioConfirm, serializeFrame } from "./frames.js";
 import { GATED_FLAG_KEYS } from "./flagCeiling.js";
 
@@ -90,12 +94,21 @@ async function main(): Promise<void> {
       });
     } else {
       if (!args.application_id) throw new Error("submit requires application_id");
-      report = await runAtsSubmission({
-        db,
-        applicationId: args.application_id,
-        headless: !args.headed,
-        confirmSubmission: confirm,
-      });
+      // Own the automation run explicitly so a one-shot console submit does
+      // not leave an orphan RUNNING automation_runs row (runAtsSubmission
+      // would otherwise mint one and never complete it).
+      const submitRun = createAutomationRun(db, { stage: "submit" });
+      try {
+        report = await runAtsSubmission({
+          db,
+          applicationId: args.application_id,
+          headless: !args.headed,
+          automationRunId: submitRun.id,
+          confirmSubmission: confirm,
+        });
+      } finally {
+        completeAutomationRun(db, submitRun.id);
+      }
     }
   } catch (err) {
     emit({
