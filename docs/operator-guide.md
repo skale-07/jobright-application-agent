@@ -36,6 +36,9 @@ drafts only, enforced by CI-level banned-identifier checks.
 12. [Dashboard](#12-dashboard)
 13. [Pipeline driver + retry](#13-pipeline)
 14. [Agent-assisted adapter authoring (Phase 6 J1)](#14-agent-authoring)
+15. [Navigation (autonomous employer-URL resolution)](#15-navigation)
+16. [Operator console (web UI)](#16-operator-console-web-ui)
+17. [When Submit stays greyed out](#17-when-submit-stays-greyed-out)
 
 Essays (§6) vs outreach emails (§10) are different things: essays are
 free-text questions **on the employer's application form**, always written
@@ -441,6 +444,11 @@ contract rather than trusted.
 | `NAVIGATION_ENABLED` | `false` | Navigation: clicking Apply on JobRight (mutates applied-state) |
 | `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail readonly OTP/magic-link retrieval during nav |
 | `ESSAY_REQUIRED_GATE_ENABLED` | `false` | Hard-stop on heuristic essay detection (`ESSAY_REQUIRED`); off until heuristics are better |
+| `OUTLOOK_VERIFICATION_ENABLED` | `false` | Read-only Outlook mailbox scan for submit verification codes (§17) |
+
+Console-only (not capability flags): `CONSOLE_HOST` (`127.0.0.1`,
+validated) and `CONSOLE_PORT` (`8899`). The console's own shell is the
+ceiling for every flag above — see §16.
 
 The banned send-style APIs have no flag — they are impossible, enforced by
 `npm run check:forbidden` (Outlook send identifiers AND Gmail
@@ -498,3 +506,144 @@ Level: everything here ships `UNIT_CONFIRMED`/`FIXTURE_CONFIRMED` (fake
 sidecars, routed fixtures, injected fetch). The first live nav run is
 yours — success is only claimed from the deterministic read-back (URL
 stored + ATS validation), never from the agent's self-report.
+
+---
+
+## 16. Operator console (web UI)
+
+A local web console for everything above: browse applications and their
+timelines, resolve review items, launch pipeline/nav/submit runs with live
+output, and confirm submissions in the browser instead of the terminal.
+
+```powershell
+npm run frontend:install     # once
+npm run frontend:build       # after any frontend change
+npm run console
+```
+
+The console prints a URL with a `#token=` fragment — **open that exact
+URL**. The fragment never reaches the server (so it cannot appear in logs);
+the page stores it for the tab and strips it from the address bar. A fresh
+tab without it can still read, but every mutation returns 401 until you
+paste the token into Settings.
+
+Two security properties hold on every request: the server binds
+`127.0.0.1` only (`CONSOLE_HOST` is validated like `DASHBOARD_HOST`), and a
+`Host` header naming anything but localhost is refused 403 — that is what
+stops a hostile page in your browser from reaching the API by DNS
+rebinding.
+
+The read-only dashboard (§12) is unchanged and still GET-only. The console
+is a separate server; run either or both.
+
+### The capability ceiling
+
+**The shell that starts the console decides what any run can do.** The UI
+can only narrow that, never widen it — a flag reaches a child run only if
+the shell had it *and* you opt into it in the launch dialog. Start the
+console with exactly the capability you intend to use that session:
+
+```powershell
+# read-only session (browse, resolve reviews, enqueue)
+npm run console
+
+# a session that may fill and submit
+$env:FORM_FILL_ENABLED="true"; $env:DRY_RUN="false"; $env:SUBMIT_ENABLED="true"
+npm run console
+```
+
+Settings shows the live ceiling. Two values are **forced** on every
+console-launched run regardless of your shell:
+`SUBMIT_REQUIRES_LOCAL_CONFIRMATION=true` and
+`MAX_UNATTENDED_SUBMISSIONS_PER_RUN=0` — the unattended submit branch is
+unreachable from the console, so a click always requires your explicit
+confirmation.
+
+### Runs
+
+Runs execute as child processes (`src/console/runner.ts`), one at a time.
+They call the same functions the CLI calls, so a console run and a CLI run
+do the same thing; the console adds a live log stream (SSE, falling back to
+polling), the flags the child actually received, cancel, and a persisted
+history under `artifacts/console/runs/<id>/`.
+
+### Submitting from the browser
+
+When a submit run reaches the confirmation point, the terminal prompt is
+replaced by a modal showing the same facts it printed — company, role, URL,
+attempt, resume sha256, plan counts. Type the company name to arm the
+button. Everything else about submission is unchanged: same env triple,
+same approved-plan policy, same pre-click verification, same single click.
+
+It fails closed in every direction: no answer within five minutes, a closed
+tab, a dropped stream, or a stopped console all count as *declined*, and a
+decline refuses before the `SUBMITTING` transition, so the application stays
+`READY_TO_SUBMIT` and can be retried.
+
+### Review queue
+
+Every review kind is resolvable here, including the ones with no CLI
+resolver: uncertain submissions (submitted / nothing-was-submitted, with
+optional requeue), essay answers (typed by you — never machine-written),
+requeue after clearing an auth or captcha wall, requeue an unsupported-ATS
+item with a corrected employer URL, abandon, and dismiss. The server
+re-checks the kind/action matrix and the application's current state, so a
+stale page cannot force an illegal transition — if the application has
+moved on, the item resolves without a transition and the response says so.
+
+### Gmail setup
+
+Settings drives the same one-time OAuth flow as `npm run gmail:auth`: start
+it, open the consent URL, paste the localhost URL you land on. Scope is
+pinned to `gmail.readonly`, and a grant carrying anything wider is refused
+before it is stored. `gmail:check` needs `GMAIL_VERIFICATION_ENABLED` in
+the console's own shell (it runs in-process).
+
+### Dev mode
+
+```powershell
+npm run console        # API on 8899
+npm run frontend:dev   # vite on 5173, proxying /api
+```
+
+Paste the token into Settings in dev mode — the `#token=` URL points at
+8899.
+
+Level: the server, run protocol, flag ceiling, and confirmation transport
+are `UNIT_CONFIRMED`; the review resolvers and submit seam are
+`FIXTURE_CONFIRMED`. **The browser UI itself is `UNVERIFIED`** — it builds
+and serves, but no page has been exercised in a real browser. Your first
+session is the promotion event.
+
+## 17. When Submit stays greyed out
+
+Some employers gate the submit button behind an emailed verification code.
+The form still looks normal, so the login-wall detector does not fire and
+field verification passes (the code input is not in the approved plan) —
+the only symptom is a disabled button.
+
+The submit path now diagnoses that before giving up, and the refusal names
+the cause: a verification prompt (with the address it was sent to), the
+required fields that are still invalid, or the visible validation errors.
+
+To let it recover automatically, enable a mailbox reader in the shell:
+
+```powershell
+$env:OUTLOOK_VERIFICATION_ENABLED="true"   # reads your Outlook web session
+# or
+$env:GMAIL_VERIFICATION_ENABLED="true"     # readonly Gmail API (needs gmail:auth)
+```
+
+The run then fetches the code, types it in, waits for the button to enable,
+and clicks once. Codes are transient: held in memory, typed once, never
+written to SQLite, artifacts, or logs. With no reader enabled the run fails
+before the click and opens an `AUTH_REQUIRED` review item naming the wall.
+
+Both readers are read-only. The Outlook path navigates and reads DOM in
+your existing session — compose and send remain banned by
+`src/outlook/sendGuards.ts` and the forbidden-identifier check.
+
+Level: `FIXTURE_CONFIRMED` against a fixture form that disables Submit
+until a six-digit code is entered. The Outlook mailbox selectors are
+synthetic and `UNVERIFIED` against a real inbox; the Gmail path reuses the
+parser already used by navigation.
