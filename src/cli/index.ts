@@ -8,6 +8,7 @@ import {
   exportNavigationAttemptsJsonl,
   exportSubmitAttemptsJsonl,
 } from "../storage/navSubmitOutcomes.js";
+import { proposeSubmitSelectorPatches } from "../heal/submitInventoryHealer.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -121,6 +122,7 @@ Commands:
   ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]
   ats:fill-outcomes [--summary] [--export <path.jsonl>]
   training:export [--out <dir>]         Dump fill/nav/submit attempt corpora as JSONL + manifest
+  heal:submit-proposals [--limit N]     LLM selector-patch PROPOSALS from submit-miss inventories (AGENT_AUTHORING_ENABLED)
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -1213,6 +1215,21 @@ function cmdAtsFillOutcomes(
   }
 }
 
+async function cmdHealSubmitProposals(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const limit =
+    typeof flags["limit"] === "string" ? Number(flags["limit"]) || 10 : 10;
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await proposeSubmitSelectorPatches({ db, limit });
+    console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdTrainingExport(flags: Record<string, string | boolean>): void {
   const outDir = path.resolve(
     typeof flags["out"] === "string"
@@ -1321,6 +1338,9 @@ async function main(): Promise<void> {
     case "ats:fill":
       await cmdAtsFill(flags);
       return;
+    case "heal:submit-proposals":
+      await cmdHealSubmitProposals(flags);
+      break;
     case "training:export":
       cmdTrainingExport(flags);
       break;

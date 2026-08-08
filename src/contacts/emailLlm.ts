@@ -2,8 +2,10 @@ import OpenAI from "openai";
 import { getConfig } from "../config/index.js";
 
 /**
- * The only LLM boundary in this codebase. Outreach email generation only —
- * never form answers, essays, demographics, or any ATS interaction.
+ * One of exactly two sanctioned LLM boundaries in this codebase: outreach
+ * email generation here, and offline selector-patch PROPOSALS in
+ * src/heal/submitInventoryHealer.ts (which reuses this client interface).
+ * Never form answers, essays, demographics, or any live ATS interaction.
  * Tests use a stub implementing this interface; no test ever calls out.
  */
 export interface EmailLlmClient {

@@ -8,6 +8,15 @@ The evidence baseline is the first live L3 session: 7 apps, 5 killed by
 navigation walls, 1 by a submit-control miss, 0 referral drafts. Time is
 lost to **walls**, not to typing — deterministic code already types fast.
 
+**Implementation status**: surfaces 1–3 and the deterministic half of 5
+are BUILT (this PR): the host policy (`navigation/hostPolicy.ts`) gates
+phase C from telemetry; the inventory healer
+(`heal/submitInventoryHealer.ts`, `npm run heal:submit-proposals`)
+generates propose-only selector patches behind AGENT_AUTHORING_ENABLED;
+the referral tail is batched after the session loop with deterministic
+contact ranking (`contacts/rank.ts`). Surface 4 and essay
+retrieval-matching remain future work.
+
 ## Ranked surfaces (highest time-return first)
 
 ### 1. Navigation phase C — the agent that clears walls
