@@ -466,11 +466,15 @@ export async function runAutomationSession(
       });
     }
 
-    // Refresh the submit counter from the arm row for the progress emit.
-    const after = getActiveArmSession(db);
-    report.submits_used = after
-      ? after.row.unattended_submissions_count
-      : report.submits_used;
+    // Refresh the submit counter straight from the arm row (not via
+    // getActiveArmSession, which returns nothing once the row is swept —
+    // that would undercount a submit made just before expiry).
+    const counts = db
+      .prepare(
+        `SELECT unattended_submissions_count AS n FROM automation_runs WHERE id = ?`,
+      )
+      .get(armRunId) as { n: number } | undefined;
+    if (counts) report.submits_used = counts.n;
 
     appsSinceDiscover += 1;
     const ms = input.nextDelayMs
