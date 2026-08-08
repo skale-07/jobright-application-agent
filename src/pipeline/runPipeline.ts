@@ -13,6 +13,7 @@ import { listOpenReviewItems, upsertOpenReviewItem } from "../queue/reviewItems.
 import { createAutomationRun, completeAutomationRun } from "../queue/automationRuns.js";
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { openEssayReviewItem } from "../applications/essayAnswers.js";
+import { essayFieldsOnly } from "../applications/essayDetector.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
@@ -583,6 +584,30 @@ async function step(
           });
           return { to: "UNSUPPORTED_ATS", note: "unsupported ATS", stop: "review" };
         case "needs_essay": {
+          // Only REQUIRED essay fields block the pipeline — an optional
+          // "anything else?" textarea is not a reason to stop (it is simply
+          // left blank; essays are never auto-filled either way). The
+          // operator can disable the stop entirely with
+          // ESSAY_GATE_ENABLED=false; submit still fails closed on
+          // unanswered essays an ATS cannot fill.
+          const essayIds = new Set(
+            essayFieldsOnly(inspect.inspection.fields).map((e) => e.field_id),
+          );
+          const requiredEssays = inspect.inspection.fields.filter(
+            (f) => essayIds.has(f.id) && f.required,
+          );
+          if (!cfg.essayGateEnabled || requiredEssays.length === 0) {
+            const note = cfg.essayGateEnabled
+              ? "only optional essay fields — proceeding, leaving them blank"
+              : "essay gate disabled by operator — proceeding to fill";
+            transitionApplication(db, {
+              applicationId: app.id,
+              nextState: "NATIVE_AUTOFILL_RUNNING",
+              reason: `pipeline: ${note}`,
+              runId,
+            });
+            return { to: "NATIVE_AUTOFILL_RUNNING", note };
+          }
           transitionApplication(db, {
             applicationId: app.id,
             nextState: "ESSAY_REQUIRED",
