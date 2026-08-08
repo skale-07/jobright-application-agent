@@ -7,6 +7,12 @@ import {
   defaultTtyConfirm,
   type ConfirmSubmission,
 } from "./submitConfirmation.js";
+import { diagnoseDisabledSubmit } from "../ats/shared/submitDiagnostics.js";
+import { recoverEmailVerification } from "../verification/recoverSubmitVerification.js";
+import {
+  resolveVerificationCodeProvider,
+  type FetchVerificationCode,
+} from "../verification/codeProviders.js";
 import { getApplication, transitionApplication } from "../queue/stateMachine.js";
 import { acquireLease, releaseLease } from "../queue/leases.js";
 import {
@@ -97,9 +103,16 @@ export async function runAtsSubmission(input: {
    * SUBMITTING transition, so the app stays READY_TO_SUBMIT.
    */
   confirmSubmission?: ConfirmSubmission;
+  /**
+   * Verification-code source for disabled-submit recovery. Defaults to
+   * the flag-gated provider resolution (Outlook web / Gmail readonly);
+   * injectable for tests.
+   */
+  fetchVerificationCode?: FetchVerificationCode;
 }): Promise<SubmissionRunReport> {
   const { db, applicationId } = input;
   const cfg = getConfig();
+  const runStartedAt = new Date().toISOString();
 
   const report: SubmissionRunReport = {
     outcome: "REFUSED",
@@ -371,18 +384,59 @@ export async function runAtsSubmission(input: {
             return persist(report);
           }
 
-          const attempt = await binding.submit(page);
+          let attempt = await binding.submit(page);
+          if (
+            !attempt.clicked &&
+            attempt.notes.some((n) => /disabled/i.test(n))
+          ) {
+            // Name the cause instead of the old opaque "submit control
+            // disabled": verification walls, invalid required fields,
+            // visible errors. One recovery attempt when it is an email
+            // verification code and a mailbox provider is enabled.
+            const diagnosis = await diagnoseDisabledSubmit(page);
+            attempt.notes.push(`diagnosis: ${diagnosis.summary}`);
+            const fetchCode =
+              input.fetchVerificationCode ?? resolveVerificationCodeProvider();
+            if (diagnosis.verification.detected && fetchCode) {
+              const recovery = await recoverEmailVerification(page, diagnosis, {
+                fetchCode,
+                submitSelector: binding.submitSelector,
+                requestedAt: runStartedAt,
+              });
+              attempt.notes.push(...recovery.notes);
+              if (recovery.submitEnabled) {
+                attempt = await binding.submit(page);
+                attempt.notes.unshift("submit retried after email verification");
+              }
+            } else if (diagnosis.verification.detected) {
+              attempt.notes.push(
+                "no mailbox provider enabled (OUTLOOK_VERIFICATION_ENABLED / GMAIL_VERIFICATION_ENABLED) — cannot fetch the code",
+              );
+            }
+          }
           if (!attempt.clicked) {
-            markSubmissionFailed(db, pending.id, attempt.notes.join("; "));
+            const reason = attempt.notes.join("; ");
+            markSubmissionFailed(db, pending.id, reason);
             failIdempotencyKey(db, idemKey, "not_clicked");
+            if (/verification code required/i.test(reason)) {
+              upsertOpenReviewItem(db, {
+                applicationId,
+                kind: "AUTH_REQUIRED",
+                title: "Employer form requires an email verification code",
+                payload: {
+                  ats: binding.id,
+                  notes: attempt.notes,
+                },
+              });
+            }
             transitionApplication(db, {
               applicationId,
               nextState: "FAILED_RETRYABLE",
-              reason: `submit control not clicked: ${attempt.notes.join("; ")}`,
+              reason: `submit control not clicked: ${reason}`,
               runId,
             });
             report.outcome = "FAILED_BEFORE_CLICK";
-            report.reason = attempt.notes.join("; ");
+            report.reason = reason;
             return persist(report);
           }
 

@@ -36,6 +36,12 @@ const envSchema = z.object({
   /** Gmail readonly OTP/magic-link retrieval during navigation. Fail closed. */
   GMAIL_VERIFICATION_ENABLED: boolFromEnv.default(false),
   /**
+   * Read-only Outlook web mailbox scan for submit verification codes.
+   * Navigation + DOM reads in the operator's session only — never
+   * compose/send (sendGuards). Fail closed.
+   */
+  OUTLOOK_VERIFICATION_ENABLED: boolFromEnv.default(false),
+  /**
    * Hard-stop inspection/pipeline on heuristic essay fields (`needs_essay` /
    * `ESSAY_REQUIRED`). Default off — the label heuristics false-positive on
    * EEO/combobox copy (e.g. "describe your race"). Free-text is still never
@@ -86,6 +92,7 @@ export type AppConfig = {
   materialsDownloadEnabled: boolean;
   navigationEnabled: boolean;
   gmailVerificationEnabled: boolean;
+  outlookVerificationEnabled: boolean;
   essayRequiredGateEnabled: boolean;
   emailGenerationEnabled: boolean;
   /** Present only when the operator configured it; consumers must not log it. */
@@ -152,6 +159,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
     navigationEnabled: parsed.NAVIGATION_ENABLED,
     gmailVerificationEnabled: parsed.GMAIL_VERIFICATION_ENABLED,
+    outlookVerificationEnabled: parsed.OUTLOOK_VERIFICATION_ENABLED,
     essayRequiredGateEnabled: parsed.ESSAY_REQUIRED_GATE_ENABLED,
     emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
     openaiApiKey: parsed.OPENAI_API_KEY,
