@@ -3,7 +3,13 @@ import { migrate, openDatabase } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { runPipeline } from "../pipeline/runPipeline.js";
 import { runNavigation } from "../navigation/runNavigation.js";
+import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
+import { runAutomationSession } from "../automation/worker.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import {
+  completeAutomationRun,
+  createAutomationRun,
+} from "../queue/automationRuns.js";
 import { createStdioConfirm, serializeFrame } from "./frames.js";
 import { GATED_FLAG_KEYS } from "./flagCeiling.js";
 
@@ -26,6 +32,11 @@ type RunnerArgs = {
   headed?: boolean;
   fixture_html?: string;
   submit?: boolean;
+  max_jobs?: number;
+  // Automation (L3) args, injected by the run route from the arm session.
+  arm_run_id?: string;
+  discover_max?: number;
+  rediscover_every?: number;
   report_path: string;
 };
 
@@ -36,11 +47,18 @@ function emit(frame: Parameters<typeof serializeFrame>[0]): void {
 async function main(): Promise<void> {
   const [kind, argsFlag, argsPath] = process.argv.slice(2);
   if (
-    (kind !== "pipeline" && kind !== "nav" && kind !== "submit") ||
+    (kind !== "pipeline" &&
+      kind !== "nav" &&
+      kind !== "submit" &&
+      kind !== "discover" &&
+      kind !== "automation") ||
     argsFlag !== "--args" ||
     !argsPath
   ) {
-    emit({ jaa_frame: "error", message: "usage: runner <pipeline|nav|submit> --args <file>" });
+    emit({
+      jaa_frame: "error",
+      message: "usage: runner <pipeline|nav|submit|discover|automation> --args <file>",
+    });
     process.exit(2);
     return;
   }
@@ -88,14 +106,54 @@ async function main(): Promise<void> {
         applicationId: args.application_id,
         headless: !args.headed,
       });
+    } else if (kind === "automation") {
+      if (!args.arm_run_id) throw new Error("automation requires arm_run_id");
+      report = await runAutomationSession({
+        db,
+        armRunId: args.arm_run_id,
+        headless: !args.headed,
+        ...(args.discover_max !== undefined ? { discoverMax: args.discover_max } : {}),
+        ...(args.rediscover_every !== undefined
+          ? { rediscoverEvery: args.rediscover_every }
+          : {}),
+        // Offline e2e seam (same as the pipeline kind): every app inspects
+        // this fixture instead of the live employer page.
+        ...(args.fixture_html ? { fixtureHtmlPath: args.fixture_html } : {}),
+      });
+    } else if (kind === "discover") {
+      // Discovery opens its own DB and enqueues to QUEUED; it throws on an
+      // empty live feed (after writing artifacts + a review item), which is
+      // a warning here, not a run failure.
+      try {
+        report = await runJobRightDiscovery({
+          maxJobs: args.max_jobs ?? 10,
+          headless: !args.headed,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (/EMPTY_FEED/.test(message)) {
+          report = { jobs_inspected: 0, warning: "empty_feed", detail: message };
+        } else {
+          throw err;
+        }
+      }
     } else {
       if (!args.application_id) throw new Error("submit requires application_id");
-      report = await runAtsSubmission({
-        db,
-        applicationId: args.application_id,
-        headless: !args.headed,
-        confirmSubmission: confirm,
-      });
+      // Own the automation run explicitly so a one-shot console submit does
+      // not leave an orphan RUNNING automation_runs row (runAtsSubmission
+      // would otherwise mint one and never complete it).
+      const submitRun = createAutomationRun(db, { stage: "submit" });
+      try {
+        report = await runAtsSubmission({
+          db,
+          applicationId: args.application_id,
+          headless: !args.headed,
+          automationRunId: submitRun.id,
+          confirmSubmission: confirm,
+        });
+      } finally {
+        completeAutomationRun(db, submitRun.id);
+      }
     }
   } catch (err) {
     emit({

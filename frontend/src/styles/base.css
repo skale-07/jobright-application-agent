@@ -500,6 +500,25 @@ details.json-block > summary {
   flex-wrap: wrap;
 }
 
+/* ── armed banner ───────────────────────────────────────────────── */
+
+.armed-banner {
+  display: block;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 650;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+.armed-banner:hover {
+  text-decoration: none;
+  filter: brightness(1.05);
+}
+
 .muted {
   color: var(--text-dim);
 }

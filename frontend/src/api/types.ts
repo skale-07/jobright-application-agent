@@ -32,6 +32,8 @@ export type ApplicationRow = {
   company: string | null;
   role: string | null;
   location: string | null;
+  automation_excluded: boolean;
+  has_open_review: boolean;
 };
 
 export type ApplicationsPage = { rows: ApplicationRow[]; total: number };
@@ -109,9 +111,11 @@ export type SubmitConfirmationSummary = {
   };
 };
 
+export type RunKind = "pipeline" | "nav" | "submit" | "discover" | "automation";
+
 export type RunRecord = {
   id: string;
-  kind: "pipeline" | "nav" | "submit";
+  kind: RunKind;
   params: Record<string, unknown>;
   granted_flags: string[];
   denied_flags: string[];
@@ -133,3 +137,17 @@ export type RunRecord = {
 };
 
 export type LogLine = { seq: number; stream: "stdout" | "stderr"; line: string };
+
+export type ArmStatus = {
+  armed: boolean;
+  arm_run_id: string | null;
+  armed_until: string | null;
+  seconds_remaining: number;
+  max_submits: number;
+  submits_used: number;
+  max_apps: number;
+  apps_started: number;
+  discover_max: number;
+  rediscover_every: number;
+  last_error_code: string | null;
+};

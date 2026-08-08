@@ -138,6 +138,10 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
   });
 
   it("stops at materials with a MANUAL review item when no resume registered", async () => {
+    // Pin the default to a guaranteed-missing path so the auto-attach is a
+    // no-op and the sticky-review behavior is what's under test.
+    process.env.DEFAULT_RESUME_PATH = path.join(artifactsDir, "no-such-default.pdf");
+    resetConfigCache();
     const appId = seed();
     const report = await runPipeline({ db, applicationId: appId });
     const appRep = report.applications[0]!;
@@ -145,7 +149,37 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(getApplication(db, appId)?.state).toBe("MATERIALS_GENERATING");
     const items = listOpenReviewItems(db);
     expect(items.some((i) => /Resume material/i.test(i.title))).toBe(true);
+    delete process.env.DEFAULT_RESUME_PATH;
+    resetConfigCache();
   });
+
+  it("a configured default resume auto-attaches and unblocks materials", async () => {
+    const defaultPath = path.join(artifactsDir, "default.pdf");
+    fs.mkdirSync(path.dirname(defaultPath), { recursive: true });
+    fs.copyFileSync(SYNTHETIC_PDF, defaultPath);
+    process.env.DEFAULT_RESUME_PATH = defaultPath;
+    resetConfigCache();
+    try {
+      const appId = seed();
+      // Offline: the greenhouse fixture keeps inspection off the network so
+      // the app cleanly reaches the fill gate instead of a live browser.
+      const report = await runPipeline({
+        db,
+        applicationId: appId,
+        fixtureHtmlPath: GREENHOUSE_FIXTURE,
+      });
+      const appRep = report.applications[0]!;
+      // No sticky review item — it advanced past materials on its own.
+      expect(getApplication(db, appId)?.state).not.toBe("MATERIALS_GENERATING");
+      expect(listOpenReviewItems(db).some((i) => /Resume material/i.test(i.title))).toBe(
+        false,
+      );
+      expect(appRep.steps.some((s) => s.from === "MATERIALS_GENERATING")).toBe(true);
+    } finally {
+      delete process.env.DEFAULT_RESUME_PATH;
+      resetConfigCache();
+    }
+  }, 60_000);
 
   it("stops on any pre-existing open review item before stepping", async () => {
     const appId = seed();

@@ -318,19 +318,23 @@ export async function runAtsSubmission(input: {
             return persist(report);
           }
         } else {
-          if (!tryConsumeUnattendedSubmission(db, runId)) {
-            markSubmissionFailed(db, pending.id, "unattended cap reached");
-            failIdempotencyKey(db, idemKey, "unattended_cap");
-            report.outcome = "REFUSED";
-            report.reason = `MAX_UNATTENDED_SUBMISSIONS_PER_RUN cap reached (${cfg.maxUnattendedSubmissionsPerRun}) — refusing unattended submission`;
-            return persist(report);
-          }
+          // Check the acknowledgment BEFORE consuming a budget slot — a
+          // refusal here must never burn an unattended submission the run
+          // never actually made. (Previously the slot was consumed first,
+          // so a run without --yes silently decremented the cap.)
           if (!input.assumeYes) {
             markSubmissionFailed(db, pending.id, "unattended without --yes");
             failIdempotencyKey(db, idemKey, "no_confirmation");
             report.outcome = "REFUSED";
             report.reason =
               "Unattended mode requires an explicit --yes acknowledgment";
+            return persist(report);
+          }
+          if (!tryConsumeUnattendedSubmission(db, runId)) {
+            markSubmissionFailed(db, pending.id, "unattended cap reached");
+            failIdempotencyKey(db, idemKey, "unattended_cap");
+            report.outcome = "REFUSED";
+            report.reason = `MAX_UNATTENDED_SUBMISSIONS_PER_RUN cap reached (${cfg.maxUnattendedSubmissionsPerRun}) — refusing unattended submission`;
             return persist(report);
           }
         }

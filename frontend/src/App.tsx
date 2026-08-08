@@ -9,6 +9,8 @@ import { RunDetailPage } from "./pages/RunDetailPage";
 import { EnqueuePage } from "./pages/EnqueuePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useTheme } from "./hooks/useTheme";
+import { formatCountdown, useArmStatus } from "./hooks/useArmStatus";
+import { Link } from "react-router-dom";
 
 const NAV = [
   { to: "/", label: "Overview", end: true },
@@ -22,6 +24,7 @@ const NAV = [
 
 export function App(): JSX.Element {
   const { theme, cycle } = useTheme();
+  const { status: arm } = useArmStatus();
 
   return (
     <div className="shell">
@@ -51,6 +54,16 @@ export function App(): JSX.Element {
       </aside>
 
       <main className="main">
+        {arm?.armed ? (
+          <Link
+            to="/"
+            className="armed-banner"
+            title="An unattended session is live"
+          >
+            ⚡ ARMED — unattended submits live · {formatCountdown(arm.seconds_remaining)} left ·{" "}
+            {arm.submits_used}/{arm.max_submits} submits · {arm.apps_started}/{arm.max_apps} apps
+          </Link>
+        ) : null}
         <Routes>
           <Route path="/" element={<OverviewPage />} />
           <Route path="/applications" element={<ApplicationsPage />} />

@@ -4,6 +4,14 @@
  * Fixture-only and mutation-free: no network, no browser, no flags.
  *
  *   DATABASE_PATH=/tmp/demo.sqlite npx tsx scripts/seed-console-demo.ts
+ *
+ * For an offline L3 (armed session) walkthrough, add a QUEUED backlog the
+ * automation worker can chew through:
+ *
+ *   DATABASE_PATH=/tmp/demo.sqlite npx tsx scripts/seed-console-demo.ts --backlog 5
+ *
+ * Backlog apps carry a Greenhouse employer URL; register a default resume
+ * (DEFAULT_RESUME_PATH) so materials auto-attach during the walk.
  */
 import { randomUUID } from "node:crypto";
 import { migrate, openDatabase } from "../src/storage/db/client.js";
@@ -33,12 +41,24 @@ const SEEDS: Array<{
   { state: "COMPLETED", company: "Stark" },
 ];
 
+function backlogCount(): number {
+  const idx = process.argv.indexOf("--backlog");
+  if (idx === -1) return 0;
+  const n = Number(process.argv[idx + 1]);
+  return Number.isFinite(n) && n > 0 ? Math.min(50, Math.round(n)) : 5;
+}
+
 function main(): void {
   const db = openDatabase();
   migrate(db);
   const created: Array<{ id: string; state: string; company: string }> = [];
 
-  for (const seed of SEEDS) {
+  const seeds = [...SEEDS];
+  for (let i = 0; i < backlogCount(); i++) {
+    seeds.push({ state: "QUEUED", company: `Backlog Corp ${i + 1}` });
+  }
+
+  for (const seed of seeds) {
     const jobNo = Math.floor(Math.random() * 1_000_000);
     const job = upsertJobByFingerprint(db, {
       jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,

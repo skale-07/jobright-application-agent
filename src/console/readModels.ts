@@ -54,12 +54,27 @@ export function listApplicationRowsPaged(
   const rows = db
     .prepare(
       `SELECT a.id, a.state, a.route, a.attempt, a.updated_at, a.created_at,
-              j.company, j.role, j.location
+              a.versions_json,
+              j.company, j.role, j.location,
+              EXISTS(
+                SELECT 1 FROM review_items r
+                WHERE r.application_id = a.id
+                  AND r.status IN ('OPEN', 'IN_PROGRESS')
+              ) AS has_open_review
        FROM applications a JOIN jobs j ON j.id = a.job_id
        ${whereSql}
        ORDER BY a.updated_at DESC LIMIT ? OFFSET ?`,
     )
     .all(...params, limit, offset) as Array<Record<string, unknown>>;
+  for (const row of rows) {
+    const versions = parseJsonSafe(row["versions_json"] as string);
+    row["automation_excluded"] =
+      versions !== null &&
+      typeof versions === "object" &&
+      (versions as Record<string, unknown>)["automation_excluded"] === true;
+    row["has_open_review"] = row["has_open_review"] === 1;
+    delete row["versions_json"];
+  }
   return { rows, total };
 }
 
@@ -136,11 +151,18 @@ export function getApplicationDetail(
 ): ApplicationDetail | undefined {
   const application = db
     .prepare(
-      `SELECT id, job_id, state, route, attempt, error_summary, created_at, updated_at
+      `SELECT id, job_id, state, route, attempt, error_summary, created_at, updated_at,
+              versions_json
        FROM applications WHERE id = ?`,
     )
     .get(applicationId) as Record<string, unknown> | undefined;
   if (!application) return undefined;
+  const versions = parseJsonSafe(application["versions_json"] as string);
+  application["automation_excluded"] =
+    versions !== null &&
+    typeof versions === "object" &&
+    (versions as Record<string, unknown>)["automation_excluded"] === true;
+  delete application["versions_json"];
 
   const jobRow = db
     .prepare(

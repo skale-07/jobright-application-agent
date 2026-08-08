@@ -22,6 +22,8 @@ import {
 } from "./readModels.js";
 import { checkBearerToken, checkHostHeader, generateBootToken } from "./security.js";
 import { buildMutationRoutes } from "./mutations.js";
+import { buildAutomationRoutes } from "./automationRoutes.js";
+import { getArmStatus, sweepStaleArmSessions } from "../automation/armSession.js";
 import { buildRunRoutes } from "./runRoutes.js";
 import { buildGmailRoutes } from "./gmailRoutes.js";
 import { GmailAuthBroker } from "./gmailAuthBroker.js";
@@ -134,7 +136,10 @@ export function createConsoleHandler(
       },
     },
     ...buildMutationRoutes({ db: deps.db }),
-    ...(deps.runManager ? buildRunRoutes({ runManager: deps.runManager }) : []),
+    ...buildAutomationRoutes({ db: deps.db, token: deps.token }),
+    ...(deps.runManager
+      ? buildRunRoutes({ runManager: deps.runManager, db: deps.db })
+      : []),
     ...(deps.gmailBroker ? buildGmailRoutes({ broker: deps.gmailBroker }) : []),
     ...(deps.extraRoutes ?? []),
   ];
@@ -245,6 +250,23 @@ export function startConsole(input: {
   const runManager = new RunManager({
     runsDir: path.join(cfg.artifactsDir, "console", "runs"),
   });
+  // Restart = disarmed: any l3_session left RUNNING by a prior process is
+  // swept before the server accepts requests.
+  const swept = sweepStaleArmSessions(input.db);
+  if (swept > 0) {
+    logger.info("swept stale L3 arm sessions on boot", {
+      service: "automation",
+      action: "sweep",
+      metadata: { swept },
+    });
+  }
+  // Belt-and-suspenders auto-disarm: getArmStatus already treats an expired
+  // row as disarmed, but this completes the row promptly so a watching UI
+  // and the DB agree without waiting for the next status read.
+  const expiryTimer = setInterval(() => {
+    getArmStatus(input.db);
+  }, 30_000);
+  expiryTimer.unref?.();
   const handler = createConsoleHandler({
     db: input.db,
     token,
@@ -254,7 +276,10 @@ export function startConsole(input: {
     gmailBroker: new GmailAuthBroker(),
   });
   const server = http.createServer(handler);
-  server.once("close", () => runManager.shutdown());
+  server.once("close", () => {
+    clearInterval(expiryTimer);
+    runManager.shutdown();
+  });
   // Cancel any active child, then exit — registering a SIGINT listener
   // suppresses Node's default terminate, so this must exit explicitly or
   // the first Ctrl+C would appear to do nothing.

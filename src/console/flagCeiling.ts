@@ -23,7 +23,19 @@ export const GATED_FLAG_KEYS = [
   "EMAIL_GENERATION_ENABLED",
   "LINKEDIN_ENRICHMENT_ENABLED",
   "ESSAY_REQUIRED_GATE_ENABLED",
+  "AUTOMATION_ENABLED",
 ] as const;
+
+/**
+ * The two submit-safety keys the console forces on every run. Exported so
+ * the run API advertises exactly what composeChildEnv sets (single source,
+ * no drift). For an unarmed run both are forced; an armed automation run
+ * relaxes them (see composeChildEnv's `context.unattended`).
+ */
+export const FORCED_SUBMIT_SAFETY = {
+  SUBMIT_REQUIRES_LOCAL_CONFIRMATION: "true",
+  MAX_UNATTENDED_SUBMISSIONS_PER_RUN: "0",
+} as const;
 
 export type GatedFlagKey = (typeof GATED_FLAG_KEYS)[number];
 
@@ -58,10 +70,22 @@ export function readCeiling(env: NodeJS.ProcessEnv = process.env): FlagCeiling {
   };
 }
 
+export type ComposeContext = {
+  /**
+   * Present ONLY for an armed automation run (set by RunManager after
+   * re-validating the arm at spawn). Relaxes the two forced submit-safety
+   * keys so the worker's submits take the unattended branch, bounded by
+   * the arm row's budget. The env cap is belt-and-suspenders — the real
+   * budget lives in the arm automation_runs row.
+   */
+  unattended?: { maxSubmits: number };
+};
+
 export function composeChildEnv(
   env: NodeJS.ProcessEnv,
   ceiling: FlagCeiling,
   optIns: FlagOptIns,
+  context: ComposeContext = {},
 ): NodeJS.ProcessEnv {
   const child: NodeJS.ProcessEnv = { ...env };
   for (const key of GATED_FLAG_KEYS) {
@@ -70,11 +94,21 @@ export function composeChildEnv(
   }
   child["DRY_RUN"] =
     ceiling.live_mode_available && optIns.live_mode === true ? "false" : "true";
-  // Forced regardless of opt-ins: the web-confirmation callback is the ONLY
-  // path to a submit click from the console; the unattended branch is
-  // structurally unreachable.
-  child["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"] = "true";
-  child["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"] = "0";
+  if (context.unattended) {
+    // Armed session: the worker's submits skip the confirmation and draw
+    // from the (env-mirrored) budget. The arm row is the authority.
+    child["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"] = "false";
+    child["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"] = String(
+      Math.max(0, Math.floor(context.unattended.maxSubmits)),
+    );
+  } else {
+    // Every other run: the web-confirmation callback is the ONLY path to a
+    // submit click; the unattended branch is structurally unreachable.
+    child["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"] =
+      FORCED_SUBMIT_SAFETY.SUBMIT_REQUIRES_LOCAL_CONFIRMATION;
+    child["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"] =
+      FORCED_SUBMIT_SAFETY.MAX_UNATTENDED_SUBMISSIONS_PER_RUN;
+  }
   return child;
 }
 
