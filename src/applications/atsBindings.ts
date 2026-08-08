@@ -10,6 +10,7 @@ import { leverSubmit, leverVerifySubmission } from "../ats/lever/submission.js";
 import { ashbySubmit, ashbyVerifySubmission } from "../ats/ashby/submission.js";
 import { isTrustedLeverHost } from "../ats/lever/urlValidation.js";
 import { isTrustedAshbyHost } from "../ats/ashby/urlValidation.js";
+import { greenhouseSelectorsV1 } from "../ats/greenhouse/selectors.js";
 import { leverSelectorsV1 } from "../ats/lever/selectors.js";
 import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
 import { verifyPageBeforeMutationGeneric } from "../ats/shared/preMutationGate.js";
@@ -40,6 +41,8 @@ export type AtsBinding = {
     normalizedUrl?: string,
   ): Promise<AtsBindingGateResult>;
   submit(page: Page): Promise<SubmissionAttempt>;
+  /** The submit control locator — used by disabled-submit diagnostics. */
+  submitSelector: string;
   verifySubmission(
     page: Page,
     opts: { screenshotPath: string },
@@ -56,6 +59,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     gate: (page, employerUrl, normalizedUrl) =>
       verifyPageBeforeMutation(page, employerUrl, normalizedUrl ?? null),
     submit: (page) => greenhouseSubmit(page),
+    submitSelector: greenhouseSelectorsV1.submit,
     verifySubmission: (page, opts) => greenhouseVerifySubmission(page, opts),
     supportsEssayFill: true,
     supportsHealing: true,
@@ -69,6 +73,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
         ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
     submit: (page) => leverSubmit(page),
+    submitSelector: leverSelectorsV1.submit,
     verifySubmission: (page, opts) => leverVerifySubmission(page, opts),
     supportsEssayFill: false,
     supportsHealing: false,
@@ -84,6 +89,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
         ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
     submit: (page) => ashbySubmit(page),
+    submitSelector: ashbySelectorsV1.submit,
     verifySubmission: (page, opts) => ashbyVerifySubmission(page, opts),
     supportsEssayFill: false,
     supportsHealing: false,

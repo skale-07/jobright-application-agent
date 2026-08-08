@@ -3,7 +3,16 @@ import path from "node:path";
 import type { Db } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
-import { waitForEnter } from "../util/stdin.js";
+import {
+  defaultTtyConfirm,
+  type ConfirmSubmission,
+} from "./submitConfirmation.js";
+import { diagnoseDisabledSubmit } from "../ats/shared/submitDiagnostics.js";
+import { recoverEmailVerification } from "../verification/recoverSubmitVerification.js";
+import {
+  resolveVerificationCodeProvider,
+  type FetchVerificationCode,
+} from "../verification/codeProviders.js";
 import { getApplication, transitionApplication } from "../queue/stateMachine.js";
 import { acquireLease, releaseLease } from "../queue/leases.js";
 import {
@@ -87,9 +96,23 @@ export async function runAtsSubmission(input: {
   assumeYes?: boolean;
   /** Shared per-batch run for the unattended cap; created ad hoc if absent. */
   automationRunId?: string;
+  /**
+   * Confirmation transport (submitConfirmation.ts). Defaults to the TTY
+   * prompt — byte-identical CLI behavior. An injected callback (console web
+   * modal) sits at exactly the same point; false ⇒ REFUSED before the
+   * SUBMITTING transition, so the app stays READY_TO_SUBMIT.
+   */
+  confirmSubmission?: ConfirmSubmission;
+  /**
+   * Verification-code source for disabled-submit recovery. Defaults to
+   * the flag-gated provider resolution (Outlook web / Gmail readonly);
+   * injectable for tests.
+   */
+  fetchVerificationCode?: FetchVerificationCode;
 }): Promise<SubmissionRunReport> {
   const { db, applicationId } = input;
   const cfg = getConfig();
+  const runStartedAt = new Date().toISOString();
 
   const report: SubmissionRunReport = {
     outcome: "REFUSED",
@@ -256,20 +279,37 @@ export async function runAtsSubmission(input: {
           return persist(report);
         }
 
-        // Human confirmation BEFORE any mutation of the page.
+        // Human confirmation BEFORE any mutation of the page. The transport
+        // is injectable (web modal via the console runner); the default TTY
+        // prompt never declines, exactly as before.
         if (cfg.submitRequiresLocalConfirmation) {
-          console.log("\n=== SUBMIT CONFIRMATION ===");
-          console.log(`  company : ${job?.company ?? "?"}`);
-          console.log(`  role    : ${job?.role ?? "?"}`);
-          console.log(`  url     : ${gate.finalUrl}`);
-          console.log(`  attempt : ${pending.submission_attempt_number}`);
-          console.log(`  resume  : sha256 ${resume.sha256.slice(0, 16)}… (${resume.size_bytes} bytes)`);
-          console.log(
-            `  plan    : ${approvedPlan.fillable_count} fill, ${approvedPlan.skipped_count} skip, ${approvedPlan.review_required_count} review`,
-          );
-          await waitForEnter(
-            "Press Enter to fill and SUBMIT this application, Ctrl+C to abort... ",
-          );
+          const confirm = input.confirmSubmission ?? defaultTtyConfirm();
+          const approved = await confirm({
+            application_id: applicationId,
+            company: job?.company ?? null,
+            role: job?.role ?? null,
+            url: gate.finalUrl,
+            attempt: pending.submission_attempt_number,
+            resume_sha256: resume.sha256,
+            resume_size_bytes: resume.size_bytes,
+            plan: {
+              fillable_count: approvedPlan.fillable_count,
+              skipped_count: approvedPlan.skipped_count,
+              review_required_count: approvedPlan.review_required_count,
+            },
+          });
+          if (!approved) {
+            markSubmissionFailed(
+              db,
+              pending.id,
+              "operator declined submission confirmation",
+            );
+            failIdempotencyKey(db, idemKey, "operator_declined");
+            report.outcome = "REFUSED";
+            report.reason =
+              "Operator declined (or confirmation timed out) — submission refused";
+            return persist(report);
+          }
         } else {
           if (!tryConsumeUnattendedSubmission(db, runId)) {
             markSubmissionFailed(db, pending.id, "unattended cap reached");
@@ -344,18 +384,59 @@ export async function runAtsSubmission(input: {
             return persist(report);
           }
 
-          const attempt = await binding.submit(page);
+          let attempt = await binding.submit(page);
+          if (
+            !attempt.clicked &&
+            attempt.notes.some((n) => /disabled/i.test(n))
+          ) {
+            // Name the cause instead of the old opaque "submit control
+            // disabled": verification walls, invalid required fields,
+            // visible errors. One recovery attempt when it is an email
+            // verification code and a mailbox provider is enabled.
+            const diagnosis = await diagnoseDisabledSubmit(page);
+            attempt.notes.push(`diagnosis: ${diagnosis.summary}`);
+            const fetchCode =
+              input.fetchVerificationCode ?? resolveVerificationCodeProvider();
+            if (diagnosis.verification.detected && fetchCode) {
+              const recovery = await recoverEmailVerification(page, diagnosis, {
+                fetchCode,
+                submitSelector: binding.submitSelector,
+                requestedAt: runStartedAt,
+              });
+              attempt.notes.push(...recovery.notes);
+              if (recovery.submitEnabled) {
+                attempt = await binding.submit(page);
+                attempt.notes.unshift("submit retried after email verification");
+              }
+            } else if (diagnosis.verification.detected) {
+              attempt.notes.push(
+                "no mailbox provider enabled (OUTLOOK_VERIFICATION_ENABLED / GMAIL_VERIFICATION_ENABLED) — cannot fetch the code",
+              );
+            }
+          }
           if (!attempt.clicked) {
-            markSubmissionFailed(db, pending.id, attempt.notes.join("; "));
+            const reason = attempt.notes.join("; ");
+            markSubmissionFailed(db, pending.id, reason);
             failIdempotencyKey(db, idemKey, "not_clicked");
+            if (/verification code required/i.test(reason)) {
+              upsertOpenReviewItem(db, {
+                applicationId,
+                kind: "AUTH_REQUIRED",
+                title: "Employer form requires an email verification code",
+                payload: {
+                  ats: binding.id,
+                  notes: attempt.notes,
+                },
+              });
+            }
             transitionApplication(db, {
               applicationId,
               nextState: "FAILED_RETRYABLE",
-              reason: `submit control not clicked: ${attempt.notes.join("; ")}`,
+              reason: `submit control not clicked: ${reason}`,
               runId,
             });
             report.outcome = "FAILED_BEFORE_CLICK";
-            report.reason = attempt.notes.join("; ");
+            report.reason = reason;
             return persist(report);
           }
 

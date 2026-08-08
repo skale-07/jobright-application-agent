@@ -10,10 +10,12 @@ import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js"
 import { getApplication, transitionApplication } from "../queue/stateMachine.js";
 import {
   ESSAY_REVIEW_TITLE,
-  listHumanEssayAnswers,
-  saveHumanEssayAnswer,
-  unansweredEssayFieldKeys,
+  recordEssayAnswer,
 } from "../applications/essayAnswers.js";
+import {
+  ReviewResolverError,
+  resolveUncertainSubmission,
+} from "../queue/reviewResolvers.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
@@ -34,16 +36,12 @@ import {
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { startDashboard } from "../dashboard/server.js";
+import { startConsole } from "../console/server.js";
 import { runAgentAuthoring } from "../agent/authorRun.js";
 import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient } from "../contacts/emailLlm.js";
-import {
-  getLatestUncertainSubmission,
-  markSubmissionFailed,
-  markSubmissionVerified,
-} from "../queue/submissionsRepo.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -133,6 +131,7 @@ Commands:
   draft:create --application <uuid> --contact <contact_id> [--headed]
   draft:verify --draft <draft_id> [--headed]
   dashboard
+  console                               Operator console (frontend + guarded mutation API)
   agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
@@ -875,81 +874,28 @@ function cmdReviewResolve(flags: Record<string, string | boolean>): void {
   const db = openDatabase();
   try {
     migrate(db);
-    const item = listOpenReviewItems(db).find((i) => i.id === id);
-    if (!item) {
-      console.error(`No open review item with id ${id}`);
-      process.exit(1);
-      return;
-    }
-    if (item.kind !== "UNCERTAIN_SUBMISSION" || !item.application_id) {
-      console.error(
-        `review:resolve currently handles UNCERTAIN_SUBMISSION items only (got ${item.kind})`,
-      );
-      process.exit(1);
-      return;
-    }
-    const applicationId = item.application_id;
-    const uncertain = getLatestUncertainSubmission(db, applicationId);
-
-    if (outcome === "submitted") {
-      if (uncertain) {
-        markSubmissionVerified(db, uncertain.id, {
-          submitted: true,
-          submitted_at: new Date().toISOString(),
-          confirmation_url: "operator://review-resolve",
-          confirmation_text: "Operator confirmed receipt exists",
-          application_identifier: null,
-          screenshot_path: uncertain.screenshot_path ?? "",
-        });
-      }
-      transitionApplication(db, {
-        applicationId,
-        nextState: "SUBMITTED",
-        reason: "operator confirmed submission receipt (review:resolve)",
-      });
-      resolveReviewItem(db, id, { outcome: "submitted", by: "review:resolve" });
-      console.log(
-        JSON.stringify({ resolved: id, outcome, state: "SUBMITTED" }, null, 2),
-      );
-      return;
-    }
-
-    // not-submitted
-    if (uncertain) {
-      markSubmissionFailed(
-        db,
-        uncertain.id,
-        "operator confirmed nothing was submitted",
-      );
-    }
-    transitionApplication(db, {
-      applicationId,
-      nextState: "FAILED_RETRYABLE",
-      reason: "operator confirmed no submission occurred (review:resolve)",
-    });
-    if (flags["requeue"] === true) {
-      transitionApplication(db, {
-        applicationId,
-        nextState: "QUEUED",
-        reason: "operator requeue after uncertain resolution",
-      });
-    }
-    resolveReviewItem(db, id, {
-      outcome: "not-submitted",
-      requeued: flags["requeue"] === true,
+    // Shared resolver (src/queue/reviewResolvers.ts) — the console uses the
+    // same body, so CLI and UI resolution can never diverge.
+    const resolved = resolveUncertainSubmission(db, {
+      reviewItemId: id,
+      outcome,
+      requeue: flags["requeue"] === true,
       by: "review:resolve",
     });
     console.log(
       JSON.stringify(
-        {
-          resolved: id,
-          outcome,
-          state: flags["requeue"] === true ? "QUEUED" : "FAILED_RETRYABLE",
-        },
+        { resolved: id, outcome, state: resolved.application_state },
         null,
         2,
       ),
     );
+  } catch (err) {
+    if (err instanceof ReviewResolverError) {
+      console.error(err.message);
+      process.exit(1);
+      return;
+    }
+    throw err;
   } finally {
     closeDatabase(db);
   }
@@ -1026,54 +972,26 @@ function cmdResumeEssay(flags: Record<string, string | boolean>): void {
       return;
     }
     const text = fs.readFileSync(abs, "utf8");
-    const saved = saveHumanEssayAnswer(db, {
+    // Shared body (essayAnswers.recordEssayAnswer) — the console essays
+    // endpoint uses the same function, so the workflows cannot diverge.
+    const outcome = recordEssayAnswer(db, {
       applicationId: application,
       fieldKey: field,
       text,
       sourceFile: abs,
+      resolvedBy: "resume-essay",
     });
-
-    // When every essay the review item asked for has an answer, resolve it
-    // and move the application back toward verification.
-    const essayItems = listOpenReviewItems(db).filter(
-      (i) => i.kind === "ESSAY" && i.application_id === application,
-    );
-    let resolved = false;
-    let remaining: string[] = [];
-    for (const item of essayItems) {
-      remaining = unansweredEssayFieldKeys(db, application, item);
-      if (remaining.length === 0) {
-        resolveReviewItem(db, item.id, {
-          resolved_by: "resume-essay",
-          answers: listHumanEssayAnswers(db, application).map((a) => ({
-            field_key: a.field_key,
-            chars: a.text.length,
-          })),
-        });
-        resolved = true;
-      }
-    }
-    if (
-      resolved &&
-      getApplication(db, application)?.state === "ESSAY_REQUIRED"
-    ) {
-      transitionApplication(db, {
-        applicationId: application,
-        nextState: "FIELD_VERIFICATION",
-        reason: "all essay answers provided via resume-essay",
-      });
-    }
 
     console.log(
       JSON.stringify(
         {
-          answer_id: saved.id,
+          answer_id: outcome.answerId,
           field_key: field,
           chars: text.trim().length,
           review_item_title: ESSAY_REVIEW_TITLE,
-          review_resolved: resolved,
-          unanswered_fields: remaining,
-          application_state: getApplication(db, application)?.state,
+          review_resolved: outcome.reviewResolved,
+          unanswered_fields: outcome.unansweredFields,
+          application_state: outcome.applicationState,
         },
         null,
         2,
@@ -1457,6 +1375,18 @@ async function main(): Promise<void> {
       const { url } = await startDashboard({ db });
       console.log(`Dashboard (read-only): ${url}`);
       console.log("Ctrl+C to stop.");
+      // Keep the process alive; the server holds the event loop open.
+      return;
+    }
+    case "console": {
+      const db = openDatabase();
+      migrate(db);
+      const { url, token } = await startConsole({ db });
+      console.log(`Operator console: ${url}#token=${token}`);
+      console.log(
+        "Open the full URL above — the #token fragment authorizes mutations",
+      );
+      console.log("and never leaves the browser. Ctrl+C to stop.");
       // Keep the process alive; the server holds the event loop open.
       return;
     }

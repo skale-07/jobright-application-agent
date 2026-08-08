@@ -36,11 +36,17 @@ const envSchema = z.object({
   /** Gmail readonly OTP/magic-link retrieval during navigation. Fail closed. */
   GMAIL_VERIFICATION_ENABLED: boolFromEnv.default(false),
   /**
+   * Read-only Outlook web mailbox scan for submit verification codes.
+   * Navigation + DOM reads in the operator's session only — never
+   * compose/send (sendGuards). Fail closed.
+   */
+  OUTLOOK_VERIFICATION_ENABLED: boolFromEnv.default(false),
+  /**
    * Hard-stop inspection/pipeline on heuristic essay fields (`needs_essay` /
    * `ESSAY_REQUIRED`). Default off — the label heuristics false-positive on
    * EEO/combobox copy (e.g. "describe your race"). Free-text is still never
-   * auto-filled (textarea refusal in approvedFillPlan). Set true only to
-   * restore the pre-gate human essay workflow.
+   * auto-filled (textarea refusal in approvedFillPlan). When enabled, only
+   * REQUIRED essay fields stop the pipeline — optional textareas never block.
    */
   ESSAY_REQUIRED_GATE_ENABLED: boolFromEnv.default(false),
   /** Outreach email generation calls the OpenAI API (spend). Fail closed. */
@@ -57,6 +63,9 @@ const envSchema = z.object({
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
   DASHBOARD_PORT: z.coerce.number().int().positive().default(8788),
+  /** Operator console (frontend + guarded mutation API). Localhost only. */
+  CONSOLE_HOST: z.string().default("127.0.0.1"),
+  CONSOLE_PORT: z.coerce.number().int().positive().default(8899),
   CANDIDATE_DATA_KEY_NAME: z
     .string()
     .default("jobright-application-agent/candidate-data-key"),
@@ -83,6 +92,7 @@ export type AppConfig = {
   materialsDownloadEnabled: boolean;
   navigationEnabled: boolean;
   gmailVerificationEnabled: boolean;
+  outlookVerificationEnabled: boolean;
   essayRequiredGateEnabled: boolean;
   emailGenerationEnabled: boolean;
   /** Present only when the operator configured it; consumers must not log it. */
@@ -93,6 +103,8 @@ export type AppConfig = {
   agentCdpUrl: string;
   dashboardHost: string;
   dashboardPort: number;
+  consoleHost: string;
+  consolePort: number;
   candidateDataKeyName: string;
   artifactsDir: string;
   privateDir: string;
@@ -110,6 +122,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   if (parsed.DASHBOARD_HOST !== "127.0.0.1" && parsed.DASHBOARD_HOST !== "localhost") {
     throw new Error(
       `DASHBOARD_HOST must be 127.0.0.1 or localhost (got ${parsed.DASHBOARD_HOST})`,
+    );
+  }
+  if (parsed.CONSOLE_HOST !== "127.0.0.1" && parsed.CONSOLE_HOST !== "localhost") {
+    throw new Error(
+      `CONSOLE_HOST must be 127.0.0.1 or localhost (got ${parsed.CONSOLE_HOST})`,
     );
   }
 
@@ -142,6 +159,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
     navigationEnabled: parsed.NAVIGATION_ENABLED,
     gmailVerificationEnabled: parsed.GMAIL_VERIFICATION_ENABLED,
+    outlookVerificationEnabled: parsed.OUTLOOK_VERIFICATION_ENABLED,
     essayRequiredGateEnabled: parsed.ESSAY_REQUIRED_GATE_ENABLED,
     emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
     openaiApiKey: parsed.OPENAI_API_KEY,
@@ -151,6 +169,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     agentCdpUrl: parsed.AGENT_CDP_URL,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
+    consoleHost: parsed.CONSOLE_HOST,
+    consolePort: parsed.CONSOLE_PORT,
     candidateDataKeyName: parsed.CANDIDATE_DATA_KEY_NAME,
     artifactsDir: path.resolve(parsed.ARTIFACTS_DIR),
     privateDir: path.resolve(parsed.PRIVATE_DIR),

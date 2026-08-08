@@ -29,4 +29,10 @@ export const outlookSelectorsV1 = {
     folderLink: '[title="Drafts"], a[aria-label*="Drafts" i]',
     listItem: '[role="option"], [role="listitem"]',
   },
+  /** Read-only mailbox scan for verification codes (submit recovery). */
+  mail: {
+    inboxListItem: '[role="option"], [role="listitem"]',
+    readingPaneBody:
+      '[aria-label*="Message body" i], [role="document"], .allowTextSelection',
+  },
 } as const;

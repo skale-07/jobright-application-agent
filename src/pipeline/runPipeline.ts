@@ -13,8 +13,10 @@ import { listOpenReviewItems, upsertOpenReviewItem } from "../queue/reviewItems.
 import { createAutomationRun, completeAutomationRun } from "../queue/automationRuns.js";
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { openEssayReviewItem } from "../applications/essayAnswers.js";
+import { essayFieldsOnly } from "../applications/essayDetector.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import type { ConfirmSubmission } from "../applications/submitConfirmation.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import {
@@ -67,6 +69,8 @@ export type PipelineOptions = {
   submit?: boolean;
   /** Forwarded to runAtsSubmission for unattended runs. */
   assumeYes?: boolean;
+  /** Confirmation transport forwarded to runAtsSubmission (web modal seam). */
+  confirmSubmission?: ConfirmSubmission;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
   /** Test seam: replaces runNavigation for offline pipeline tests. */
@@ -583,6 +587,28 @@ async function step(
           });
           return { to: "UNSUPPORTED_ATS", note: "unsupported ATS", stop: "review" };
         case "needs_essay": {
+          // Reached only when ESSAY_REQUIRED_GATE_ENABLED=true (the
+          // inspector suppresses the needs_essay route otherwise). Even
+          // with the gate on, only REQUIRED essay fields block — an
+          // optional "anything else?" textarea is simply left blank
+          // (essays are never auto-filled either way).
+          const essayIds = new Set(
+            essayFieldsOnly(inspect.inspection.fields).map((e) => e.field_id),
+          );
+          const requiredEssays = inspect.inspection.fields.filter(
+            (f) => essayIds.has(f.id) && f.required,
+          );
+          if (requiredEssays.length === 0) {
+            const note =
+              "only optional essay fields — proceeding, leaving them blank";
+            transitionApplication(db, {
+              applicationId: app.id,
+              nextState: "NATIVE_AUTOFILL_RUNNING",
+              reason: `pipeline: ${note}`,
+              runId,
+            });
+            return { to: "NATIVE_AUTOFILL_RUNNING", note };
+          }
           transitionApplication(db, {
             applicationId: app.id,
             nextState: "ESSAY_REQUIRED",
@@ -744,6 +770,9 @@ async function step(
         headless: ctx.options.headless ?? false,
         assumeYes: ctx.options.assumeYes ?? false,
         automationRunId,
+        ...(ctx.options.confirmSubmission
+          ? { confirmSubmission: ctx.options.confirmSubmission }
+          : {}),
       });
       if (result.outcome !== "SUBMITTED_VERIFIED") {
         return {
