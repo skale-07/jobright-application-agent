@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 232 40" width="232" height="40">
+  <!-- Dispatch horizontal lockup: waypoint-track mark + monospace wordmark.
+       Theme-aware via prefers-color-scheme; usage rules in DESIGN.md §1.5. -->
+  <style>
+    .track { stroke: #58a6ff; }
+    .station { fill: #0d1117; stroke: #58a6ff; }
+    .delivered { fill: #58a6ff; }
+    .word { fill: #e6edf3; }
+    .segment { fill: #58a6ff; }
+    text {
+      font-family: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    @media (prefers-color-scheme: light) {
+      .track { stroke: #0969da; }
+      .station { fill: #f6f8fa; stroke: #0969da; }
+      .delivered { fill: #0969da; }
+      .word { fill: #1f2328; }
+      .segment { fill: #0969da; }
+    }
+  </style>
+  <g transform="translate(4, 4)">
+    <path class="track" d="M8 24 L24 8" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <circle class="station" cx="8" cy="24" r="3.2" stroke-width="2.6"/>
+    <circle class="station" cx="16" cy="16" r="3.2" stroke-width="2.6"/>
+    <circle class="delivered" cx="24" cy="8" r="4"/>
+  </g>
+  <text x="44" y="27"><tspan class="word">dispatch</tspan><tspan class="segment">·console</tspan></text>
+</svg>

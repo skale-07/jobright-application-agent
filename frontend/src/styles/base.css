@@ -57,6 +57,9 @@ pre,
 }
 
 .sidebar .brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 600;
@@ -65,6 +68,11 @@ pre,
   letter-spacing: 0.02em;
 }
 .sidebar .brand span {
+  color: var(--accent);
+}
+/* The logomark inherits currentColor (DESIGN.md §1.5) — accent in chrome. */
+.sidebar .brand .brand-mark {
+  display: inline-flex;
   color: var(--accent);
 }
 

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Dispatch logomark: the waypoint track (DESIGN.md §1.5). -->
+  <style>
+    .track { stroke: #58a6ff; }
+    .station { fill: #0d1117; stroke: #58a6ff; }
+    .delivered { fill: #58a6ff; }
+    @media (prefers-color-scheme: light) {
+      .track { stroke: #0969da; }
+      .station { fill: #f6f8fa; stroke: #0969da; }
+      .delivered { fill: #0969da; }
+    }
+  </style>
+  <path class="track" d="M6 18 L18 6" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle class="station" cx="6" cy="18" r="2.4" stroke-width="2"/>
+  <circle class="station" cx="12" cy="12" r="2.4" stroke-width="2"/>
+  <circle class="delivered" cx="18" cy="6" r="3"/>
+</svg>

@@ -1,3 +1,5 @@
+<img src="design/logo.svg" alt="dispatch·console" width="232" height="40" />
+
 # jobright-application-agent
 
 **Dispatch** — the application operator console. A local, deterministic

@@ -38,7 +38,67 @@ Tagline: **"Every application accounted for."**
   artifacts, report paths). A screen that says "failed" without a path to
   *why* violates the design system, not just the house rules.
 
-### 1.4 Voice and tone
+### 1.4 Mission and values
+
+**Mission**: put one operator confidently in command of many applications —
+every submission deliberate, every state honest, every outcome accounted
+for.
+
+Values, in priority order (each traces to an enforced mechanism — a value
+without a mechanism is marketing):
+
+1. **Operator sovereignty** — capability flows only from the operator's
+   shell and explicit arming; the UI can narrow it, never widen it.
+   *(flag ceiling, arm sessions, typed confirmations)*
+2. **Evidence over reassurance** — every claim carries its receipt; every
+   failure carries its inventory. *(artifacts, validation ladder, CTA and
+   file-input inventories)*
+3. **Fail closed, visibly** — the refused path names its gate; the default
+   state of every capability is off. *(fail-closed flags, named refusals)*
+4. **Calm surfaces, loud signals** — quiet backgrounds and dense data,
+   with color reserved for meaning; ARMED is never quiet. *(signal-color
+   law §2.3, ARMED law)*
+5. **Connect, don't replace** — outreach ends as a draft in the operator's
+   own mailbox; essays and self-ID answers are always the human's words.
+   *(sendGuards, essay/demographic non-fill policy)*
+
+### 1.5 Logo — the waypoint track
+
+The mark is three stations on a rising track, the final one filled: an
+application's route through the pipeline, delivered and **accounted for**.
+It is monoline and geometric — drawn from the same visual family as the
+data surfaces (dots, tracks, monospace), not decoration imported from
+elsewhere.
+
+**Assets** (all theme-aware, no raster variants):
+
+| Asset | Path | Use |
+|---|---|---|
+| Mark (component) | `frontend/src/components/DispatchMark.tsx` | sidebar, in-app surfaces; inherits `currentColor` |
+| Favicon | `frontend/public/favicon.svg` | browser tab; `prefers-color-scheme` aware |
+| Horizontal lockup | `design/logo.svg` | docs, READMEs, external surfaces |
+
+**Construction**: 24×24 grid; track from (6,18) to (18,6), stroke 2,
+round caps; open stations r=2.4 at the ends of each segment, filled
+terminal station r=3. The lockup pairs the mark with the wordmark
+`dispatch·console` in `--font-mono` semibold, the `·console` segment in
+`--accent`.
+
+**Usage rules**:
+
+- The mark renders in `currentColor` — accent in chrome, text color in
+  prose. Never recolor stations individually, never use signal colors
+  (`--ok`/`--warn`/`--danger`) for the mark: the logo is identity, not
+  status.
+- Minimum size 14px; below that use nothing rather than a mushy mark.
+- No rotation, gradients, shadows, outlines, or containers. On busy
+  backgrounds, don't use the mark.
+- The wordmark is always lowercase `dispatch·console`; prose uses
+  "Dispatch".
+- Asset colors must come from the palette — enforced by
+  `tests/unit/design-tokens.test.ts`.
+
+### 1.6 Voice and tone
 
 | Rule | Do | Don't |
 |---|---|---|
@@ -57,8 +117,11 @@ part of the brand voice. They appear verbatim, uppercase, monospace.
 ## 2. Design tokens
 
 Tokens live in `frontend/src/styles/tokens.css` and are **authoritative
-there**; this section documents meaning and usage. Never hardcode a color,
-radius, or font in a component — consume the variable.
+there**; `design/tokens.json` is the machine-readable mirror (W3C design
+tokens shape) for tooling and agents, and
+`tests/unit/design-tokens.test.ts` fails the build if the two drift. This
+section documents meaning and usage. Never hardcode a color, radius, or
+font in a component — consume the variable.
 
 ### 2.1 Themes
 
@@ -246,7 +309,7 @@ When generating or modifying UI in this repo:
 3. Map any new state or signal onto the color-meaning table in §2.3. If a
    new meaning genuinely has no color, propose a token in the same PR —
    in both themes — and document it here.
-4. Copy follows §1.4 voice: terse, factual, gates named, no first person.
+4. Copy follows §1.6 voice: terse, factual, gates named, no first person.
 5. UI claims follow the validation ladder: a screen for an unexercised
    live path must not present itself as proven (see
    `docs/validation-levels.md`).
@@ -259,6 +322,9 @@ When generating or modifying UI in this repo:
 
 - This file changes by PR like code, ideally in the same PR as the visual
   change it describes.
+- Palette changes touch three places in one PR: `tokens.css`,
+  `design/tokens.json`, and this file — the drift test enforces the first
+  two; review enforces the third.
 - `AGENTS.md` covers engineering conventions; `CLAUDE.md` /
   `.cursor/rules/house-rules.mdc` remain the canonical safety rules. On
   any conflict: safety rules > AGENTS.md > DESIGN.md > personal taste.
