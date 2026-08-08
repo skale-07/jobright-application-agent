@@ -8,6 +8,21 @@
 export const ashbySelectorsV1 = {
   form: "form",
   submit: "button[type='submit']",
+  /**
+   * Ranked submit resolution (see shared/submitControl.ts). Live Ashby
+   * renders a custom React footer whose CTA is frequently type="button"
+   * with the text "Submit application" — the accessible-name tier is the
+   * one that survives that; the CSS tier keeps the fixture/classic path.
+   * Wizard/nav controls are excluded by name: clicking "Next" and calling
+   * it a submit is the failure mode this exists to prevent.
+   */
+  submitCascade: {
+    form: "form",
+    css: "button[type='submit'], input[type='submit']",
+    namePattern: /submit\s+application|^submit$|^apply(\s+now)?$/i,
+    excludePattern:
+      /^(next|continue|back|previous|cancel|close|save|yes|no|sign in|log in|upload|attach)\b/i,
+  },
   resume:
     "input[type='file'][name='_systemfield_resume'], input[type='file'][id*='_systemfield_resume']",
   /** Stable name-attribute prefix on Ashby's built-in fields. */

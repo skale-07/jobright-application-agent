@@ -10,6 +10,10 @@ import type {
 } from "../adapter.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import {
+  detectUploadCommit,
+  resolveResumeFileInput,
+} from "../shared/uploadResolve.js";
+import {
   assertExecutableApprovedEntry,
   type ApprovedFillPlanEntry,
 } from "../../applications/approvedFillPlan.js";
@@ -358,39 +362,41 @@ export async function ashbyUploadFile(
     };
   }
   const stat = fs.statSync(abs);
-  const input = page.locator(ashbySelectorsV1.resume).first();
-  if ((await input.count()) === 0) {
+  const filename = path.basename(abs);
+  // Resolve with wait + keyword/lone-input fallback + one retry — a
+  // one-shot count() against Ashby's late-mounting dropzone is exactly the
+  // "sometimes the resume doesn't upload" bug. Misses carry the file-input
+  // inventory as evidence.
+  const resolution = await resolveResumeFileInput(page, {
+    css: ashbySelectorsV1.resume,
+  });
+  if (!resolution.found) {
     return {
       field: kind,
       path: abs,
-      filename: path.basename(abs),
+      filename,
       size_bytes: stat.size,
       verified: false,
-      evidence: "resume file input not found",
+      evidence: `resume file input not found; ${resolution.notes.join("; ")}; inventory: ${JSON.stringify(resolution.inventory)}`,
     };
   }
+  const input = resolution.input;
   // setInputFiles works on CSS-hidden (display:none) inputs behind
   // Ashby's drag-drop zone — visibility is not required.
   await input.setInputFiles(abs);
-  const files = await input.evaluate(
-    (el: { files?: ArrayLike<{ name: string; size: number }> | null }) => {
-      const list = el.files ? Array.from(el.files) : [];
-      return list.map((f) => ({ name: f.name, size: f.size }));
-    },
-  );
-  const filename = path.basename(abs);
-  const verified =
-    files.some((f) => f.name === filename) ||
-    files.some((f) => f.size === stat.size);
+  // Chip-accepting commit check: Ashby dropzones may replace the input with
+  // a filename chip; requiring input.files to persist reads success as fail.
+  const commit = await detectUploadCommit(page, input, {
+    filename,
+    sizeBytes: stat.size,
+  });
   return {
     field: kind,
     path: abs,
     filename,
     size_bytes: stat.size,
-    verified,
-    evidence: verified
-      ? `input files: ${JSON.stringify(files)}`
-      : `upload not reflected; input files: ${JSON.stringify(files)}`,
+    verified: commit.verified,
+    evidence: `${commit.evidence}; resolved via ${resolution.via}`,
   };
 }
 

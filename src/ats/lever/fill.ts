@@ -3,6 +3,10 @@ import path from "node:path";
 import type { Page } from "playwright";
 import type { FormResetResult, UploadVerification } from "../adapter.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
+import {
+  detectUploadCommit,
+  resolveResumeFileInput,
+} from "../shared/uploadResolve.js";
 import { leverSelectorsV1 } from "./selectors.js";
 
 /**
@@ -31,37 +35,37 @@ export async function leverUploadFile(
     };
   }
   const stat = fs.statSync(abs);
-  const input = page.locator(leverSelectorsV1.resume).first();
-  if ((await input.count()) === 0) {
+  const filename = path.basename(abs);
+  // Shared resolve (wait + keyword/lone-input fallback + one retry) and
+  // chip-accepting commit check — same rationale as the Ashby port: a
+  // one-shot count() and an input-files-only verify each read transient
+  // states as failures. Misses carry the file-input inventory as evidence.
+  const resolution = await resolveResumeFileInput(page, {
+    css: leverSelectorsV1.resume,
+  });
+  if (!resolution.found) {
     return {
       field: kind,
       path: abs,
-      filename: path.basename(abs),
+      filename,
       size_bytes: stat.size,
       verified: false,
-      evidence: "resume file input not found",
+      evidence: `resume file input not found; ${resolution.notes.join("; ")}; inventory: ${JSON.stringify(resolution.inventory)}`,
     };
   }
+  const input = resolution.input;
   await input.setInputFiles(abs);
-  const files = await input.evaluate(
-    (el: { files?: ArrayLike<{ name: string; size: number }> | null }) => {
-      const list = el.files ? Array.from(el.files) : [];
-      return list.map((f) => ({ name: f.name, size: f.size }));
-    },
-  );
-  const filename = path.basename(abs);
-  const verified =
-    files.some((f) => f.name === filename) ||
-    files.some((f) => f.size === stat.size);
+  const commit = await detectUploadCommit(page, input, {
+    filename,
+    sizeBytes: stat.size,
+  });
   return {
     field: kind,
     path: abs,
     filename,
     size_bytes: stat.size,
-    verified,
-    evidence: verified
-      ? `input files: ${JSON.stringify(files)}`
-      : `upload not reflected; input files: ${JSON.stringify(files)}`,
+    verified: commit.verified,
+    evidence: `${commit.evidence}; resolved via ${resolution.via}`,
   };
 }
 

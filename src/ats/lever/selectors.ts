@@ -9,6 +9,14 @@ export const leverSelectorsV1 = {
   fieldContainer: ".application-field, .application-question",
   submit:
     "button[data-qa='btn-submit'], .template-btn-submit, button[type='submit']",
+  /** Ranked submit resolution (see shared/submitControl.ts). */
+  submitCascade: {
+    form: "form#application-form, form[action*='/apply'], form.application-form",
+    css: "button[data-qa='btn-submit'], .template-btn-submit, button[type='submit'], input[type='submit']",
+    namePattern: /submit\s+application|^submit$|^apply(\s+now)?$/i,
+    excludePattern:
+      /^(next|continue|back|previous|cancel|close|save|yes|no|sign in|log in|upload|attach)\b/i,
+  },
   resume: "input[type='file'][name='resume'], #resume-upload-input",
   loginMarkers: /sign in to apply|log in to apply|create an account to apply/i,
   /** HTML-side form presence (no browser). */
