@@ -86,13 +86,18 @@ elsewhere.
 Pick by context, never by taste: accent lockup by default; mono when the
 accent would compete; app icon only where a platform demands a tile.
 
-The marketing site (`site/index.html`, fully self-contained) is the brand's
-outward voice: student-focused, leading with the mission (your time back
-from job apps), structured as the machine's own loop
-(watch → arm → report → compound), palette-bound to the tokens, and
-honest — no invented numbers, no testimonials, every claim traceable to an
-enforced mechanism. Motion is orchestrated, sparse, and fully disabled
-under `prefers-reduced-motion`.
+The marketing site (`site/index.html` + `site/pricing.html`, shared
+`site/dispatch.css`, no build step) is the brand's outward voice:
+student-focused, leading with the mission (your time back from job apps),
+structured as the machine's own loop (watch → arm → report → compound),
+with the journey, stack diagrams, and onboarding told in plain language.
+Palette-bound to the tokens and honest — no invented user numbers, no
+testimonials, every claim traceable to an enforced mechanism. Positioning
+is explicit: Dispatch is **closed-source, paid, local-first** software;
+during beta, JobRight Premium is required for unlimited applying and
+referral drafting. Referral drafts are presented as the second half of
+every application, never as sent mail. Motion is orchestrated, sparse,
+and fully disabled under `prefers-reduced-motion`.
 
 **Construction**: 24×24 grid; track from (6,18) to (18,6), stroke 2,
 round caps; open stations r=2.4 at the ends of each segment, filled

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dispatch — pricing</title>
+<link rel="icon" type="image/svg+xml" href="../frontend/public/favicon.svg" />
+<link rel="stylesheet" href="dispatch.css" />
+<!-- TODO(stripe): uncomment when wiring checkout.
+<script src="https://js.stripe.com/v3/"></script>
+-->
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav" aria-label="main">
+    <a class="brand" href="index.html">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+      </svg>
+      dispatch<span class="seg">·console</span>
+    </a>
+    <div class="links">
+      <a href="index.html#loop">How it works</a>
+      <a href="index.html#stack">The stack</a>
+      <a href="index.html#setup">Setup</a>
+      <a class="pill" href="#plans">Pricing</a>
+    </div>
+  </nav>
+</div>
+
+<section class="wrap" id="plans" style="padding-top: 3rem;">
+  <div class="section-head">
+    <h2>Simple pricing.<br />Your time is the expensive thing.</h2>
+    <p>
+      One student, one console, unlimited nights back. Dispatch is
+      <strong>proprietary, paid software</strong> — closed source, but
+      local-first: your data lives on your disk either way.
+    </p>
+  </div>
+
+  <div class="beta-note">
+    <strong>Beta requirement:</strong> Dispatch currently discovers jobs
+    through JobRight, so a <strong>JobRight Premium</strong> account is
+    required for unlimited applying and referral drafting during the beta.
+    More discovery platforms are on the roadmap — when they land, that
+    requirement goes away.
+  </div>
+
+  <div class="plans">
+    <div class="plan">
+      <p class="name">Rehearsal</p>
+      <p class="price">$0<span> — closed beta</span></p>
+      <ul>
+        <li>Full console, dry-run mode</li>
+        <li>Discovery + fill planning (touches nothing)</li>
+        <li>See exactly what it would type</li>
+        <li class="na">No live submits</li>
+        <li class="na">No referral drafts</li>
+      </ul>
+      <a class="btn ghost" href="#" data-stripe-checkout data-price-id="price_TODO_rehearsal" aria-describedby="stripe-note">Join the beta list</a>
+      <p class="note">no card needed</p>
+    </div>
+
+    <div class="plan featured">
+      <span class="flag">most students</span>
+      <p class="name">Operator</p>
+      <p class="price">$15<span>/mo · beta pricing</span></p>
+      <ul>
+        <li>Unlimited armed sessions</li>
+        <li>Greenhouse, Lever &amp; Ashby portals</li>
+        <li>Verified submissions with receipts</li>
+        <li>Referral drafts after every submit</li>
+        <li>Evidence vault + full audit trail</li>
+        <li>Requires your JobRight Premium (beta)</li>
+      </ul>
+      <a class="btn primary" href="#" data-stripe-checkout data-price-id="price_TODO_operator_monthly" aria-describedby="stripe-note">Get Operator</a>
+      <p class="note">cancel anytime · billing via Stripe</p>
+    </div>
+
+    <div class="plan">
+      <p class="name">Career center</p>
+      <p class="price">Let's talk</p>
+      <ul>
+        <li>Seats for a cohort or program</li>
+        <li>Onboarding session for students</li>
+        <li>Priority support</li>
+        <li>Early access to new platforms</li>
+      </ul>
+      <a class="btn ghost" href="#" data-stripe-checkout data-price-id="price_TODO_campus" aria-describedby="stripe-note">Contact us</a>
+      <p class="note">universities &amp; bootcamps</p>
+    </div>
+  </div>
+
+  <p id="stripe-note" class="note mono" style="margin-top: 1rem; color: var(--text-faint); font-size: 0.75rem;">
+    checkout wiring in progress — buttons go live shortly
+  </p>
+</section>
+
+<section class="wrap" style="padding-top: 1rem;">
+  <div class="section-head">
+    <h2>Fair questions.</h2>
+  </div>
+  <div class="faq">
+    <details>
+      <summary>Why do I need JobRight Premium too?</summary>
+      <p>
+        During beta, JobRight is the discovery layer — the feed Dispatch
+        watches for new postings. Unlimited applying and referral drafting
+        ride on that feed, and JobRight caps it on their free tier. We're
+        building support for more discovery platforms; when those ship,
+        the Premium requirement goes with them.
+      </p>
+    </details>
+    <details>
+      <summary>Is Dispatch open source?</summary>
+      <p>
+        <strong>No. Dispatch is a closed-source, paid product.</strong>
+        What we promise instead of source code: it's local-first by
+        design — your profile, resumes, answers, and history live on your
+        disk, every submission produces evidence you can audit, and the
+        software structurally cannot send email or submit without the
+        bounds you set.
+      </p>
+    </details>
+    <details>
+      <summary>Does it send referral emails for me?</summary>
+      <p>
+        Never. It <strong>drafts</strong> them — into your own mailbox,
+        addressed to real alumni and engineers at the company, written
+        from your persona and validated before you ever see them. You
+        read, edit, and hit send. Your name only ever goes out in your
+        own hand.
+      </p>
+    </details>
+    <details>
+      <summary>What happens when it hits a CAPTCHA or a login wall?</summary>
+      <p>
+        It parks the application with the evidence attached and moves on
+        to the next one. Nothing is force-clicked, nothing is guessed —
+        the parked items are your short morning worklist.
+      </p>
+    </details>
+    <details>
+      <summary>Can it write my essays?</summary>
+      <p>
+        No — and that's a feature. Essay questions and self-ID questions
+        are always yours. Dispatch banks the answers you write so you
+        never write the same one twice, but the words are never invented
+        for you.
+      </p>
+    </details>
+  </div>
+</section>
+
+<footer class="wrap">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+  </svg>
+  <p class="mission">
+    Put one operator confidently in command of many applications — every
+    submission deliberate, every state honest, every outcome accounted for.
+    And the nights? Those are yours again.
+  </p>
+  <div class="fine">
+    <span>Dispatch — every application accounted for</span>
+    <a href="index.html">Home</a>
+    <a href="index.html#setup">Setup</a>
+    <span>closed beta · proprietary software · local-first by design</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // ── Stripe checkout stub ─────────────────────────────────────────────
+  // TODO(stripe): wire tomorrow —
+  //   1. Uncomment the js.stripe.com <script> in <head>.
+  //   2. Set STRIPE_PUBLISHABLE_KEY below (pk from the Stripe dashboard).
+  //   3. Replace the data-price-id placeholders on the three buttons with
+  //      real Price IDs (price_…), or point the buttons at Stripe Payment
+  //      Links and delete this handler entirely.
+  //   4. For real checkout sessions, add a tiny backend endpoint that
+  //      creates the session server-side; never put a secret key here.
+  var STRIPE_PUBLISHABLE_KEY = ""; // TODO(stripe)
+
+  document.querySelectorAll("[data-stripe-checkout]").forEach(function (btn) {
+    btn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      if (!STRIPE_PUBLISHABLE_KEY) {
+        var note = document.getElementById("stripe-note");
+        if (note) {
+          note.textContent =
+            "checkout isn't wired up yet — " +
+            btn.getAttribute("data-price-id") +
+            " goes live shortly";
+        }
+        return;
+      }
+      // TODO(stripe): with the key set, redirect to Checkout here, e.g.
+      // Stripe(STRIPE_PUBLISHABLE_KEY).redirectToCheckout({ lineItems: [...], mode: "subscription", ... })
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
