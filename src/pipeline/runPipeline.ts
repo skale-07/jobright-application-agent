@@ -80,6 +80,11 @@ export type PipelineOptions = {
   confirmSubmission?: ConfirmSubmission;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
+  /**
+   * Test seam: force JobRight session readiness for the contacts step.
+   * Production always asks describeSessionReadiness.
+   */
+  jobrightContactsReady?: boolean;
   /** Test seam: replaces runNavigation for offline pipeline tests. */
   navigationRunner?: (input: RunNavigationInput) => Promise<NavigationReport>;
   /**
@@ -333,6 +338,14 @@ export async function runPipeline(
     metadata: {
       run_id: runId,
       applications: report.applications.length,
+      results: report.applications.map((a) => ({
+        application_id: a.application_id,
+        start_state: a.start_state,
+        end_state: a.end_state,
+        stopped: a.stopped,
+        stop_reason: a.stop_reason,
+        steps: a.steps.map((s) => `${s.from}→${s.to ?? "stop"}: ${s.note}`),
+      })),
     },
   });
   return report;
@@ -367,6 +380,20 @@ async function runOneApplication(input: {
     stop_reason: null,
   };
 
+  logger.info("pipeline app begin", {
+    service: "pipeline",
+    action: "app_begin",
+    application_id: applicationId,
+    metadata: {
+      run_id: runId,
+      start_state: first.state,
+      headless: options.headless ?? true,
+      submit_opt_in: options.submit === true,
+      has_employer_url: Boolean(getEmployerApplicationUrl(db, applicationId)),
+      fixture: Boolean(options.fixtureHtmlPath),
+    },
+  });
+
   acquireLease(db, {
     resourceType: "application",
     resourceId: `${applicationId}:pipeline`,
@@ -388,16 +415,63 @@ async function runOneApplication(input: {
       if (openItems.length > 0) {
         appReport.stopped = "review";
         appReport.stop_reason = `open review item: ${openItems[0]?.kind} — ${openItems[0]?.title}`;
+        logger.warn("pipeline stopped: open review", {
+          service: "pipeline",
+          action: "stop_review",
+          application_id: applicationId,
+          metadata: {
+            state: app.state,
+            review_kind: openItems[0]?.kind,
+            review_title: openItems[0]?.title,
+            review_id: openItems[0]?.id,
+          },
+        });
         break;
       }
 
       if (!ADVANCEABLE.includes(app.state)) {
         appReport.stopped = "terminal";
         appReport.stop_reason = `state ${app.state} is not pipeline-advanceable`;
+        logger.info("pipeline stopped: non-advanceable state", {
+          service: "pipeline",
+          action: "stop_terminal",
+          application_id: applicationId,
+          metadata: { state: app.state },
+        });
         break;
       }
 
-      const outcome = await step({ db, app, runId, options }, input.automationRunId);
+      logger.info(`pipeline step: ${app.state}`, {
+        service: "pipeline",
+        action: "step_enter",
+        application_id: applicationId,
+        metadata: {
+          run_id: runId,
+          iteration: i,
+          state: app.state,
+          employer_url: getEmployerApplicationUrl(db, applicationId),
+        },
+      });
+
+      let outcome: StepOutcome;
+      try {
+        outcome = await step({ db, app, runId, options }, input.automationRunId);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const stack = err instanceof Error ? err.stack : undefined;
+        logger.error("pipeline step threw", {
+          service: "pipeline",
+          action: "step_error",
+          application_id: applicationId,
+          metadata: {
+            state: app.state,
+            error: message.slice(0, 500),
+            stack: stack?.split("\n").slice(0, 8).join(" | "),
+          },
+        });
+        throw err;
+      }
+
       appReport.steps.push({
         from: app.state,
         to: outcome.to,
@@ -406,9 +480,34 @@ async function runOneApplication(input: {
       if (outcome.to) {
         appReport.end_state = outcome.to;
       }
+
+      logger.info(`pipeline step done: ${app.state}`, {
+        service: "pipeline",
+        action: "step_exit",
+        application_id: applicationId,
+        metadata: {
+          from: app.state,
+          to: outcome.to,
+          note: outcome.note,
+          stop: outcome.stop ?? null,
+        },
+      });
+
       if (outcome.stop) {
         appReport.stopped = outcome.stop;
         appReport.stop_reason = outcome.note;
+        const level = outcome.stop === "gate" || outcome.stop === "review" ? "warn" : "info";
+        logger[level](`pipeline stop: ${outcome.stop}`, {
+          service: "pipeline",
+          action: "stop",
+          application_id: applicationId,
+          metadata: {
+            stop: outcome.stop,
+            stop_reason: outcome.note,
+            last_state: app.state,
+            next_state: outcome.to,
+          },
+        });
         break;
       }
     }
@@ -422,6 +521,21 @@ async function runOneApplication(input: {
 
   const finalApp = getApplication(db, applicationId);
   if (finalApp) appReport.end_state = finalApp.state;
+
+  logger.info("pipeline app end", {
+    service: "pipeline",
+    action: "app_end",
+    application_id: applicationId,
+    metadata: {
+      run_id: runId,
+      start_state: appReport.start_state,
+      end_state: appReport.end_state,
+      stopped: appReport.stopped,
+      stop_reason: appReport.stop_reason,
+      step_count: appReport.steps.length,
+      steps: appReport.steps.map((s) => `${s.from}→${s.to ?? "—"} (${s.note})`),
+    },
+  });
   return appReport;
 }
 
@@ -827,7 +941,25 @@ async function step(
       // fixture). When neither is available, complete rather than fail —
       // the operator can run contacts:extract manually later is NOT possible
       // once COMPLETED, so we stop instead when a session might exist.
-      const readiness = describeSessionReadiness("jobright", "STORAGE_STATE");
+      const readiness =
+        ctx.options.jobrightContactsReady !== undefined
+          ? {
+              ready: ctx.options.jobrightContactsReady,
+              detail: ctx.options.jobrightContactsReady
+                ? "test seam: ready"
+                : "test seam: not ready",
+            }
+          : describeSessionReadiness("jobright", "STORAGE_STATE");
+      logger.info("contacts step session readiness", {
+        service: "pipeline",
+        action: "contacts_readiness",
+        application_id: app.id,
+        metadata: {
+          ready: readiness.ready,
+          detail: readiness.detail,
+          has_fixture: Boolean(ctx.options.contactsFixtureHtmlPath),
+        },
+      });
       if (!ctx.options.contactsFixtureHtmlPath && !readiness.ready) {
         transitionApplication(db, {
           applicationId: app.id,
@@ -840,18 +972,43 @@ async function step(
           note: "completed (no jobright session for contact extraction)",
         };
       }
-      const contactsReport = await runContactsExtraction({
-        db,
-        applicationId: app.id,
-        ...(ctx.options.contactsFixtureHtmlPath
-          ? { fixtureHtmlPath: ctx.options.contactsFixtureHtmlPath }
-          : {}),
-        headless: ctx.options.headless ?? true,
-      });
-      return {
-        to: contactsReport.end_state as ApplicationState,
-        note: `contacts extracted: ${contactsReport.extracted}`,
-      };
+      try {
+        const contactsReport = await runContactsExtraction({
+          db,
+          applicationId: app.id,
+          ...(ctx.options.contactsFixtureHtmlPath
+            ? { fixtureHtmlPath: ctx.options.contactsFixtureHtmlPath }
+            : {}),
+          headless: ctx.options.headless ?? true,
+        });
+        return {
+          to: contactsReport.end_state as ApplicationState,
+          note: `contacts extracted: ${contactsReport.extracted}`,
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error("contacts extraction failed", {
+          service: "pipeline",
+          action: "contacts_error",
+          application_id: app.id,
+          metadata: {
+            error: message.slice(0, 500),
+            jobright_ready: readiness.ready,
+            fixture: Boolean(ctx.options.contactsFixtureHtmlPath),
+          },
+        });
+        upsertOpenReviewItem(db, {
+          applicationId: app.id,
+          kind: "MANUAL",
+          title: "Contact extraction failed after submit",
+          payload: { error: message.slice(0, 500) },
+        });
+        return {
+          to: null,
+          note: `contacts extraction failed: ${message.slice(0, 200)}`,
+          stop: "review",
+        };
+      }
     }
 
     case "CONTACTS_EXTRACTED": {

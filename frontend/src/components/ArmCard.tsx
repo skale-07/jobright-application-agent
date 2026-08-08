@@ -7,7 +7,8 @@ import { formatCountdown } from "../hooks/useArmStatus";
 /** Opt-ins the automation worker needs; the shell ceiling still decides. */
 const AUTOMATION_RUN_BODY = {
   kind: "automation",
-  params: {},
+  // Operator wants visible browsers for L3 inspection (captcha, walls).
+  params: { headed: true },
   flags: {
     AUTOMATION_ENABLED: true,
     FORM_FILL_ENABLED: true,

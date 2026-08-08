@@ -309,11 +309,38 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
 
   it("SUBMITTED completes when no jobright session exists for contacts", async () => {
     const appId = seed("SUBMITTED");
-    const report = await runPipeline({ db, applicationId: appId });
+    // Force not-ready so local private/auth storage cannot make this flaky.
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      jobrightContactsReady: false,
+    });
     expect(getApplication(db, appId)?.state).toBe("COMPLETED");
     expect(report.applications[0]?.steps[0]?.note).toMatch(
       /no jobright session/,
     );
+  });
+
+  it("SUBMITTED parks on review when contact extraction throws", async () => {
+    const appId = seed("SUBMITTED");
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      // Ready for live path but seed job id is not a real JobRight id → throws.
+      jobrightContactsReady: true,
+    });
+    expect(getApplication(db, appId)?.state).toBe("CONTACTS_EXTRACTING");
+    expect(report.applications[0]?.stopped).toBe("review");
+    expect(report.applications[0]?.stop_reason).toMatch(
+      /contacts extraction failed/i,
+    );
+    expect(
+      listOpenReviewItems(db).some(
+        (r) =>
+          r.application_id === appId &&
+          r.title.includes("Contact extraction failed"),
+      ),
+    ).toBe(true);
   });
 
   it("SUBMITTED extracts fixture contacts, then gates on outreach generation flag", async () => {

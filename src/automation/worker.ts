@@ -332,11 +332,32 @@ export async function runAutomationSession(
 
   /** Feed touch that never kills the loop: discovery throws on empty/auth. */
   const tryDiscover = async (): Promise<void> => {
-    if (discoverMax <= 0) return;
+    if (discoverMax <= 0) {
+      logger.info("automation discover skipped (discover_max=0)", {
+        service: "automation",
+        action: "discover_skip",
+        metadata: { arm_run_id: armRunId },
+      });
+      return;
+    }
+    logger.info("automation discover starting", {
+      service: "automation",
+      action: "discover_begin",
+      metadata: { arm_run_id: armRunId, discover_max: discoverMax },
+    });
     try {
       const r = await discover(discoverMax);
       report.discover_runs += 1;
       report.notes.push(`discover: ${r.jobs_inspected} inspected`);
+      logger.info("automation discover finished", {
+        service: "automation",
+        action: "discover_end",
+        metadata: {
+          arm_run_id: armRunId,
+          jobs_inspected: r.jobs_inspected,
+          discover_runs: report.discover_runs,
+        },
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       noteError(
@@ -347,8 +368,29 @@ export async function runAutomationSession(
             : "discover_error",
       );
       report.notes.push(`discover skipped (${lastErrorCode})`);
+      logger.warn("automation discover failed", {
+        service: "automation",
+        action: "discover_error",
+        metadata: {
+          arm_run_id: armRunId,
+          code: lastErrorCode,
+          error: message.slice(0, 500),
+        },
+      });
     }
   };
+
+  logger.info("automation session begin", {
+    service: "automation",
+    action: "session_begin",
+    metadata: {
+      arm_run_id: armRunId,
+      headless: input.headless ?? true,
+      discover_max: discoverMax,
+      rediscover_every: rediscoverEvery,
+      delay_ms_range: delayRange,
+    },
+  });
 
   await tryDiscover();
   let appsSinceDiscover = 0;
@@ -379,6 +421,15 @@ export async function runAutomationSession(
         }
       }
       report.stopped_reason = expired ? "expired" : "disarmed";
+      logger.info("automation loop exit: arm inactive", {
+        service: "automation",
+        action: "session_stop",
+        metadata: {
+          arm_run_id: armRunId,
+          stopped_reason: report.stopped_reason,
+          apps_started: report.apps_started,
+        },
+      });
       break;
     }
 
@@ -400,15 +451,49 @@ export async function runAutomationSession(
     }
     if (!appId) {
       report.stopped_reason = "queue_drained";
+      logger.info("automation loop exit: queue drained", {
+        service: "automation",
+        action: "session_stop",
+        metadata: {
+          arm_run_id: armRunId,
+          seen_count: seen.size,
+          apps_started: report.apps_started,
+        },
+      });
       break;
     }
 
     if (!consumeArmApplication(db, armRunId)) {
       report.stopped_reason = "apps_cap";
+      logger.info("automation loop exit: apps cap", {
+        service: "automation",
+        action: "session_stop",
+        metadata: {
+          arm_run_id: armRunId,
+          apps_started: report.apps_started,
+          max_apps: active.meta.max_apps,
+        },
+      });
       break;
     }
     seen.add(appId);
     report.apps_started += 1;
+
+    const appRow = getApplication(db, appId);
+    logger.info("automation processing app", {
+      service: "automation",
+      action: "app_begin",
+      application_id: appId,
+      metadata: {
+        arm_run_id: armRunId,
+        start_state: appRow?.state ?? null,
+        allow_submit: allowSubmit,
+        submits_left: submitsLeft,
+        apps_started: report.apps_started,
+        max_apps: active.meta.max_apps,
+        headless: input.headless ?? true,
+      },
+    });
 
     try {
       const pipelineReport = await runPipeline({
@@ -427,6 +512,19 @@ export async function runAutomationSession(
       const appReport: PipelineAppReport | undefined = pipelineReport.applications[0];
       if (appReport) {
         report.per_app.push(toAppResult(db, appReport));
+        logger.info("automation app pipeline result", {
+          service: "automation",
+          action: "app_end",
+          application_id: appId,
+          metadata: {
+            start_state: appReport.start_state,
+            end_state: appReport.end_state,
+            stopped: appReport.stopped,
+            stop_reason: appReport.stop_reason,
+            submitted: toAppResult(db, appReport).submitted,
+            steps: appReport.steps.map((s) => `${s.from}→${s.to ?? "—"}: ${s.note}`),
+          },
+        });
         if (appReport.stopped == null) {
           noteError("anomaly_no_stop");
           report.notes.push(`anomaly: ${appId} stopped with no reason`);
@@ -434,6 +532,12 @@ export async function runAutomationSession(
         // Post-submit outreach tail (drafts only, never send). Only states a
         // verified submit can reach; failures are review items, not stops.
         if (TAIL_STATES.has(appReport.end_state)) {
+          logger.info("automation outreach tail begin", {
+            service: "automation",
+            action: "outreach_begin",
+            application_id: appId,
+            metadata: { end_state: appReport.end_state },
+          });
           const tail = await runOutreachTail({
             db,
             applicationId: appId,
@@ -447,7 +551,24 @@ export async function runAutomationSession(
             report.drafts_saved += 1;
           }
           for (const n of tail.notes) report.notes.push(`outreach ${appId}: ${n}`);
+          logger.info("automation outreach tail end", {
+            service: "automation",
+            action: "outreach_end",
+            application_id: appId,
+            metadata: {
+              email_status: tail.email_status,
+              draft_status: tail.draft_status,
+              notes: tail.notes,
+            },
+          });
         }
+      } else {
+        logger.warn("automation pipeline returned no app report", {
+          service: "automation",
+          action: "app_end",
+          application_id: appId,
+          metadata: { run_id: pipelineReport.run_id },
+        });
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -458,11 +579,19 @@ export async function runAutomationSession(
             ? "jobright_auth"
             : "pipeline_error",
       );
-      report.notes.push(`app ${appId} error (${lastErrorCode})`);
+      report.notes.push(`app ${appId} error (${lastErrorCode}): ${message.slice(0, 200)}`);
       logger.warn("automation worker: app error, continuing", {
         service: "automation",
         action: "app_error",
-        metadata: { application_id: appId, code: lastErrorCode },
+        application_id: appId,
+        metadata: {
+          code: lastErrorCode,
+          error: message.slice(0, 500),
+          stack:
+            err instanceof Error
+              ? err.stack?.split("\n").slice(0, 8).join(" | ")
+              : undefined,
+        },
       });
     }
 
@@ -492,6 +621,17 @@ export async function runAutomationSession(
       apps_started: report.apps_started,
       submits_used: report.submits_used,
       stopped_reason: report.stopped_reason,
+      discover_runs: report.discover_runs,
+      emails_generated: report.emails_generated,
+      drafts_saved: report.drafts_saved,
+      notes: report.notes,
+      per_app: report.per_app.map((a) => ({
+        application_id: a.application_id,
+        end_state: a.end_state,
+        stopped: a.stopped,
+        stop_reason: a.stop_reason,
+        submitted: a.submitted,
+      })),
     },
   });
   return report;

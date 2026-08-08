@@ -583,6 +583,11 @@ export async function runNavigation(
         method: r.method,
         wall: r.wall,
         resolved_ats: r.resolved_ats,
+        employer_url: r.employer_application_url ?? r.resolved_url ?? null,
+        notes: r.notes?.slice?.(0, 12) ?? r.notes,
+        phase_trace: r.phase_trace,
+        report_path: r.report_path ?? null,
+        headless: input.headless ?? true,
       },
     });
     return r;

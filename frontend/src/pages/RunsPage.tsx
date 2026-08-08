@@ -26,7 +26,7 @@ export function RunsPage(): JSX.Element {
   const [applicationId, setApplicationId] = useState("");
   const [maxApplications, setMaxApplications] = useState("1");
   const [maxJobs, setMaxJobs] = useState("10");
-  const [headed, setHeaded] = useState(false);
+  const [headed, setHeaded] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [liveMode, setLiveMode] = useState(false);
   const [submitOptIn, setSubmitOptIn] = useState(false);
@@ -150,7 +150,12 @@ export function RunsPage(): JSX.Element {
                 checked={headed}
                 onChange={(e) => setHeaded(e.target.checked)}
               />
-              <span>Headed browser</span>
+              <span>
+                Headed browser{" "}
+                <span className="faint">
+                  (default on — uncheck for headless)
+                </span>
+              </span>
             </label>
           </div>
 
