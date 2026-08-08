@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dispatch — the job hunt, accounted for</title>
+<title>Dispatch — your time back from job apps</title>
 <link rel="icon" type="image/svg+xml" href="../frontend/public/favicon.svg" />
 <style>
 /* ── Dispatch marketing site — palette bound to DESIGN.md / tokens.css.
@@ -81,7 +81,6 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 body {
   margin: 0;
   background: var(--bg);
@@ -102,10 +101,7 @@ a:focus-visible, button:focus-visible {
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
 
 /* ── nav ── */
-.nav {
-  display: flex; align-items: center; gap: 1.25rem;
-  padding: 1.1rem 0;
-}
+.nav { display: flex; align-items: center; gap: 1.25rem; padding: 1.1rem 0; }
 .nav .brand {
   display: flex; align-items: center; gap: 0.5rem;
   font-family: var(--font-mono); font-weight: 600; font-size: 15px;
@@ -121,7 +117,7 @@ a:focus-visible, button:focus-visible {
 .hero {
   display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
   gap: 3rem; align-items: center;
-  padding: 4.5rem 0 5rem;
+  padding: 4.5rem 0 4rem;
 }
 .eyebrow {
   font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600;
@@ -130,10 +126,17 @@ a:focus-visible, button:focus-visible {
 }
 .hero h1 {
   font-family: var(--font-mono);
-  font-size: clamp(2rem, 4.6vw, 3.3rem);
+  font-size: clamp(2rem, 4.6vw, 3.4rem);
   line-height: 1.12; letter-spacing: -0.015em;
   margin: 0 0 1.2rem; text-wrap: balance; font-weight: 700;
 }
+.hero h1 .give { color: var(--accent); }
+.caret {
+  display: inline-block; width: 0.55em; height: 1.05em;
+  background: var(--accent); vertical-align: text-bottom; margin-left: 0.12em;
+  animation: blink 1.1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
 .hero .sub {
   color: var(--text-dim); font-size: 1.12rem; max-width: 34rem;
   margin: 0 0 1.8rem;
@@ -144,21 +147,22 @@ a:focus-visible, button:focus-visible {
   display: inline-block; padding: 0.65rem 1.25rem;
   border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem;
   border: 1px solid transparent;
+  transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
 }
 .btn.primary { background: var(--accent); color: var(--bg); }
-.btn.primary:hover { text-decoration: none; filter: brightness(1.1); }
+.btn.primary:hover { text-decoration: none; filter: brightness(1.12); transform: translateY(-1px); }
 .btn.ghost { border-color: var(--border-strong); color: var(--text); }
-.btn.ghost:hover { text-decoration: none; background: var(--bg-hover); }
+.btn.ghost:hover { text-decoration: none; background: var(--bg-hover); transform: translateY(-1px); }
 .truth {
   margin-top: 1.1rem; font-family: var(--font-mono);
-  font-size: 0.78rem; color: var(--text-faint);
+  font-size: 0.78rem; color: var(--text-faint); min-height: 1.2em;
 }
+.truth::after { content: "▌"; color: var(--accent); animation: blink 1.1s steps(1) infinite; }
 
 /* hero entrance — one orchestrated moment */
 .hero > * { animation: rise 0.55s ease-out both; }
-.hero > *:nth-child(2) { animation-delay: 0.12s; }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .hero > * { animation: none; } }
+.hero > *:nth-child(2) { animation-delay: 0.15s; }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
 /* ── console mock ── */
 .console {
@@ -167,6 +171,7 @@ a:focus-visible, button:focus-visible {
   border-radius: var(--radius);
   overflow: hidden;
   font-family: var(--font-mono); font-size: 0.8rem;
+  box-shadow: 0 0 0 1px transparent;
 }
 .console .armed {
   display: flex; gap: 0.6rem; align-items: center;
@@ -174,6 +179,8 @@ a:focus-visible, button:focus-visible {
   padding: 0.55rem 0.9rem; font-weight: 600; font-size: 0.75rem;
   border-bottom: 1px solid var(--border);
 }
+.console .armed .bolt { animation: bolt 2.4s ease-in-out infinite; }
+@keyframes bolt { 0%, 88%, 100% { opacity: 1; } 92%, 96% { opacity: 0.35; } }
 .console .body { padding: 0.9rem 0.9rem 1rem; }
 .console .rpt-head {
   color: var(--text-faint); font-size: 0.72rem;
@@ -184,6 +191,13 @@ a:focus-visible, button:focus-visible {
 .console table { width: 100%; border-collapse: collapse; }
 .console td { padding: 0.42rem 0.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .console tr:last-child td { border-bottom: 0; }
+.console tr { opacity: 0; animation: rowIn 0.4s ease-out forwards; }
+.console tr:nth-child(1) { animation-delay: 0.5s; }
+.console tr:nth-child(2) { animation-delay: 0.75s; }
+.console tr:nth-child(3) { animation-delay: 1.0s; }
+.console tr:nth-child(4) { animation-delay: 1.25s; }
+.console tr:nth-child(5) { animation-delay: 1.5s; }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
 .console .co { color: var(--text); white-space: nowrap; }
 .console .role { color: var(--text-faint); font-size: 0.72rem; }
 .chip {
@@ -194,9 +208,30 @@ a:focus-visible, button:focus-visible {
 .chip.warn { background: var(--warn-dim); color: var(--warn); }
 .chip.danger { background: var(--danger-dim); color: var(--danger); }
 .chip.purple { background: var(--purple-dim); color: var(--purple); }
+.chip.glow { animation: glow 1.6s ease-out 1.9s 1 both; }
+@keyframes glow {
+  0% { box-shadow: 0 0 0 0 var(--ok-dim); }
+  40% { box-shadow: 0 0 0 6px var(--ok-dim); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
 .console .foot {
   margin-top: 0.75rem; color: var(--text-faint); font-size: 0.7rem;
   overflow-x: auto; white-space: nowrap;
+}
+
+/* ── the twelve fields marquee ── */
+.fields-strip {
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: var(--bg-inset);
+  overflow: hidden; padding: 0.7rem 0;
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint);
+  white-space: nowrap;
+}
+.fields-strip .lane { display: inline-flex; gap: 2.2rem; padding-right: 2.2rem; animation: lane 42s linear infinite; }
+@keyframes lane { to { transform: translateX(-50%); } }
+.fields-strip s { text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
+.fields-strip .never {
+  color: var(--accent); font-weight: 600;
 }
 
 /* ── section scaffolding ── */
@@ -220,8 +255,10 @@ section { padding: 3.5rem 0; }
   position: absolute; left: 6px; top: 2px;
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--bg); border: 2px solid var(--accent);
+  transition: box-shadow 0.4s ease;
 }
 .stage.delivered .station { background: var(--accent); }
+.stage.lit .station { box-shadow: 0 0 0 6px var(--accent-dim); }
 .stage .tag {
   font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent);
@@ -234,12 +271,17 @@ section { padding: 3.5rem 0; }
 .stage > p { color: var(--text-dim); max-width: 40rem; margin: 0 0 1.25rem; }
 .stage > p strong { color: var(--text); font-weight: 600; }
 
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.55s ease, transform 0.55s ease; }
+.reveal.lit, .reveal.in { opacity: 1; transform: none; }
+
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
 .card {
   background: var(--bg-raised); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 1.1rem 1.2rem;
+  transition: transform 0.18s ease, border-color 0.18s ease;
 }
-.card:hover { border-color: var(--border-strong); }
+.card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .card .k {
   font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint);
   text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.45rem;
@@ -259,8 +301,10 @@ section { padding: 3.5rem 0; }
 .arm-btn {
   display: inline-block; background: var(--accent); color: var(--bg);
   font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-sm); cursor: default;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
+.arm-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
 
 /* rewards list */
 .rewards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
@@ -271,7 +315,9 @@ section { padding: 3.5rem 0; }
   display: flex; gap: 1rem; justify-content: space-between; align-items: baseline;
   padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border);
   background: var(--bg-raised); flex-wrap: wrap;
+  transition: background 0.15s ease;
 }
+.ledger .li:hover { background: var(--bg-hover); }
 .ledger .li:last-child { border-bottom: 0; }
 .ledger .what { font-size: 0.95rem; }
 .ledger .so { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); }
@@ -285,11 +331,10 @@ section { padding: 3.5rem 0; }
 .fact {
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem 1.1rem; background: var(--bg-raised);
+  transition: transform 0.18s ease, border-color 0.18s ease;
 }
-.fact .f {
-  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600;
-  margin: 0 0 0.35rem;
-}
+.fact:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.fact .f { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; margin: 0 0 0.35rem; }
 .fact p { margin: 0; font-size: 0.88rem; color: var(--text-dim); }
 
 /* ── footer ── */
@@ -308,6 +353,14 @@ footer .fine a:hover { color: var(--text); }
 @media (max-width: 880px) {
   .hero { grid-template-columns: 1fr; padding-top: 3rem; }
   .cards, .rewards, .command .facts { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero > *, .console tr, .chip.glow, .fields-strip .lane,
+  .console .armed .bolt, .caret, .truth::after { animation: none !important; }
+  .console tr { opacity: 1; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .btn, .card, .fact, .arm-btn { transition: none; }
 }
 </style>
 </head>
@@ -334,23 +387,23 @@ footer .fine a:hover { color: var(--text); }
 
 <header class="wrap hero" id="top">
   <div>
-    <p class="eyebrow">for students who are done with job portals</p>
-    <h1>You've typed your name 400 times.</h1>
+    <p class="eyebrow">for students buried in job portals</p>
+    <h1>Job apps took your nights.<br /><span class="give">Take them back.</span><span class="caret" aria-hidden="true"></span></h1>
     <p class="sub">
-      Same twelve fields. Different portal. Every night, after the problem
-      sets. <strong>Dispatch</strong> is an operator console that runs the
-      application grind for you — bounded, supervised, and honest about
-      every single outcome.
+      You've typed your name into 400 portals — same twelve fields, every
+      night, after the problem sets. <strong>Dispatch</strong> runs the
+      grind while you sleep, and hands you the receipts in the morning.
+      The mission is simple: <strong>your time back.</strong>
     </p>
     <div class="cta-row">
       <a class="btn primary" href="https://github.com/skale-07/jobright-application-agent/blob/master/docs/operator-guide.md">Arm your first session</a>
       <a class="btn ghost" href="#loop">See the loop</a>
     </div>
-    <p class="truth">open source · runs on your machine · you hold every key</p>
+    <p class="truth" id="truth"></p>
   </div>
 
   <div class="console" role="img" aria-label="Dispatch session report: one verified submission, one outreach draft, two applications parked for review, three filled and parked">
-    <div class="armed">⚡ ARMED · 84m left · 1/10 submits · 7/25 apps</div>
+    <div class="armed"><span class="bolt">⚡</span> ARMED · <span id="countdown">84:00</span> left · 1/10 submits · 7/25 apps</div>
     <div class="body">
       <div class="rpt-head">
         <span>session a966e305 · stopped: queue_drained</span>
@@ -359,7 +412,7 @@ footer .fine a:hover { color: var(--text); }
       <table>
         <tr>
           <td><div class="co">Meridian Labs</div><div class="role">SWE Intern · Greenhouse</div></td>
-          <td style="text-align:right"><span class="chip ok">submitted ✓</span></td>
+          <td style="text-align:right"><span class="chip ok glow">submitted ✓</span></td>
         </tr>
         <tr>
           <td><div class="co">Northbeam</div><div class="role">Platform Intern · Lever</div></td>
@@ -383,52 +436,63 @@ footer .fine a:hover { color: var(--text); }
   </div>
 </header>
 
+<div class="fields-strip" aria-hidden="true">
+  <span class="lane" id="lane">
+    <span class="never">the twelve fields you'll never type again →</span>
+    <s>First name</s><s>Last name</s><s>Email</s><s>Phone</s><s>Location</s><s>LinkedIn URL</s>
+    <s>GitHub URL</s><s>Portfolio</s><s>School</s><s>Graduation year</s><s>Work authorization</s><s>Resume upload</s>
+    <span class="never">the twelve fields you'll never type again →</span>
+    <s>First name</s><s>Last name</s><s>Email</s><s>Phone</s><s>Location</s><s>LinkedIn URL</s>
+    <s>GitHub URL</s><s>Portfolio</s><s>School</s><s>Graduation year</s><s>Work authorization</s><s>Resume upload</s>
+  </span>
+</div>
+
 <section class="wrap" id="loop">
-  <div class="section-head">
-    <h2>Built on the habit loop.<br />The habit just isn't yours anymore.</h2>
+  <div class="section-head reveal">
+    <h2>The grind is a loop.<br />Now the loop runs without you.</h2>
     <p>
-      Nir Eyal's <em>Hooked</em> describes how products capture people:
-      trigger, action, variable reward, investment. Job portals run that
-      loop on you every night. Dispatch takes the same four stages and
-      hands the compulsive part to a machine — you keep the rewards.
+      Job portals turned applying into a nightly ritual: the guilt, the
+      forms, the maybe-reward, repeat. Dispatch keeps the loop — watch,
+      arm, report, compound — and moves the ritual onto a machine. You
+      keep the outcomes and the evenings.
     </p>
   </div>
 
   <div class="loop">
-    <div class="stage">
+    <div class="stage reveal">
       <span class="station" aria-hidden="true"></span>
-      <p class="tag">01 · Trigger</p>
-      <h3>The dread was the trigger. Now it's the feed.</h3>
+      <p class="tag">01 · Watch</p>
+      <h3>The dread used to start the night. Now the feed does.</h3>
       <p>
-        The old internal trigger: that low-grade guilt at 11pm that you
-        should be applying. Dispatch replaces it with an external one — it
-        discovers new postings on your feed and queues them itself.
+        The old starting gun was guilt — that 11pm feeling that you should
+        be applying. Dispatch watches your feed instead, discovers new
+        postings, and queues them itself.
         <strong>Opportunity pings you. Obligation doesn't.</strong>
       </p>
       <div class="cards">
         <div class="card">
-          <p class="k">the old trigger</p>
+          <p class="k">what it replaces</p>
           <p>Portal #47 wants the <strong>same twelve fields</strong> — retyped, because autofill never works there.</p>
         </div>
         <div class="card">
-          <p class="k">the old trigger</p>
+          <p class="k">what it replaces</p>
           <p>An <strong>essay wall at 11pm</strong>: "Why do you want to work here?" — 500 words, before the deadline.</p>
         </div>
         <div class="card">
-          <p class="k">the old trigger</p>
+          <p class="k">what it replaces</p>
           <p>The <strong>silence after submit</strong>. Did it even go through? No receipt, no record, no idea.</p>
         </div>
       </div>
     </div>
 
-    <div class="stage">
+    <div class="stage reveal">
       <span class="station" aria-hidden="true"></span>
-      <p class="tag">02 · Action</p>
-      <h3>One action: arm a session.</h3>
+      <p class="tag">02 · Arm</p>
+      <h3>Your whole job: one click, with hard bounds.</h3>
       <p>
-        The simplest behavior wins. Yours is one click with hard bounds you
-        set — a timer and caps. Inside that window the machine discovers,
-        fills, verifies, and submits. Outside it, nothing moves.
+        You set a timer and two caps, and press one button. Inside that
+        window the machine discovers, fills, verifies, and submits.
+        Outside it, nothing moves.
         <strong>Restart the console and it's disarmed. Always.</strong>
       </p>
       <div class="arm-mock" role="img" aria-label="Arm card: 120 minute duration, 10 submit cap, 25 application cap">
@@ -441,41 +505,41 @@ footer .fine a:hover { color: var(--text); }
       </div>
     </div>
 
-    <div class="stage">
+    <div class="stage reveal">
       <span class="station" aria-hidden="true"></span>
-      <p class="tag">03 · Variable reward</p>
+      <p class="tag">03 · Report</p>
       <h3>Wake up to a report, not a to-do list.</h3>
       <p>
-        Every session ends differently — that's the point. Verified
-        submissions with receipts. Outreach drafts to real people at the
-        company, waiting in <strong>your</strong> mailbox. Walls parked
-        with the evidence attached. You open the console to find out what
-        happened, not to do it.
+        Every session ends differently — that's what makes opening the
+        console interesting instead of dreadful. Verified submissions with
+        receipts. Outreach drafts to real people, waiting in
+        <strong>your</strong> mailbox. Walls parked with evidence attached.
+        You read what happened; you don't do it.
       </p>
       <div class="rewards">
         <div class="card">
-          <p class="k">the hunt</p>
+          <p class="k">the offer path</p>
           <p><strong>Verified submissions</strong> — screenshot, receipt, confirmation text. Never "probably went through".</p>
         </div>
         <div class="card">
-          <p class="k">the tribe</p>
+          <p class="k">the people path</p>
           <p><strong>Outreach drafts</strong> to alumni and engineers at each company — generated, validated, never sent without you.</p>
         </div>
         <div class="card">
-          <p class="k">the self</p>
-          <p><strong>A cleared queue.</strong> Walls that needed a human are parked with their evidence; everything else moved.</p>
+          <p class="k">the sanity path</p>
+          <p><strong>A cleared queue.</strong> Anything that needed a human is parked with its evidence; everything else moved.</p>
         </div>
       </div>
     </div>
 
-    <div class="stage delivered">
+    <div class="stage delivered reveal">
       <span class="station" aria-hidden="true"></span>
-      <p class="tag">04 · Investment</p>
+      <p class="tag">04 · Compound</p>
       <h3>Every answer you give, you never give again.</h3>
       <p>
-        Stored value compounds. Each thing you feed Dispatch makes the next
-        session need less of you — and overnight discovery reloads the
-        queue, so the loop re-arms itself.
+        Each thing you feed Dispatch makes the next session need less of
+        you — and overnight discovery reloads the queue, so the loop keeps
+        turning on its own.
       </p>
       <div class="ledger">
         <div class="li"><span class="what">Your profile, once</span><span class="so">→ every form, every portal</span></div>
@@ -490,7 +554,7 @@ footer .fine a:hover { color: var(--text); }
 
 <section class="command" id="command">
   <div class="wrap">
-    <div class="section-head">
+    <div class="section-head reveal">
       <h2>Autonomy you arm.<br />Not autonomy you hope for.</h2>
       <p>
         The reason you can sleep while it runs isn't trust — it's
@@ -498,7 +562,7 @@ footer .fine a:hover { color: var(--text); }
         promise.
       </p>
     </div>
-    <div class="facts">
+    <div class="facts reveal">
       <div class="fact">
         <p class="f">Bounded by construction</p>
         <p>A session is a timer and two caps backed by an atomic counter. A crash can't reset it; disarming makes further submits structurally impossible.</p>
@@ -529,6 +593,7 @@ footer .fine a:hover { color: var(--text); }
   <p class="mission">
     Put one operator confidently in command of many applications — every
     submission deliberate, every state honest, every outcome accounted for.
+    And the nights? Those are yours again.
   </p>
   <div class="fine">
     <span>Dispatch — every application accounted for</span>
@@ -537,6 +602,58 @@ footer .fine a:hover { color: var(--text); }
     <a href="https://github.com/skale-07/jobright-application-agent/blob/master/DESIGN.md">Design system</a>
   </div>
 </footer>
+
+<script>
+(function () {
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Live countdown in the ARMED banner — the session is running, right now.
+  var secs = 84 * 60;
+  var cd = document.getElementById("countdown");
+  if (cd && !reduced) {
+    setInterval(function () {
+      secs = Math.max(0, secs - 1);
+      var m = Math.floor(secs / 60);
+      var s = String(secs % 60).padStart(2, "0");
+      cd.textContent = m + ":" + s;
+    }, 1000);
+  }
+
+  // Typed truth line under the CTAs.
+  var truth = document.getElementById("truth");
+  var line = "open source · runs on your machine · you hold every key";
+  if (truth) {
+    if (reduced) {
+      truth.textContent = line;
+    } else {
+      var i = 0;
+      var t = setInterval(function () {
+        truth.textContent = line.slice(0, ++i);
+        if (i >= line.length) clearInterval(t);
+      }, 28);
+    }
+  }
+
+  // Scroll reveals: sections rise in; each loop station lights as it enters.
+  var targets = document.querySelectorAll(".reveal");
+  if (reduced || !("IntersectionObserver" in window)) {
+    targets.forEach(function (el) { el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add(e.target.classList.contains("stage") ? "lit" : "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.18 },
+    );
+    targets.forEach(function (el) { io.observe(el); });
+  }
+})();
+</script>
 
 </body>
 </html>

@@ -87,10 +87,12 @@ Pick by context, never by taste: accent lockup by default; mono when the
 accent would compete; app icon only where a platform demands a tile.
 
 The marketing site (`site/index.html`, fully self-contained) is the brand's
-outward voice: student-focused, structured on the habit loop
-(trigger → action → variable reward → investment), palette-bound to the
-tokens, and honest — no invented numbers, no testimonials, every claim
-traceable to an enforced mechanism.
+outward voice: student-focused, leading with the mission (your time back
+from job apps), structured as the machine's own loop
+(watch → arm → report → compound), palette-bound to the tokens, and
+honest — no invented numbers, no testimonials, every claim traceable to an
+enforced mechanism. Motion is orchestrated, sparse, and fully disabled
+under `prefers-reduced-motion`.
 
 **Construction**: 24×24 grid; track from (6,18) to (18,6), stroke 2,
 round caps; open stations r=2.4 at the ends of each segment, filled
