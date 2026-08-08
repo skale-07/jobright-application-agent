@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { apiGet } from "../api/client";
+import { apiGet, apiPost } from "../api/client";
 import type { ApplicationsPage as Page } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
+import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
 
 const PAGE_SIZE = 100;
 
@@ -19,11 +20,22 @@ export function ApplicationsPage(): JSX.Element {
   qs.set("limit", String(PAGE_SIZE));
   qs.set("offset", String(offset));
 
-  const { data, error, loading } = usePoll<Page>(
+  const { data, error, loading, refresh } = usePoll<Page>(
     () => apiGet<Page>(`/api/applications?${qs.toString()}`),
     5000,
     [qs.toString()],
   );
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
+  const toggleAutomation = async (id: string, excluded: boolean): Promise<void> => {
+    setToggleError(null);
+    try {
+      await apiPost(`/api/applications/${id}/automation`, { excluded });
+      refresh();
+    } catch (err) {
+      setToggleError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const applyFilters = (next: { state?: string; q?: string }): void => {
     const merged = new URLSearchParams(params);
@@ -72,6 +84,7 @@ export function ApplicationsPage(): JSX.Element {
       </div>
 
       {error ? <div className="banner danger">{error}</div> : null}
+      {toggleError ? <div className="banner danger">{toggleError}</div> : null}
 
       <div className="table-wrap">
         <table>
@@ -79,29 +92,48 @@ export function ApplicationsPage(): JSX.Element {
             <tr>
               <th>Company</th>
               <th>Role</th>
+              <th>Status</th>
               <th>State</th>
-              <th>Attempt</th>
+              <th>Automation</th>
               <th>Updated</th>
               <th className="mono">ID</th>
             </tr>
           </thead>
           <tbody>
-            {(data?.rows ?? []).map((row) => (
-              <tr key={row.id}>
-                <td>
-                  <Link to={`/applications/${row.id}`}>{row.company ?? "—"}</Link>
-                </td>
-                <td className="muted">{row.role ?? "—"}</td>
-                <td>
-                  <StateBadge value={row.state} />
-                </td>
-                <td className="mono">{row.attempt}</td>
-                <td className="mono faint nowrap">
-                  {new Date(row.updated_at).toLocaleString()}
-                </td>
-                <td className="mono faint">{row.id.slice(0, 8)}</td>
-              </tr>
-            ))}
+            {(data?.rows ?? []).map((row) => {
+              const chip = deriveChip(row.state, row.has_open_review);
+              return (
+                <tr key={row.id}>
+                  <td>
+                    <Link to={`/applications/${row.id}`}>{row.company ?? "—"}</Link>
+                  </td>
+                  <td className="muted">{row.role ?? "—"}</td>
+                  <td>
+                    <span className={`badge ${CHIP_CLASS[chip]}`}>{chip}</span>
+                  </td>
+                  <td>
+                    <StateBadge value={row.state} />
+                  </td>
+                  <td>
+                    <button
+                      className="ghost"
+                      title={
+                        row.automation_excluded
+                          ? "Excluded from L3 automation — click to include"
+                          : "Included in L3 automation — click to exclude"
+                      }
+                      onClick={() => void toggleAutomation(row.id, !row.automation_excluded)}
+                    >
+                      {row.automation_excluded ? "excluded ✕" : "included ✓"}
+                    </button>
+                  </td>
+                  <td className="mono faint nowrap">
+                    {new Date(row.updated_at).toLocaleString()}
+                  </td>
+                  <td className="mono faint">{row.id.slice(0, 8)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {!loading && (data?.rows.length ?? 0) === 0 ? (

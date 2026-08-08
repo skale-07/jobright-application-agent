@@ -1,7 +1,28 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiPost } from "../api/client";
 import type { ArmStatus } from "../api/types";
 import { formatCountdown } from "../hooks/useArmStatus";
+
+/** Opt-ins the automation worker needs; the shell ceiling still decides. */
+const AUTOMATION_RUN_BODY = {
+  kind: "automation",
+  params: {},
+  flags: {
+    AUTOMATION_ENABLED: true,
+    FORM_FILL_ENABLED: true,
+    SUBMIT_ENABLED: true,
+    NAVIGATION_ENABLED: true,
+    NATIVE_AUTOFILL_ENABLED: true,
+    MATERIALS_DOWNLOAD_ENABLED: true,
+    GMAIL_VERIFICATION_ENABLED: true,
+    // Outreach tail (drafts only, never send) — granted only if the shell
+    // ceiling carries these; otherwise the tail is simply skipped.
+    EMAIL_GENERATION_ENABLED: true,
+    OUTLOOK_DRAFTS_ENABLED: true,
+  },
+  live_mode: true,
+};
 
 /**
  * Arm / disarm the L3 unattended session. Arming here does NOT itself make
@@ -16,6 +37,7 @@ export function ArmCard({
   status: ArmStatus | null;
   onChanged: () => void;
 }): JSX.Element {
+  const navigate = useNavigate();
   const [duration, setDuration] = useState("120");
   const [maxSubmits, setMaxSubmits] = useState("10");
   const [maxApps, setMaxApps] = useState("25");
@@ -33,6 +55,42 @@ export function ArmCard({
       });
       onChanged();
     } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Launch the automation worker against the live arm. */
+  const startWorker = async (): Promise<void> => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await apiPost<{ run_id: string }>("/api/runs", AUTOMATION_RUN_BODY);
+      navigate(`/runs/${res.run_id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** One action: arm with the entered bounds, then launch the worker. */
+  const startSession = async (): Promise<void> => {
+    setBusy(true);
+    setError(null);
+    try {
+      await apiPost("/api/automation/arm", {
+        duration_minutes: Number(duration) || 120,
+        max_submits: Number(maxSubmits) || 10,
+        max_apps: Number(maxApps) || 25,
+      });
+      onChanged();
+      const res = await apiPost<{ run_id: string }>("/api/runs", AUTOMATION_RUN_BODY);
+      navigate(`/runs/${res.run_id}`);
+    } catch (err) {
+      // A failed launch leaves the session ARMED — the card shows that and
+      // the operator can retry the worker or disarm.
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
@@ -86,9 +144,14 @@ export function ArmCard({
             per-app confirmation. Disarm — or a console restart — stops that
             immediately.
           </p>
-          <button className="danger" onClick={() => void disarm()} disabled={busy}>
-            Disarm now
-          </button>
+          <div className="toolbar" style={{ marginBottom: 0 }}>
+            <button className="primary" onClick={() => void startWorker()} disabled={busy}>
+              Start automation worker
+            </button>
+            <button className="danger" onClick={() => void disarm()} disabled={busy}>
+              Disarm now
+            </button>
+          </div>
         </>
       ) : (
         <>
@@ -127,9 +190,18 @@ export function ArmCard({
               />
             </label>
           </div>
-          <button className="primary" onClick={() => void arm()} disabled={busy}>
-            Arm unattended session
-          </button>
+          <div className="toolbar" style={{ marginBottom: 0 }}>
+            <button className="primary" onClick={() => void startSession()} disabled={busy}>
+              Start L3 session
+            </button>
+            <button onClick={() => void arm()} disabled={busy}>
+              Arm only
+            </button>
+          </div>
+          <p className="faint" style={{ marginBottom: 0 }}>
+            Start L3 session = arm with these bounds, then launch the
+            automation worker. Arm only leaves launching to you.
+          </p>
         </>
       )}
     </div>

@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { apiGet } from "../api/client";
+import { apiGet, apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { Timeline } from "../components/Timeline";
 import { JsonView } from "../components/JsonView";
+import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
 
 function str(record: Record<string, unknown>, key: string): string | null {
   const v = record[key];
@@ -13,11 +15,13 @@ function str(record: Record<string, unknown>, key: string): string | null {
 
 export function ApplicationDetailPage(): JSX.Element {
   const { id = "" } = useParams();
-  const { data, error, loading } = usePoll<ApplicationDetail>(
+  const { data, error, loading, refresh } = usePoll<ApplicationDetail>(
     () => apiGet<ApplicationDetail>(`/api/applications/${id}`),
     5000,
     [id],
   );
+  const [toggleBusy, setToggleBusy] = useState(false);
+  const [toggleError, setToggleError] = useState<string | null>(null);
 
   if (loading && !data) return <p className="faint">Loading…</p>;
   if (error) return <div className="banner danger">{error}</div>;
@@ -25,6 +29,24 @@ export function ApplicationDetailPage(): JSX.Element {
 
   const state = String(data.application["state"] ?? "");
   const employerUrl = str(data.job, "employer_application_url");
+  const excluded = data.application["automation_excluded"] === true;
+  const hasOpenReview = data.review_items.some((r) =>
+    ["OPEN", "IN_PROGRESS"].includes(r.status),
+  );
+  const chip = deriveChip(state, hasOpenReview);
+
+  const toggleAutomation = async (): Promise<void> => {
+    setToggleBusy(true);
+    setToggleError(null);
+    try {
+      await apiPost(`/api/applications/${id}/automation`, { excluded: !excluded });
+      refresh();
+    } catch (err) {
+      setToggleError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setToggleBusy(false);
+    }
+  };
 
   return (
     <>
@@ -38,8 +60,21 @@ export function ApplicationDetailPage(): JSX.Element {
           </h1>
           <div className="sub mono">{id}</div>
         </div>
-        <StateBadge value={state} />
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          <span className={`badge ${CHIP_CLASS[chip]}`}>{chip}</span>
+          <StateBadge value={state} />
+          <button className="ghost" onClick={() => void toggleAutomation()} disabled={toggleBusy}>
+            {excluded ? "include in automation" : "exclude from automation"}
+          </button>
+        </div>
       </div>
+      {toggleError ? <div className="banner danger">{toggleError}</div> : null}
+      {excluded ? (
+        <div className="banner warn">
+          Excluded from L3 automation — the unattended worker will skip this
+          application until it is included again.
+        </div>
+      ) : null}
 
       <div className="grid-2">
         <div className="card">

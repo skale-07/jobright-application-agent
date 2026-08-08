@@ -1,4 +1,5 @@
 import type { Db } from "../storage/db/client.js";
+import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import {
   runPipeline,
@@ -6,6 +7,17 @@ import {
   type PipelineOptions,
 } from "../pipeline/runPipeline.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
+import { getApplication } from "../queue/stateMachine.js";
+import { upsertOpenReviewItem } from "../queue/reviewItems.js";
+import { listContacts } from "../contacts/repository.js";
+import { generateEmailForContact } from "../contacts/emailGenerate.js";
+import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
+import {
+  createOutlookDraft,
+  verifyOutlookDraft,
+  type DraftReport,
+  type DraftVerificationReport,
+} from "../outlook/draftRun.js";
 import { getActiveArmSession, consumeArmApplication } from "./armSession.js";
 
 /**
@@ -42,6 +54,8 @@ export type AutomationSessionReport = {
   submits_used: number;
   stopped_reason: AutomationStopReason;
   discover_runs: number;
+  emails_generated: number;
+  drafts_saved: number;
   notes: string[];
   per_app: AutomationAppResult[];
 };
@@ -53,6 +67,17 @@ export type AutomationProgress = {
 };
 
 type DiscoveryRunner = (maxJobs: number) => Promise<{ jobs_inspected: number }>;
+type DraftRunner = (input: {
+  db: Db;
+  applicationId: string;
+  contactId: string;
+  headless?: boolean;
+}) => Promise<DraftReport>;
+type DraftVerifier = (input: {
+  db: Db;
+  draftId: string;
+  headless?: boolean;
+}) => Promise<DraftVerificationReport>;
 
 export type AutomationSessionInput = {
   db: Db;
@@ -70,6 +95,10 @@ export type AutomationSessionInput = {
   contactsFixtureHtmlPath?: string;
   /** Test seam replacing live discovery. */
   discoveryRunner?: DiscoveryRunner;
+  /** Test seams for the post-submit outreach tail (drafts only, never send). */
+  emailClient?: EmailLlmClient;
+  draftRunner?: DraftRunner;
+  draftVerifier?: DraftVerifier;
   /** Progress sink (the runner turns this into SSE frames). */
   onProgress?: (p: AutomationProgress) => void;
   /** Deterministic jitter for tests (default Math.random via index). */
@@ -126,6 +155,140 @@ function pickNextApplication(db: Db, seen: Set<string>): string | null {
   );
 }
 
+export type OutreachTailResult = {
+  application_id: string;
+  email_status: "generated" | "rejected" | "skipped" | null;
+  draft_status: "verified" | "saved" | "refused" | "failed" | "skipped" | null;
+  notes: string[];
+};
+
+/**
+ * The M6 tail: after a verified submit the pipeline dead-ends at
+ * CONTACTS_EXTRACTED / EMAIL_GENERATED (stop:"gate") — this picks those up
+ * when the child env carries the outreach flags. Drafts only, never send:
+ * the only mailbox mutation is createOutlookDraft, which is itself behind
+ * OUTLOOK_DRAFTS_ENABLED + DRY_RUN and the sendGuards/check-forbidden bans.
+ * Every failure lands as a review item + note — the submission is never
+ * reversed and the session loop never dies on outreach.
+ */
+export async function runOutreachTail(input: {
+  db: Db;
+  applicationId: string;
+  headless?: boolean;
+  emailClient?: EmailLlmClient;
+  draftRunner?: DraftRunner;
+  draftVerifier?: DraftVerifier;
+}): Promise<OutreachTailResult> {
+  const { db, applicationId } = input;
+  const result: OutreachTailResult = {
+    application_id: applicationId,
+    email_status: null,
+    draft_status: null,
+    notes: [],
+  };
+  const cfg = getConfig();
+
+  try {
+    // Phase 1 — outreach generation (spend surface; generateEmailForContact
+    // re-asserts the gate itself). REJECTED already opened a review item.
+    if (getApplication(db, applicationId)?.state === "CONTACTS_EXTRACTED") {
+      if (!cfg.emailGenerationEnabled || !cfg.openaiApiKey) {
+        result.email_status = "skipped";
+        result.notes.push("email generation gated off");
+        return result;
+      }
+      const contact = listContacts(db, applicationId).find(
+        (c) => c.name && c.email,
+      );
+      if (!contact) {
+        result.email_status = "skipped";
+        result.notes.push("no contact with both name and email");
+        return result;
+      }
+      const gen = await generateEmailForContact({
+        db,
+        applicationId,
+        contactId: contact.id,
+        client: input.emailClient ?? new OpenAiEmailClient(),
+      });
+      if (gen.validation_status !== "VALIDATED") {
+        result.email_status = "rejected";
+        result.notes.push("generation rejected — review item opened");
+        return result;
+      }
+      result.email_status = "generated";
+    }
+
+    // Phase 2 — Outlook draft (mailbox mutation; createOutlookDraft
+    // re-asserts drafts-only + DRY_RUN). Verify by deterministic read-back.
+    if (getApplication(db, applicationId)?.state === "EMAIL_GENERATED") {
+      if (!cfg.outlookDraftsEnabled || cfg.dryRun) {
+        result.draft_status = "skipped";
+        result.notes.push("draft creation gated off");
+        return result;
+      }
+      const gen = db
+        .prepare(
+          `SELECT contact_id FROM email_generations
+           WHERE application_id = ? AND validation_status = 'VALIDATED'
+           ORDER BY created_at DESC LIMIT 1`,
+        )
+        .get(applicationId) as { contact_id: string } | undefined;
+      if (!gen) {
+        result.draft_status = "skipped";
+        result.notes.push("no VALIDATED generation to draft from");
+        return result;
+      }
+      const create = input.draftRunner ?? createOutlookDraft;
+      const draft = await create({
+        db,
+        applicationId,
+        contactId: gen.contact_id,
+        headless: input.headless ?? true,
+      });
+      if (draft.status !== "SAVED" || !draft.draft_id) {
+        result.draft_status = draft.status === "REFUSED" ? "refused" : "failed";
+        result.notes.push(`draft ${draft.status}: ${draft.reason}`);
+        if (draft.status === "FAILED") {
+          upsertOpenReviewItem(db, {
+            applicationId,
+            kind: "MANUAL",
+            title: "Outreach draft failed after submit",
+            payload: { reason: draft.reason },
+          });
+        }
+        return result;
+      }
+      const verify = input.draftVerifier ?? verifyOutlookDraft;
+      const v = await verify({
+        db,
+        draftId: draft.draft_id,
+        headless: input.headless ?? true,
+      });
+      result.draft_status = v.verified ? "verified" : "saved";
+      if (!v.verified) result.notes.push(`draft saved but unverified: ${v.notes.join("; ")}`);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    result.notes.push(`outreach tail error: ${message.slice(0, 200)}`);
+    upsertOpenReviewItem(db, {
+      applicationId,
+      kind: "MANUAL",
+      title: "Outreach tail failed after submit",
+      payload: { error: message.slice(0, 500) },
+    });
+    logger.warn("outreach tail failed — submission unaffected", {
+      service: "automation",
+      action: "outreach_tail_error",
+      metadata: { application_id: applicationId },
+    });
+  }
+  return result;
+}
+
+/** End states the outreach tail can pick up from. */
+const TAIL_STATES = new Set(["CONTACTS_EXTRACTED", "EMAIL_GENERATED"]);
+
 export async function runAutomationSession(
   input: AutomationSessionInput,
 ): Promise<AutomationSessionReport> {
@@ -144,6 +307,8 @@ export async function runAutomationSession(
     submits_used: 0,
     stopped_reason: "queue_drained",
     discover_runs: 0,
+    emails_generated: 0,
+    drafts_saved: 0,
     notes: [],
     per_app: [],
   };
@@ -254,6 +419,23 @@ export async function runAutomationSession(
         if (appReport.stopped == null) {
           lastErrorCode = "anomaly_no_stop";
           report.notes.push(`anomaly: ${appId} stopped with no reason`);
+        }
+        // Post-submit outreach tail (drafts only, never send). Only states a
+        // verified submit can reach; failures are review items, not stops.
+        if (TAIL_STATES.has(appReport.end_state)) {
+          const tail = await runOutreachTail({
+            db,
+            applicationId: appId,
+            headless: input.headless ?? true,
+            ...(input.emailClient ? { emailClient: input.emailClient } : {}),
+            ...(input.draftRunner ? { draftRunner: input.draftRunner } : {}),
+            ...(input.draftVerifier ? { draftVerifier: input.draftVerifier } : {}),
+          });
+          if (tail.email_status === "generated") report.emails_generated += 1;
+          if (tail.draft_status === "verified" || tail.draft_status === "saved") {
+            report.drafts_saved += 1;
+          }
+          for (const n of tail.notes) report.notes.push(`outreach ${appId}: ${n}`);
         }
       }
     } catch (err) {

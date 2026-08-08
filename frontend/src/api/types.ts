@@ -32,6 +32,8 @@ export type ApplicationRow = {
   company: string | null;
   role: string | null;
   location: string | null;
+  automation_excluded: boolean;
+  has_open_review: boolean;
 };
 
 export type ApplicationsPage = { rows: ApplicationRow[]; total: number };

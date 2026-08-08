@@ -16,11 +16,7 @@ import { registerResumeMaterial } from "../../src/jobright/materialsRegister.js"
 import { upsertOpenReviewItem } from "../../src/queue/reviewItems.js";
 import { armSession, getArmStatus, hashArmToken } from "../../src/automation/armSession.js";
 import { runAutomationSession } from "../../src/automation/worker.js";
-import {
-  applyControlledFillEnv,
-  applySafeFillEnv,
-  useIsolatedFillEnv,
-} from "../helpers/fillEnvIsolation.js";
+import { applySafeFillEnv, useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
 import { resetConfigCache } from "../../src/config/index.js";
 
 const GREENHOUSE_FIXTURE = path.join(

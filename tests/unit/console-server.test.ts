@@ -226,6 +226,73 @@ describe("console server (UNIT_CONFIRMED)", () => {
     }
   });
 
+  it("automation exclude toggle round-trips through the API and the read models", async () => {
+    const h = handler();
+
+    // Bearer-gated; boolean-validated; 404 on unknown app.
+    expect(
+      (await invoke(h, "POST", `/api/applications/${appId}/automation`)).statusCode,
+    ).toBe(401);
+    expect(
+      (
+        await invoke(h, "POST", `/api/applications/${appId}/automation`, {
+          token,
+          body: JSON.stringify({ excluded: "yes" }),
+        })
+      ).statusCode,
+    ).toBe(400);
+    expect(
+      (
+        await invoke(h, "POST", `/api/applications/${randomUUID()}/automation`, {
+          token,
+          body: JSON.stringify({ excluded: true }),
+        })
+      ).statusCode,
+    ).toBe(404);
+
+    // Exclude, preserving unrelated versions_json keys.
+    db.prepare(`UPDATE applications SET versions_json = ? WHERE id = ?`).run(
+      JSON.stringify({ resume_version: "v2" }),
+      appId,
+    );
+    const excluded = await invoke(h, "POST", `/api/applications/${appId}/automation`, {
+      token,
+      body: JSON.stringify({ excluded: true }),
+    });
+    expect(excluded.statusCode).toBe(200);
+    expect(JSON.parse(excluded.body)).toEqual({
+      application_id: appId,
+      automation_excluded: true,
+    });
+    const versions = JSON.parse(
+      (
+        db.prepare(`SELECT versions_json AS v FROM applications WHERE id = ?`).get(appId) as {
+          v: string;
+        }
+      ).v,
+    );
+    expect(versions).toEqual({ resume_version: "v2", automation_excluded: true });
+
+    // The list read model surfaces the flag + open-review presence.
+    const list = JSON.parse((await invoke(h, "GET", "/api/applications")).body);
+    const row = list.rows.find((r: { id: string }) => r.id === appId);
+    expect(row.automation_excluded).toBe(true);
+    expect(row.has_open_review).toBe(true); // seeded MANUAL item
+    expect(row.versions_json).toBeUndefined();
+
+    // Detail carries it too; include again flips it back.
+    const detail = JSON.parse((await invoke(h, "GET", `/api/applications/${appId}`)).body);
+    expect(detail.application.automation_excluded).toBe(true);
+    await invoke(h, "POST", `/api/applications/${appId}/automation`, {
+      token,
+      body: JSON.stringify({ excluded: false }),
+    });
+    const after = JSON.parse((await invoke(h, "GET", "/api/applications")).body);
+    expect(
+      after.rows.find((r: { id: string }) => r.id === appId).automation_excluded,
+    ).toBe(false);
+  });
+
   it("refuses non-GET/POST methods and unauthorized POSTs", async () => {
     const h = handler();
     for (const method of ["PUT", "DELETE", "PATCH"]) {

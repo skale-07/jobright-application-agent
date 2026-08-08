@@ -6,13 +6,15 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
 
-type Kind = "pipeline" | "nav" | "submit" | "discover";
+type Kind = "pipeline" | "nav" | "submit" | "discover" | "automation";
 
 const KIND_HELP: Record<Kind, string> = {
   pipeline: "Advance applications through the state machine.",
   nav: "Resolve the employer application URL from the JobRight job page.",
   submit: "Fill, verify, and submit one application (you confirm the click).",
   discover: "Pull jobs from the JobRight feed and enqueue them (needs a JobRight session).",
+  automation:
+    "L3 worker: process the queue unattended while the arm session is live (arm on Overview first).",
 };
 
 export function RunsPage(): JSX.Element {
@@ -87,21 +89,13 @@ export function RunsPage(): JSX.Element {
                 <option value="nav">nav — resolve employer URL</option>
                 <option value="submit">submit</option>
                 <option value="discover">discover — pull + enqueue jobs</option>
+                <option value="automation">automation — L3 unattended worker</option>
               </select>
             </label>
             <p className="faint" style={{ margin: 0 }}>
               {KIND_HELP[kind]}
             </p>
-            {kind !== "discover" ? (
-              <label className="field">
-                Application ID {kind === "pipeline" ? "(optional)" : "(required)"}
-                <input
-                  value={applicationId}
-                  onChange={(e) => setApplicationId(e.target.value)}
-                  placeholder="uuid"
-                />
-              </label>
-            ) : (
+            {kind === "discover" ? (
               <label className="field">
                 Max jobs
                 <input
@@ -109,6 +103,20 @@ export function RunsPage(): JSX.Element {
                   min={1}
                   value={maxJobs}
                   onChange={(e) => setMaxJobs(e.target.value)}
+                />
+              </label>
+            ) : kind === "automation" ? (
+              <p className="faint" style={{ margin: 0 }}>
+                Scope comes from the armed session (caps, discovery cadence) —
+                nothing to configure here.
+              </p>
+            ) : (
+              <label className="field">
+                Application ID {kind === "pipeline" ? "(optional)" : "(required)"}
+                <input
+                  value={applicationId}
+                  onChange={(e) => setApplicationId(e.target.value)}
+                  placeholder="uuid"
                 />
               </label>
             )}
