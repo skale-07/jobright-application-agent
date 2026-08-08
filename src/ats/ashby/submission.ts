@@ -1,5 +1,10 @@
 import type { Page } from "playwright";
-import type { SubmissionAttempt, SubmissionReceipt } from "../adapter.js";
+import type {
+  SubmissionAttempt,
+  SubmissionReceipt,
+  SubmitClickOptions,
+} from "../adapter.js";
+import { CLICK_WITHHELD_NOTE } from "../adapter.js";
 import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { ashbySelectorsV1 } from "./selectors.js";
@@ -64,7 +69,10 @@ export function extractApplicationIdentifier(html: string): string | null {
  * assertSubmitAllowed runs here as the last line of defense even though
  * callers gate earlier.
  */
-export async function ashbySubmit(page: Page): Promise<SubmissionAttempt> {
+export async function ashbySubmit(
+  page: Page,
+  opts: SubmitClickOptions = {},
+): Promise<SubmissionAttempt> {
   assertSubmitAllowed("ashby.submit");
   const resolution = await resolveSubmitControl(page, ashbySelectorsV1.submitCascade);
   if (!resolution.found) {
@@ -81,6 +89,9 @@ export async function ashbySubmit(page: Page): Promise<SubmissionAttempt> {
   const control = resolution.control;
   if (await control.isDisabled().catch(() => false)) {
     return { clicked: false, notes: [...notes, "submit control disabled"] };
+  }
+  if (opts.beforeClick && !(await opts.beforeClick())) {
+    return { clicked: false, notes: [...notes, CLICK_WITHHELD_NOTE] };
   }
   await control.click();
   notes.push("submit control clicked");

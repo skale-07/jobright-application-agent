@@ -8,6 +8,7 @@ import {
   type ConfirmSubmission,
 } from "./submitConfirmation.js";
 import { diagnoseDisabledSubmit } from "../ats/shared/submitDiagnostics.js";
+import type { SubmitClickOptions } from "../ats/adapter.js";
 import { recoverEmailVerification } from "../verification/recoverSubmitVerification.js";
 import {
   resolveVerificationCodeProvider,
@@ -330,14 +331,31 @@ export async function runAtsSubmission(input: {
               "Unattended mode requires an explicit --yes acknowledgment";
             return persist(report);
           }
-          if (!tryConsumeUnattendedSubmission(db, runId)) {
-            markSubmissionFailed(db, pending.id, "unattended cap reached");
-            failIdempotencyKey(db, idemKey, "unattended_cap");
-            report.outcome = "REFUSED";
-            report.reason = `MAX_UNATTENDED_SUBMISSIONS_PER_RUN cap reached (${cfg.maxUnattendedSubmissionsPerRun}) — refusing unattended submission`;
-            return persist(report);
-          }
+          // The budget slot is NOT consumed here anymore — it is consumed at
+          // click-commit time via the beforeClick gate below, so a failure
+          // that never reaches a clickable control (verify miss, control not
+          // found, disabled) no longer burns an unattended submission. The
+          // Netic session spent its only slot on exactly such a failure.
         }
+
+        // Click-commit gate: consumed once, immediately before the first
+        // actual click. The verification-recovery retry re-enters submit()
+        // after a slot was already spent — idempotent by design.
+        let unattendedSlotConsumed = false;
+        let unattendedCapHit = false;
+        const clickGate: SubmitClickOptions = cfg.submitRequiresLocalConfirmation
+          ? {}
+          : {
+              beforeClick: () => {
+                if (unattendedSlotConsumed) return true;
+                if (tryConsumeUnattendedSubmission(db, runId)) {
+                  unattendedSlotConsumed = true;
+                  return true;
+                }
+                unattendedCapHit = true;
+                return false;
+              },
+            };
 
         transitionApplication(db, {
           applicationId,
@@ -417,7 +435,7 @@ export async function runAtsSubmission(input: {
             return persist(report);
           }
 
-          let attempt = await binding.submit(page);
+          let attempt = await binding.submit(page, clickGate);
           if (
             !attempt.clicked &&
             attempt.notes.some((n) => /disabled/i.test(n))
@@ -438,7 +456,7 @@ export async function runAtsSubmission(input: {
               });
               attempt.notes.push(...recovery.notes);
               if (recovery.submitEnabled) {
-                attempt = await binding.submit(page);
+                attempt = await binding.submit(page, clickGate);
                 attempt.notes.unshift("submit retried after email verification");
               }
             } else if (diagnosis.verification.detected) {
@@ -446,6 +464,19 @@ export async function runAtsSubmission(input: {
                 "no mailbox provider enabled (OUTLOOK_VERIFICATION_ENABLED / GMAIL_VERIFICATION_ENABLED) — cannot fetch the code",
               );
             }
+          }
+          if (!attempt.clicked && unattendedCapHit) {
+            markSubmissionFailed(db, pending.id, "unattended cap reached at click time");
+            failIdempotencyKey(db, idemKey, "unattended_cap");
+            transitionApplication(db, {
+              applicationId,
+              nextState: "FAILED_RETRYABLE",
+              reason: "unattended cap reached at click time — filled and verified, click withheld",
+              runId,
+            });
+            report.outcome = "REFUSED";
+            report.reason = `MAX_UNATTENDED_SUBMISSIONS_PER_RUN cap reached (${cfg.maxUnattendedSubmissionsPerRun}) — click withheld after successful fill+verify`;
+            return persist(report);
           }
           if (!attempt.clicked) {
             const reason = attempt.notes.join("; ");

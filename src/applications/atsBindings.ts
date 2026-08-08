@@ -1,5 +1,9 @@
 import type { Page } from "playwright";
-import type { SubmissionAttempt, SubmissionReceipt } from "../ats/adapter.js";
+import type {
+  SubmissionAttempt,
+  SubmissionReceipt,
+  SubmitClickOptions,
+} from "../ats/adapter.js";
 import type { SupportedAtsId } from "../ats/shared/urlValidationDispatch.js";
 import {
   greenhouseSubmit,
@@ -40,7 +44,7 @@ export type AtsBinding = {
     employerUrl: string,
     normalizedUrl?: string,
   ): Promise<AtsBindingGateResult>;
-  submit(page: Page): Promise<SubmissionAttempt>;
+  submit(page: Page, opts?: SubmitClickOptions): Promise<SubmissionAttempt>;
   /** The submit control locator — used by disabled-submit diagnostics. */
   submitSelector: string;
   verifySubmission(
@@ -58,7 +62,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     id: "greenhouse",
     gate: (page, employerUrl, normalizedUrl) =>
       verifyPageBeforeMutation(page, employerUrl, normalizedUrl ?? null),
-    submit: (page) => greenhouseSubmit(page),
+    submit: (page, opts) => greenhouseSubmit(page, opts),
     submitSelector: greenhouseSelectorsV1.submit,
     verifySubmission: (page, opts) => greenhouseVerifySubmission(page, opts),
     supportsEssayFill: true,
@@ -72,7 +76,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
         formMarkers: leverSelectorsV1.formMarkers,
         ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
-    submit: (page) => leverSubmit(page),
+    submit: (page, opts) => leverSubmit(page, opts),
     submitSelector: leverSelectorsV1.submit,
     verifySubmission: (page, opts) => leverVerifySubmission(page, opts),
     supportsEssayFill: false,
@@ -88,7 +92,7 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
         formMarkers: ashbySelectorsV1.renderedFormMarkers,
         ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
       }),
-    submit: (page) => ashbySubmit(page),
+    submit: (page, opts) => ashbySubmit(page, opts),
     submitSelector: ashbySelectorsV1.submit,
     verifySubmission: (page, opts) => ashbyVerifySubmission(page, opts),
     supportsEssayFill: false,
