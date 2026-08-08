@@ -50,6 +50,17 @@ export type AutomationAppResult = {
   stopped: string | null;
   stop_reason: string | null;
   submitted: boolean;
+  /**
+   * Referral-tail outcome for this app, or null when the tail never ran.
+   * The first live L3 session reported emails_generated: 0 with no way to
+   * tell "no verified submit" from "flag off" from "no contacts" — every
+   * skip now names itself.
+   */
+  outreach: {
+    email_status: OutreachTailResult["email_status"];
+    draft_status: OutreachTailResult["draft_status"];
+    skip_reason: string | null;
+  } | null;
 };
 
 export type AutomationSessionReport = {
@@ -511,7 +522,8 @@ export async function runAutomationSession(
       });
       const appReport: PipelineAppReport | undefined = pipelineReport.applications[0];
       if (appReport) {
-        report.per_app.push(toAppResult(db, appReport));
+        const appResult = toAppResult(db, appReport);
+        report.per_app.push(appResult);
         logger.info("automation app pipeline result", {
           service: "automation",
           action: "app_end",
@@ -531,6 +543,19 @@ export async function runAutomationSession(
         }
         // Post-submit outreach tail (drafts only, never send). Only states a
         // verified submit can reach; failures are review items, not stops.
+        if (appResult.submitted && !TAIL_STATES.has(appReport.end_state)) {
+          // Verified submit but the pipeline never reached a tail state —
+          // contacts extraction didn't run (flag off, extraction failed, or
+          // the pipeline stopped earlier). Name it instead of a silent 0.
+          appResult.outreach = {
+            email_status: null,
+            draft_status: null,
+            skip_reason: `tail unreachable from end_state ${appReport.end_state} — contacts extraction did not run`,
+          };
+          report.notes.push(
+            `outreach ${appId}: skipped — end_state ${appReport.end_state} (no contacts extracted)`,
+          );
+        }
         if (TAIL_STATES.has(appReport.end_state)) {
           logger.info("automation outreach tail begin", {
             service: "automation",
@@ -546,6 +571,14 @@ export async function runAutomationSession(
             ...(input.draftRunner ? { draftRunner: input.draftRunner } : {}),
             ...(input.draftVerifier ? { draftVerifier: input.draftVerifier } : {}),
           });
+          appResult.outreach = {
+            email_status: tail.email_status,
+            draft_status: tail.draft_status,
+            skip_reason:
+              tail.email_status === "skipped" || tail.draft_status === "skipped"
+                ? (tail.notes[0] ?? "skipped")
+                : null,
+          };
           if (tail.email_status === "generated") report.emails_generated += 1;
           if (tail.draft_status === "verified" || tail.draft_status === "saved") {
             report.drafts_saved += 1;
@@ -653,5 +686,6 @@ function toAppResult(db: Db, appReport: PipelineAppReport): AutomationAppResult 
     stopped: appReport.stopped,
     stop_reason: appReport.stop_reason,
     submitted,
+    outreach: null,
   };
 }

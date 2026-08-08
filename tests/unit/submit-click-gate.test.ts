@@ -44,8 +44,8 @@ describe("submit click-commit gate (FIXTURE_CONFIRMED)", () => {
       expect(attempt.clicked).toBe(false);
       expect(attempt.notes).toContain(CLICK_WITHHELD_NOTE);
       expect(calls).toBe(1);
-      const clicked = await page.evaluate(() => document.body.dataset["clicked"]);
-      expect(clicked).toBeUndefined();
+      const clicked = await page.locator("body").getAttribute("data-clicked");
+      expect(clicked).toBeNull();
     });
   }, 30_000);
 
@@ -61,7 +61,7 @@ describe("submit click-commit gate (FIXTURE_CONFIRMED)", () => {
       });
       expect(attempt.clicked).toBe(true);
       expect(calls).toBe(1);
-      const clicked = await page.evaluate(() => document.body.dataset["clicked"]);
+      const clicked = await page.locator("body").getAttribute("data-clicked");
       expect(clicked).toBe("yes");
     });
   }, 30_000);
@@ -90,8 +90,8 @@ describe("submit click-commit gate (FIXTURE_CONFIRMED)", () => {
       const attempt = await greenhouseSubmit(page, { beforeClick: () => false });
       expect(attempt.clicked).toBe(false);
       expect(attempt.notes).toContain(CLICK_WITHHELD_NOTE);
-      const clicked = await page.evaluate(() => document.body.dataset["clicked"]);
-      expect(clicked).toBeUndefined();
+      const clicked = await page.locator("body").getAttribute("data-clicked");
+      expect(clicked).toBeNull();
     });
   }, 30_000);
 });
