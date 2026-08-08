@@ -1,0 +1,84 @@
+/* Design tokens — the entire visual system lives in these variables.
+   Dark is the primary theme (operator tool, log-heavy); light is derived.
+   Manual toggle sets data-theme on <html>; otherwise the OS decides. */
+
+:root {
+  --font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas,
+    monospace;
+  --font-ui: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+
+  /* dark palette (default) */
+  --bg: #0d1117;
+  --bg-raised: #161b22;
+  --bg-inset: #010409;
+  --bg-hover: #1c2129;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #6e7681;
+
+  --accent: #58a6ff;
+  --accent-dim: rgba(88, 166, 255, 0.15);
+  --ok: #3fb950;
+  --ok-dim: rgba(63, 185, 80, 0.15);
+  --warn: #d29922;
+  --warn-dim: rgba(210, 153, 34, 0.15);
+  --danger: #f85149;
+  --danger-dim: rgba(248, 81, 73, 0.15);
+  --purple: #bc8cff;
+  --purple-dim: rgba(188, 140, 255, 0.15);
+
+  --radius: 8px;
+  --radius-sm: 5px;
+  --shadow: 0 8px 24px rgba(1, 4, 9, 0.55);
+  --sidebar-w: 13.5rem;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa;
+    --bg-raised: #ffffff;
+    --bg-inset: #eef1f4;
+    --bg-hover: #f0f3f6;
+    --border: #d0d7de;
+    --border-strong: #afb8c1;
+    --text: #1f2328;
+    --text-dim: #59636e;
+    --text-faint: #818b98;
+    --accent: #0969da;
+    --accent-dim: rgba(9, 105, 218, 0.1);
+    --ok: #1a7f37;
+    --ok-dim: rgba(26, 127, 55, 0.12);
+    --warn: #9a6700;
+    --warn-dim: rgba(154, 103, 0, 0.12);
+    --danger: #cf222e;
+    --danger-dim: rgba(207, 34, 46, 0.1);
+    --purple: #8250df;
+    --purple-dim: rgba(130, 80, 223, 0.1);
+    --shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+  }
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-raised: #ffffff;
+  --bg-inset: #eef1f4;
+  --bg-hover: #f0f3f6;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+  --text: #1f2328;
+  --text-dim: #59636e;
+  --text-faint: #818b98;
+  --accent: #0969da;
+  --accent-dim: rgba(9, 105, 218, 0.1);
+  --ok: #1a7f37;
+  --ok-dim: rgba(26, 127, 55, 0.12);
+  --warn: #9a6700;
+  --warn-dim: rgba(154, 103, 0, 0.12);
+  --danger: #cf222e;
+  --danger-dim: rgba(207, 34, 46, 0.1);
+  --purple: #8250df;
+  --purple-dim: rgba(130, 80, 223, 0.1);
+  --shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+}
