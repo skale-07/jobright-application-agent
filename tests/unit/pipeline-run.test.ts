@@ -193,6 +193,12 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
   }, 60_000);
 
   it("routes the essay fixture to ESSAY_REQUIRED and resumes after answers", async () => {
+    applyControlledFillEnv({
+      FORM_FILL_ENABLED: "true",
+      DRY_RUN: "false",
+      SUBMIT_ENABLED: "false",
+      ESSAY_REQUIRED_GATE_ENABLED: "true",
+    });
     const appId = seed();
     registerResumeMaterial({ db, applicationId: appId, filePath: SYNTHETIC_PDF });
     const first = await runPipeline({

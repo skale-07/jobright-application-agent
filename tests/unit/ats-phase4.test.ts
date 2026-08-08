@@ -16,6 +16,7 @@ import { detectAts } from "../../src/ats/registry.js";
 import { GREENHOUSE_ADAPTER_VERSION } from "../../src/ats/greenhouse/v1.js";
 import { resetConfigCache } from "../../src/config/index.js";
 import {
+  applyControlledFillEnv,
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
@@ -57,13 +58,23 @@ describe("Phase 4 ATS inspection", () => {
     expect(report.form_fill_enabled).toBe(false);
   });
 
-  it("flags essay fields and routes needs_essay", async () => {
+  it("flags essay fields and routes needs_essay when gate is on", async () => {
+    applyControlledFillEnv({ ESSAY_REQUIRED_GATE_ENABLED: "true" });
     const f = loadAtsFixture("essay");
     const fields = discoverFieldsFromHtml(f.html);
     const essays = classifyEssayFields(fields).filter((e) => e.is_essay);
     expect(essays.length).toBeGreaterThanOrEqual(1);
     const report = await inspectApplicationHtml(f);
     expect(report.route).toBe("needs_essay");
+  });
+
+  it("does not hard-stop on essays when ESSAY_REQUIRED_GATE_ENABLED is off (default)", async () => {
+    const f = loadAtsFixture("essay");
+    const report = await inspectApplicationHtml(f);
+    expect(report.route).not.toBe("needs_essay");
+    // Heuristic classification still reported for observability;
+    // only routing is gated off.
+    expect(report.essays.length).toBeGreaterThanOrEqual(1);
   });
 
   it("detects demographics fields", async () => {

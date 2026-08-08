@@ -15,6 +15,7 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "AGENT_FALLBACK_ENABLED",
   "NAVIGATION_ENABLED",
   "GMAIL_VERIFICATION_ENABLED",
+  "ESSAY_REQUIRED_GATE_ENABLED",
 ] as const;
 
 export type ControlledFillEnvKey = (typeof CONTROLLED_FILL_ENV_KEYS)[number];

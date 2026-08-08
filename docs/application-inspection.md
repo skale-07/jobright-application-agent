@@ -36,7 +36,7 @@ Reports write to `artifacts/ats-inspect/<name>/inspect-report.json`.
 | Route | Meaning |
 |-------|---------|
 | `ready_for_fill_later` | Mapped; fill deferred to later phase |
-| `needs_essay` | Long / essay-like questions present |
+| `needs_essay` | Long / essay-like questions present — **only when `ESSAY_REQUIRED_GATE_ENABLED=true`** (default off; heuristics false-positive on demographic wording). Textareas still never auto-fill. |
 | `needs_review_unmapped` | Required fields lack answer aliases |
 | `needs_login` / `needs_human_captcha` / `needs_account_creation` | Human gate |
 | `skip_unsupported_ats` | Do not attempt fill |

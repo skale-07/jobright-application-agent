@@ -206,7 +206,12 @@ approved plan — healing relocates fields, never chooses answers.
 
 ## 6. Essays
 
-If inspection flagged essay questions the application parks in
+**By default the pipeline does not park for essays** (`ESSAY_REQUIRED_GATE_ENABLED=false`).
+Heuristics still classify fields for the proposed plan (textareas never auto-fill),
+but EEO/combobox false positives must not block fill. Set
+`ESSAY_REQUIRED_GATE_ENABLED=true` only for the human `resume-essay` workflow.
+
+If the gate is on and inspection flagged essay questions, the application parks in
 `ESSAY_REQUIRED` with an `ESSAY` review item listing every question.
 
 ```powershell
@@ -435,6 +440,7 @@ contract rather than trusted.
 | `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) + nav agent phase |
 | `NAVIGATION_ENABLED` | `false` | Navigation: clicking Apply on JobRight (mutates applied-state) |
 | `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail readonly OTP/magic-link retrieval during nav |
+| `ESSAY_REQUIRED_GATE_ENABLED` | `false` | Hard-stop on heuristic essay detection (`ESSAY_REQUIRED`); off until heuristics are better |
 
 The banned send-style APIs have no flag — they are impossible, enforced by
 `npm run check:forbidden` (Outlook send identifiers AND Gmail
