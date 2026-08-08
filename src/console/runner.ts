@@ -116,6 +116,9 @@ async function main(): Promise<void> {
         ...(args.rediscover_every !== undefined
           ? { rediscoverEvery: args.rediscover_every }
           : {}),
+        // Offline e2e seam (same as the pipeline kind): every app inspects
+        // this fixture instead of the live employer page.
+        ...(args.fixture_html ? { fixtureHtmlPath: args.fixture_html } : {}),
       });
     } else if (kind === "discover") {
       // Discovery opens its own DB and enqueues to QUEUED; it throws on an

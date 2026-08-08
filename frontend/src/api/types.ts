@@ -149,4 +149,5 @@ export type ArmStatus = {
   apps_started: number;
   discover_max: number;
   rediscover_every: number;
+  last_error_code: string | null;
 };

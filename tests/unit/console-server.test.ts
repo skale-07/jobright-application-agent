@@ -226,6 +226,57 @@ describe("console server (UNIT_CONFIRMED)", () => {
     }
   });
 
+  it("kill switch beats arm: an ARMED session still cannot launch automation without AUTOMATION_ENABLED", async () => {
+    const h = createConsoleHandler({
+      db,
+      token,
+      distDir: path.join(tmpDir, "dist"),
+      artifactsDir: path.join(tmpDir, "artifacts"),
+      runManager: new RunManager({ runsDir: path.join(tmpDir, "runs") }),
+    });
+    // Arm a real session first.
+    const armed = await invoke(h, "POST", "/api/automation/arm", {
+      token,
+      body: JSON.stringify({ duration_minutes: 30 }),
+    });
+    expect(JSON.parse(armed.body).armed).toBe(true);
+
+    // Shell carries fill/submit/live but NOT the automation kill switch.
+    const prior = {
+      AUTOMATION_ENABLED: process.env.AUTOMATION_ENABLED,
+      FORM_FILL_ENABLED: process.env.FORM_FILL_ENABLED,
+      SUBMIT_ENABLED: process.env.SUBMIT_ENABLED,
+      DRY_RUN: process.env.DRY_RUN,
+    };
+    delete process.env.AUTOMATION_ENABLED;
+    process.env.FORM_FILL_ENABLED = "true";
+    process.env.SUBMIT_ENABLED = "true";
+    process.env.DRY_RUN = "false";
+    try {
+      const denied = await invoke(h, "POST", "/api/runs", {
+        token,
+        body: JSON.stringify({
+          kind: "automation",
+          params: {},
+          flags: {
+            AUTOMATION_ENABLED: true, // opted in, but not in the ceiling
+            FORM_FILL_ENABLED: true,
+            SUBMIT_ENABLED: true,
+          },
+          live_mode: true,
+        }),
+      });
+      expect(denied.statusCode).toBe(403);
+      expect(denied.body).toMatch(/AUTOMATION_ENABLED/);
+    } finally {
+      for (const [k, v] of Object.entries(prior)) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+      await invoke(h, "POST", "/api/automation/disarm", { token });
+    }
+  });
+
   it("automation exclude toggle round-trips through the API and the read models", async () => {
     const h = handler();
 

@@ -138,6 +138,14 @@ export function ArmCard({
                 <span className="faint"> / {status.max_apps}</span>
               </div>
             </div>
+            {status.last_error_code ? (
+              <div className="stat">
+                <div className="label">last error</div>
+                <div className="value mono" style={{ fontSize: "1rem", color: "var(--warn)" }}>
+                  {status.last_error_code}
+                </div>
+              </div>
+            ) : null}
           </div>
           <p className="muted" style={{ marginTop: 0 }}>
             Submits made by the automation worker during this window skip the

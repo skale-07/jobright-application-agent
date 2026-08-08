@@ -653,8 +653,7 @@ parser already used by navigation.
 
 L3 lets the console click Submit **without a per-application confirmation**,
 but only inside a **timed, capped, operator-armed session**. This section
-is the contract; the runbook (prerequisites, "watch the first hour") lands
-with the worker loop.
+is the contract; §18.1 below is the runbook.
 
 **Arming.** From the console you arm a session: a duration (clamped 15–240
 minutes, default 120) and caps — max submits (default 10) and max apps
@@ -693,3 +692,59 @@ the automation worker regardless of any arm.
 Hard-stop codes that park an app and continue the queue: `CAPTCHA_REQUIRED`,
 `AUTH_REQUIRED` (non-OTP / no mailbox recovery), phone OTP, `UNSUPPORTED_ATS`,
 missing materials, and budget/attempt exhaustion.
+
+### 18.1 Runbook
+
+**Prerequisites (before the first armed session):**
+
+1. **JobRight session** ready (`npm run auth:login -- --service jobright`;
+   the Overview "Session readiness" card must show jobright ready) — needed
+   for discovery and contacts extraction.
+2. **Default resume** uploaded (Settings → "Upload default resume", or place
+   the PDF at `DEFAULT_RESUME_PATH`). Apps without a registered resume
+   auto-attach this; if it is missing they park at materials review.
+3. **Gmail verification** authorized (`npm run gmail:auth`) if you want the
+   worker to recover ATS email-verification codes unattended
+   (`GMAIL_VERIFICATION_ENABLED`).
+4. Start the console from a shell that carries the capabilities you intend
+   to grant — at minimum `AUTOMATION_ENABLED=true FORM_FILL_ENABLED=true
+   SUBMIT_ENABLED=true DRY_RUN=false` plus whatever else you want in the
+   ceiling (navigation, native autofill, materials download, gmail
+   verification; email generation + outlook drafts for the outreach tail).
+   The shell is the ceiling: anything not exported there can never reach a
+   child run, whatever the UI asks for.
+
+**Starting a session:** on Overview, set duration/caps on the arm card and
+press **Start L3 session** (arm + launch in one action), or **Arm only** and
+launch the `automation` kind from Runs yourself. The worker discovers (per
+the arm's `discover_max`/`rediscover_every`), then walks the queue oldest
+first, skipping apps with open review items and apps you've excluded
+(Applications → include/exclude toggle).
+
+**Watch the first hour.** Keep the run view (SSE) open for the first armed
+session: confirm the first unattended submit looks right in the ATS tab, the
+arm card counters climb (`submits x/y`, `apps x/y`), and walls park with
+review items instead of retrying. The first verified live submit is what
+promotes this path to `LIVE_MUTATION_CONFIRMED` — treat everything before
+that as unverified.
+
+**While armed you can always:**
+- **Disarm** (arm card) — soft stop: the in-flight app finishes, nothing
+  else starts, and the budget can never be consumed again.
+- **Cancel the run** (run view) — SIGTERM the worker child; the arm stays
+  armed until you disarm or it expires.
+- **Kill switch**: unset/`false` `AUTOMATION_ENABLED` in the console shell
+  and restart the console — restart also always disarms.
+
+**After the session:** the run report lists per-app outcomes
+(`per_app[].end_state` / `stopped` / `submitted`), discovery runs, outreach
+tail counts (`emails_generated`, `drafts_saved`), and why the session
+stopped (`disarmed` / `expired` / `apps_cap` / `queue_drained`). Leftover
+apps sit at `READY_TO_SUBMIT` (budget spent) or in review (walls). Review
+items are the worklist; Outlook Drafts is the outreach review surface —
+nothing has been sent.
+
+**Escape hatch:** the CLI one-shot submit
+(`npm run submit -- --application <id>` with `--yes` for unattended) is
+unchanged and still available; the console one-shot submit keeps its
+confirmation modal regardless of arm.

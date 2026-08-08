@@ -18,7 +18,11 @@ import {
   type DraftReport,
   type DraftVerificationReport,
 } from "../outlook/draftRun.js";
-import { getActiveArmSession, consumeArmApplication } from "./armSession.js";
+import {
+  getActiveArmSession,
+  consumeArmApplication,
+  noteArmError,
+} from "./armSession.js";
 
 /**
  * The L3 autonomous worker: while an armed session is live and under its
@@ -313,6 +317,11 @@ export async function runAutomationSession(
     per_app: [],
   };
   let lastErrorCode: string | null = null;
+  /** Record the code for progress frames AND the arm row (Overview card). */
+  const noteError = (code: string): void => {
+    lastErrorCode = code;
+    noteArmError(db, armRunId, code);
+  };
 
   const emit = (): void =>
     input.onProgress?.({
@@ -330,11 +339,13 @@ export async function runAutomationSession(
       report.notes.push(`discover: ${r.jobs_inspected} inspected`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      lastErrorCode = /AUTH_REQUIRED/.test(message)
-        ? "jobright_auth"
-        : /EMPTY_FEED/.test(message)
-          ? "empty_feed"
-          : "discover_error";
+      noteError(
+        /AUTH_REQUIRED/.test(message)
+          ? "jobright_auth"
+          : /EMPTY_FEED/.test(message)
+            ? "empty_feed"
+            : "discover_error",
+      );
       report.notes.push(`discover skipped (${lastErrorCode})`);
     }
   };
@@ -417,7 +428,7 @@ export async function runAutomationSession(
       if (appReport) {
         report.per_app.push(toAppResult(db, appReport));
         if (appReport.stopped == null) {
-          lastErrorCode = "anomaly_no_stop";
+          noteError("anomaly_no_stop");
           report.notes.push(`anomaly: ${appId} stopped with no reason`);
         }
         // Post-submit outreach tail (drafts only, never send). Only states a
@@ -440,11 +451,13 @@ export async function runAutomationSession(
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      lastErrorCode = /lease/i.test(message)
-        ? "lease_held"
-        : /AUTH_REQUIRED/.test(message)
-          ? "jobright_auth"
-          : "pipeline_error";
+      noteError(
+        /lease/i.test(message)
+          ? "lease_held"
+          : /AUTH_REQUIRED/.test(message)
+            ? "jobright_auth"
+            : "pipeline_error",
+      );
       report.notes.push(`app ${appId} error (${lastErrorCode})`);
       logger.warn("automation worker: app error, continuing", {
         service: "automation",

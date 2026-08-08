@@ -39,6 +39,8 @@ export type ArmMetadata = {
   discover_max: number;
   rediscover_every: number;
   armed_by_token_hash: string;
+  /** Worker-reported last error code (display only; never gates anything). */
+  last_error_code: string | null;
 };
 
 export type ArmStatus = {
@@ -52,6 +54,7 @@ export type ArmStatus = {
   apps_started: number;
   discover_max: number;
   rediscover_every: number;
+  last_error_code: string | null;
 };
 
 export class ArmConflictError extends Error {
@@ -89,6 +92,8 @@ function parseMeta(row: AutomationRunRow): ArmMetadata {
       typeof raw.rediscover_every === "number" ? raw.rediscover_every : 0,
     armed_by_token_hash:
       typeof raw.armed_by_token_hash === "string" ? raw.armed_by_token_hash : "",
+    last_error_code:
+      typeof raw.last_error_code === "string" ? raw.last_error_code : null,
   };
 }
 
@@ -146,6 +151,7 @@ export function armSession(
     discover_max: discoverMax,
     rediscover_every: rediscoverEvery,
     armed_by_token_hash: input.armedByTokenHash,
+    last_error_code: null,
   };
   createAutomationRun(db, {
     stage: L3_SESSION_STAGE,
@@ -175,6 +181,7 @@ export function getArmStatus(db: Db, now: Date = new Date()): ArmStatus {
       apps_started: 0,
       discover_max: 0,
       rediscover_every: 0,
+      last_error_code: null,
     };
   }
   const { row, meta } = active;
@@ -193,7 +200,33 @@ export function getArmStatus(db: Db, now: Date = new Date()): ArmStatus {
     apps_started: meta.apps_started,
     discover_max: meta.discover_max,
     rediscover_every: meta.rediscover_every,
+    last_error_code: meta.last_error_code,
   };
+}
+
+/**
+ * Record the worker's last error code on the arm row (display only — shown
+ * on the Overview arm card). Best-effort: a completed/expired row is left
+ * untouched and the error never affects gating.
+ */
+export function noteArmError(db: Db, armRunId: string, code: string): void {
+  const write = db.transaction((): void => {
+    const row = db
+      .prepare(
+        `SELECT id, stage, status, started_at, ended_at,
+                max_unattended_submissions, unattended_submissions_count, metadata_json
+         FROM automation_runs WHERE id = ? AND status = 'RUNNING'`,
+      )
+      .get(armRunId) as AutomationRunRow | undefined;
+    if (!row) return;
+    const meta = parseMeta(row);
+    meta.last_error_code = code;
+    db.prepare(`UPDATE automation_runs SET metadata_json = ? WHERE id = ?`).run(
+      JSON.stringify(meta),
+      armRunId,
+    );
+  });
+  write();
 }
 
 /**
