@@ -133,3 +133,16 @@ export type RunRecord = {
 };
 
 export type LogLine = { seq: number; stream: "stdout" | "stderr"; line: string };
+
+export type ArmStatus = {
+  armed: boolean;
+  arm_run_id: string | null;
+  armed_until: string | null;
+  seconds_remaining: number;
+  max_submits: number;
+  submits_used: number;
+  max_apps: number;
+  apps_started: number;
+  discover_max: number;
+  rediscover_every: number;
+};
