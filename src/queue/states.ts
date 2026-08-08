@@ -142,9 +142,13 @@ const ALLOWED: Partial<Record<ApplicationState, readonly ApplicationState[]>> = 
   ],
   ESSAY_REQUIRED: ["FIELD_VERIFICATION", "READY_TO_SUBMIT", "FAILED_FINAL"],
   AUTH_REQUIRED: ["APPLICATION_OPENING", "FAILED_FINAL"],
-  CAPTCHA_REQUIRED: ["FAILED_FINAL"],
+  // Operator resolution (console/CLI): the operator solved the captcha in a
+  // headed session — or the wall is gone — so re-open the employer page.
+  CAPTCHA_REQUIRED: ["APPLICATION_OPENING", "FAILED_FINAL"],
   AMBIGUOUS_FIELD: ["FIELD_VERIFICATION", "FAILED_FINAL"],
-  UNSUPPORTED_ATS: ["FAILED_FINAL"],
+  // Operator resolution: a corrected, supported employer URL was supplied —
+  // re-open against it (URL validity is enforced by setEmployerApplicationUrl).
+  UNSUPPORTED_ATS: ["APPLICATION_OPENING", "FAILED_FINAL"],
   READY_TO_SUBMIT: ["SUBMITTING", "FAILED_RETRYABLE", "FAILED_FINAL"],
   SUBMITTING: [
     "SUBMITTED",

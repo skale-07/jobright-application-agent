@@ -2,7 +2,13 @@ import { randomUUID } from "node:crypto";
 import type { Db } from "../storage/db/client.js";
 import type { DiscoveredField } from "../ats/adapter.js";
 import { essayFieldsOnly, type EssayClassification } from "./essayDetector.js";
-import { upsertOpenReviewItem, type ReviewItem } from "../queue/reviewItems.js";
+import {
+  listOpenReviewItems,
+  resolveReviewItem,
+  upsertOpenReviewItem,
+  type ReviewItem,
+} from "../queue/reviewItems.js";
+import { getApplication, transitionApplication } from "../queue/stateMachine.js";
 
 export const ESSAY_ANSWER_PREFIX = "essay:";
 export const ESSAY_REVIEW_TITLE = "Essay answers required";
@@ -126,6 +132,73 @@ export function openEssayReviewItem(
     payload: { essays },
   });
   return { item, created, essays };
+}
+
+/**
+ * Record one human essay answer and settle the surrounding workflow:
+ * resolve the ESSAY review item once every asked-for field has an answer,
+ * and move ESSAY_REQUIRED → FIELD_VERIFICATION when that happens. This is
+ * the shared body behind the resume-essay CLI and the console endpoint —
+ * extracted so the two can never diverge.
+ */
+export function recordEssayAnswer(
+  db: Db,
+  input: {
+    applicationId: string;
+    fieldKey: string;
+    text: string;
+    /** Where the text came from, for the answer row (file path or "console"). */
+    sourceFile?: string;
+    resolvedBy?: string;
+  },
+): {
+  answerId: string;
+  reviewResolved: boolean;
+  unansweredFields: string[];
+  applicationState: string | undefined;
+} {
+  const saved = saveHumanEssayAnswer(db, {
+    applicationId: input.applicationId,
+    fieldKey: input.fieldKey,
+    text: input.text,
+    ...(input.sourceFile ? { sourceFile: input.sourceFile } : {}),
+  });
+
+  const essayItems = listOpenReviewItems(db).filter(
+    (i) => i.kind === "ESSAY" && i.application_id === input.applicationId,
+  );
+  let resolved = false;
+  let remaining: string[] = [];
+  for (const item of essayItems) {
+    remaining = unansweredEssayFieldKeys(db, input.applicationId, item);
+    if (remaining.length === 0) {
+      resolveReviewItem(db, item.id, {
+        resolved_by: input.resolvedBy ?? "resume-essay",
+        answers: listHumanEssayAnswers(db, input.applicationId).map((a) => ({
+          field_key: a.field_key,
+          chars: a.text.length,
+        })),
+      });
+      resolved = true;
+    }
+  }
+  if (
+    resolved &&
+    getApplication(db, input.applicationId)?.state === "ESSAY_REQUIRED"
+  ) {
+    transitionApplication(db, {
+      applicationId: input.applicationId,
+      nextState: "FIELD_VERIFICATION",
+      reason: `all essay answers provided via ${input.resolvedBy ?? "resume-essay"}`,
+    });
+  }
+
+  return {
+    answerId: saved.id,
+    reviewResolved: resolved,
+    unansweredFields: remaining,
+    applicationState: getApplication(db, input.applicationId)?.state,
+  };
 }
 
 /** Field keys from an ESSAY review item's payload that still lack answers. */

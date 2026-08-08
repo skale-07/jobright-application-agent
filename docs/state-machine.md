@@ -27,3 +27,20 @@ through `review:resolve` — never by automation:
 
 The `submissions` table gets a `PENDING` row **before** any submit click, so a
 crash mid-submit always leaves evidence that an attempt was in flight.
+
+## Operator requeue edges (console / review resolvers)
+
+Wall states are operator-resolvable — a human clears the wall, then requeues
+through the resolver layer (`src/queue/reviewResolvers.ts`, used by both the
+console and the CLI). Never driven by automation:
+
+| Edge | Meaning |
+| --- | --- |
+| `AUTH_REQUIRED → APPLICATION_OPENING` | Operator logged in / restored the session; re-open the employer page |
+| `CAPTCHA_REQUIRED → APPLICATION_OPENING` | Operator solved the captcha in a headed session (or the wall is gone) |
+| `UNSUPPORTED_ATS → APPLICATION_OPENING` | Operator supplied a corrected, supported employer URL (validated by `setEmployerApplicationUrl` before the transition) |
+| `AMBIGUOUS_FIELD → FIELD_VERIFICATION` | Operator resolved the ambiguity; re-verify the form |
+
+Resolvers transition only when the application still sits in the blocked
+state; otherwise the review item resolves item-only and the response reports
+`transition_skipped`.

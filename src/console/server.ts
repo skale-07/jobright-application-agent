@@ -21,6 +21,7 @@ import {
   listReviewItemViews,
 } from "./readModels.js";
 import { checkBearerToken, checkHostHeader, generateBootToken } from "./security.js";
+import { buildMutationRoutes } from "./mutations.js";
 import { findRoute, type Route } from "./routes.js";
 import { serveStatic } from "./staticFiles.js";
 import { BodyError } from "./body.js";
@@ -126,6 +127,7 @@ export function createConsoleHandler(
         serveArtifact(res, deps.artifactsDir, searchParams.get("path") ?? "");
       },
     },
+    ...buildMutationRoutes({ db: deps.db }),
     ...(deps.extraRoutes ?? []),
   ];
 
