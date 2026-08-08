@@ -29,7 +29,10 @@ import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import type { Page } from "playwright";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
-import { getRegisteredResume } from "../jobright/materialsRegister.js";
+import {
+  ensureResumeForApplication,
+  getRegisteredResume,
+} from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
@@ -426,6 +429,11 @@ async function step(
     }
 
     case "MATERIALS_GENERATING": {
+      // Auto-attach the configured default resume before giving up — so an
+      // unattended session processing a freshly discovered app is not
+      // dead-ended by a sticky review item. No-op when one is already
+      // registered; loud when there is no default file to fall back to.
+      ensureResumeForApplication(db, app.id);
       const resume = getRegisteredResume(db, app.id);
       if (!resume) {
         upsertOpenReviewItem(db, {
@@ -433,12 +441,12 @@ async function step(
           kind: "MANUAL",
           title: "Resume material not registered",
           payload: {
-            hint: `npm run materials:register -- --application ${app.id} --file <domain-resume.pdf>`,
+            hint: `Register one (materials:register) or set DEFAULT_RESUME_PATH; app ${app.id}`,
           },
         });
         return {
           to: null,
-          note: "no verified resume material — register one (materials:register)",
+          note: "no verified resume material and no default resume to auto-attach",
           stop: "review",
         };
       }

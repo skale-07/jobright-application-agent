@@ -109,9 +109,11 @@ export type SubmitConfirmationSummary = {
   };
 };
 
+export type RunKind = "pipeline" | "nav" | "submit" | "discover" | "automation";
+
 export type RunRecord = {
   id: string;
-  kind: "pipeline" | "nav" | "submit";
+  kind: RunKind;
   params: Record<string, unknown>;
   granted_flags: string[];
   denied_flags: string[];

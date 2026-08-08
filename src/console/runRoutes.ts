@@ -20,6 +20,7 @@ const KIND_MINIMUMS: Record<RunKind, { flags: GatedFlagKey[]; live_mode: boolean
   nav: { flags: ["NAVIGATION_ENABLED"], live_mode: false },
   submit: { flags: ["FORM_FILL_ENABLED", "SUBMIT_ENABLED"], live_mode: true },
   pipeline: { flags: [], live_mode: false }, // flag-off pipeline is a valid dry walk
+  discover: { flags: [], live_mode: false }, // feed read + enqueue, parity with the CLI
 };
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -119,8 +120,13 @@ export function buildRunRoutes(deps: { runManager: RunManager }): Route[] {
       handler: async ({ req, res }) => {
         const body = await readJsonBody(req);
         const kind = body["kind"];
-        if (kind !== "pipeline" && kind !== "nav" && kind !== "submit") {
-          json(res, 400, { error: "kind must be pipeline | nav | submit" });
+        if (
+          kind !== "pipeline" &&
+          kind !== "nav" &&
+          kind !== "submit" &&
+          kind !== "discover"
+        ) {
+          json(res, 400, { error: "kind must be pipeline | nav | submit | discover" });
           return;
         }
         const params =

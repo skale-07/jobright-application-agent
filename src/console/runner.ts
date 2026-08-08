@@ -3,6 +3,7 @@ import { migrate, openDatabase } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { runPipeline } from "../pipeline/runPipeline.js";
 import { runNavigation } from "../navigation/runNavigation.js";
+import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import {
   completeAutomationRun,
@@ -30,6 +31,7 @@ type RunnerArgs = {
   headed?: boolean;
   fixture_html?: string;
   submit?: boolean;
+  max_jobs?: number;
   report_path: string;
 };
 
@@ -40,11 +42,17 @@ function emit(frame: Parameters<typeof serializeFrame>[0]): void {
 async function main(): Promise<void> {
   const [kind, argsFlag, argsPath] = process.argv.slice(2);
   if (
-    (kind !== "pipeline" && kind !== "nav" && kind !== "submit") ||
+    (kind !== "pipeline" &&
+      kind !== "nav" &&
+      kind !== "submit" &&
+      kind !== "discover") ||
     argsFlag !== "--args" ||
     !argsPath
   ) {
-    emit({ jaa_frame: "error", message: "usage: runner <pipeline|nav|submit> --args <file>" });
+    emit({
+      jaa_frame: "error",
+      message: "usage: runner <pipeline|nav|submit|discover> --args <file>",
+    });
     process.exit(2);
     return;
   }
@@ -92,6 +100,23 @@ async function main(): Promise<void> {
         applicationId: args.application_id,
         headless: !args.headed,
       });
+    } else if (kind === "discover") {
+      // Discovery opens its own DB and enqueues to QUEUED; it throws on an
+      // empty live feed (after writing artifacts + a review item), which is
+      // a warning here, not a run failure.
+      try {
+        report = await runJobRightDiscovery({
+          maxJobs: args.max_jobs ?? 10,
+          headless: !args.headed,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (/EMPTY_FEED/.test(message)) {
+          report = { jobs_inspected: 0, warning: "empty_feed", detail: message };
+        } else {
+          throw err;
+        }
+      }
     } else {
       if (!args.application_id) throw new Error("submit requires application_id");
       // Own the automation run explicitly so a one-shot console submit does

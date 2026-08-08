@@ -54,7 +54,7 @@ export function defaultConsoleRunnerInvocation(): {
  * stdin, which the child treats as decline.
  */
 
-export type RunKind = "pipeline" | "nav" | "submit";
+export type RunKind = "pipeline" | "nav" | "submit" | "discover";
 export type RunStatus =
   | "pending"
   | "running"

@@ -289,5 +289,37 @@ export function buildMutationRoutes(deps: { db: Db }): Route[] {
         json(res, 200, { ...registered, stored_path: stored });
       },
     },
+    {
+      method: "POST",
+      pattern: "/api/materials/default-resume",
+      handler: async ({ req, res }) => {
+        // Store the uploaded PDF at DEFAULT_RESUME_PATH — the fallback the
+        // pipeline auto-attaches when an application reaches materials with
+        // none registered. Verified as a PDF the same way as per-app uploads.
+        const contentType = req.headers["content-type"] ?? "";
+        if (!contentType.includes("application/pdf")) {
+          json(res, 400, { error: "content-type must be application/pdf" });
+          return;
+        }
+        let raw: Buffer;
+        try {
+          raw = await readRawBody(req, { limitBytes: UPLOAD_LIMIT_BYTES });
+        } catch (err) {
+          if (err instanceof BodyError) {
+            json(res, err.statusCode, { error: err.message });
+            return;
+          }
+          throw err;
+        }
+        if (raw.length === 0 || !raw.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
+          json(res, 400, { error: "body does not look like a PDF (missing %PDF header)" });
+          return;
+        }
+        const target = getConfig().defaultResumePath;
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, raw, { mode: 0o600 });
+        json(res, 200, { default_resume_path: target, size_bytes: raw.length });
+      },
+    },
   ];
 }
