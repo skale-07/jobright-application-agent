@@ -22,6 +22,8 @@ import {
 } from "./readModels.js";
 import { checkBearerToken, checkHostHeader, generateBootToken } from "./security.js";
 import { buildMutationRoutes } from "./mutations.js";
+import { buildRunRoutes } from "./runRoutes.js";
+import { RunManager } from "./runManager.js";
 import { findRoute, type Route } from "./routes.js";
 import { serveStatic } from "./staticFiles.js";
 import { BodyError } from "./body.js";
@@ -42,6 +44,7 @@ export type ConsoleDeps = {
   token: string;
   distDir: string;
   artifactsDir: string;
+  runManager?: RunManager;
   /** Later milestones extend the handler with mutation routes. */
   extraRoutes?: Route[];
 };
@@ -128,6 +131,7 @@ export function createConsoleHandler(
       },
     },
     ...buildMutationRoutes({ db: deps.db }),
+    ...(deps.runManager ? buildRunRoutes({ runManager: deps.runManager }) : []),
     ...(deps.extraRoutes ?? []),
   ];
 
@@ -234,13 +238,19 @@ export function startConsole(input: {
   const token = generateBootToken();
   const distDir =
     input.distDir ?? path.resolve(process.cwd(), "frontend", "dist");
+  const runManager = new RunManager({
+    runsDir: path.join(cfg.artifactsDir, "console", "runs"),
+  });
   const handler = createConsoleHandler({
     db: input.db,
     token,
     distDir,
     artifactsDir: cfg.artifactsDir,
+    runManager,
   });
   const server = http.createServer(handler);
+  server.once("close", () => runManager.shutdown());
+  process.once("SIGINT", () => runManager.shutdown());
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(cfg.consolePort, cfg.consoleHost, () => {
