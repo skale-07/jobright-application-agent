@@ -232,7 +232,9 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
   // Country / phone-style labels: "United States" ↔ "United States +1"
   const strippedExp = optionKey(exp);
 
-  // OFCCP veteran: profile "I am not a protected veteran" (or close) → board copy
+  // OFCCP veteran: profile "I am not a protected veteran" (or close) → board copy.
+  // Boards phrase the negative answer with or without "protected"; match either,
+  // but ONLY negative-polarity options — never an "I identify as…" row.
   if (
     /not a protected veteran|i am not a protected veteran|not a veteran/.test(
       strippedExp,
@@ -241,7 +243,7 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
     const vetHits = options.filter((o) => {
       if (isDeclineOption(o)) return false;
       const k = optionKey(o);
-      return /not a protected veteran|i am not a protected veteran/.test(k);
+      return /not\s+a(?:\s+protected)?\s+veteran/.test(k);
     });
     if (vetHits.length === 1 && vetHits[0] !== undefined) {
       return { ok: true, label: vetHits[0], via: "synonym" };
