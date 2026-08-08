@@ -3,6 +3,8 @@ import { apiGet } from "../api/client";
 import type { Summary } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
+import { ArmCard } from "../components/ArmCard";
+import { useArmStatus } from "../hooks/useArmStatus";
 
 const STAGE_MEANING: Record<number, string> = {
   1: "inspection only — fill disabled",
@@ -17,6 +19,7 @@ export function OverviewPage(): JSX.Element {
     () => apiGet<Summary>("/api/summary"),
     5000,
   );
+  const { status: arm, refresh: refreshArm } = useArmStatus();
 
   if (loading && !data) return <p className="faint">Loading…</p>;
   if (error) return <div className="banner danger">{error}</div>;
@@ -65,6 +68,8 @@ export function OverviewPage(): JSX.Element {
           </div>
         </div>
       </div>
+
+      <ArmCard status={arm} onChanged={refreshArm} />
 
       <div className="grid-2">
         <div className="card">

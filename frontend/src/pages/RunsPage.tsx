@@ -6,12 +6,15 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
 
-type Kind = "pipeline" | "nav" | "submit";
+type Kind = "pipeline" | "nav" | "submit" | "discover" | "automation";
 
 const KIND_HELP: Record<Kind, string> = {
   pipeline: "Advance applications through the state machine.",
   nav: "Resolve the employer application URL from the JobRight job page.",
   submit: "Fill, verify, and submit one application (you confirm the click).",
+  discover: "Pull jobs from the JobRight feed and enqueue them (needs a JobRight session).",
+  automation:
+    "L3 worker: process the queue unattended while the arm session is live (arm on Overview first).",
 };
 
 export function RunsPage(): JSX.Element {
@@ -22,6 +25,7 @@ export function RunsPage(): JSX.Element {
   const [kind, setKind] = useState<Kind>("pipeline");
   const [applicationId, setApplicationId] = useState("");
   const [maxApplications, setMaxApplications] = useState("1");
+  const [maxJobs, setMaxJobs] = useState("10");
   const [headed, setHeaded] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [liveMode, setLiveMode] = useState(false);
@@ -43,6 +47,7 @@ export function RunsPage(): JSX.Element {
         params["max_applications"] = Number(maxApplications) || 1;
         if (submitOptIn) params["submit"] = true;
       }
+      if (kind === "discover") params["max_jobs"] = Number(maxJobs) || 10;
       const res = await apiPost<{ run_id: string }>("/api/runs", {
         kind,
         params,
@@ -83,19 +88,38 @@ export function RunsPage(): JSX.Element {
                 <option value="pipeline">pipeline</option>
                 <option value="nav">nav — resolve employer URL</option>
                 <option value="submit">submit</option>
+                <option value="discover">discover — pull + enqueue jobs</option>
+                <option value="automation">automation — L3 unattended worker</option>
               </select>
             </label>
             <p className="faint" style={{ margin: 0 }}>
               {KIND_HELP[kind]}
             </p>
-            <label className="field">
-              Application ID {kind === "pipeline" ? "(optional)" : "(required)"}
-              <input
-                value={applicationId}
-                onChange={(e) => setApplicationId(e.target.value)}
-                placeholder="uuid"
-              />
-            </label>
+            {kind === "discover" ? (
+              <label className="field">
+                Max jobs
+                <input
+                  type="number"
+                  min={1}
+                  value={maxJobs}
+                  onChange={(e) => setMaxJobs(e.target.value)}
+                />
+              </label>
+            ) : kind === "automation" ? (
+              <p className="faint" style={{ margin: 0 }}>
+                Scope comes from the armed session (caps, discovery cadence) —
+                nothing to configure here.
+              </p>
+            ) : (
+              <label className="field">
+                Application ID {kind === "pipeline" ? "(optional)" : "(required)"}
+                <input
+                  value={applicationId}
+                  onChange={(e) => setApplicationId(e.target.value)}
+                  placeholder="uuid"
+                />
+              </label>
+            )}
             {kind === "pipeline" ? (
               <>
                 <label className="field">

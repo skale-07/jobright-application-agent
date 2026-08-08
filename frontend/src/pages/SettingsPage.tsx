@@ -29,6 +29,7 @@ export function SettingsPage(): JSX.Element {
       <TokenCard />
       <CapabilitiesCard flags={flags.data} summary={summary.data} />
       <GmailCard status={gmail.data} onChanged={gmail.refresh} />
+      <DefaultResumeCard />
       <MaterialsCard />
     </>
   );
@@ -283,6 +284,54 @@ function GmailCard({
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function DefaultResumeCard(): JSX.Element {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
+
+  const upload = async (): Promise<void> => {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = (await apiUpload("/api/materials/default-resume", file, {})) as {
+        default_resume_path: string;
+      };
+      setResult(`stored at ${res.default_resume_path}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2>Default resume</h2>
+      <p className="muted" style={{ marginTop: 0 }}>
+        The fallback resume auto-attached to any application that reaches the
+        materials stage with none registered — required for unattended
+        sessions to process freshly discovered jobs.
+      </p>
+      {error ? <div className="banner danger">{error}</div> : null}
+      {result ? <div className="banner ok">{result}</div> : null}
+      <div style={{ display: "grid", gap: "0.6rem" }}>
+        <label className="field">
+          Resume PDF
+          <input type="file" accept="application/pdf" ref={fileRef} />
+        </label>
+        <div>
+          <button className="primary" onClick={() => void upload()} disabled={busy}>
+            Set as default resume
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

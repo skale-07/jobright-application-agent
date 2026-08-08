@@ -59,6 +59,11 @@ const envSchema = z.object({
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
+  /**
+   * L3 kill switch. The console automation worker (unattended apply while
+   * armed) is refused unless this is set — regardless of any arm. Fail closed.
+   */
+  AUTOMATION_ENABLED: boolFromEnv.default(false),
   /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
@@ -71,6 +76,14 @@ const envSchema = z.object({
     .default("jobright-application-agent/candidate-data-key"),
   ARTIFACTS_DIR: z.string().default("artifacts"),
   PRIVATE_DIR: z.string().default("private"),
+  /**
+   * Fallback resume auto-attached to an application that reaches the
+   * materials stage with none registered (used by unattended L3 sessions
+   * so a fresh discovery does not dead-end on a missing resume). Plain
+   * path, not a capability flag; auto-attach is a no-op when the file is
+   * absent.
+   */
+  DEFAULT_RESUME_PATH: z.string().default("private/candidate/resumes/default.pdf"),
   JSONL_EVENTS_PATH: z.string().default("data/events/applications.jsonl"),
   /** chrome = system Google Chrome (needed for Google OAuth). chromium = bundled. */
   BROWSER_CHANNEL: z.string().default("chrome"),
@@ -100,6 +113,7 @@ export type AppConfig = {
   emailLlmModel: string;
   agentAuthoringEnabled: boolean;
   agentFallbackEnabled: boolean;
+  automationEnabled: boolean;
   agentCdpUrl: string;
   dashboardHost: string;
   dashboardPort: number;
@@ -108,6 +122,7 @@ export type AppConfig = {
   candidateDataKeyName: string;
   artifactsDir: string;
   privateDir: string;
+  defaultResumePath: string;
   jsonlEventsPath: string;
   browserChannel: BrowserChannel;
   /** Always false — no send capability exists. */
@@ -166,6 +181,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
+    automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
@@ -174,6 +190,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     candidateDataKeyName: parsed.CANDIDATE_DATA_KEY_NAME,
     artifactsDir: path.resolve(parsed.ARTIFACTS_DIR),
     privateDir: path.resolve(parsed.PRIVATE_DIR),
+    defaultResumePath: path.resolve(parsed.DEFAULT_RESUME_PATH),
     jsonlEventsPath: path.resolve(parsed.JSONL_EVENTS_PATH),
     browserChannel: parseBrowserChannel(parsed.BROWSER_CHANNEL),
     emailSendEnabled: false,

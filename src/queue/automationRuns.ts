@@ -9,7 +9,16 @@ import { getConfig } from "../config/index.js";
  */
 export function createAutomationRun(
   db: Db,
-  input: { stage: string; metadata?: Record<string, unknown> },
+  input: {
+    stage: string;
+    metadata?: Record<string, unknown>;
+    /**
+     * Explicit unattended-submission cap for this run. Defaults to the
+     * config snapshot (unchanged behavior). An armed L3 session passes its
+     * per-session budget here so the counter is scoped to the arm row.
+     */
+    maxUnattendedSubmissions?: number;
+  },
 ): { id: string } {
   const id = randomUUID();
   db.prepare(
@@ -21,10 +30,37 @@ export function createAutomationRun(
     id,
     input.stage,
     new Date().toISOString(),
-    getConfig().maxUnattendedSubmissionsPerRun,
+    input.maxUnattendedSubmissions ?? getConfig().maxUnattendedSubmissionsPerRun,
     JSON.stringify(input.metadata ?? {}),
   );
   return { id };
+}
+
+export type AutomationRunRow = {
+  id: string;
+  stage: string;
+  status: string;
+  started_at: string;
+  ended_at: string | null;
+  max_unattended_submissions: number;
+  unattended_submissions_count: number;
+  metadata_json: string;
+};
+
+/** The latest RUNNING row for a stage — the arm session helpers use this. */
+export function getLatestRunningByStage(
+  db: Db,
+  stage: string,
+): AutomationRunRow | undefined {
+  return db
+    .prepare(
+      `SELECT id, stage, status, started_at, ended_at,
+              max_unattended_submissions, unattended_submissions_count, metadata_json
+       FROM automation_runs
+       WHERE stage = ? AND status = 'RUNNING'
+       ORDER BY started_at DESC LIMIT 1`,
+    )
+    .get(stage) as AutomationRunRow | undefined;
 }
 
 /**

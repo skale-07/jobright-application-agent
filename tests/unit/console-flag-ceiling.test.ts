@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  FORCED_SUBMIT_SAFETY,
   GATED_FLAG_KEYS,
   composeChildEnv,
   grantedAndDenied,
@@ -84,6 +85,42 @@ describe("flag ceiling (UNIT_CONFIRMED)", () => {
     // unattended — the web confirmation is the only path to a click.
     expect(child["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"]).toBe("true");
     expect(child["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"]).toBe("0");
+  });
+
+  it("an armed automation context relaxes the two forced submit-safety keys", () => {
+    const shell = { FORM_FILL_ENABLED: "true", SUBMIT_ENABLED: "true", DRY_RUN: "false" };
+    const ceiling = readCeiling(shell);
+    const optIns = {
+      flags: { FORM_FILL_ENABLED: true, SUBMIT_ENABLED: true },
+      live_mode: true,
+    };
+
+    // Without context: forced closed exactly as before.
+    const closed = composeChildEnv(shell, ceiling, optIns);
+    expect(closed["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"]).toBe("true");
+    expect(closed["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"]).toBe("0");
+
+    // With an armed context: confirmation off, cap = remaining budget.
+    const armed = composeChildEnv(shell, ceiling, optIns, {
+      unattended: { maxSubmits: 7 },
+    });
+    expect(armed["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"]).toBe("false");
+    expect(armed["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"]).toBe("7");
+    // The capability flags themselves still obey ceiling + opt-in.
+    expect(armed["FORM_FILL_ENABLED"]).toBe("true");
+    expect(armed["SUBMIT_ENABLED"]).toBe("true");
+    expect(armed["DRY_RUN"]).toBe("false");
+  });
+
+  it("the advertised always_forced constant matches what an unarmed run gets", () => {
+    // Guards against drift between /api/flags and composeChildEnv.
+    const child = composeChildEnv({}, readCeiling({}), {});
+    expect(child["SUBMIT_REQUIRES_LOCAL_CONFIRMATION"]).toBe(
+      FORCED_SUBMIT_SAFETY.SUBMIT_REQUIRES_LOCAL_CONFIRMATION,
+    );
+    expect(child["MAX_UNATTENDED_SUBMISSIONS_PER_RUN"]).toBe(
+      FORCED_SUBMIT_SAFETY.MAX_UNATTENDED_SUBMISSIONS_PER_RUN,
+    );
   });
 
   it("grantedAndDenied reports exactly what the run got", () => {

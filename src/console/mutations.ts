@@ -188,6 +188,44 @@ export function buildMutationRoutes(deps: { db: Db }): Route[] {
     },
     {
       method: "POST",
+      pattern: "/api/applications/:id/automation",
+      handler: async ({ req, res, params }) => {
+        // Include/exclude an application from L3 automation. Stored in
+        // versions_json.automation_excluded (no schema migration); the
+        // worker's selection query skips excluded apps. Other keys in
+        // versions_json are preserved.
+        const body = await readJsonBody(req);
+        if (typeof body["excluded"] !== "boolean") {
+          json(res, 400, { error: "excluded must be a boolean" });
+          return;
+        }
+        const id = params["id"]!;
+        const row = db
+          .prepare(`SELECT versions_json FROM applications WHERE id = ?`)
+          .get(id) as { versions_json: string } | undefined;
+        if (!row) {
+          json(res, 404, { error: `No application with id ${id}` });
+          return;
+        }
+        let versions: Record<string, unknown> = {};
+        try {
+          const parsed = JSON.parse(row.versions_json) as unknown;
+          if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+            versions = parsed as Record<string, unknown>;
+          }
+        } catch {
+          versions = {};
+        }
+        versions["automation_excluded"] = body["excluded"];
+        db.prepare(`UPDATE applications SET versions_json = ? WHERE id = ?`).run(
+          JSON.stringify(versions),
+          id,
+        );
+        json(res, 200, { application_id: id, automation_excluded: body["excluded"] });
+      },
+    },
+    {
+      method: "POST",
       pattern: "/api/essays/answer",
       handler: async ({ req, res }) => {
         const body = await readJsonBody(req);
@@ -287,6 +325,38 @@ export function buildMutationRoutes(deps: { db: Db }): Route[] {
           ...(typeof label === "string" && label.length > 0 ? { label } : {}),
         });
         json(res, 200, { ...registered, stored_path: stored });
+      },
+    },
+    {
+      method: "POST",
+      pattern: "/api/materials/default-resume",
+      handler: async ({ req, res }) => {
+        // Store the uploaded PDF at DEFAULT_RESUME_PATH — the fallback the
+        // pipeline auto-attaches when an application reaches materials with
+        // none registered. Verified as a PDF the same way as per-app uploads.
+        const contentType = req.headers["content-type"] ?? "";
+        if (!contentType.includes("application/pdf")) {
+          json(res, 400, { error: "content-type must be application/pdf" });
+          return;
+        }
+        let raw: Buffer;
+        try {
+          raw = await readRawBody(req, { limitBytes: UPLOAD_LIMIT_BYTES });
+        } catch (err) {
+          if (err instanceof BodyError) {
+            json(res, err.statusCode, { error: err.message });
+            return;
+          }
+          throw err;
+        }
+        if (raw.length === 0 || !raw.subarray(0, 5).toString("latin1").startsWith("%PDF-")) {
+          json(res, 400, { error: "body does not look like a PDF (missing %PDF header)" });
+          return;
+        }
+        const target = getConfig().defaultResumePath;
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, raw, { mode: 0o600 });
+        json(res, 200, { default_resume_path: target, size_bytes: raw.length });
       },
     },
   ];
