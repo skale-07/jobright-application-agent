@@ -34,6 +34,7 @@ import {
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { startDashboard } from "../dashboard/server.js";
+import { startConsole } from "../console/server.js";
 import { runAgentAuthoring } from "../agent/authorRun.js";
 import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
@@ -133,6 +134,7 @@ Commands:
   draft:create --application <uuid> --contact <contact_id> [--headed]
   draft:verify --draft <draft_id> [--headed]
   dashboard
+  console                               Operator console (frontend + guarded mutation API)
   agent:author --url <GREENHOUSE_APPLICATION_URL> [--cdp <url>]
   run --dry-run [--fixture]   Discovery only (no ATS submit)
 
@@ -1457,6 +1459,18 @@ async function main(): Promise<void> {
       const { url } = await startDashboard({ db });
       console.log(`Dashboard (read-only): ${url}`);
       console.log("Ctrl+C to stop.");
+      // Keep the process alive; the server holds the event loop open.
+      return;
+    }
+    case "console": {
+      const db = openDatabase();
+      migrate(db);
+      const { url, token } = await startConsole({ db });
+      console.log(`Operator console: ${url}#token=${token}`);
+      console.log(
+        "Open the full URL above — the #token fragment authorizes mutations",
+      );
+      console.log("and never leaves the browser. Ctrl+C to stop.");
       // Keep the process alive; the server holds the event loop open.
       return;
     }
