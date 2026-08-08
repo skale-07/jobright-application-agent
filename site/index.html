@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dispatch — the job hunt, accounted for</title>
+<link rel="icon" type="image/svg+xml" href="../frontend/public/favicon.svg" />
+<style>
+/* ── Dispatch marketing site — palette bound to DESIGN.md / tokens.css.
+     Dark-first: bare :root is the dark palette; light responds to the OS
+     and to an explicit data-theme stamp. ─────────────────────────────── */
+:root {
+  --bg: #0d1117;
+  --bg-raised: #161b22;
+  --bg-inset: #010409;
+  --bg-hover: #1c2129;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #6e7681;
+  --accent: #58a6ff;
+  --accent-dim: rgba(88, 166, 255, 0.15);
+  --ok: #3fb950;
+  --ok-dim: rgba(63, 185, 80, 0.15);
+  --warn: #d29922;
+  --warn-dim: rgba(210, 153, 34, 0.15);
+  --danger: #f85149;
+  --danger-dim: rgba(248, 81, 73, 0.15);
+  --purple: #bc8cff;
+  --purple-dim: rgba(188, 140, 255, 0.15);
+  --font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  --font-ui: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f8fa;
+    --bg-raised: #ffffff;
+    --bg-inset: #eef1f4;
+    --bg-hover: #f0f3f6;
+    --border: #d0d7de;
+    --border-strong: #afb8c1;
+    --text: #1f2328;
+    --text-dim: #59636e;
+    --text-faint: #818b98;
+    --accent: #0969da;
+    --accent-dim: rgba(9, 105, 218, 0.1);
+    --ok: #1a7f37;
+    --ok-dim: rgba(26, 127, 55, 0.12);
+    --warn: #9a6700;
+    --warn-dim: rgba(154, 103, 0, 0.12);
+    --danger: #cf222e;
+    --danger-dim: rgba(207, 34, 46, 0.1);
+    --purple: #8250df;
+    --purple-dim: rgba(130, 80, 223, 0.1);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f8fa;
+  --bg-raised: #ffffff;
+  --bg-inset: #eef1f4;
+  --bg-hover: #f0f3f6;
+  --border: #d0d7de;
+  --border-strong: #afb8c1;
+  --text: #1f2328;
+  --text-dim: #59636e;
+  --text-faint: #818b98;
+  --accent: #0969da;
+  --accent-dim: rgba(9, 105, 218, 0.1);
+  --ok: #1a7f37;
+  --ok-dim: rgba(26, 127, 55, 0.12);
+  --warn: #9a6700;
+  --warn-dim: rgba(154, 103, 0, 0.12);
+  --danger: #cf222e;
+  --danger-dim: rgba(207, 34, 46, 0.1);
+  --purple: #8250df;
+  --purple-dim: rgba(130, 80, 223, 0.1);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.mono { font-family: var(--font-mono); }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ── nav ── */
+.nav {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 1.1rem 0;
+}
+.nav .brand {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-mono); font-weight: 600; font-size: 15px;
+  color: var(--text); letter-spacing: 0.02em;
+}
+.nav .brand:hover { text-decoration: none; }
+.nav .brand .seg { color: var(--accent); }
+.nav .links { margin-left: auto; display: flex; gap: 1.25rem; font-size: 0.9rem; }
+.nav .links a { color: var(--text-dim); }
+.nav .links a:hover { color: var(--text); text-decoration: none; }
+
+/* ── hero ── */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: 3rem; align-items: center;
+  padding: 4.5rem 0 5rem;
+}
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent);
+  margin: 0 0 1.1rem;
+}
+.hero h1 {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 4.6vw, 3.3rem);
+  line-height: 1.12; letter-spacing: -0.015em;
+  margin: 0 0 1.2rem; text-wrap: balance; font-weight: 700;
+}
+.hero .sub {
+  color: var(--text-dim); font-size: 1.12rem; max-width: 34rem;
+  margin: 0 0 1.8rem;
+}
+.hero .sub strong { color: var(--text); font-weight: 600; }
+.cta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+.btn {
+  display: inline-block; padding: 0.65rem 1.25rem;
+  border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+.btn.primary { background: var(--accent); color: var(--bg); }
+.btn.primary:hover { text-decoration: none; filter: brightness(1.1); }
+.btn.ghost { border-color: var(--border-strong); color: var(--text); }
+.btn.ghost:hover { text-decoration: none; background: var(--bg-hover); }
+.truth {
+  margin-top: 1.1rem; font-family: var(--font-mono);
+  font-size: 0.78rem; color: var(--text-faint);
+}
+
+/* hero entrance — one orchestrated moment */
+.hero > * { animation: rise 0.55s ease-out both; }
+.hero > *:nth-child(2) { animation-delay: 0.12s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .hero > * { animation: none; } }
+
+/* ── console mock ── */
+.console {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-family: var(--font-mono); font-size: 0.8rem;
+}
+.console .armed {
+  display: flex; gap: 0.6rem; align-items: center;
+  background: var(--danger-dim); color: var(--danger);
+  padding: 0.55rem 0.9rem; font-weight: 600; font-size: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.console .body { padding: 0.9rem 0.9rem 1rem; }
+.console .rpt-head {
+  color: var(--text-faint); font-size: 0.72rem;
+  display: flex; justify-content: space-between; gap: 1rem;
+  padding-bottom: 0.6rem; border-bottom: 1px solid var(--border);
+  margin-bottom: 0.35rem; flex-wrap: wrap;
+}
+.console table { width: 100%; border-collapse: collapse; }
+.console td { padding: 0.42rem 0.25rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.console tr:last-child td { border-bottom: 0; }
+.console .co { color: var(--text); white-space: nowrap; }
+.console .role { color: var(--text-faint); font-size: 0.72rem; }
+.chip {
+  display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+}
+.chip.ok { background: var(--ok-dim); color: var(--ok); }
+.chip.warn { background: var(--warn-dim); color: var(--warn); }
+.chip.danger { background: var(--danger-dim); color: var(--danger); }
+.chip.purple { background: var(--purple-dim); color: var(--purple); }
+.console .foot {
+  margin-top: 0.75rem; color: var(--text-faint); font-size: 0.7rem;
+  overflow-x: auto; white-space: nowrap;
+}
+
+/* ── section scaffolding ── */
+section { padding: 3.5rem 0; }
+.section-head { max-width: 42rem; margin-bottom: 2.25rem; }
+.section-head h2 {
+  font-family: var(--font-mono); font-size: 1.65rem; line-height: 1.25;
+  letter-spacing: -0.01em; margin: 0 0 0.7rem; text-wrap: balance;
+}
+.section-head p { color: var(--text-dim); margin: 0; }
+
+/* ── the loop: waypoint track rail ── */
+.loop { position: relative; }
+.loop::before {
+  content: ""; position: absolute; top: 10px; bottom: 10px; left: 15px;
+  width: 2px; background: var(--border);
+}
+.stage { position: relative; padding: 0 0 3.5rem 3.5rem; }
+.stage:last-child { padding-bottom: 0.5rem; }
+.stage .station {
+  position: absolute; left: 6px; top: 2px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--accent);
+}
+.stage.delivered .station { background: var(--accent); }
+.stage .tag {
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--accent);
+  margin: 0 0 0.5rem;
+}
+.stage h3 {
+  font-family: var(--font-mono); font-size: 1.35rem; margin: 0 0 0.7rem;
+  letter-spacing: -0.01em; text-wrap: balance;
+}
+.stage > p { color: var(--text-dim); max-width: 40rem; margin: 0 0 1.25rem; }
+.stage > p strong { color: var(--text); font-weight: 600; }
+
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
+.card {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.1rem 1.2rem;
+}
+.card:hover { border-color: var(--border-strong); }
+.card .k {
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.45rem;
+}
+.card p { margin: 0; font-size: 0.92rem; color: var(--text-dim); }
+.card p strong { color: var(--text); }
+
+/* arm mock */
+.arm-mock {
+  max-width: 30rem; background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.1rem 1.2rem; font-family: var(--font-mono);
+}
+.arm-mock .row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.arm-mock .stat .l { font-size: 0.68rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.arm-mock .stat .v { font-size: 1.15rem; font-weight: 600; }
+.arm-mock .v span { color: var(--text-faint); font-weight: 400; }
+.arm-btn {
+  display: inline-block; background: var(--accent); color: var(--bg);
+  font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+}
+
+/* rewards list */
+.rewards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; }
+
+/* investment ledger */
+.ledger { max-width: 40rem; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.ledger .li {
+  display: flex; gap: 1rem; justify-content: space-between; align-items: baseline;
+  padding: 0.8rem 1.1rem; border-bottom: 1px solid var(--border);
+  background: var(--bg-raised); flex-wrap: wrap;
+}
+.ledger .li:last-child { border-bottom: 0; }
+.ledger .what { font-size: 0.95rem; }
+.ledger .so { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); }
+
+/* ── command section ── */
+.command {
+  background: var(--bg-inset); border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.command .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; max-width: 56rem; }
+.fact {
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 1rem 1.1rem; background: var(--bg-raised);
+}
+.fact .f {
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.fact p { margin: 0; font-size: 0.88rem; color: var(--text-dim); }
+
+/* ── footer ── */
+footer { padding: 3rem 0 3.5rem; }
+footer .mission {
+  font-family: var(--font-mono); font-size: 1rem; max-width: 38rem;
+  color: var(--text-dim); margin: 1rem 0 1.5rem;
+}
+footer .fine {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  font-size: 0.82rem; color: var(--text-faint);
+}
+footer .fine a { color: var(--text-faint); }
+footer .fine a:hover { color: var(--text); }
+
+@media (max-width: 880px) {
+  .hero { grid-template-columns: 1fr; padding-top: 3rem; }
+  .cards, .rewards, .command .facts { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav" aria-label="main">
+    <a class="brand" href="#top">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+      </svg>
+      dispatch<span class="seg">·console</span>
+    </a>
+    <div class="links">
+      <a href="#loop">How it works</a>
+      <a href="#command">You stay in command</a>
+      <a href="https://github.com/skale-07/jobright-application-agent">GitHub</a>
+    </div>
+  </nav>
+</div>
+
+<header class="wrap hero" id="top">
+  <div>
+    <p class="eyebrow">for students who are done with job portals</p>
+    <h1>You've typed your name 400 times.</h1>
+    <p class="sub">
+      Same twelve fields. Different portal. Every night, after the problem
+      sets. <strong>Dispatch</strong> is an operator console that runs the
+      application grind for you — bounded, supervised, and honest about
+      every single outcome.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://github.com/skale-07/jobright-application-agent/blob/master/docs/operator-guide.md">Arm your first session</a>
+      <a class="btn ghost" href="#loop">See the loop</a>
+    </div>
+    <p class="truth">open source · runs on your machine · you hold every key</p>
+  </div>
+
+  <div class="console" role="img" aria-label="Dispatch session report: one verified submission, one outreach draft, two applications parked for review, three filled and parked">
+    <div class="armed">⚡ ARMED · 84m left · 1/10 submits · 7/25 apps</div>
+    <div class="body">
+      <div class="rpt-head">
+        <span>session a966e305 · stopped: queue_drained</span>
+        <span>7 started · 1 verified</span>
+      </div>
+      <table>
+        <tr>
+          <td><div class="co">Meridian Labs</div><div class="role">SWE Intern · Greenhouse</div></td>
+          <td style="text-align:right"><span class="chip ok">submitted ✓</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Northbeam</div><div class="role">Platform Intern · Lever</div></td>
+          <td style="text-align:right"><span class="chip purple">draft ready</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Helio Systems</div><div class="role">Data Intern · Ashby</div></td>
+          <td style="text-align:right"><span class="chip danger">needs-human</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Foundry Analytics</div><div class="role">Quant Intern · Greenhouse</div></td>
+          <td style="text-align:right"><span class="chip warn">ready</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">+ 3 more</div><div class="role">filled &amp; parked at the submit line</div></td>
+          <td style="text-align:right"><span class="chip warn">ready</span></td>
+        </tr>
+      </table>
+      <div class="foot">evidence → artifacts/applications/&lt;uuid&gt;/submission/ · logs.jsonl</div>
+    </div>
+  </div>
+</header>
+
+<section class="wrap" id="loop">
+  <div class="section-head">
+    <h2>Built on the habit loop.<br />The habit just isn't yours anymore.</h2>
+    <p>
+      Nir Eyal's <em>Hooked</em> describes how products capture people:
+      trigger, action, variable reward, investment. Job portals run that
+      loop on you every night. Dispatch takes the same four stages and
+      hands the compulsive part to a machine — you keep the rewards.
+    </p>
+  </div>
+
+  <div class="loop">
+    <div class="stage">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">01 · Trigger</p>
+      <h3>The dread was the trigger. Now it's the feed.</h3>
+      <p>
+        The old internal trigger: that low-grade guilt at 11pm that you
+        should be applying. Dispatch replaces it with an external one — it
+        discovers new postings on your feed and queues them itself.
+        <strong>Opportunity pings you. Obligation doesn't.</strong>
+      </p>
+      <div class="cards">
+        <div class="card">
+          <p class="k">the old trigger</p>
+          <p>Portal #47 wants the <strong>same twelve fields</strong> — retyped, because autofill never works there.</p>
+        </div>
+        <div class="card">
+          <p class="k">the old trigger</p>
+          <p>An <strong>essay wall at 11pm</strong>: "Why do you want to work here?" — 500 words, before the deadline.</p>
+        </div>
+        <div class="card">
+          <p class="k">the old trigger</p>
+          <p>The <strong>silence after submit</strong>. Did it even go through? No receipt, no record, no idea.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">02 · Action</p>
+      <h3>One action: arm a session.</h3>
+      <p>
+        The simplest behavior wins. Yours is one click with hard bounds you
+        set — a timer and caps. Inside that window the machine discovers,
+        fills, verifies, and submits. Outside it, nothing moves.
+        <strong>Restart the console and it's disarmed. Always.</strong>
+      </p>
+      <div class="arm-mock" role="img" aria-label="Arm card: 120 minute duration, 10 submit cap, 25 application cap">
+        <div class="row">
+          <div class="stat"><div class="l">duration</div><div class="v">120<span>m</span></div></div>
+          <div class="stat"><div class="l">max submits</div><div class="v">10</div></div>
+          <div class="stat"><div class="l">max apps</div><div class="v">25</div></div>
+        </div>
+        <span class="arm-btn">Start L3 session</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">03 · Variable reward</p>
+      <h3>Wake up to a report, not a to-do list.</h3>
+      <p>
+        Every session ends differently — that's the point. Verified
+        submissions with receipts. Outreach drafts to real people at the
+        company, waiting in <strong>your</strong> mailbox. Walls parked
+        with the evidence attached. You open the console to find out what
+        happened, not to do it.
+      </p>
+      <div class="rewards">
+        <div class="card">
+          <p class="k">the hunt</p>
+          <p><strong>Verified submissions</strong> — screenshot, receipt, confirmation text. Never "probably went through".</p>
+        </div>
+        <div class="card">
+          <p class="k">the tribe</p>
+          <p><strong>Outreach drafts</strong> to alumni and engineers at each company — generated, validated, never sent without you.</p>
+        </div>
+        <div class="card">
+          <p class="k">the self</p>
+          <p><strong>A cleared queue.</strong> Walls that needed a human are parked with their evidence; everything else moved.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage delivered">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">04 · Investment</p>
+      <h3>Every answer you give, you never give again.</h3>
+      <p>
+        Stored value compounds. Each thing you feed Dispatch makes the next
+        session need less of you — and overnight discovery reloads the
+        queue, so the loop re-arms itself.
+      </p>
+      <div class="ledger">
+        <div class="li"><span class="what">Your profile, once</span><span class="so">→ every form, every portal</span></div>
+        <div class="li"><span class="what">An essay answer you wrote</span><span class="so">→ banked for every board that asks again</span></div>
+        <div class="li"><span class="what">Your resumes, labeled by domain</span><span class="so">→ auto-attached per application</span></div>
+        <div class="li"><span class="what">A persona for outreach</span><span class="so">→ drafts that sound like you</span></div>
+        <div class="li"><span class="what">Every fill outcome</span><span class="so">→ selectors that learn which fields flake</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="command" id="command">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Autonomy you arm.<br />Not autonomy you hope for.</h2>
+      <p>
+        The reason you can sleep while it runs isn't trust — it's
+        architecture. Every claim below is enforced in code, not in a
+        promise.
+      </p>
+    </div>
+    <div class="facts">
+      <div class="fact">
+        <p class="f">Bounded by construction</p>
+        <p>A session is a timer and two caps backed by an atomic counter. A crash can't reset it; disarming makes further submits structurally impossible.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Every gate still runs</p>
+        <p>Arming removes exactly one thing: the per-application "are you sure". Field verification, upload verification, page identity, the approved plan — all still gate every click.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Walls park, with evidence</p>
+        <p>CAPTCHA, logins, essay questions — anything that needs a human parks the application with a review item and its evidence. Nothing is force-clicked.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Your words stay yours</p>
+        <p>Essays and self-ID questions are never auto-answered. Outreach stops at drafts in your own mailbox — the codebase can't send mail, and CI proves it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+  </svg>
+  <p class="mission">
+    Put one operator confidently in command of many applications — every
+    submission deliberate, every state honest, every outcome accounted for.
+  </p>
+  <div class="fine">
+    <span>Dispatch — every application accounted for</span>
+    <a href="https://github.com/skale-07/jobright-application-agent">GitHub</a>
+    <a href="https://github.com/skale-07/jobright-application-agent/blob/master/docs/operator-guide.md">Operator guide</a>
+    <a href="https://github.com/skale-07/jobright-application-agent/blob/master/DESIGN.md">Design system</a>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -70,13 +70,27 @@ It is monoline and geometric — drawn from the same visual family as the
 data surfaces (dots, tracks, monospace), not decoration imported from
 elsewhere.
 
-**Assets** (all theme-aware, no raster variants):
+**Assets** (all theme-aware SVG, no raster variants):
 
 | Asset | Path | Use |
 |---|---|---|
 | Mark (component) | `frontend/src/components/DispatchMark.tsx` | sidebar, in-app surfaces; inherits `currentColor` |
-| Favicon | `frontend/public/favicon.svg` | browser tab; `prefers-color-scheme` aware |
-| Horizontal lockup | `design/logo.svg` | docs, READMEs, external surfaces |
+| Favicon | `frontend/public/favicon.svg` | browser tab |
+| Horizontal lockup | `design/logo.svg` | docs, READMEs, external headers |
+| Stacked lockup | `design/logo-stacked.svg` | square-ish placements (cards, badges) |
+| Mark, standalone | `design/logo-mark.svg` | anywhere the wordmark is already nearby |
+| Wordmark only | `design/logo-wordmark.svg` | tight horizontal spaces (mark would fall below 14px) |
+| Monochrome lockup | `design/logo-mono.svg` | dense docs / co-branding rows where the accent would fight |
+| App icon | `design/logo-appicon.svg` | avatars, app grids, social — the ONE sanctioned container context; fixed dark tile, deliberately single-theme |
+
+Pick by context, never by taste: accent lockup by default; mono when the
+accent would compete; app icon only where a platform demands a tile.
+
+The marketing site (`site/index.html`, fully self-contained) is the brand's
+outward voice: student-focused, structured on the habit loop
+(trigger → action → variable reward → investment), palette-bound to the
+tokens, and honest — no invented numbers, no testimonials, every claim
+traceable to an enforced mechanism.
 
 **Construction**: 24×24 grid; track from (6,18) to (18,6), stroke 2,
 round caps; open stations r=2.4 at the ends of each segment, filled

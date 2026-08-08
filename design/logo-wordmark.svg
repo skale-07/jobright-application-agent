@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 32" width="190" height="32">
+  <!-- Dispatch wordmark only — for tight horizontal spaces where the mark
+       would fall below its 14px minimum. DESIGN.md §1.5. -->
+  <style>
+    .word { fill: #e6edf3; }
+    .segment { fill: #58a6ff; }
+    text {
+      font-family: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    @media (prefers-color-scheme: light) {
+      .word { fill: #1f2328; }
+      .segment { fill: #0969da; }
+    }
+  </style>
+  <text x="4" y="23"><tspan class="word">dispatch</tspan><tspan class="segment">·console</tspan></text>
+</svg>

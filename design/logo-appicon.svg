@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Dispatch app icon: the mark on a fixed dark tile. The one sanctioned
+       "container" context (avatars, app grids, social) — deliberately
+       single-theme so the tile is stable on any ground. DESIGN.md §1.5. -->
+  <rect width="64" height="64" rx="14" fill="#0d1117"/>
+  <rect width="64" height="64" rx="14" fill="none" stroke="#30363d" stroke-width="1"/>
+  <g transform="translate(8, 8)">
+    <path d="M12 36 L36 12" stroke="#58a6ff" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <circle cx="12" cy="36" r="4.8" fill="#0d1117" stroke="#58a6ff" stroke-width="4"/>
+    <circle cx="24" cy="24" r="4.8" fill="#0d1117" stroke="#58a6ff" stroke-width="4"/>
+    <circle cx="36" cy="12" r="6" fill="#58a6ff"/>
+  </g>
+</svg>

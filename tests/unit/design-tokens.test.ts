@@ -98,11 +98,16 @@ describe("design/tokens.json ↔ tokens.css contract (UNIT_CONFIRMED)", () => {
     expect(css.dark["sidebar-w"]).toBe(leaf(json, "layout", "sidebar-width").$value);
   });
 
-  it("brand assets use palette colors only (favicon + lockup)", () => {
+  it("brand assets use palette colors only (favicon + every design/*.svg)", () => {
+    const designDir = path.join(process.cwd(), "design");
     const assets = [
       path.join(process.cwd(), "frontend", "public", "favicon.svg"),
-      path.join(process.cwd(), "design", "logo.svg"),
+      ...fs
+        .readdirSync(designDir)
+        .filter((f) => f.endsWith(".svg"))
+        .map((f) => path.join(designDir, f)),
     ];
+    expect(assets.length).toBeGreaterThanOrEqual(2);
     const palette = new Set(
       [...Object.values(css.dark), ...Object.values(css.light)].map((v) =>
         v.toLowerCase(),
