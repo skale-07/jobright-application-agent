@@ -1,6 +1,11 @@
 # jobright-application-agent
 
-Local deterministic Playwright application processor (JobRight → ATS → Outlook drafts).
+**Dispatch** — the application operator console. A local, deterministic
+Playwright application processor (JobRight → ATS → Outlook drafts) with an
+operator web console and operator-armed autonomy. Every application
+accounted for.
+
+Design system: [DESIGN.md](DESIGN.md) · Coding-agent context: [AGENTS.md](AGENTS.md)
 
 **Do not** place this repo under OneDrive. Canonical path: `C:\dev\jobright-application-agent`.
 

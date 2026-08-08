@@ -29,8 +29,8 @@ export function App(): JSX.Element {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">
-          jobright<span>·console</span>
+        <div className="brand" title="Dispatch — every application accounted for">
+          dispatch<span>·console</span>
         </div>
         <nav>
           {NAV.map((item) => (
