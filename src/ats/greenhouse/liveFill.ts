@@ -30,6 +30,28 @@ import {
   type GreenhouseIdentityVerification,
 } from "./identityVerification.js";
 import { validateGreenhouseApplicationUrl } from "./urlValidation.js";
+import {
+  buildOperatorFieldBrief,
+  printOperatorFieldBrief,
+} from "../../applications/operatorFieldBrief.js";
+import type { ApprovedFillPlan } from "../../applications/approvedFillPlan.js";
+
+function briefFromApproved(approvedPlan: ApprovedFillPlan) {
+  return approvedPlan.entries.map((e) => ({
+    field_id: e.field_id,
+    label: e.label,
+    type: e.type,
+    canonical_field: e.canonical_field,
+    action:
+      e.action === "FILL"
+        ? ("fill" as const)
+        : e.action === "REVIEW_REQUIRED"
+          ? ("review_required" as const)
+          : ("skip_empty" as const),
+    value: e.value,
+    reason: e.reason,
+  }));
+}
 
 export type GreenhouseLiveFillReport = ApplicationFillReport & {
   validation_level: "LIVE_MUTATION_CONFIRMED" | "LIVE_READ_ONLY_CONFIRMED" | "UNVERIFIED";
@@ -456,6 +478,17 @@ export async function runGreenhouseLiveFill(input: {
         base.verify.passed && uploadsOk
           ? "LIVE_MUTATION_CONFIRMED"
           : "UNVERIFIED";
+      if (base.validation_level === "UNVERIFIED" && base.verify) {
+        const brief = buildOperatorFieldBrief({
+          context: `Live fill — greenhouse ${base.final_url ?? base.url}`,
+          verify: base.verify,
+          fill: base.fill,
+          upload: base.uploads?.find((u) => !u.verified) ?? null,
+          planEntries: briefFromApproved(approvedPlan),
+        });
+        base.operator_brief = brief;
+        printOperatorFieldBrief(brief);
+      }
       return persist(base);
     },
   );

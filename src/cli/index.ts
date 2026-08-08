@@ -17,6 +17,7 @@ import {
   resolveUncertainSubmission,
 } from "../queue/reviewResolvers.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import { printOperatorFieldBrief } from "../applications/operatorFieldBrief.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -834,6 +835,31 @@ function cmdReview(): void {
   try {
     migrate(db);
     const items = listOpenReviewItems(db);
+    for (const i of items) {
+      let payload: unknown = {};
+      try {
+        payload = JSON.parse(i.payload_json);
+      } catch {
+        payload = { raw: i.payload_json };
+      }
+      const brief =
+        payload &&
+        typeof payload === "object" &&
+        payload !== null &&
+        "operator_brief" in payload
+          ? (payload as { operator_brief: unknown }).operator_brief
+          : null;
+      if (
+        brief &&
+        typeof brief === "object" &&
+        brief !== null &&
+        "items" in brief
+      ) {
+        printOperatorFieldBrief(
+          brief as import("../applications/operatorFieldBrief.js").OperatorFieldBrief,
+        );
+      }
+    }
     console.log(
       JSON.stringify(
         items.map((i) => ({

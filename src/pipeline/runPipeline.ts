@@ -33,6 +33,10 @@ import { getRegisteredResume } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
+import {
+  printOperatorFieldBrief,
+  type OperatorFieldBrief,
+} from "../applications/operatorFieldBrief.js";
 
 export const MAX_ATTEMPTS = 3;
 
@@ -650,6 +654,7 @@ async function step(
       }
       let verifyPassed = false;
       let detail = "";
+      let operatorBrief: OperatorFieldBrief | undefined;
       if (ctx.options.fixtureHtmlPath) {
         const fillReport = await runAtsFixtureFill("greenhouse", {
           execute: true,
@@ -657,6 +662,9 @@ async function step(
         });
         verifyPassed = fillReport.verify?.passed === true;
         detail = `fixture fill: ${fillReport.fill?.filled.length ?? 0} filled`;
+        if (fillReport.operator_brief) {
+          operatorBrief = fillReport.operator_brief;
+        }
       } else {
         const url = getEmployerApplicationUrl(db, app.id);
         if (!url) {
@@ -684,12 +692,14 @@ async function step(
                 gateFailure: `${detected.ats} live fill refused: ${liveReport.gate.failure_code}`,
                 verifyPassed: false,
                 detail: "",
+                operatorBrief: undefined as OperatorFieldBrief | undefined,
               };
             }
             return {
               gateFailure: null,
               verifyPassed: liveReport.verify?.passed === true,
               detail: `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
+              operatorBrief: liveReport.operator_brief,
             };
           }
           const liveReport = await runGreenhouseLiveFill({
@@ -702,6 +712,7 @@ async function step(
             gateFailure: null,
             verifyPassed: liveReport.verify?.passed === true,
             detail: `live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
+            operatorBrief: liveReport.operator_brief,
           };
         });
         if (filled.gateFailure) {
@@ -709,6 +720,7 @@ async function step(
         }
         verifyPassed = filled.verifyPassed;
         detail = filled.detail;
+        operatorBrief = filled.operatorBrief;
       }
 
       transitionApplication(db, {
@@ -718,6 +730,10 @@ async function step(
         runId,
       });
       if (!verifyPassed) {
+        // Live fill already printed; fixture path may not have.
+        if (operatorBrief && ctx.options.fixtureHtmlPath) {
+          printOperatorFieldBrief(operatorBrief);
+        }
         transitionApplication(db, {
           applicationId: app.id,
           nextState: "AMBIGUOUS_FIELD",
@@ -729,7 +745,10 @@ async function step(
           applicationId: app.id,
           kind: "AMBIGUOUS_FIELD",
           title: "Fill verification failed",
-          payload: { detail },
+          payload: {
+            detail,
+            ...(operatorBrief ? { operator_brief: operatorBrief } : {}),
+          },
         });
         return { to: "AMBIGUOUS_FIELD", note: "verification failed", stop: "review" };
       }

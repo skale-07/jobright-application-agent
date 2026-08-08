@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Page } from "playwright";
 import { LeverAdapterV1, leverFullNameMatcher } from "../../src/ats/lever/v1.js";
 import {
@@ -16,6 +16,14 @@ import {
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
+
+vi.mock("../../src/candidate/sensitiveProfileIO.js", () => ({
+  tryLoadSensitiveProfile: () => null,
+  getSensitiveValue: () => undefined,
+  loadSensitiveProfile: () => {
+    throw new Error("loadSensitiveProfile not available in lever-fill tests");
+  },
+}));
 
 const FIXTURE_DIR = path.join(process.cwd(), "tests", "fixtures", "ats");
 

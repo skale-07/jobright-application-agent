@@ -10,6 +10,7 @@ import {
   getSensitiveValue,
   tryLoadSensitiveProfile,
 } from "../candidate/sensitiveProfileIO.js";
+import { locationTypeaheadQuery } from "./locationQuery.js";
 
 export type FillPlanAction =
   | "fill"
@@ -166,6 +167,14 @@ export function buildFillPlan(
     let value = getProfileValue(profile, field.canonical_field);
     if (field.canonical_field === "requires_sponsorship") {
       value = normalizeSponsorship(value);
+    }
+    if (field.canonical_field === "address.city" && typeof value === "string") {
+      // Location typeaheads want "Baltimore, Maryland, USA" not bare city.
+      value = locationTypeaheadQuery(
+        value,
+        profile.address?.state ?? "",
+        profile.address?.country ?? "",
+      );
     }
     if (
       (field.canonical_field === "graduation_year" ||

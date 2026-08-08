@@ -42,6 +42,12 @@ export const publicProfileSchema = z.object({
    * never invent "No" for applicants who might be bound.
    */
   restrictive_covenants: z.string().optional().default(""),
+  /**
+   * Current employer / organization (Lever `org`, "Current company").
+   * Prefer explicit value; fall back is not invented from employment_history
+   * unless the operator puts it here.
+   */
+  current_company: z.string().optional().default(""),
   employment_history: z.array(z.unknown()).optional().default([]),
   education_history: z.array(z.unknown()).optional().default([]),
 });
@@ -79,6 +85,7 @@ export function getProfileValue(
   if (canonical === "how_heard") return profile.how_heard;
   if (canonical === "restrictive_covenants") return profile.restrictive_covenants;
   if (canonical === "preferred_name") return profile.preferred_name;
+  if (canonical === "current_company") return profile.current_company ?? "";
 
   const parts = canonical.split(".");
   let cur: unknown = profile;

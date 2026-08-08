@@ -24,6 +24,7 @@ import {
   readComboboxValue,
 } from "./comboboxFill.js";
 import { logger } from "../../logging/logger.js";
+import { locationsMatch } from "../../applications/locationQuery.js";
 
 export type FieldMeta = {
   name?: string;
@@ -84,9 +85,208 @@ async function setSelectByValueOrLabel(
     await locator.selectOption({ label: partial });
     return;
   }
+  // "I am not a protected veteran" → "I am not a veteran"
+  const tokens = text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !/^(the|and|not|are|you)$/.test(t));
+  const byTokens = options.find((o) => {
+    const ol = o.toLowerCase();
+    return tokens.filter((t) => ol.includes(t)).length >= Math.min(2, tokens.length);
+  });
+  if (byTokens) {
+    await locator.selectOption({ label: byTokens });
+    return;
+  }
   throw new Error(
     `No select option matching "${text}" (options: ${options.join(", ")})`,
   );
+}
+
+function isLocationStyleField(entry: {
+  field_id: string;
+  label: string;
+  canonical_field?: string | null;
+  name?: string;
+  inputId?: string;
+}): boolean {
+  if (entry.canonical_field === "address.city") return true;
+  const blob = `${entry.field_id} ${entry.label} ${entry.name ?? ""} ${entry.inputId ?? ""}`.toLowerCase();
+  return (
+    blob.includes("location-input") ||
+    /\bcurrent location\b/.test(blob) ||
+    /^location$/.test(entry.label.trim().toLowerCase())
+  );
+}
+
+/**
+ * Lever/GH "Current location" style fields: type city (prefer city + state),
+ * wait for an autocomplete dropdown, click a match or the first row, then
+ * keyboard ArrowDown+Enter as last resort. Plain fill alone does NOT commit
+ * Places-style widgets (they clear unselected text on blur).
+ */
+async function fillLocationStyleText(
+  page: Page,
+  loc: Locator,
+  value: unknown,
+): Promise<{ notes: string[] }> {
+  const text = String(value).trim();
+  const notes: string[] = [];
+  if (!text) {
+    notes.push("location fill skipped — empty value");
+    return { notes };
+  }
+
+  await loc.scrollIntoViewIfNeeded().catch(() => undefined);
+  await loc.click({ timeout: 5_000 });
+  // Clear residual/autocomplete cache
+  await loc.fill("");
+  await loc.press("Control+A").catch(() => undefined);
+  await loc.press("Backspace").catch(() => undefined);
+
+  // Type so key events fire (many widgets ignore .fill for suggestions).
+  await loc.pressSequentially(text, { delay: 40 });
+  // Nudge filters that key up only after a pause
+  await page.waitForTimeout(350);
+
+  const suggestionSelectors = [
+    ".pac-item:visible",
+    ".pac-container .pac-item",
+    '[role="listbox"] [role="option"]:visible',
+    '[role="option"]:visible',
+    "ul.dropdown-menu li:visible",
+    ".tt-suggestion:visible",
+    ".autocomplete-suggestion:visible",
+    ".location-typeahead-option:visible",
+    "[class*='suggestion']:visible",
+    "[class*='dropdown'] li:visible",
+    "[class*='Dropdown'] [class*='option']:visible",
+    "[data-testid*='location'] [role='option']",
+  ];
+
+  const itemsLocator = page.locator(suggestionSelectors.join(", "));
+
+  let chose = false;
+  const deadline = Date.now() + 3_500;
+  while (Date.now() < deadline && !chose) {
+    const count = await itemsLocator.count().catch(() => 0);
+    if (count > 0) {
+      notes.push(`suggestions visible: ${count}`);
+      const lower = text.toLowerCase();
+      // Prefer a row that contains the typed city token.
+      let pickIndex = 0;
+      for (let i = 0; i < Math.min(count, 12); i++) {
+        const t = ((await itemsLocator.nth(i).innerText().catch(() => "")) ?? "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase();
+        if (!t) continue;
+        const cityToken = lower.split(/[,\s]+/)[0] ?? lower;
+        if (t.includes(cityToken) || cityToken.length >= 4 && t.includes(cityToken.slice(0, 4))) {
+          pickIndex = i;
+          notes.push(`matched suggestion index ${i}: ${t.slice(0, 80)}`);
+          break;
+        }
+      }
+      if (pickIndex === 0 && count > 0) {
+        notes.push("no city-token match — clicking first suggestion");
+      }
+      try {
+        await itemsLocator.nth(pickIndex).click({ timeout: 2_000 });
+        chose = true;
+        notes.push(`clicked suggestion index ${pickIndex}`);
+      } catch (err) {
+        notes.push(
+          `click suggestion failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+      break;
+    }
+    await page.waitForTimeout(150);
+  }
+
+  if (!chose) {
+    // Keyboard commit: first highlighted option (standard autocomplete contract).
+    notes.push("no clickable suggestion list within timeout — ArrowDown+Enter");
+    await loc.focus();
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(120);
+    await page.keyboard.press("Enter");
+    chose = true;
+    notes.push("keyboard ArrowDown+Enter");
+  }
+
+  await page.waitForTimeout(200);
+  await loc.evaluate(
+    (el: {
+      dispatchEvent: (e: Event) => void;
+      getAttribute: (n: string) => string | null;
+      textContent: string | null;
+      closest: (s: string) => {
+        querySelector: (s: string) => { textContent: string | null } | null;
+      } | null;
+      parentElement: {
+        querySelector: (s: string) => { textContent: string | null } | null;
+      } | null;
+    }) => {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    },
+  );
+
+  let readBack = (await loc.inputValue().catch(() => "")).trim();
+  // Some Lever UIs put the committed value in a nearby selected label.
+  if (!readBack) {
+    readBack = (
+      await loc.evaluate(
+        (el: {
+          getAttribute: (n: string) => string | null;
+          textContent: string | null;
+          closest: (s: string) => {
+            querySelector: (s: string) => { textContent: string | null } | null;
+          } | null;
+          parentElement: {
+            querySelector: (s: string) => { textContent: string | null } | null;
+          } | null;
+        }) => {
+          const root =
+            el.closest(".application-field") ??
+            el.closest("label") ??
+            el.parentElement;
+          const selected =
+            root?.querySelector?.("[class*='selected']") ??
+            root?.querySelector?.("[data-selected]");
+          return (
+            (selected?.textContent ??
+              el.getAttribute("value") ??
+              el.textContent ??
+              "")
+              .replace(/\s+/g, " ")
+              .trim()
+          );
+        },
+      ).catch(() => "")
+    ).trim();
+  }
+
+  if (!readBack) {
+    // Final keyboard Tab often forces commit in Google Places.
+    await loc.focus();
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(150);
+    readBack = (await loc.inputValue().catch(() => "")).trim();
+  }
+
+  if (!readBack) {
+    notes.push("location still empty after suggestion pick — will fail verify");
+    throw new Error(
+      `location autocomplete did not commit (typed "${text}"; tried click-first + ArrowDown/Enter). ${notes.join("; ")}`,
+    );
+  }
+
+  notes.push(`location committed: ${readBack.slice(0, 120)}`);
+  return { notes };
 }
 
 /** Digits only; used so ITI formatting ("(555) 123-4567") can match raw profile. */
@@ -183,6 +383,8 @@ function valuesMatch(expected: unknown, observed: unknown): boolean {
   }
   // ITI phone formatting vs profile digits.
   if (phonesMatch(eRaw, oRaw)) return true;
+  // Places commit "Baltimore, MD, USA" vs plan "Baltimore" / "Baltimore, Maryland, USA"
+  if (locationsMatch(eRaw, oRaw) || locationsMatch(oRaw, eRaw)) return true;
   return false;
 }
 
@@ -370,12 +572,30 @@ export async function greenhouseFillFromPlan(
             match_via: "exact",
           });
         } else {
-          await loc.fill(String(entry.value));
-          field_meta.push({
-            field_id: entry.field_id,
-            canonical_field: entry.canonical_field,
-            control_kind: "text",
-          });
+          if (
+            isLocationStyleField({
+              field_id: entry.field_id,
+              label: entry.label,
+              canonical_field: entry.canonical_field,
+              ...(meta?.name ? { name: meta.name } : {}),
+              ...(meta?.inputId ? { inputId: meta.inputId } : {}),
+            })
+          ) {
+            const locFill = await fillLocationStyleText(page, loc, entry.value);
+            field_meta.push({
+              field_id: entry.field_id,
+              canonical_field: entry.canonical_field,
+              control_kind: "text",
+              notes: locFill.notes,
+            });
+          } else {
+            await loc.fill(String(entry.value));
+            field_meta.push({
+              field_id: entry.field_id,
+              canonical_field: entry.canonical_field,
+              control_kind: "text",
+            });
+          }
         }
       }
       filled.push(entry.canonical_field ?? entry.field_id);

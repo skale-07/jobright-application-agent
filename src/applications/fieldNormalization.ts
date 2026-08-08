@@ -47,6 +47,30 @@ export function matchCanonicalField(
 
   if (best) return best.canonical;
 
+  // Name/id-based hints when phrase map missed (Lever EEO / org / location)
+  if (/eeo\[?\s*gender|name=["']?eeo\[gender\]/i.test(nameHint) || /eeo\[gender\]/i.test(normalized))
+    return "gender";
+  if (
+    /eeo\[?\s*race|name=["']?eeo\[race\]/i.test(nameHint) ||
+    /eeo\[race\]/i.test(normalized) ||
+    (/\brace\b/.test(normalized) && !/trace|brace/.test(normalized))
+  )
+    return "race_ethnicity";
+  if (/eeo\[?\s*veteran|eeo\[veteran\]/i.test(nameHint) || /eeo\[veteran\]/i.test(normalized))
+    return "veteran_status";
+  if (
+    nameHint === "org" ||
+    /^(current )?company$/.test(normalized) ||
+    /current organization|organization name/.test(normalized)
+  )
+    return "current_company";
+  if (
+    /location-input|name=["']?location/i.test(nameHint) ||
+    normalized === "location" ||
+    normalized === "current location"
+  )
+    return "address.city";
+
   // Name-based Greenhouse hints (only when phrase map missed)
   if (/email/i.test(nameHint)) return "email";
   if (/phone/i.test(nameHint)) return "phone";

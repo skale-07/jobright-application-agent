@@ -55,6 +55,11 @@ import {
 } from "../storage/atomicJson.js";
 import { redactObject } from "../logging/redaction.js";
 import type { SubmissionReceipt } from "../ats/adapter.js";
+import {
+  buildOperatorFieldBrief,
+  printOperatorFieldBrief,
+  type OperatorFieldBrief,
+} from "./operatorFieldBrief.js";
 
 export type SubmissionRunOutcome =
   | "SUBMITTED_VERIFIED"
@@ -71,6 +76,8 @@ export type SubmissionRunReport = {
   review_item_id: string | null;
   reason: string;
   artifact_path: string | null;
+  /** Present when pre-click fill/verify/upload failed. */
+  operator_brief?: OperatorFieldBrief;
 };
 
 /**
@@ -366,10 +373,31 @@ export async function runAtsSubmission(input: {
             }
           }
           if (!verify.passed || !upload.verified || fill.errors.length > 0) {
+            const operatorBrief = buildOperatorFieldBrief({
+              context: `Submit blocked — ${binding.id} app ${applicationId}`,
+              verify,
+              fill,
+              upload,
+              planEntries: approvedPlan.entries.map((e) => ({
+                field_id: e.field_id,
+                label: e.label,
+                type: e.type,
+                canonical_field: e.canonical_field,
+                action:
+                  e.action === "FILL"
+                    ? ("fill" as const)
+                    : e.action === "REVIEW_REQUIRED"
+                      ? ("review_required" as const)
+                      : ("skip_empty" as const),
+                value: e.value,
+                reason: e.reason,
+              })),
+            });
+            printOperatorFieldBrief(operatorBrief);
             markSubmissionFailed(
               db,
               pending.id,
-              `pre-submit verification failed (verify=${verify.passed}, upload=${upload.verified}, fillErrors=${fill.errors.length})`,
+              `pre-submit verification failed (verify=${verify.passed}, upload=${upload.verified}, fillErrors=${fill.errors.length}; open_items=${operatorBrief.fail_count})`,
             );
             failIdempotencyKey(db, idemKey, "verify_failed");
             transitionApplication(db, {
@@ -381,6 +409,7 @@ export async function runAtsSubmission(input: {
             report.outcome = "FAILED_BEFORE_CLICK";
             report.reason =
               "Refusing to click submit: field verification or upload did not pass";
+            report.operator_brief = operatorBrief;
             return persist(report);
           }
 

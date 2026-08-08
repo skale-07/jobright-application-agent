@@ -21,6 +21,28 @@ import type {
   FormVerificationResult,
   UploadVerification,
 } from "../ats/adapter.js";
+import {
+  buildOperatorFieldBrief,
+  printOperatorFieldBrief,
+} from "./operatorFieldBrief.js";
+import type { ApprovedFillPlan } from "./approvedFillPlan.js";
+
+function briefPlanEntries(approvedPlan: ApprovedFillPlan) {
+  return approvedPlan.entries.map((e) => ({
+    field_id: e.field_id,
+    label: e.label,
+    type: e.type,
+    canonical_field: e.canonical_field,
+    action:
+      e.action === "FILL"
+        ? ("fill" as const)
+        : e.action === "REVIEW_REQUIRED"
+          ? ("review_required" as const)
+          : ("skip_empty" as const),
+    value: e.value,
+    reason: e.reason,
+  }));
+}
 
 /**
  * Shared guarded live fill for the non-greenhouse ATSes (lever/ashby).
@@ -59,6 +81,8 @@ export type AtsLiveFillReport = {
   submit_attempted: false;
   notes: string[];
   report_path?: string;
+  /** Built when fill/verify/uploads need operator attention. */
+  operator_brief?: import("./operatorFieldBrief.js").OperatorFieldBrief;
 };
 
 export async function runAtsLiveFill(input: {
@@ -204,6 +228,17 @@ export async function runAtsLiveFill(input: {
           ? "LIVE_MUTATION_CONFIRMED"
           : "UNVERIFIED";
       report.notes.push("submit not attempted — live fill never submits");
+      if (report.validation_level === "UNVERIFIED") {
+        const brief = buildOperatorFieldBrief({
+          context: `Live fill — ${binding.id} ${gate.finalUrl}`,
+          verify: report.verify,
+          fill: report.fill,
+          upload: report.uploads?.find((u) => !u.verified) ?? null,
+          planEntries: briefPlanEntries(approvedPlan),
+        });
+        report.operator_brief = brief;
+        printOperatorFieldBrief(brief);
+      }
       return persist(report, { plan, approvedPlan });
     },
   );

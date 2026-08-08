@@ -102,6 +102,7 @@ export type ApplicationFillReport = {
   submit_attempted: false;
   notes: string[];
   report_path?: string;
+  operator_brief?: import("./operatorFieldBrief.js").OperatorFieldBrief;
 };
 
 export async function planApplicationFill(input: {
