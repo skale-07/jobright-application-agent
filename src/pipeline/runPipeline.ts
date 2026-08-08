@@ -16,6 +16,7 @@ import { openEssayReviewItem } from "../applications/essayAnswers.js";
 import { essayFieldsOnly } from "../applications/essayDetector.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
+import type { ConfirmSubmission } from "../applications/submitConfirmation.js";
 import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import {
@@ -68,6 +69,8 @@ export type PipelineOptions = {
   submit?: boolean;
   /** Forwarded to runAtsSubmission for unattended runs. */
   assumeYes?: boolean;
+  /** Confirmation transport forwarded to runAtsSubmission (web modal seam). */
+  confirmSubmission?: ConfirmSubmission;
   /** Fixture HTML for the contacts page — offline post-submit walk. */
   contactsFixtureHtmlPath?: string;
   /** Test seam: replaces runNavigation for offline pipeline tests. */
@@ -769,6 +772,9 @@ async function step(
         headless: ctx.options.headless ?? false,
         assumeYes: ctx.options.assumeYes ?? false,
         automationRunId,
+        ...(ctx.options.confirmSubmission
+          ? { confirmSubmission: ctx.options.confirmSubmission }
+          : {}),
       });
       if (result.outcome !== "SUBMITTED_VERIFIED") {
         return {
