@@ -1,0 +1,15 @@
+{
+  "arm_run_id": "a2952075-ba0a-4418-a812-03f4b59bdb47",
+  "apps_started": 0,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 2,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "essay_drafts_generated": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected"
+  ],
+  "per_app": []
+}

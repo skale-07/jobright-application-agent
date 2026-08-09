@@ -1,0 +1,26 @@
+{
+  "run_id": "nav-e548bfaa-2611-4f40-984e-88a16dcd5e91",
+  "application_id": "0acba944-71d1-4b60-ab67-4174fbe28e39",
+  "jobright_job_id": "6a6a69888693c23e7fb7aa3a",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.lever.co/metr/52fca070-da6a-441e-b1d1-8184c51b52e6/apply",
+  "resolved_ats": "lever",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (known ATS, 11 candidates)",
+      "evidence": "jobs.lever.co"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "written_at": "2026-08-09T03:31:07.848Z"
+}

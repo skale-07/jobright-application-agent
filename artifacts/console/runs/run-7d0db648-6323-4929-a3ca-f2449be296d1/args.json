@@ -1,0 +1,9 @@
+{
+  "headed": true,
+  "arm_run_id": "a2952075-ba0a-4418-a812-03f4b59bdb47",
+  "armed_until": "2026-08-09T05:16:06.096Z",
+  "max_apps": 25,
+  "discover_max": 10,
+  "rediscover_every": 5,
+  "report_path": "C:\\dev\\jobright-application-agent\\artifacts\\console\\runs\\run-7d0db648-6323-4929-a3ca-f2449be296d1\\report.json"
+}

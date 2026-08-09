@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "6ccf68fb-eacd-4a15-8d66-92f61210f7a8",
+  "submission_id": "25151884-98f6-4949-9da9-d7b7b83cd9af",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": "a38aa556-41c0-4c48-9f86-903bc44da726",
+  "reason": "Refusing to click submit: 1 required question(s) unanswered — What makes you a good fit for Cohere? (if you've ever built something with Cohere, be sure to tell us and link it here!) [textarea]",
+  "artifact_path": null
+}

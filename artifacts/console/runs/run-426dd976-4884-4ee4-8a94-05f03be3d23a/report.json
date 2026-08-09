@@ -1,0 +1,58 @@
+{
+  "arm_run_id": "696d256d-51be-416e-98ec-eeae0b5e50b0",
+  "apps_started": 5,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 3,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "essay_drafts_generated": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "essay drafts skipped: ESSAY_DRAFT_ENABLED off"
+  ],
+  "per_app": [
+    {
+      "application_id": "ed8f09ec-2c4d-4272-9d1f-1329241ebd19",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "ashby live fill refused: BLOCKING_CAPTCHA",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "9ef51992-1016-4b54-b7df-5ee59083ad79",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "ashby live fill refused: BLOCKING_CAPTCHA",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "6ccf68fb-eacd-4a15-8d66-92f61210f7a8",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "gate",
+      "stop_reason": "submission not verified: FAILED_BEFORE_CLICK — Refusing to click submit: 1 required question(s) unanswered — What makes you a good fit for Cohere? (if you've ever built something with Cohere, be sure to tell us and link it here!) [textarea]",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "0acba944-71d1-4b60-ab67-4174fbe28e39",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "766c107d-e55b-4e14-95b1-e077c48b17c0",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "employer URL missing at fill stage — parked for review",
+      "submitted": false,
+      "outreach": null
+    }
+  ]
+}
