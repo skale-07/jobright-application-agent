@@ -24,6 +24,32 @@ export function getEmployerApplicationUrl(
   return typeof url === "string" && url.length > 0 ? url : null;
 }
 
+/**
+ * Remove a stored employer URL (nav-audit repair path: the URL failed the
+ * company-congruence check, so the application must re-navigate). Keeps
+ * the ATS tag out too — a cleared URL means "nothing is known".
+ */
+export function clearEmployerApplicationUrl(
+  db: Db,
+  applicationId: string,
+): void {
+  const row = db
+    .prepare(
+      `SELECT j.id, j.raw_json FROM jobs j
+       JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+    )
+    .get(applicationId) as { id: string; raw_json: string } | undefined;
+  if (!row) throw new Error(`Unknown application: ${applicationId}`);
+  const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
+  delete raw["employer_application_url"];
+  delete raw["employer_application_ats"];
+  db.prepare(`UPDATE jobs SET raw_json = ?, updated_at = ? WHERE id = ?`).run(
+    JSON.stringify(raw),
+    new Date().toISOString(),
+    row.id,
+  );
+}
+
 /** Persist the employer ATS URL on the job so submit and re-runs find it. */
 export function setEmployerApplicationUrl(
   db: Db,

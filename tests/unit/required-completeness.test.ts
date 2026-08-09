@@ -51,6 +51,57 @@ describe("required-completeness scan (FIXTURE_CONFIRMED)", () => {
     });
   }, 30_000);
 
+  it("catches the LIVE Ashby shape: asterisk-labeled role=radio groups with no aria-required", async () => {
+    // The real submit gate refused only the essay textarea while two blank
+    // required radio groups sailed past — Ashby marks required with ONLY a
+    // trailing asterisk on the label, no [aria-required].
+    const html = `
+      <form>
+        <div class="_fieldEntry_x1">
+          <label id="l1">Are you able to work full time for the duration of the internship?<span>*</span></label>
+          <div role="radiogroup" aria-labelledby="l1">
+            <div role="radio" aria-checked="false" tabindex="0">Yes</div>
+            <div role="radio" aria-checked="false" tabindex="-1">No</div>
+          </div>
+        </div>
+        <div class="_fieldEntry_x1">
+          <label id="l2">Please select the current level of education you are pursuing *</label>
+          <div role="radiogroup" aria-labelledby="l2">
+            <div role="radio" aria-checked="false">Undergraduate</div>
+            <div role="radio" aria-checked="false">PhD</div>
+          </div>
+        </div>
+        <div class="_fieldEntry_x1">
+          <label id="l3">Which office is closest to you? *</label>
+          <div role="radiogroup" aria-labelledby="l3">
+            <div role="radio" aria-checked="true">Toronto</div>
+            <div role="radio" aria-checked="false">London</div>
+          </div>
+        </div>
+        <div class="_fieldEntry_x1">
+          <label id="l4">Anything else you want to share? (optional)</label>
+          <div role="radiogroup" aria-labelledby="l4">
+            <div role="radio" aria-checked="false">Yes</div>
+            <div role="radio" aria-checked="false">No</div>
+          </div>
+        </div>
+        <button type="button">Submit application</button>
+      </form>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const scan = await scanRequiredCompleteness(page);
+      expect(scan.scanned).toBe(true);
+      const labels = scan.unanswered.map((u) => u.label);
+      expect(labels.join(" | ")).toMatch(/work full time/);
+      expect(labels.join(" | ")).toMatch(/level of education/);
+      // Answered group: not flagged. Unmarked optional group: not flagged.
+      expect(labels.join(" | ")).not.toMatch(/closest to you/);
+      expect(labels.join(" | ")).not.toMatch(/Anything else/);
+      expect(
+        scan.unanswered.filter((u) => u.control === "radio_group").length,
+      ).toBe(2);
+    });
+  }, 30_000);
+
   it("a fully answered form passes clean", async () => {
     const html = `
       <form>

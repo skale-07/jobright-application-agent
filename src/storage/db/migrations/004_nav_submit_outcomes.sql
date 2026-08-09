@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS navigation_attempts (
   arm_run_id TEXT,                     -- armed session, when driven by the worker
   session_kind TEXT NOT NULL,          -- cdp | ephemeral
   method TEXT,                         -- anchor_href | apply_click_popup | apply_click_same_tab | agent | NULL
-  wall TEXT NOT NULL,                  -- none | jobright_auth | auth | captcha | phone_otp | budget | submit_risk
+  wall TEXT NOT NULL,                  -- none | jobright_auth | auth | captcha | phone_otp | budget | submit_risk | mismatch | duplicate_url
   resolved INTEGER NOT NULL DEFAULT 0, -- label: did this attempt produce a stored employer URL
   resolved_ats TEXT,
   start_host TEXT,

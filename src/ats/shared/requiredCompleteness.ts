@@ -9,8 +9,13 @@
  * click-commit gate) and names each unanswered question.
  *
  * Conservative in both directions:
- *   - only [required]/[aria-required] controls count — no heuristics on
- *     asterisks or styling, so an optional field can never block;
+ *   - native controls count only via [required]/[aria-required];
+ *   - ARIA widget groups (role=radiogroup/combobox) additionally count
+ *     when their visible label ends in the universal required marker
+ *     ("*" / "✱") — the live Cohere form marks required radio groups ONLY
+ *     that way, and the first scan sailed past them. The failure mode of
+ *     this heuristic is a visible refusal + review item, never a wrong
+ *     submit, so the asymmetry favors including it;
  *   - fail-open on scan errors — a broken scan must not strand a
  *     completed form (post-click verification still guards the outcome).
  *
@@ -108,19 +113,43 @@ const SCAN_EXPRESSION = `(() => {
     }
   }
 
-  const widgets = document.querySelectorAll(
-    '[role="radiogroup"][aria-required="true"], [role="combobox"][aria-required="true"]'
-  );
+  // Widget labels often live on a sibling <label> inside the field
+  // container rather than on the widget itself (Ashby's live shape).
+  const widgetLabel = (el) => {
+    const direct = labelFor(el);
+    if (direct !== "(unlabeled)") return direct;
+    let node = el;
+    for (let i = 0; i < 3 && node.parentElement; i++) {
+      node = node.parentElement;
+      const labs = node.querySelectorAll("label");
+      // Exactly one label in the ancestor = unambiguous; more than one
+      // means we've climbed out of this field's container — stop rather
+      // than borrow a neighboring question's label (and its asterisk).
+      if (labs.length === 1 && clean(labs[0].textContent)) {
+        return clean(labs[0].textContent);
+      }
+      if (labs.length > 1) break;
+    }
+    return "(unlabeled)";
+  };
+  // aria-required is authoritative; a trailing asterisk on the label is
+  // the fallback marker (the live Cohere required groups carry ONLY it).
+  const widgetRequired = (el, label) =>
+    el.getAttribute("aria-required") === "true" || /[*\\u2731]\\s*$/.test(label);
+
+  const widgets = document.querySelectorAll('[role="radiogroup"], [role="combobox"]');
   for (const el of Array.from(widgets)) {
     if (!visible(el)) continue;
+    const label = widgetLabel(el);
+    if (!widgetRequired(el, label)) continue;
     if (el.getAttribute("role") === "radiogroup") {
       const checked = el.querySelector('[role="radio"][aria-checked="true"]');
       const nativeChecked = el.querySelector("input:checked");
-      if (!checked && !nativeChecked) {
-        const key = labelFor(el);
-        if (!seenGroups.has(key)) {
-          seenGroups.add(key);
-          out.push({ label: key, control: "radio_group" });
+      const pressed = el.querySelector('button[aria-pressed="true"]');
+      if (!checked && !nativeChecked && !pressed) {
+        if (!seenGroups.has(label)) {
+          seenGroups.add(label);
+          out.push({ label: label, control: "radio_group" });
         }
       }
     } else {
@@ -128,7 +157,7 @@ const SCAN_EXPRESSION = `(() => {
       const trimmed = clean(value);
       const placeholderish = /^(start typing|select|choose)/i.test(trimmed);
       if (trimmed === "" || placeholderish) {
-        out.push({ label: labelFor(el), control: "combobox" });
+        out.push({ label: label, control: "combobox" });
       }
     }
   }

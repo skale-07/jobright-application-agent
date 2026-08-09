@@ -494,9 +494,24 @@ npm run nav:resolve -- --app <application_uuid>
 npm run run -- --pipeline --app <application_uuid>
 ```
 
+**Employer congruence gate.** Every candidate URL — anchor, click
+capture, or agent answer — must belong to the job's own company before it
+is stored: the org slug embedded in every supported-ATS URL is checked
+against the company name (tokens, initials, parenthetical aliases). A
+wrong-employer answer from the agent gets one corrective retry (the goal
+names the company explicitly), then parks as a `mismatch` wall with a
+review item naming both companies. A URL already held by another live
+application parks as `duplicate_url` naming the sibling. This exists
+because a live session returned one company's application page for three
+unrelated jobs — host-only acceptance let it through. Armed sessions also
+run an **employer-URL audit** at start: pre-submit apps holding a
+wrong-company URL are repaired automatically (URL cleared, app
+re-navigates); anything past submit parks for you.
+
 Walls route to existing states: employer login/phone → MANUAL review;
-captcha → `CAPTCHA_REQUIRED`; budget → `FAILED_RETRYABLE`; JobRight auth
-loss → `AUTH_REQUIRED` (re-login and retry). Artifacts under
+captcha → `CAPTCHA_REQUIRED`; budget → `FAILED_RETRYABLE`; wrong-employer
+`mismatch` and `duplicate_url` → `FAILED_RETRYABLE` with a named review
+item; JobRight auth loss → `AUTH_REQUIRED` (re-login and retry). Artifacts under
 `artifacts/navigation/<runId>/` never contain credentials, codes, or
 magic-link URLs. When nav ran in your CDP Chrome, inspection and fill
 re-attach to the same Chrome so employer cookies survive
@@ -515,6 +530,20 @@ stored + ATS validation), never from the agent's self-report.
 A local web console for everything above: browse applications and their
 timelines, resolve review items, launch pipeline/nav/submit runs with live
 output, and confirm submissions in the browser instead of the terminal.
+
+The console opens on **Home** — the non-technical front door. One button
+("Start applying") arms a default two-hour session and launches the
+worker; while running, the same card shows time left, applications
+worked, and submissions in plain words, plus a Stop button. Below it,
+**Needs you** turns every open review item into a to-do in normal
+language ("Answer 1 written question — Cohere — a draft is ready for
+you"), each linking straight to the application. Submitted applications
+and a setup checklist (JobRight login, Outlook, applying on/off) fill the
+rest of the page. The sidebar shows only Home / Needs you / Applications
+/ Settings; Overview, Runs, Enqueue, and Fill outcomes — the
+operator-grade pages, unchanged — live under a collapsed **advanced**
+group. Custom session limits (duration/caps, arm-only) remain on
+Overview's arm card.
 
 ```powershell
 npm run frontend:install     # once

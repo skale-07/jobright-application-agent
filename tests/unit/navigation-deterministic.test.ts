@@ -247,6 +247,8 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
             need: null,
             session: "ephemeral",
             notes: [],
+            congruence: null,
+            duplicates: null,
           };
         },
       });
@@ -280,11 +282,98 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           need: null,
           session: "ephemeral",
           notes: [],
+          congruence: null,
+          duplicates: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("CAPTCHA_REQUIRED");
       expect(
         listOpenReviewItems(db!).some((i) => i.kind === "CAPTCHA_REQUIRED"),
+      ).toBe(true);
+    } finally {
+      applySafeFillEnv();
+    }
+  });
+
+  it("flag on: a wrong-employer mismatch parks with a named review item (UNIT_CONFIRMED)", async () => {
+    const appId = seedApp();
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await runPipeline({
+        db: db!,
+        applicationId: appId,
+        navigationRunner: async ({ applicationId }) => ({
+          run_id: "nav-mismatch",
+          application_id: applicationId,
+          jobright_job_id: null,
+          method: null,
+          resolved_url: null,
+          resolved_ats: null,
+          wall: "mismatch",
+          phase_trace: [],
+          agent: null,
+          gmail: null,
+          need: null,
+          session: "cdp",
+          notes: [],
+          congruence: {
+            verdict: "mismatch",
+            slug: "cohere",
+            detail: 'slug "cohere" shares nothing with company "Postman"',
+            expected_company: "Postman",
+            url: "https://jobs.ashbyhq.com/cohere/x/application",
+          },
+          duplicates: null,
+        }),
+      });
+      expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");
+      const item = listOpenReviewItems(db!).find((i) =>
+        /wrong company/.test(i.title),
+      );
+      expect(item?.title).toContain("cohere");
+      expect(item?.title).toContain("Postman");
+    } finally {
+      applySafeFillEnv();
+    }
+  });
+
+  it("flag on: a duplicate-URL wall parks naming the sibling application (UNIT_CONFIRMED)", async () => {
+    const appId = seedApp();
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await runPipeline({
+        db: db!,
+        applicationId: appId,
+        navigationRunner: async ({ applicationId }) => ({
+          run_id: "nav-dupe",
+          application_id: applicationId,
+          jobright_job_id: null,
+          method: null,
+          resolved_url: null,
+          resolved_ats: null,
+          wall: "duplicate_url",
+          phase_trace: [],
+          agent: null,
+          gmail: null,
+          need: null,
+          session: "cdp",
+          notes: [],
+          congruence: null,
+          duplicates: [
+            {
+              application_id: "11111111-2222-3333-4444-555555555555",
+              state: "READY_TO_SUBMIT",
+              company: "Cohere",
+              role: "ML Intern",
+            },
+          ],
+        }),
+      });
+      expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");
+      expect(
+        listOpenReviewItems(db!).some((i) => /Duplicate posting/.test(i.title)),
       ).toBe(true);
     } finally {
       applySafeFillEnv();
@@ -313,6 +402,8 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           need: null,
           session: "ephemeral",
           notes: [],
+          congruence: null,
+          duplicates: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");

@@ -12,6 +12,7 @@ import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { listContacts } from "../contacts/repository.js";
 import { rankOutreachContacts } from "../contacts/rank.js";
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
+import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
 import {
@@ -75,6 +76,8 @@ export type AutomationSessionReport = {
   drafts_saved: number;
   /** Essay suggestion drafts generated into review items (UNVERIFIED). */
   essay_drafts_generated: number;
+  /** Session-start employer-URL audit (wrong-company/duplicate repair). */
+  nav_audit?: { checked: number; repaired: number; parked: number };
   notes: string[];
   per_app: AutomationAppResult[];
 };
@@ -419,6 +422,28 @@ export async function runAutomationSession(
       delay_ms_range: delayRange,
     },
   });
+
+  // Self-healing sweep before any application is touched: stored employer
+  // URLs that contradict their job's company are cleared and re-routed to
+  // navigation; duplicates park. Fail-open — an audit error is a note,
+  // never a dead session.
+  try {
+    const audit = auditEmployerUrls(db);
+    report.nav_audit = {
+      checked: audit.applications_checked,
+      repaired: audit.repaired,
+      parked: audit.parked + audit.duplicates_parked,
+    };
+    if (audit.mismatches_found > 0 || audit.duplicates_parked > 0) {
+      report.notes.push(
+        `nav audit: ${audit.repaired} wrong-employer URL(s) cleared for re-navigation, ${audit.parked + audit.duplicates_parked} parked for review`,
+      );
+    }
+  } catch (err) {
+    report.notes.push(
+      `nav audit failed (continuing): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+    );
+  }
 
   await tryDiscover();
   let appsSinceDiscover = 0;

@@ -60,6 +60,8 @@ describe("navigation + submit attempt telemetry (UNIT_CONFIRMED)", () => {
     need: null,
     session: "ephemeral",
     notes: ["unresolved by deterministic phases"],
+    congruence: null,
+    duplicates: null,
     ...over,
   });
 

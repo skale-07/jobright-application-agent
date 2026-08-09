@@ -49,6 +49,8 @@ export type ReviewItemView = {
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
+  company: string | null;
+  role: string | null;
 };
 
 export type TimelineEntry = {

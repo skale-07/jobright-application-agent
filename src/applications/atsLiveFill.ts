@@ -71,6 +71,22 @@ export type AtsLiveFillReport = {
     skipped_count: number;
     review_required_count: number;
   } | null;
+  /**
+   * Every plan entry's label + routing — values excluded. Exists because a
+   * live run once reported "10 skipped" with no way to tell WHICH questions
+   * the plan missed; blind counts made the bug undiagnosable. Labels are
+   * the form's own question text, not candidate data.
+   */
+  plan_fields: Array<{
+    field_id: string;
+    label: string;
+    type: string;
+    canonical_field: string | null;
+    action: string;
+    reason: string;
+  }> | null;
+  /** Sanitized pre-fill page HTML, written when the plan skipped fields. */
+  form_snapshot_path: string | null;
   fill: FillResult | null;
   verify: FormVerificationResult | null;
   uploads: UploadVerification[] | null;
@@ -113,6 +129,8 @@ export async function runAtsLiveFill(input: {
     mode: "refused",
     gate: { ok: false, failure_code: null, reason: null, final_url: null },
     plan_summary: null,
+    plan_fields: null,
+    form_snapshot_path: null,
     fill: null,
     verify: null,
     uploads: null,
@@ -203,6 +221,19 @@ export async function runAtsLiveFill(input: {
         skipped_count: approvedPlan.skipped_count,
         review_required_count: approvedPlan.review_required_count,
       };
+      report.plan_fields = approvedPlan.entries.map((e) => ({
+        field_id: e.field_id,
+        label: e.label,
+        type: String(e.type),
+        canonical_field: e.canonical_field ?? null,
+        action: String(e.action),
+        reason: e.reason,
+      }));
+      // Ground truth for skipped-question diagnosis: the pre-fill DOM, with
+      // control values scrubbed (a handoff page can arrive pre-filled).
+      if (approvedPlan.skipped_count > 0 && gate.html) {
+        report.form_snapshot_path = writeFormSnapshot(gate.html);
+      }
 
       if (!input.execute) {
         report.mode = "plan_only";
@@ -242,6 +273,30 @@ export async function runAtsLiveFill(input: {
       return persist(report, { plan, approvedPlan });
     },
   );
+
+  /**
+   * Persist a value-scrubbed copy of the page HTML for offline discovery
+   * repro. Scrubbing is defensive: value attributes, textarea bodies, and
+   * scripts go; question labels and structure — the diagnostic payload —
+   * stay. Capped so a pathological page can't flood the artifacts dir.
+   */
+  function writeFormSnapshot(html: string): string {
+    const cfg = getConfig();
+    const outDir = path.join(cfg.artifactsDir, "ats-fill", `${binding.id}-live`);
+    fs.mkdirSync(outDir, { recursive: true });
+    const snapshotPath = path.join(outDir, `form-snapshot-${Date.now()}.html`);
+    const scrubbed = html
+      .replace(/<script\b[\s\S]*?<\/script>/gi, "")
+      .replace(/\bvalue\s*=\s*"[^"]*"/gi, 'value="[SCRUBBED]"')
+      .replace(/\bvalue\s*=\s*'[^']*'/gi, "value='[SCRUBBED]'")
+      .replace(
+        /(<textarea\b[^>]*>)[\s\S]*?(<\/textarea>)/gi,
+        "$1[SCRUBBED]$2",
+      )
+      .slice(0, 2_000_000);
+    fs.writeFileSync(snapshotPath, scrubbed, "utf8");
+    return snapshotPath;
+  }
 
   function persist(
     r: AtsLiveFillReport,

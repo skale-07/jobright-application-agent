@@ -283,7 +283,50 @@ async function fillLocationStyleText(
     );
   }
 
-  notes.push(`location committed: ${readBack.slice(0, 120)}`);
+  // Blur-stability check — the live METR run reported "committed" here yet
+  // verify later read an EMPTY field: Places-style widgets silently clear
+  // typed-but-unselected text when focus leaves. Verify happens after
+  // blur, so blur NOW and confirm the value survives; if it clears, one
+  // bounded retry with the bare city token (shorter queries surface the
+  // suggestion list more reliably), else fail loudly at fill time where
+  // the retry is still possible.
+  await loc.blur().catch(() => undefined);
+  await page.waitForTimeout(300);
+  let postBlur = (await loc.inputValue().catch(() => "")).trim();
+  if (!postBlur) {
+    notes.push("location cleared on blur — retrying with city token only");
+    const cityToken = text.split(/[,]/)[0]?.trim() || text;
+    await loc.click({ timeout: 5_000 });
+    await loc.fill("");
+    await loc.pressSequentially(cityToken, { delay: 60 });
+    await page.waitForTimeout(700);
+    const retryItems = page.locator(suggestionSelectors.join(", "));
+    const retryCount = await retryItems.count().catch(() => 0);
+    if (retryCount > 0) {
+      await retryItems
+        .first()
+        .click({ timeout: 2_000 })
+        .catch(() => undefined);
+      notes.push(`retry: clicked first of ${retryCount} suggestions`);
+    } else {
+      await loc.focus();
+      await page.keyboard.press("ArrowDown");
+      await page.waitForTimeout(150);
+      await page.keyboard.press("Enter");
+      notes.push("retry: keyboard ArrowDown+Enter");
+    }
+    await loc.blur().catch(() => undefined);
+    await page.waitForTimeout(300);
+    postBlur = (await loc.inputValue().catch(() => "")).trim();
+    if (!postBlur) {
+      notes.push("location still empty after blur-stable retry");
+      throw new Error(
+        `location autocomplete cleared on blur and the retry did not commit (typed "${text}"). ${notes.join("; ")}`,
+      );
+    }
+  }
+
+  notes.push(`location committed (blur-stable): ${postBlur.slice(0, 120)}`);
   return { notes };
 }
 

@@ -36,6 +36,12 @@ import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
 import { evaluateAgentHostPolicy } from "./hostPolicy.js";
+import {
+  checkUrlCongruence,
+  findApplicationsWithEmployerUrl,
+  getJobIdentity,
+  type CongruenceVerdict,
+} from "./congruence.js";
 
 function detectAtsFromUrlSafe(url: string): boolean {
   return detectAtsFromUrl(url).ats !== null;
@@ -73,7 +79,11 @@ export type NavigationWall =
   | "captcha"
   | "phone_otp"
   | "budget"
-  | "submit_risk";
+  | "submit_risk"
+  /** Resolved URL belongs to a different employer than the job record. */
+  | "mismatch"
+  /** Another live application already holds this employer URL. */
+  | "duplicate_url";
 
 export type NavigationMethod =
   | "anchor_href"
@@ -103,6 +113,10 @@ export type NavigationReport = {
   need: AgentNavigateResult["need"] | null;
   session: "cdp" | "ephemeral";
   notes: string[];
+  /** Identity check between the job's company and any candidate URL. */
+  congruence: (CongruenceVerdict & { expected_company: string; url: string }) | null;
+  /** Populated on wall "duplicate_url": who already holds this URL. */
+  duplicates: Array<{ application_id: string; state: string; company: string; role: string }> | null;
   report_path?: string;
 };
 
@@ -179,6 +193,8 @@ export async function runNavigation(
     need: null,
     session: "ephemeral",
     notes: [],
+    congruence: null,
+    duplicates: null,
   };
 
   /** Values that must never reach the artifact, whatever echoes them. */
@@ -191,6 +207,19 @@ export async function runNavigation(
     return persist(report);
   }
   report.jobright_job_id = resolved.target.jobrightJobId;
+
+  // The job's own identity — every phase's result is checked against it.
+  // A missing company (shouldn't happen) degrades congruence to "unknown",
+  // which the persist path treats as human-review territory, never a pass.
+  const jobIdentity = getJobIdentity(db, applicationId);
+
+  /** Congruence gate every candidate URL passes before acceptance. */
+  const congruent = (url: string): CongruenceVerdict => {
+    if (!jobIdentity?.company) {
+      return { verdict: "unknown", slug: null, detail: "job has no company on record" };
+    }
+    return checkUrlCongruence(jobIdentity.company, url);
+  };
 
   // Agent phase (N3) needs the operator's CDP Chrome; when it's available,
   // phases A/B run in the SAME Chrome so the agent continues seamlessly.
@@ -234,11 +263,19 @@ export async function runNavigation(
     // applies none of the landing-page checks phase B does, so an
     // arbitrary https href must never be stored as the employer URL.
     const hrefs = await readExternalApplyHrefs(page);
-    const atsHref = hrefs.find((h) => detectAtsFromUrlSafe(h));
+    const atsHrefs = hrefs.filter((h) => detectAtsFromUrlSafe(h));
+    // Identity before acceptance: an anchor pointing at a known ATS but a
+    // DIFFERENT employer's board (aggregator pages mix them) must not win.
+    const atsHref = atsHrefs.find((h) => congruent(h).verdict === "match");
+    for (const rejected of atsHrefs.filter((h) => congruent(h).verdict === "mismatch")) {
+      report.notes.push(
+        `phase A: known-ATS anchor rejected — ${congruent(rejected).detail}`,
+      );
+    }
     if (atsHref) {
       report.phase_trace.push({
         phase: "A_anchor_hrefs",
-        outcome: `resolved (known ATS, ${hrefs.length} candidates)`,
+        outcome: `resolved (known ATS, ${hrefs.length} candidates, employer match)`,
         evidence: new URL(atsHref).hostname,
       });
       return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
@@ -276,7 +313,17 @@ export async function runNavigation(
           html: capture.landingHtml,
           title: capture.landingTitle ?? "",
         }).detected;
-      if (!landingWall) {
+      const captureCong = congruent(capture.url);
+      if (captureCong.verdict === "mismatch") {
+        report.notes.push(
+          `phase B: captured URL rejected — ${captureCong.detail}`,
+        );
+        report.phase_trace.push({
+          phase: "B_apply_click",
+          outcome: "captured URL belongs to a different employer — not stored",
+          evidence: new URL(capture.url).hostname,
+        });
+      } else if (!landingWall) {
         report.phase_trace.push({
           phase: "B_apply_click",
           outcome: `resolved via ${capture.via}`,
@@ -289,13 +336,16 @@ export async function runNavigation(
           capture.url,
           capture.via === "popup" ? "apply_click_popup" : "apply_click_same_tab",
         );
+      } else {
+        // A wrong-employer capture must NOT become the agent's start page —
+        // only a genuine same-employer login wall is worth continuing from.
+        capturedWallUrl = capture.url;
+        report.phase_trace.push({
+          phase: "B_apply_click",
+          outcome: "captured URL lands on a login wall — not stored",
+          evidence: new URL(capture.url).hostname,
+        });
       }
-      capturedWallUrl = capture.url;
-      report.phase_trace.push({
-        phase: "B_apply_click",
-        outcome: "captured URL lands on a login wall — not stored",
-        evidence: new URL(capture.url).hostname,
-      });
     }
 
     // Classify what we're stuck on (the landing page after the click flow).
@@ -437,13 +487,29 @@ export async function runNavigation(
     const visited = new Set<string>();
     let turnStartUrl = startUrl;
     let resume: AgentNavigateTask["resume"];
+    // The agent must know WHO it is navigating for: the live failure this
+    // guards against was a goal that never named the employer, so a
+    // leftover application-form tab (any company's) read as success.
+    const targetLabel = jobIdentity
+      ? `the posting "${jobIdentity.role}" at ${jobIdentity.company}`
+      : "this posting";
+    const baseGoal =
+      `Reach the employer's job-application form page for ${targetLabel}, ` +
+      `starting from the current page. Only an application page belonging to ` +
+      `${jobIdentity?.company ?? "this job's employer"} counts — never return ` +
+      `an application form for a different company, and do not reuse ` +
+      `previously open tabs for other jobs.`;
+    let correction: string | null = null;
+    let lastMismatch:
+      | (CongruenceVerdict & { url: string })
+      | null = null;
     try {
       while (turns < 3 && Date.now() < deadline) {
         const agentResult = await navigateViaSidecar({
           task: {
             task_version: 1,
             task_type: "navigate",
-            goal: "Reach the employer's job-application form page for this posting, starting from the current page.",
+            goal: correction ? `${baseGoal} ${correction}` : baseGoal,
             start_url: turnStartUrl,
             cdp_url: cfg0.agentCdpUrl,
             allowed_domains: allowedDomains,
@@ -471,9 +537,33 @@ export async function runNavigation(
         report.notes.push(...agentResult.notes.map((n) => `agent[${turns}]: ${n}`));
 
         if (agentResult.status === "ok" && agentResult.final_url) {
+          // The agent's word is a proposal, not a result: verify the URL
+          // belongs to this job's employer before accepting. One corrective
+          // retry per rejection, inside the existing turn cap.
+          const cong = congruent(agentResult.final_url);
+          if (cong.verdict === "mismatch") {
+            lastMismatch = { ...cong, url: agentResult.final_url };
+            report.phase_trace.push({
+              phase: "C_agent",
+              outcome: `rejected (turn ${turns}): wrong employer — ${cong.detail}`,
+              evidence: new URL(agentResult.final_url).hostname,
+            });
+            report.notes.push(
+              `agent[${turns}]: returned wrong-employer URL (${cong.detail}) — corrective retry`,
+            );
+            correction =
+              `IMPORTANT: on a previous attempt you returned ` +
+              `${agentResult.final_url}, which belongs to a different ` +
+              `company ("${cong.slug}"), not ${jobIdentity?.company ?? "the target employer"}. ` +
+              `That was wrong. Start over from the job posting page and find ` +
+              `the application page for ${jobIdentity?.company ?? "the correct employer"} only.`;
+            turnStartUrl = resolved.target.jobUrl;
+            resume = undefined;
+            continue;
+          }
           report.phase_trace.push({
             phase: "C_agent",
-            outcome: `resolved (turn ${turns})`,
+            outcome: `resolved (turn ${turns}, employer ${cong.verdict === "match" ? "match" : "unverified"})`,
             evidence: new URL(agentResult.final_url).hostname,
           });
           return resolveAndPersist(
@@ -539,6 +629,20 @@ export async function runNavigation(
         });
         return persist(report);
       }
+      if (lastMismatch) {
+        // Every accepted-looking answer was for the wrong employer — park
+        // as a mismatch (with the evidence), not an anonymous budget wall.
+        report.wall = "mismatch";
+        report.congruence = {
+          ...lastMismatch,
+          expected_company: jobIdentity?.company ?? "(unknown)",
+        };
+        report.phase_trace.push({
+          phase: "C_agent",
+          outcome: `exhausted turns — every candidate URL belonged to a different employer (last: ${lastMismatch.slug ?? "?"})`,
+        });
+        return persist(report);
+      }
       report.wall = "budget";
       report.phase_trace.push({
         phase: "C_agent",
@@ -564,6 +668,40 @@ export async function runNavigation(
     url: string,
     method: NavigationMethod,
   ): NavigationReport {
+    // Backstop identity check — phases pre-filter, but nothing may be
+    // persisted that fails congruence, whatever path proposed it.
+    const cong = congruent(url);
+    r.congruence = {
+      ...cong,
+      expected_company: jobIdentity?.company ?? "(unknown)",
+      url,
+    };
+    if (cong.verdict === "mismatch") {
+      r.notes.push(`refusing to store wrong-employer URL: ${cong.detail}`);
+      r.wall = "mismatch";
+      return persist(r);
+    }
+    if (cong.verdict === "unknown") {
+      r.notes.push(
+        `employer congruence unverifiable (${cong.detail}) — URL routes to human review via the unsupported-ATS path`,
+      );
+    }
+
+    // One posting, one application: a URL already held by another live
+    // application is a duplicate (stale agent tab or JobRight double
+    // listing) — park it instead of building a second submission.
+    const dupes = findApplicationsWithEmployerUrl(database, url, appId);
+    if (dupes.length > 0) {
+      r.duplicates = dupes;
+      r.notes.push(
+        `employer URL already held by ${dupes.length} other application(s): ${dupes
+          .map((d) => `${d.application_id.slice(0, 8)} (${d.company} — ${d.role}, ${d.state})`)
+          .join("; ")}`,
+      );
+      r.wall = "duplicate_url";
+      return persist(r);
+    }
+
     try {
       const stored = storeResolvedEmployerUrl(database, appId, url, {
         runId: r.run_id,
