@@ -106,6 +106,21 @@ export type SubmissionAttempt = {
   notes: string[];
 };
 
+/**
+ * Click-commit seam for submit implementations: called AFTER the submit
+ * control is resolved, visible, and enabled — immediately before the click.
+ * Returning false withholds the click (clicked=false, note names the gate).
+ * This is where the unattended submission budget is consumed, so a slot is
+ * only ever spent on an attempt that could actually click (a resolve miss
+ * or disabled control no longer burns budget).
+ */
+export type SubmitClickOptions = {
+  beforeClick?: () => boolean | Promise<boolean>;
+};
+
+/** The note emitted when beforeClick withholds the click — callers match on it. */
+export const CLICK_WITHHELD_NOTE = "click withheld by pre-click gate";
+
 export type SubmissionReceipt = {
   submitted: boolean;
   submitted_at: string;

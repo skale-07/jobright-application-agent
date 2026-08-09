@@ -1,5 +1,10 @@
 import type { Page } from "playwright";
-import type { SubmissionAttempt, SubmissionReceipt } from "../adapter.js";
+import type {
+  SubmissionAttempt,
+  SubmissionReceipt,
+  SubmitClickOptions,
+} from "../adapter.js";
+import { CLICK_WITHHELD_NOTE } from "../adapter.js";
 import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "./identityVerification.js";
 import { greenhouseSelectorsV1 } from "./selectors.js";
@@ -49,7 +54,10 @@ export function extractApplicationIdentifier(html: string): string | null {
  * Click the Greenhouse submit control. assertSubmitAllowed runs here as the
  * last line of defense even though callers gate earlier.
  */
-export async function greenhouseSubmit(page: Page): Promise<SubmissionAttempt> {
+export async function greenhouseSubmit(
+  page: Page,
+  opts: SubmitClickOptions = {},
+): Promise<SubmissionAttempt> {
   assertSubmitAllowed("greenhouse.submit");
   const notes: string[] = [];
   const control = page.locator(greenhouseSelectorsV1.submit).first();
@@ -58,6 +66,9 @@ export async function greenhouseSubmit(page: Page): Promise<SubmissionAttempt> {
   }
   if (await control.isDisabled().catch(() => false)) {
     return { clicked: false, notes: ["submit control disabled"] };
+  }
+  if (opts.beforeClick && !(await opts.beforeClick())) {
+    return { clicked: false, notes: [CLICK_WITHHELD_NOTE] };
   }
   await control.click();
   notes.push("submit control clicked");

@@ -47,6 +47,8 @@
     "record:jobright": "tsx src/cli/index.ts record-jobright",
     "recorder:promote": "tsx src/cli/index.ts recorder:promote",
     "discover": "tsx src/cli/index.ts discover",
+    "training:export": "tsx src/cli/index.ts training:export",
+    "heal:submit-proposals": "tsx src/cli/index.ts heal:submit-proposals",
     "enqueue": "tsx src/cli/index.ts enqueue",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",

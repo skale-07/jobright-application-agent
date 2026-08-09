@@ -17,6 +17,12 @@ const AUTOMATION_RUN_BODY = {
     NATIVE_AUTOFILL_ENABLED: true,
     MATERIALS_DOWNLOAD_ENABLED: true,
     GMAIL_VERIFICATION_ENABLED: true,
+    // Navigation agent (phase C): without this opt-in the armed child gets
+    // AGENT_FALLBACK_ENABLED=false and every nav wall dies as "budget" —
+    // exactly the 5/7 failures of the first live L3 session. Granted only
+    // when the shell ceiling carries the flag AND the operator's CDP
+    // Chrome is reachable at nav time; otherwise phase C self-skips.
+    AGENT_FALLBACK_ENABLED: true,
     // Outreach tail (drafts only, never send) — granted only if the shell
     // ceiling carries these; otherwise the tail is simply skipped.
     EMAIL_GENERATION_ENABLED: true,
@@ -117,6 +123,19 @@ export function ArmCard({
     <div className="card" style={armed ? { borderColor: "var(--danger)" } : undefined}>
       <h2>Unattended session</h2>
       {error ? <div className="banner danger">{error}</div> : null}
+      {status?.agent_phase ? (
+        <p
+          className="mono"
+          style={{
+            fontSize: "11.5px",
+            marginTop: 0,
+            color: status.agent_phase.available ? "var(--ok)" : "var(--warn)",
+          }}
+        >
+          nav agent: {status.agent_phase.available ? "available" : "unavailable"} —{" "}
+          {status.agent_phase.reason}
+        </p>
+      ) : null}
 
       {armed && status ? (
         <>

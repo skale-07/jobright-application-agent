@@ -752,6 +752,19 @@ SQLite state — never the console terminal alone. A submit that failed to
 find its control now writes a CTA inventory into the submission report
 notes, and a failed resume upload writes a file-input inventory into the
 fill/submit evidence — a failure without its inventory is a bug.
+Every navigation and submit attempt also lands as a SQLite telemetry row
+(`navigation_attempts` / `submit_attempts`, joined to fill outcomes) —
+`npm run training:export` dumps all three corpora as JSONL; see
+`docs/telemetry-training.md` for the schema, the PII policy, and the
+`*_rates` views to read first after a session.
+
+**Nav agent while armed.** The ArmCard shows `nav agent:
+available/unavailable` before you arm. Available means the shell exported
+`AGENT_FALLBACK_ENABLED=true` AND your CDP Chrome
+(`chrome:debug:jobright`) is answering — armed navigation then runs the
+agent phase on walls instead of parking them as `budget`. Leave that
+Chrome open for the session's duration; without it, wall'd apps park
+with the reason named in the trace.
 
 **Escape hatch:** the CLI one-shot submit
 (`npm run submit -- --application <id>` with `--yes` for unattended) is

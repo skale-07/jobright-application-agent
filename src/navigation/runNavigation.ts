@@ -34,6 +34,8 @@ import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
+import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 
 function detectAtsFromUrlSafe(url: string): boolean {
   return detectAtsFromUrl(url).ats !== null;
@@ -160,7 +162,8 @@ export async function runNavigation(
 ): Promise<NavigationReport> {
   assertNavigationAllowed("runNavigation");
   const { db, applicationId } = input;
-  const deadline = Date.now() + TOTAL_WALLCLOCK_MS;
+  const startedAt = Date.now();
+  const deadline = startedAt + TOTAL_WALLCLOCK_MS;
 
   const report: NavigationReport = {
     run_id: `nav-${randomUUID()}`,
@@ -353,6 +356,23 @@ export async function runNavigation(
 
     const startUrl =
       finalUrl && finalUrl !== "about:blank" ? finalUrl : resolved.target.jobUrl;
+
+    // Deterministic-first host policy: telemetry says whether the agent has
+    // ever cleared this host. A host with repeated all-fail agent runs
+    // parks immediately — the agent budget goes to hosts it can win.
+    const policyHost = startUrl.startsWith("https://")
+      ? new URL(startUrl).hostname
+      : null;
+    const hostPolicy = evaluateAgentHostPolicy(db, policyHost);
+    if (!hostPolicy.runAgent) {
+      report.phase_trace.push({
+        phase: "C_agent",
+        outcome: `skipped: ${hostPolicy.reason}`,
+      });
+      report.notes.push(hostPolicy.reason);
+      report.wall = "budget";
+      return persist(report);
+    }
     const allowedDomains = Array.from(
       new Set(
         [
@@ -585,6 +605,15 @@ export async function runNavigation(
     }
     writeJsonAtomic(outPath, JSON.parse(serialized) as Record<string, unknown>);
     r.report_path = outPath;
+    // Telemetry row (fail-open): joins to this artifact + logs via run_id.
+    recordNavigationAttempt(
+      {
+        report: r,
+        startUrl: resolved.ok ? resolved.target.jobUrl : null,
+        durationMs: Date.now() - startedAt,
+      },
+      { db },
+    );
     logger.info("navigation run finished", {
       service: "navigation",
       action: "nav_run",

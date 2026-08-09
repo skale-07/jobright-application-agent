@@ -10,6 +10,7 @@ import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { getApplication } from "../queue/stateMachine.js";
 import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { listContacts } from "../contacts/repository.js";
+import { rankOutreachContacts } from "../contacts/rank.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
 import {
@@ -50,6 +51,17 @@ export type AutomationAppResult = {
   stopped: string | null;
   stop_reason: string | null;
   submitted: boolean;
+  /**
+   * Referral-tail outcome for this app, or null when the tail never ran.
+   * The first live L3 session reported emails_generated: 0 with no way to
+   * tell "no verified submit" from "flag off" from "no contacts" — every
+   * skip now names itself.
+   */
+  outreach: {
+    email_status: OutreachTailResult["email_status"];
+    draft_status: OutreachTailResult["draft_status"];
+    skip_reason: string | null;
+  } | null;
 };
 
 export type AutomationSessionReport = {
@@ -201,9 +213,19 @@ export async function runOutreachTail(input: {
         result.notes.push("email generation gated off");
         return result;
       }
-      const contact = listContacts(db, applicationId).find(
-        (c) => c.name && c.email,
-      );
+      const jobRole =
+        (
+          db
+            .prepare(
+              `SELECT j.role AS role FROM jobs j
+               JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
+            )
+            .get(applicationId) as { role: string | null } | undefined
+        )?.role ?? null;
+      const contact = rankOutreachContacts(
+        listContacts(db, applicationId),
+        jobRole,
+      )[0];
       if (!contact) {
         result.email_status = "skipped";
         result.notes.push("no contact with both name and email");
@@ -396,6 +418,8 @@ export async function runAutomationSession(
   let appsSinceDiscover = 0;
   // Each app is attempted at most once per session (see pickNextApplication).
   const seen = new Set<string>();
+  /** Verified-submit apps whose referral tail runs after the loop (batch). */
+  const tailQueue: Array<{ appId: string; appResult: AutomationAppResult }> = [];
 
   // The active-arm helper both validates status+expiry and lazily sweeps an
   // expired row, so it is the single source of truth for "still armed".
@@ -511,7 +535,8 @@ export async function runAutomationSession(
       });
       const appReport: PipelineAppReport | undefined = pipelineReport.applications[0];
       if (appReport) {
-        report.per_app.push(toAppResult(db, appReport));
+        const appResult = toAppResult(db, appReport);
+        report.per_app.push(appResult);
         logger.info("automation app pipeline result", {
           service: "automation",
           action: "app_end",
@@ -531,36 +556,25 @@ export async function runAutomationSession(
         }
         // Post-submit outreach tail (drafts only, never send). Only states a
         // verified submit can reach; failures are review items, not stops.
+        if (appResult.submitted && !TAIL_STATES.has(appReport.end_state)) {
+          // Verified submit but the pipeline never reached a tail state —
+          // contacts extraction didn't run (flag off, extraction failed, or
+          // the pipeline stopped earlier). Name it instead of a silent 0.
+          appResult.outreach = {
+            email_status: null,
+            draft_status: null,
+            skip_reason: `tail unreachable from end_state ${appReport.end_state} — contacts extraction did not run`,
+          };
+          report.notes.push(
+            `outreach ${appId}: skipped — end_state ${appReport.end_state} (no contacts extracted)`,
+          );
+        }
         if (TAIL_STATES.has(appReport.end_state)) {
-          logger.info("automation outreach tail begin", {
-            service: "automation",
-            action: "outreach_begin",
-            application_id: appId,
-            metadata: { end_state: appReport.end_state },
-          });
-          const tail = await runOutreachTail({
-            db,
-            applicationId: appId,
-            headless: input.headless ?? true,
-            ...(input.emailClient ? { emailClient: input.emailClient } : {}),
-            ...(input.draftRunner ? { draftRunner: input.draftRunner } : {}),
-            ...(input.draftVerifier ? { draftVerifier: input.draftVerifier } : {}),
-          });
-          if (tail.email_status === "generated") report.emails_generated += 1;
-          if (tail.draft_status === "verified" || tail.draft_status === "saved") {
-            report.drafts_saved += 1;
-          }
-          for (const n of tail.notes) report.notes.push(`outreach ${appId}: ${n}`);
-          logger.info("automation outreach tail end", {
-            service: "automation",
-            action: "outreach_end",
-            application_id: appId,
-            metadata: {
-              email_status: tail.email_status,
-              draft_status: tail.draft_status,
-              notes: tail.notes,
-            },
-          });
+          // Batched: the tail (text API + Outlook browser) runs AFTER the
+          // session loop, so an armed window is spent on applications, not
+          // on waiting for a drafting model between them.
+          tailQueue.push({ appId, appResult });
+          report.notes.push(`outreach ${appId}: queued for post-session batch`);
         }
       } else {
         logger.warn("automation pipeline returned no app report", {
@@ -612,6 +626,49 @@ export async function runAutomationSession(
     await sleep(ms);
   }
 
+  // Post-session referral batch: drafts only, never send; failures are
+  // review items. Runs even when the arm expired mid-loop — drafting does
+  // not require an armed session, only its own flags.
+  for (const { appId, appResult } of tailQueue) {
+    logger.info("automation outreach tail begin (batched)", {
+      service: "automation",
+      action: "outreach_begin",
+      application_id: appId,
+      metadata: { batch_size: tailQueue.length },
+    });
+    const tail = await runOutreachTail({
+      db,
+      applicationId: appId,
+      headless: input.headless ?? true,
+      ...(input.emailClient ? { emailClient: input.emailClient } : {}),
+      ...(input.draftRunner ? { draftRunner: input.draftRunner } : {}),
+      ...(input.draftVerifier ? { draftVerifier: input.draftVerifier } : {}),
+    });
+    appResult.outreach = {
+      email_status: tail.email_status,
+      draft_status: tail.draft_status,
+      skip_reason:
+        tail.email_status === "skipped" || tail.draft_status === "skipped"
+          ? (tail.notes[0] ?? "skipped")
+          : null,
+    };
+    if (tail.email_status === "generated") report.emails_generated += 1;
+    if (tail.draft_status === "verified" || tail.draft_status === "saved") {
+      report.drafts_saved += 1;
+    }
+    for (const n of tail.notes) report.notes.push(`outreach ${appId}: ${n}`);
+    logger.info("automation outreach tail end (batched)", {
+      service: "automation",
+      action: "outreach_end",
+      application_id: appId,
+      metadata: {
+        email_status: tail.email_status,
+        draft_status: tail.draft_status,
+        notes: tail.notes,
+      },
+    });
+  }
+
   emit();
   logger.info("automation session finished", {
     service: "automation",
@@ -653,5 +710,6 @@ function toAppResult(db: Db, appReport: PipelineAppReport): AutomationAppResult 
     stopped: appReport.stopped,
     stop_reason: appReport.stop_reason,
     submitted,
+    outreach: null,
   };
 }

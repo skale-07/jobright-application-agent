@@ -150,4 +150,6 @@ export type ArmStatus = {
   discover_max: number;
   rediscover_every: number;
   last_error_code: string | null;
+  /** Whether armed navigation can run the agent phase (shell flag + CDP). */
+  agent_phase?: { available: boolean; reason: string };
 };

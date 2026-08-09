@@ -10,6 +10,50 @@ import {
 } from "../automation/armSession.js";
 import { readJsonBody } from "./body.js";
 import type { Route } from "./routes.js";
+import { readCeiling } from "./flagCeiling.js";
+import { probeCdpEndpoint } from "../navigation/runNavigation.js";
+import { getConfig } from "../config/index.js";
+
+export type AgentPhaseAvailability = {
+  available: boolean;
+  reason: string;
+};
+
+/**
+ * Can an armed session's navigation run phase C? Requires the SHELL ceiling
+ * to carry AGENT_FALLBACK_ENABLED (the child can then opt in) AND the
+ * operator's CDP Chrome to answer. Surfaced on the status endpoint so the
+ * ArmCard can say, BEFORE arming, whether nav walls will park as "budget"
+ * or get the agent. The probe is cached — status is polled aggressively.
+ */
+let cdpProbeCache: { at: number; ok: boolean } | null = null;
+const CDP_PROBE_TTL_MS = 10_000;
+
+export async function agentPhaseAvailability(
+  now: number = Date.now(),
+): Promise<AgentPhaseAvailability> {
+  const ceiling = readCeiling();
+  if (!ceiling.flags.AGENT_FALLBACK_ENABLED) {
+    return {
+      available: false,
+      reason:
+        "AGENT_FALLBACK_ENABLED is off in the console shell — nav walls will park as budget",
+    };
+  }
+  if (!cdpProbeCache || now - cdpProbeCache.at > CDP_PROBE_TTL_MS) {
+    cdpProbeCache = {
+      at: now,
+      ok: await probeCdpEndpoint(getConfig().agentCdpUrl),
+    };
+  }
+  return cdpProbeCache.ok
+    ? { available: true, reason: "shell flag on + CDP Chrome reachable" }
+    : {
+        available: false,
+        reason:
+          "CDP Chrome unreachable — start chrome:debug:jobright to give nav walls the agent phase",
+      };
+}
 
 /**
  * Arm/disarm/status for the L3 unattended session. Status is a tokenless
@@ -36,7 +80,11 @@ export function buildAutomationRoutes(deps: { db: Db; token: string }): Route[] 
     {
       method: "GET",
       pattern: "/api/automation/status",
-      handler: ({ res }) => json(res, 200, getArmStatus(deps.db)),
+      handler: async ({ res }) =>
+        json(res, 200, {
+          ...getArmStatus(deps.db),
+          agent_phase: await agentPhaseAvailability(),
+        }),
     },
     {
       method: "POST",
