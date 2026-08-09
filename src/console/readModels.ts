@@ -89,9 +89,14 @@ export type ReviewItemView = {
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
+  /** Job identity so lists can say "Cohere — ML Intern", not a UUID. */
+  company: string | null;
+  role: string | null;
 };
 
-function toReviewItemView(item: ReviewItem): ReviewItemView {
+function toReviewItemView(
+  item: ReviewItem & { company?: string | null; role?: string | null },
+): ReviewItemView {
   return {
     id: item.id,
     application_id: item.application_id,
@@ -103,6 +108,8 @@ function toReviewItemView(item: ReviewItem): ReviewItemView {
     created_at: item.created_at,
     updated_at: item.updated_at,
     resolved_at: item.resolved_at,
+    company: item.company ?? null,
+    role: item.role ?? null,
   };
 }
 
@@ -116,18 +123,22 @@ export function listReviewItemViews(
   const where: string[] = [];
   const params: unknown[] = [];
   if ((options.status ?? "open") === "open") {
-    where.push(`status IN ('OPEN', 'IN_PROGRESS')`);
+    where.push(`r.status IN ('OPEN', 'IN_PROGRESS')`);
   }
   if (options.kind) {
-    where.push(`kind = ?`);
+    where.push(`r.kind = ?`);
     params.push(options.kind);
   }
   const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
   const items = db
     .prepare(
-      `SELECT * FROM review_items ${whereSql} ORDER BY created_at DESC LIMIT 500`,
+      `SELECT r.*, j.company, j.role
+       FROM review_items r
+       LEFT JOIN applications a ON a.id = r.application_id
+       LEFT JOIN jobs j ON j.id = a.job_id
+       ${whereSql} ORDER BY r.created_at DESC LIMIT 500`,
     )
-    .all(...params) as ReviewItem[];
+    .all(...params) as Array<ReviewItem & { company: string | null; role: string | null }>;
   return items.map(toReviewItemView);
 }
 

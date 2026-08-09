@@ -5,6 +5,7 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { JsonView } from "../components/JsonView";
 import { ReviewActionPanel } from "../components/ReviewActionPanel";
+import { describeReviewItem, jobLabel } from "../lib/plainLanguage";
 
 export function ReviewPage(): JSX.Element {
   const { data, error, loading, refresh } = usePoll<ReviewItemView[]>(
@@ -23,8 +24,10 @@ export function ReviewPage(): JSX.Element {
   return (
     <>
       <div className="page-head">
-        <h1>Review queue</h1>
-        <div className="sub">{items.length} open</div>
+        <h1>Needs you</h1>
+        <div className="sub">
+          {items.length} thing{items.length === 1 ? "" : "s"} waiting on a human
+        </div>
       </div>
 
       {error ? <div className="banner danger">{error}</div> : null}
@@ -51,16 +54,23 @@ export function ReviewPage(): JSX.Element {
               }}
             >
               <div className="t-head">
-                <strong>{item.title}</strong>
+                <strong>{describeReviewItem(item).action}</strong>
                 <span className="t-when">
                   {new Date(item.created_at).toLocaleString()}
                 </span>
               </div>
+              <div className="muted" style={{ marginTop: "0.2rem", fontSize: "12.5px" }}>
+                {describeReviewItem(item).why}
+              </div>
               {item.application_id ? (
                 <div style={{ marginTop: "0.3rem" }}>
-                  <Link className="mono" to={`/applications/${item.application_id}`}>
-                    {item.application_id}
+                  <Link to={`/applications/${item.application_id}`}>
+                    {jobLabel(item)}
                   </Link>
+                  <span className="faint" style={{ fontSize: "11.5px" }}>
+                    {" "}
+                    · {item.title}
+                  </span>
                 </div>
               ) : (
                 <div className="faint mono">service-level item</div>

@@ -531,6 +531,20 @@ A local web console for everything above: browse applications and their
 timelines, resolve review items, launch pipeline/nav/submit runs with live
 output, and confirm submissions in the browser instead of the terminal.
 
+The console opens on **Home** — the non-technical front door. One button
+("Start applying") arms a default two-hour session and launches the
+worker; while running, the same card shows time left, applications
+worked, and submissions in plain words, plus a Stop button. Below it,
+**Needs you** turns every open review item into a to-do in normal
+language ("Answer 1 written question — Cohere — a draft is ready for
+you"), each linking straight to the application. Submitted applications
+and a setup checklist (JobRight login, Outlook, applying on/off) fill the
+rest of the page. The sidebar shows only Home / Needs you / Applications
+/ Settings; Overview, Runs, Enqueue, and Fill outcomes — the
+operator-grade pages, unchanged — live under a collapsed **advanced**
+group. Custom session limits (duration/caps, arm-only) remain on
+Overview's arm card.
+
 ```powershell
 npm run frontend:install     # once
 npm run frontend:build       # after any frontend change
