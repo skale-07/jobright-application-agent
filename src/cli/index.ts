@@ -9,6 +9,8 @@ import {
   exportSubmitAttemptsJsonl,
 } from "../storage/navSubmitOutcomes.js";
 import { proposeSubmitSelectorPatches } from "../heal/submitInventoryHealer.js";
+import { initScreenerBank, tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import { suggestBankAdditions } from "../candidate/screenerSuggest.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -123,6 +125,8 @@ Commands:
   ats:fill-outcomes [--summary] [--export <path.jsonl>]
   training:export [--out <dir>]         Dump fill/nav/submit attempt corpora as JSONL + manifest
   heal:submit-proposals [--limit N]     LLM selector-patch PROPOSALS from submit-miss inventories (AGENT_AUTHORING_ENABLED)
+  screeners:init                        Create private/candidate/screeners.json from the example answer bank
+  screeners:suggest                     Verified screener predictions with no bank answer — ready-to-paste labels
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -1215,6 +1219,24 @@ function cmdAtsFillOutcomes(
   }
 }
 
+function cmdScreenersInit(): void {
+  const result = initScreenerBank();
+  const bank = tryLoadScreenerBank();
+  console.log(
+    JSON.stringify(
+      {
+        ...result,
+        note: result.created
+          ? "Edit the answers to match YOU — they are typed verbatim into forms."
+          : "screeners.json already exists — not overwritten",
+        keys: bank ? Object.keys(bank.answers).length : 0,
+      },
+      null,
+      2,
+    ),
+  );
+}
+
 async function cmdHealSubmitProposals(
   flags: Record<string, string | boolean>,
 ): Promise<void> {
@@ -1338,6 +1360,12 @@ async function main(): Promise<void> {
     case "ats:fill":
       await cmdAtsFill(flags);
       return;
+    case "screeners:init":
+      cmdScreenersInit();
+      break;
+    case "screeners:suggest":
+      console.log(JSON.stringify({ suggestions: suggestBankAdditions() }, null, 2));
+      break;
     case "heal:submit-proposals":
       await cmdHealSubmitProposals(flags);
       break;

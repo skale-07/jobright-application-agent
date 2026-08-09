@@ -11,6 +11,7 @@ import {
   tryLoadSensitiveProfile,
 } from "../candidate/sensitiveProfileIO.js";
 import { locationTypeaheadQuery } from "./locationQuery.js";
+import type { ScreenerResolution } from "../candidate/screenerMatch.js";
 
 export type FillPlanAction =
   | "fill"
@@ -82,6 +83,16 @@ export function isWorkAuthorizationField(
 export function buildFillPlan(
   mapped: MappedField[],
   profile: PublicProfile,
+  opts: {
+    /**
+     * Screener resolutions for otherwise-unmapped fields, keyed by field
+     * id (built by planApplicationFill from the operator's answer bank —
+     * see screenerMatch.ts for the accuracy contract). Only consulted on
+     * the skip_unmapped branch: profile mappings, essay/demographic/file
+     * routing, and every existing behavior are untouched.
+     */
+    screenerResolutions?: Map<string, ScreenerResolution>;
+  } = {},
 ): ResolvedFillPlan {
   const essayIds = new Set(
     essayFieldsOnly(mapped)
@@ -152,6 +163,47 @@ export function buildFillPlan(
     }
 
     if (!field.canonical_field) {
+      const screener = opts.screenerResolutions?.get(field.id);
+      if (screener) {
+        const canonical = `screener:${screener.key}`;
+        if (screener.status === "fill") {
+          // Unique canonical per field: two fields may share a key.
+          const unique = canonical in answers ? `${canonical}:${field.id}` : canonical;
+          answers[unique] = screener.value;
+          entries.push({
+            field_id: field.id,
+            label: field.label,
+            type: field.type,
+            canonical_field: unique,
+            action: "fill",
+            value: screener.value,
+            reason: `Screener bank answer (${screener.basis})`,
+          });
+          continue;
+        }
+        if (screener.status === "review") {
+          entries.push({
+            field_id: field.id,
+            label: field.label,
+            type: field.type,
+            canonical_field: canonical,
+            action: "review_required",
+            value: null,
+            reason: screener.reason,
+          });
+          continue;
+        }
+        entries.push({
+          field_id: field.id,
+          label: field.label,
+          type: field.type,
+          canonical_field: canonical,
+          action: "skip_empty",
+          value: null,
+          reason: screener.reason,
+        });
+        continue;
+      }
       entries.push({
         field_id: field.id,
         label: field.label,

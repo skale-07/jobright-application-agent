@@ -758,6 +758,16 @@ Every navigation and submit attempt also lands as a SQLite telemetry row
 `docs/telemetry-training.md` for the schema, the PII policy, and the
 `*_rates` views to read first after a session.
 
+**Screener answers.** `npm run screeners:init` creates
+`private/candidate/screeners.json` — your verbatim answers to the common
+"Additional Questions" (availability, education level, closest location,
+how-did-you-hear, …). Matched questions fill from this bank (option
+answers must literally match a page option or they park);
+`SCREENER_LLM_MATCH_ENABLED` adds an LLM label→key mapping assist (labels
+only — your answers never reach a model); `npm run screeners:suggest`
+lists verified predictions ready to paste into the bank. Full set +
+policies: `docs/screener-questions.md`.
+
 **Nav agent while armed.** The ArmCard shows `nav agent:
 available/unavailable` before you arm. Available means the shell exported
 `AGENT_FALLBACK_ENABLED=true` AND your CDP Chrome

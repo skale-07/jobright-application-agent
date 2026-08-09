@@ -36,6 +36,14 @@ import type {
 } from "../ats/adapter.js";
 import type { Page } from "playwright";
 import type { FillPlanEntry } from "./resolveAnswers.js";
+import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import {
+  matchScreenerKey,
+  resolveScreenerForField,
+  type ScreenerResolution,
+} from "../candidate/screenerMatch.js";
+import { mapScreenerLabels } from "./screenerLlmMap.js";
+import { isDemographicsField as screenerIsDemographic } from "./essayDetector.js";
 import type { ApprovedFillPlan } from "./approvedFillPlan.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
 import { buildHumanEssayEntries } from "./essayFill.js";
@@ -133,7 +141,60 @@ export async function planApplicationFill(input: {
     ? annotateFullNameField(mapDiscoveredFields(fields, aliases), nameMatcher)
     : mapDiscoveredFields(fields, aliases);
   const profile = input.profile ?? loadPublicProfile();
-  const plan = buildFillPlan(mapped, profile);
+
+  // Screener pass for otherwise-unmapped fields: deterministic patterns
+  // first; the flag-gated LLM assist maps only the leftovers (labels +
+  // options + registry descriptions — never answers). Every mapping still
+  // resolves through the deterministic option-verified bank path, and no
+  // bank on disk means this entire block is a no-op.
+  const screenerResolutions = new Map<string, ScreenerResolution>();
+  const bank = tryLoadScreenerBank();
+  if (bank) {
+    const candidates = mapped.filter(
+      (f) =>
+        !f.canonical_field &&
+        f.type !== "textarea" &&
+        f.type !== "file" &&
+        !screenerIsDemographic(f),
+    );
+    const unmatchedForLlm: typeof candidates = [];
+    for (const f of candidates) {
+      if (matchScreenerKey(f.label)) {
+        const r = resolveScreenerForField(
+          { label: f.label, type: f.type, options: f.options },
+          bank,
+          undefined,
+          profile,
+        );
+        if (r) screenerResolutions.set(f.id, r);
+      } else {
+        unmatchedForLlm.push(f);
+      }
+    }
+    if (unmatchedForLlm.length > 0) {
+      const mappings = await mapScreenerLabels({
+        ats: adapter.id,
+        labels: unmatchedForLlm.map((f) => ({
+          label: f.label,
+          options: f.options,
+        })),
+      });
+      const byLabel = new Map(mappings.map((m) => [m.label, m.key]));
+      for (const f of unmatchedForLlm) {
+        const key = byLabel.get(f.label);
+        if (!key) continue;
+        const r = resolveScreenerForField(
+          { label: f.label, type: f.type, options: f.options },
+          bank,
+          key,
+          profile,
+        );
+        if (r) screenerResolutions.set(f.id, r);
+      }
+    }
+  }
+
+  const plan = buildFillPlan(mapped, profile, { screenerResolutions });
   const approvedPlan = toApprovedFillPlan(plan.entries);
   adapter.setFillContext(plan.entries, fields);
   adapter.setApprovedFillPlan(approvedPlan, profile);
