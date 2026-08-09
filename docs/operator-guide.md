@@ -768,6 +768,18 @@ only — your answers never reach a model); `npm run screeners:suggest`
 lists verified predictions ready to paste into the bank. Full set +
 policies: `docs/screener-questions.md`.
 
+**Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
+`private/candidate/about-me.md` and write your context once. With
+`ESSAY_DRAFT_ENABLED=true`, **armed sessions draft automatically**: after
+the session loop, every open essay question on the session's apps gets a
+draft — grounded ONLY in your about-me + the posting, validated (length,
+no placeholders), landing as UNVERIFIED suggestions inside the essay
+review item and under `artifacts/applications/<id>/essays/`. The review
+UI pre-fills the answer box with the draft; you edit-or-approve, and only
+approved text ever fills. Manual per-app run:
+`npm run essay:draft -- --application <uuid>`. Missing flag/key/about-me
+degrades to a named note in the session report, never a failure.
+
 **Pre-click completeness.** Immediately before any submit click, the page
 is scanned for required-but-unanswered controls (native and ARIA widgets).
 Any hit refuses BEFORE the click — no unattended budget spent — parks the

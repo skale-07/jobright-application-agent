@@ -120,7 +120,22 @@ export function ReviewActionPanel({
         <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.75rem" }}>
           <label className="field">
             Essay field
-            <select value={essayField} onChange={(e) => setEssayField(e.target.value)}>
+            <select
+              value={essayField}
+              onChange={(e) => {
+                const next = e.target.value;
+                setEssayField(next);
+                // Pre-fill from the AI suggestion when one exists and the
+                // operator hasn't typed anything — edit-or-approve, never
+                // silently submitted.
+                const drafts = item.payload?.["essay_drafts"] as
+                  | Record<string, string>
+                  | undefined;
+                if (drafts?.[next] && essayText.trim() === "") {
+                  setEssayText(drafts[next]);
+                }
+              }}
+            >
               <option value="">choose a field…</option>
               {essayFields.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -129,8 +144,13 @@ export function ReviewActionPanel({
               ))}
             </select>
           </label>
+          {(item.payload?.["essay_drafts"] as Record<string, string> | undefined)?.[essayField] ? (
+            <p className="mono" style={{ fontSize: "11.5px", color: "var(--purple)", margin: 0 }}>
+              pre-filled from AI draft (UNVERIFIED) — edit to make it yours before saving
+            </p>
+          ) : null}
           <label className="field">
-            Your answer (never machine-written)
+            Your answer (yours to approve — drafts are suggestions)
             <textarea
               rows={6}
               value={essayText}

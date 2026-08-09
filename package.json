@@ -52,6 +52,7 @@
     "screeners:init": "tsx src/cli/index.ts screeners:init",
     "screeners:suggest": "tsx src/cli/index.ts screeners:suggest",
     "review:bulk": "tsx src/cli/index.ts review:bulk",
+    "essay:draft": "tsx src/cli/index.ts essay:draft",
     "enqueue": "tsx src/cli/index.ts enqueue",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",

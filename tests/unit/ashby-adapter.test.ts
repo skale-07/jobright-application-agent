@@ -261,3 +261,49 @@ describe("Ashby adapter M4 (UNIT_CONFIRMED)", () => {
     });
   });
 });
+
+describe("ashby radiogroup discovery — live Cohere shapes (UNIT_CONFIRMED)", () => {
+  it("role=radio divs with nested markup and a trailing submit button", () => {
+    const html = `
+      <div role="radiogroup" aria-required="true" aria-labelledby="lbl-edu">
+        <h4 id="lbl-edu">Please select the current level of education you are pursuing*</h4>
+        <div class="row"><div role="radio" aria-checked="false"><span>Undergrad</span></div></div>
+        <div class="row"><div role="radio" aria-checked="false">Master's/MBA</div></div>
+        <div class="row"><div role="radio" aria-checked="false">PhD</div></div>
+      </div>
+      <button type="button">Submit application</button>`;
+    const groups = discoverAshbyButtonGroups(html);
+    expect(groups.length).toBe(1);
+    expect(groups[0]!.label).toBe(
+      "Please select the current level of education you are pursuing",
+    );
+    expect(groups[0]!.options).toEqual(["Undergrad", "Master's/MBA", "PhD"]);
+    expect(groups[0]!.required).toBe(true);
+    // The trailing submit button is NOT an option (window ends at the
+    // group's real closing tag, not at the next radiogroup/EOF).
+    expect(groups[0]!.options).not.toContain("Submit application");
+  });
+
+  it("native radio inputs wrapped in labels", () => {
+    const html = `
+      <fieldset role="radiogroup" aria-required="true" aria-label="Are you available for a full-time internship?">
+        <label><input type="radio" name="avail" value="yes"> Yes</label>
+        <label><input type="radio" name="avail" value="no"> No</label>
+      </fieldset>`;
+    const groups = discoverAshbyButtonGroups(html);
+    expect(groups.length).toBe(1);
+    expect(groups[0]!.options).toEqual(["Yes", "No"]);
+  });
+
+  it("two adjacent groups stay separate with their own options", () => {
+    const html = `
+      <div role="radiogroup" aria-labelledby="a"><h4 id="a">Q1</h4>
+        <div role="radio">Yes</div><div role="radio">No</div>
+      </div>
+      <div role="radiogroup" aria-labelledby="b"><h4 id="b">Q2</h4>
+        <div role="radio">Remote</div><div role="radio">Hybrid</div><div role="radio">On-site</div>
+      </div>`;
+    const groups = discoverAshbyButtonGroups(html);
+    expect(groups.map((g) => g.options?.length ?? 0)).toEqual([2, 3]);
+  });
+});

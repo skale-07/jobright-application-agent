@@ -2,11 +2,13 @@ import OpenAI from "openai";
 import { getConfig } from "../config/index.js";
 
 /**
- * One of exactly two sanctioned LLM boundaries in this codebase: outreach
- * email generation here, and offline selector-patch PROPOSALS in
- * src/heal/submitInventoryHealer.ts (which reuses this client interface).
- * Never form answers, essays, demographics, or any live ATS interaction.
- * Tests use a stub implementing this interface; no test ever calls out.
+ * One of the sanctioned LLM boundaries in this codebase — all of which
+ * reuse this client interface: outreach email generation (here), offline
+ * selector-patch PROPOSALS (heal/submitInventoryHealer.ts), screener
+ * label→key MAPPING (applications/screenerLlmMap.ts — never answers), and
+ * essay DRAFT suggestions into review items (applications/essayDraft.ts —
+ * never filled without human approval). Never demographics, never live
+ * ATS interaction. Tests use stubs; no test ever calls out.
  */
 export interface EmailLlmClient {
   /** Returns the raw model output string (expected to be JSON). */

@@ -120,6 +120,32 @@ export function upsertOpenReviewItem(
   }
 }
 
+/** Shallow-merge a patch into an OPEN item's payload (drafts, annotations). */
+export function updateReviewItemPayload(
+  db: Db,
+  reviewItemId: string,
+  patch: Record<string, unknown>,
+): ReviewItem | null {
+  const row = db
+    .prepare(
+      `SELECT * FROM review_items WHERE id = ? AND status IN ('OPEN','IN_PROGRESS')`,
+    )
+    .get(reviewItemId) as ReviewItem | undefined;
+  if (!row) return null;
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = JSON.parse((row as unknown as { payload_json: string }).payload_json ?? "{}");
+  } catch {
+    payload = {};
+  }
+  const merged = { ...payload, ...patch };
+  db.prepare(`UPDATE review_items SET payload_json = ? WHERE id = ?`).run(
+    JSON.stringify(merged),
+    reviewItemId,
+  );
+  return db.prepare(`SELECT * FROM review_items WHERE id = ?`).get(reviewItemId) as ReviewItem;
+}
+
 export function listOpenReviewItems(db: Db): ReviewItem[] {
   return db
     .prepare(

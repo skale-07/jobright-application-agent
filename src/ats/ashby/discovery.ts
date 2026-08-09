@@ -42,27 +42,77 @@ function resolveLabelledBy(html: string, id: string): string | null {
 }
 
 /**
- * Regex pass over role="radiogroup" blocks. Assumes button-only group
- * innards (true of Ashby's segmented controls; a group containing nested
- * divs would truncate at the first </div> — acceptable for the synthetic
- * fixture, revisit against captured live DOM).
+ * Regex pass over role="radiogroup" blocks. The original version assumed
+ * button-only innards and truncated at the first nested </div> — the live
+ * Cohere run proved both wrong: its Additional Questions radiogroups nest
+ * divs and render options as role="radio" elements, so the groups were
+ * dropped from discovery entirely and the screener bank never saw them.
+ * The window now extends to the next radiogroup (or a bounded cap), and
+ * options come from <button>s, [role="radio"] elements, or radio-input
+ * labels — whichever the DOM actually uses.
  */
+const GROUP_WINDOW_CAP = 4_000;
+
+/**
+ * True innards of the element opened at `start`: walk open/close tags of
+ * the same name, balancing depth. Falls back to the cap on malformed HTML
+ * — a too-wide window only risks extra option candidates, never a miss.
+ */
+function balancedInner(html: string, tag: string, start: number): string {
+  const tokenRe = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
+  tokenRe.lastIndex = start;
+  let depth = 1;
+  let t: RegExpExecArray | null;
+  while ((t = tokenRe.exec(html)) !== null) {
+    depth += t[1] === "/" ? -1 : 1;
+    if (depth === 0) return html.slice(start, t.index);
+    if (t.index - start > GROUP_WINDOW_CAP) break;
+  }
+  return html.slice(start, Math.min(html.length, start + GROUP_WINDOW_CAP));
+}
+
 export function discoverAshbyButtonGroups(html: string): DiscoveredField[] {
   const out: DiscoveredField[] = [];
-  const groupRe =
-    /<div\b([^>]*\brole=["']radiogroup["'][^>]*)>([\s\S]*?)<\/div>/gi;
+  const openRe = /<(div|fieldset)\b([^>]*\brole=["']radiogroup["'][^>]*)>/gi;
+  const opens: Array<{ tag: string; attrs: string; start: number }> = [];
   let m: RegExpExecArray | null;
+  while ((m = openRe.exec(html)) !== null) {
+    opens.push({
+      tag: m[1] ?? "div",
+      attrs: m[2] ?? "",
+      start: m.index + m[0].length,
+    });
+  }
   let idx = 0;
-  while ((m = groupRe.exec(html)) !== null) {
-    const attrs = m[1] ?? "";
-    const inner = m[2] ?? "";
+  for (const open of opens) {
+    const attrs = open.attrs;
+    const inner = balancedInner(html, open.tag, open.start);
 
     const options: string[] = [];
+    const push = (t: string): void => {
+      const clean = stripTags(t).replace(/\s+/g, " ").trim();
+      if (clean && !options.includes(clean) && options.length < 12) {
+        options.push(clean);
+      }
+    };
+    // Tier 1: segmented-control buttons (the original Ashby shape).
     const btnRe = /<button\b[^>]*>([\s\S]*?)<\/button>/gi;
     let b: RegExpExecArray | null;
-    while ((b = btnRe.exec(inner)) !== null) {
-      const t = stripTags(b[1] ?? "");
-      if (t) options.push(t);
+    while ((b = btnRe.exec(inner)) !== null) push(b[1] ?? "");
+    // Tier 2: ARIA radios (the live Cohere shape).
+    if (options.length === 0) {
+      const radioRe =
+        /<[a-z]+\b[^>]*\brole=["']radio["'][^>]*>([\s\S]*?)<\/[a-z]+>/gi;
+      let r: RegExpExecArray | null;
+      while ((r = radioRe.exec(inner)) !== null) push(r[1] ?? "");
+    }
+    // Tier 3: native radio inputs — option text from the wrapping label.
+    if (options.length === 0) {
+      const labelRe = /<label\b[^>]*>([\s\S]*?)<\/label>/gi;
+      let l: RegExpExecArray | null;
+      while ((l = labelRe.exec(inner)) !== null) {
+        if (/<input\b[^>]*type=["']radio["']/i.test(l[1] ?? "")) push(l[1] ?? "");
+      }
     }
     if (options.length === 0) continue;
 
