@@ -1,0 +1,25 @@
+{
+  "run_id": "nav-444d882d-65f7-4e7b-ab6e-5b25117da663",
+  "application_id": "03f370e5-3d75-4fad-b439-694357777393",
+  "jobright_job_id": "6a764ef4a26ccc369f834ce3",
+  "method": "agent",
+  "resolved_url": "https://jobs.ashbyhq.com/cohere/36d1f52f-8270-4652-adf5-5303a0ff341b/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": "[REDACTED]",
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 1,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found",
+    "agent[1]: elapsed 36s, steps 1"
+  ],
+  "written_at": "2026-08-09T01:16:35.912Z"
+}

@@ -1,0 +1,18 @@
+{
+  "run_id": "nav-454cdf0e-2efe-4d9f-83d9-122376b776d8",
+  "application_id": "bd171c25-f0a2-4120-9bf8-ffe5ed83a111",
+  "jobright_job_id": "6a51c40f8d7d3e6cf1cc296d",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": "[REDACTED]",
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "no standard Apply control found"
+  ],
+  "written_at": "2026-08-08T03:49:37.273Z"
+}

@@ -1,0 +1,23 @@
+{
+  "ats": "ashby",
+  "url": "https://jobs.ashbyhq.com/cohere/36d1f52f-8270-4652-adf5-5303a0ff341b/application",
+  "requested_url": "https://jobs.ashbyhq.com/cohere/36d1f52f-8270-4652-adf5-5303a0ff341b/application",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "BLOCKING_CAPTCHA",
+    "reason": "blocking CAPTCHA detected: challenge_iframe_rendered,recaptcha_widget_container,readable_application_form_present",
+    "final_url": "https://jobs.ashbyhq.com/cohere/36d1f52f-8270-4652-adf5-5303a0ff341b/application"
+  },
+  "plan_summary": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "refused before any mutation — page gate failed"
+  ],
+  "written_at": "2026-08-09T01:15:22.925Z"
+}

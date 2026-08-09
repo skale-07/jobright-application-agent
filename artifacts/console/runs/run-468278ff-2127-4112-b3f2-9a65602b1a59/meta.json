@@ -1,0 +1,56 @@
+{
+  "id": "run-468278ff-2127-4112-b3f2-9a65602b1a59",
+  "kind": "pipeline",
+  "params": {
+    "headed": false,
+    "max_applications": 1
+  },
+  "granted_flags": [
+    "AGENT_AUTHORING_ENABLED",
+    "AGENT_FALLBACK_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "FORM_FILL_ENABLED",
+    "LIVE_MODE",
+    "NAVIGATION_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [],
+  "status": "succeeded",
+  "created_at": "2026-08-08T01:43:36.568Z",
+  "started_at": "2026-08-08T01:43:36.631Z",
+  "ended_at": "2026-08-08T01:43:38.294Z",
+  "exit_code": 0,
+  "error": null,
+  "gates": {
+    "FORM_FILL_ENABLED": true,
+    "SUBMIT_ENABLED": true,
+    "MATERIALS_DOWNLOAD_ENABLED": false,
+    "NAVIGATION_ENABLED": true,
+    "GMAIL_VERIFICATION_ENABLED": false,
+    "OUTLOOK_VERIFICATION_ENABLED": false,
+    "AGENT_FALLBACK_ENABLED": true,
+    "AGENT_AUTHORING_ENABLED": true,
+    "NATIVE_AUTOFILL_ENABLED": false,
+    "JOBRIGHT_AUTOFILL_ENABLED": false,
+    "OUTLOOK_DRAFTS_ENABLED": false,
+    "EMAIL_GENERATION_ENABLED": true,
+    "LINKEDIN_ENRICHMENT_ENABLED": false,
+    "ESSAY_REQUIRED_GATE_ENABLED": false,
+    "DRY_RUN": false
+  },
+  "pending_confirmation": null,
+  "report": {
+    "run_id": "5adfe94e-19b8-4e31-bc18-ec56b01f6122",
+    "applications": [
+      {
+        "application_id": "ed8f09ec-2c4d-4272-9d1f-1329241ebd19",
+        "start_state": "MATERIALS_GENERATING",
+        "end_state": "MATERIALS_GENERATING",
+        "steps": [],
+        "stopped": "review",
+        "stop_reason": "open review item: MANUAL — Resume material not registered"
+      }
+    ]
+  },
+  "log_seq": 1
+}

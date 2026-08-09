@@ -1,0 +1,52 @@
+{
+  "id": "run-c8f8feb0-abe9-47a0-9f8f-3326fda10c73",
+  "kind": "automation",
+  "params": {
+    "headed": true,
+    "arm_run_id": "bf3d9169-c76e-4932-9a0c-67fbb4b757ab",
+    "armed_until": "2026-08-08T05:49:11.567Z",
+    "max_apps": 25,
+    "discover_max": 10,
+    "rediscover_every": 5
+  },
+  "granted_flags": [
+    "AUTOMATION_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "FORM_FILL_ENABLED",
+    "GMAIL_VERIFICATION_ENABLED",
+    "LIVE_MODE",
+    "MATERIALS_DOWNLOAD_ENABLED",
+    "NATIVE_AUTOFILL_ENABLED",
+    "NAVIGATION_ENABLED",
+    "OUTLOOK_DRAFTS_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [],
+  "status": "canceled",
+  "created_at": "2026-08-08T03:49:11.577Z",
+  "started_at": "2026-08-08T03:49:11.595Z",
+  "ended_at": null,
+  "exit_code": null,
+  "error": null,
+  "gates": {
+    "FORM_FILL_ENABLED": true,
+    "SUBMIT_ENABLED": true,
+    "MATERIALS_DOWNLOAD_ENABLED": true,
+    "NAVIGATION_ENABLED": true,
+    "GMAIL_VERIFICATION_ENABLED": true,
+    "OUTLOOK_VERIFICATION_ENABLED": false,
+    "AGENT_FALLBACK_ENABLED": false,
+    "AGENT_AUTHORING_ENABLED": false,
+    "NATIVE_AUTOFILL_ENABLED": true,
+    "JOBRIGHT_AUTOFILL_ENABLED": false,
+    "OUTLOOK_DRAFTS_ENABLED": true,
+    "EMAIL_GENERATION_ENABLED": true,
+    "LINKEDIN_ENRICHMENT_ENABLED": false,
+    "ESSAY_REQUIRED_GATE_ENABLED": false,
+    "AUTOMATION_ENABLED": true,
+    "DRY_RUN": false
+  },
+  "pending_confirmation": null,
+  "report": null,
+  "log_seq": 95
+}

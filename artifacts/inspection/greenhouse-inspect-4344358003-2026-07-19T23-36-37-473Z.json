@@ -1,0 +1,76 @@
+{
+  "validation_level": "UNVERIFIED",
+  "requested_url": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+  "normalized_url": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+  "final_url": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+  "requested_host": "job-boards.greenhouse.io",
+  "final_host": "job-boards.greenhouse.io",
+  "redirect_observed": false,
+  "remained_on_trusted_greenhouse_host": true,
+  "url_validation": {
+    "passed": true,
+    "normalizedUrl": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    "host": "job-boards.greenhouse.io",
+    "boardToken": "[REDACTED]",
+    "greenhouseJobId": "4344358003",
+    "warnings": [],
+    "failureReason": null
+  },
+  "final_navigation": {
+    "passed": true,
+    "requestedUrl": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    "finalUrl": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    "requestedHost": "job-boards.greenhouse.io",
+    "finalHost": "job-boards.greenhouse.io",
+    "remainedOnTrustedGreenhouseHost": true,
+    "redirectObserved": false,
+    "failureCode": null,
+    "failureReason": null
+  },
+  "identity_verification": {
+    "requestedUrl": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    "finalUrl": "https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003",
+    "requestedJobId": "4344358003",
+    "observedJobId": "4344358003",
+    "company": "simplifyjobsintegrationsandbox",
+    "role": "Job Application for Software Engineer Intern at Simplify Jobs Integration Sandbox",
+    "formDetected": true,
+    "fieldCount": 29,
+    "warnings": [
+      "login_wall_low: auth_provider_marker"
+    ],
+    "passed": false,
+    "failureCode": "CAPTCHA",
+    "failureReason": "CAPTCHA detected. Inspection stopped."
+  },
+  "login_wall_detection": {
+    "detected": false,
+    "confidence": "LOW",
+    "signals": [
+      "auth_provider_marker"
+    ]
+  },
+  "captcha_detected": true,
+  "form_detected": true,
+  "field_count": 29,
+  "failure_code": "CAPTCHA",
+  "failure_reason": "CAPTCHA detected. Inspection stopped.",
+  "ats": "greenhouse",
+  "company": "simplifyjobsintegrationsandbox",
+  "role": "Job Application for Software Engineer Intern at Simplify Jobs Integration Sandbox",
+  "greenhouse_job_id": "4344358003",
+  "field_summary": null,
+  "fields": [],
+  "proposed_fill_plan": null,
+  "warnings": [
+    "login_wall_low: auth_provider_marker",
+    "CAPTCHA markers detected"
+  ],
+  "inspection_started_at": "2026-07-19T23:36:30.913Z",
+  "inspection_completed_at": "2026-07-19T23:36:37.473Z",
+  "mutation_attempted": false,
+  "upload_attempted": false,
+  "submit_attempted": false,
+  "artifact_path": "C:\\dev\\jobright-application-agent\\artifacts\\inspection\\greenhouse-inspect-4344358003-2026-07-19T23-36-37-473Z.json",
+  "error": "CAPTCHA detected. Inspection stopped."
+}

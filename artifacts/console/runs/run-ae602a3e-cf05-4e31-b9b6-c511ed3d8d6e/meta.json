@@ -1,0 +1,29 @@
+{
+  "id": "run-ae602a3e-cf05-4e31-b9b6-c511ed3d8d6e",
+  "kind": "pipeline",
+  "params": {
+    "headed": false,
+    "max_applications": 1,
+    "submit": true
+  },
+  "granted_flags": [
+    "AGENT_AUTHORING_ENABLED",
+    "AGENT_FALLBACK_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "FORM_FILL_ENABLED",
+    "LIVE_MODE",
+    "NAVIGATION_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [],
+  "status": "failed",
+  "created_at": "2026-08-08T01:32:56.653Z",
+  "started_at": null,
+  "ended_at": "2026-08-08T01:32:56.664Z",
+  "exit_code": -4058,
+  "error": "spawn C:\\dev\\jobright-application-agent\\node_modules\\.bin\\tsx ENOENT",
+  "gates": null,
+  "pending_confirmation": null,
+  "report": null,
+  "log_seq": 0
+}

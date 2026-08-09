@@ -1,0 +1,173 @@
+{
+  "mode": "executed",
+  "ats": "greenhouse",
+  "url": "https://boards.greenhouse.io/acme/jobs/12345",
+  "plan": {
+    "answers": {
+      "legal_name.first": "FIRST",
+      "legal_name.last": "LAST",
+      "email": "you@example.com",
+      "school": "Johns Hopkins University",
+      "graduation_year": "2029",
+      "requires_sponsorship": "No"
+    },
+    "entries": [
+      {
+        "field_id": "first_name",
+        "label": "First name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "fill",
+        "value": "FIRST",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "last_name",
+        "label": "Last name",
+        "type": "text",
+        "canonical_field": "legal_name.last",
+        "action": "fill",
+        "value": "LAST",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "fill",
+        "value": "you@example.com",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "skip_empty",
+        "value": null,
+        "reason": "Profile value empty for phone"
+      },
+      {
+        "field_id": "school",
+        "label": "School / University",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "fill",
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "grad_year",
+        "label": "Expected graduation year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "fill",
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "sponsorship",
+        "label": "Will you now or in the future require sponsorship?",
+        "type": "select",
+        "canonical_field": "requires_sponsorship",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "resume",
+        "label": "Resume",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "cover",
+        "label": "Cover letter",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      }
+    ],
+    "fillable_count": 6,
+    "skipped_count": 3
+  },
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "school",
+      "graduation_year",
+      "requires_sponsorship"
+    ],
+    "skipped": [],
+    "errors": []
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "FIRST",
+        "observed": "FIRST",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "LAST",
+        "observed": "LAST",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "you@example.com",
+        "observed": "you@example.com",
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": "Johns Hopkins University",
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": "2029",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "No",
+        "observed": {
+          "value": "no",
+          "label": "No"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": [
+    {
+      "field": "resume",
+      "path": "C:\\dev\\jobright-application-agent\\tests\\fixtures\\ats\\greenhouse\\sample-resume.pdf",
+      "filename": "sample-resume.pdf",
+      "size_bytes": 45,
+      "verified": true,
+      "evidence": "input files: [{\"name\":\"sample-resume.pdf\",\"size\":45}]"
+    }
+  ],
+  "submit_attempted": false,
+  "notes": [
+    "submit not called — Phase 5 forbids submission"
+  ],
+  "written_at": "2026-07-18T23:33:43.026Z"
+}

@@ -1,0 +1,13 @@
+{
+  "run_id": "5adfe94e-19b8-4e31-bc18-ec56b01f6122",
+  "applications": [
+    {
+      "application_id": "ed8f09ec-2c4d-4272-9d1f-1329241ebd19",
+      "start_state": "MATERIALS_GENERATING",
+      "end_state": "MATERIALS_GENERATING",
+      "steps": [],
+      "stopped": "review",
+      "stop_reason": "open review item: MANUAL — Resume material not registered"
+    }
+  ]
+}

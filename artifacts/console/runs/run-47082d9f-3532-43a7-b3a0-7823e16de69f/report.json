@@ -1,0 +1,65 @@
+{
+  "arm_run_id": "a966e305-f6d8-45c0-aa8b-56b191062737",
+  "apps_started": 7,
+  "submits_used": 1,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 3,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "discover: 8 inspected"
+  ],
+  "per_app": [
+    {
+      "application_id": "7c67d36d-7074-4e9b-9739-fd96dbd7a1ca",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    },
+    {
+      "application_id": "271d8fd5-9985-4ca0-8761-fb3caa91cda7",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    },
+    {
+      "application_id": "ed3e04ee-6ae5-4c8f-8c91-4b2bf400fee5",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    },
+    {
+      "application_id": "fd6209dc-6162-468b-aab4-23acf11b66ee",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    },
+    {
+      "application_id": "ff096e7c-b563-4cd8-8e00-65db92f50bc4",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "gate",
+      "stop_reason": "submission not verified: FAILED_BEFORE_CLICK — submit control not found",
+      "submitted": false
+    },
+    {
+      "application_id": "03e34742-34e8-4312-901d-6643dd055dd3",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    },
+    {
+      "application_id": "66d32930-50ae-4df8-808a-19a79f750aab",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false
+    }
+  ]
+}

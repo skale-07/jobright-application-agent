@@ -1,0 +1,52 @@
+{
+  "fixture": "login-required",
+  "inspected_at": "2026-08-07T17:43:36.200Z",
+  "inspection": {
+    "ats": "greenhouse",
+    "adapter_version": 1,
+    "url": "https://boards.greenhouse.io/acme/jobs/login-1",
+    "title": "Login required",
+    "requires_login": true,
+    "captcha_detected": false,
+    "account_creation_detected": true,
+    "fields": [
+      {
+        "id": "email",
+        "label": "email",
+        "type": "text",
+        "required": false,
+        "name": "email"
+      }
+    ],
+    "warnings": [
+      "Login wall detected",
+      "Account creation markers detected"
+    ]
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "greenhouse URL host",
+    "greenhouse form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "email",
+      "label": "email",
+      "type": "text",
+      "required": false,
+      "name": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    }
+  ],
+  "essays": [],
+  "demographics_fields": [],
+  "unmapped_required": [],
+  "route": "needs_login",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "Login wall detected",
+    "Account creation markers detected"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "737edcdd-ef88-4a67-a473-8df530c2923c",
+  "submission_id": "d1deabfd-28c3-44a2-9c5c-fd5f17232e60",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Refusing to click submit: field verification or upload did not pass",
+  "artifact_path": null
+}

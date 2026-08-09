@@ -17,7 +17,7 @@ browser-profiles/
 
 # Operational data and artifacts
 data/
-artifacts/
+# artifacts/
 cache/
 traces/
 screenshots/

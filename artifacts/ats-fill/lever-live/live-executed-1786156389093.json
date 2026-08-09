@@ -1,0 +1,208 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/plus-2/b69c9b6d-483f-41d4-b487-97c99332ca40/apply",
+  "requested_url": "https://jobs.lever.co/plus-2/b69c9b6d-483f-41d4-b487-97c99332ca40/apply",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.lever.co/plus-2/b69c9b6d-483f-41d4-b487-97c99332ca40/apply"
+  },
+  "plan_summary": {
+    "fillable_count": 7,
+    "skipped_count": 4,
+    "review_required_count": 0
+  },
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "address.city",
+      "linkedin_url",
+      "github_url",
+      "gender"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "location-input",
+        "canonical_field": "address.city",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[LinkedIn]",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[GitHub]",
+        "canonical_field": "github_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "eeo[gender]",
+        "canonical_field": "gender",
+        "control_kind": "native_select",
+        "selected_option": "Male",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham Kale",
+        "observed": "Shubham Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "address.city",
+        "expected": "Baltimore",
+        "observed": "",
+        "match": false
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "github_url",
+        "expected": "https://github.com/skale-07",
+        "observed": "https://github.com/skale-07",
+        "match": true
+      },
+      {
+        "canonical_field": "gender",
+        "expected": "Male",
+        "observed": {
+          "value": "Male",
+          "label": "Male"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "submit not attempted — live fill never submits"
+  ],
+  "operator_brief": {
+    "title": "Live fill — lever https://jobs.lever.co/plus-2/b69c9b6d-483f-41d4-b487-97c99332ca40/apply",
+    "summary": "5 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:address.city",
+        "question": "location",
+        "field_id": "location-input",
+        "canonical_field": "address.city",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Baltimore\"; page shows \"(empty)\"",
+        "expected": "Baltimore",
+        "observed": "",
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Baltimore). If this is a typeahead/combobox, you must select an option — typing alone often leaves the field empty.",
+          "System expected \"Baltimore\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.city",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.city\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "empty:resume-upload-input",
+        "question": "resume",
+        "field_id": "resume-upload-input",
+        "canonical_field": null,
+        "kind": "plan_empty_profile",
+        "problem": "File uploads handled via uploadResume/uploadCoverLetter",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Add the missing fact to public-profile.json (or sensitive profile when applicable).",
+          "Or type the answer on the form yourself."
+        ]
+      },
+      {
+        "id": "empty:org",
+        "question": "org",
+        "field_id": "org",
+        "canonical_field": null,
+        "kind": "plan_empty_profile",
+        "problem": "No answer-alias mapping",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Add the missing fact to public-profile.json (or sensitive profile when applicable).",
+          "Or type the answer on the form yourself."
+        ]
+      },
+      {
+        "id": "empty:eeo[race]",
+        "question": "eeo[race]",
+        "field_id": "eeo[race]",
+        "canonical_field": null,
+        "kind": "plan_empty_profile",
+        "problem": "Demographics deferred to sensitive-profile policy path",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Add the missing fact to public-profile.json (or sensitive profile when applicable).",
+          "Or type the answer on the form yourself."
+        ]
+      },
+      {
+        "id": "empty:eeo[veteran]",
+        "question": "eeo[veteran]",
+        "field_id": "eeo[veteran]",
+        "canonical_field": null,
+        "kind": "plan_empty_profile",
+        "problem": "Demographics deferred to sensitive-profile policy path",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Add the missing fact to public-profile.json (or sensitive profile when applicable).",
+          "Or type the answer on the form yourself."
+        ]
+      }
+    ],
+    "ok_count": 6,
+    "fail_count": 5
+  },
+  "written_at": "2026-08-08T02:33:09.158Z"
+}

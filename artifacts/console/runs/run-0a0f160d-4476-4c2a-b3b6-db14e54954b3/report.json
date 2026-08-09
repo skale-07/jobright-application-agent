@@ -1,0 +1,24 @@
+{
+  "run_id": "cabe1628-bb16-40f2-a9ff-b99e9c50378e",
+  "applications": [
+    {
+      "application_id": "ed8f09ec-2c4d-4272-9d1f-1329241ebd19",
+      "start_state": "QUEUED",
+      "end_state": "MATERIALS_GENERATING",
+      "steps": [
+        {
+          "from": "QUEUED",
+          "to": "MATERIALS_GENERATING",
+          "note": "materials stage entered"
+        },
+        {
+          "from": "MATERIALS_GENERATING",
+          "to": null,
+          "note": "no verified resume material — register one (materials:register)"
+        }
+      ],
+      "stopped": "review",
+      "stop_reason": "no verified resume material — register one (materials:register)"
+    }
+  ]
+}

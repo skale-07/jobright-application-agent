@@ -1,0 +1,23 @@
+{
+  "arm_run_id": "a295b76e-df42-47b3-afd6-057c18f68d14",
+  "apps_started": 1,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 2,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected"
+  ],
+  "per_app": [
+    {
+      "application_id": "766c107d-e55b-4e14-95b1-e077c48b17c0",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "employer URL missing at fill stage",
+      "submitted": false,
+      "outreach": null
+    }
+  ]
+}

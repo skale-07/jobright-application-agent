@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "83026295-53e4-429a-a68c-28a2b7ba2391",
+  "submission_id": "699e5f5b-bd11-47f4-8282-b22f14fe5051",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "submit control not found",
+  "artifact_path": null
+}

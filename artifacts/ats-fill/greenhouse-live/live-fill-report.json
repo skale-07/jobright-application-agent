@@ -1,0 +1,1319 @@
+{
+  "mode": "executed",
+  "ats": "greenhouse",
+  "url": "https://job-boards.greenhouse.io/thenuclearcompany/jobs/5383171008",
+  "plan": {
+    "answers": {
+      "legal_name.first": "Shubham",
+      "legal_name.last": "Kale",
+      "email": "s***@jh.edu",
+      "address.country": "United States",
+      "phone": "***-***-7636",
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor of Science",
+      "major": "Applied Math & Stats",
+      "graduation_month": "May",
+      "graduation_year": "2029",
+      "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+      "how_heard": "LinkedIn",
+      "address.line1": "3510 N Charles St",
+      "work_authorization": "[REDACTED_SPONSORSHIP]",
+      "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
+      "restrictive_covenants": "No",
+      "gender_identity": "Man",
+      "sexual_orientation": "Heterosexual",
+      "transgender": "No",
+      "disability_status": "No",
+      "veteran_status": "I am not a veteran",
+      "gender": "Male",
+      "hispanic_latino": "No"
+    },
+    "entries": [
+      {
+        "field_id": "first_name",
+        "label": "First Name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "fill",
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "last_name",
+        "label": "Last Name",
+        "type": "text",
+        "canonical_field": "legal_name.last",
+        "action": "fill",
+        "value": "Kale",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "fill",
+        "value": "s***@jh.edu",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "country",
+        "label": "Country",
+        "type": "text",
+        "canonical_field": "address.country",
+        "action": "fill",
+        "value": "United States",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_4",
+        "label": "field_4",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "fill",
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "resume",
+        "label": "Attach",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "cover_letter",
+        "label": "Attach",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "school--0",
+        "label": "School",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "fill",
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "degree--0",
+        "label": "Degree",
+        "type": "text",
+        "canonical_field": "degree",
+        "action": "fill",
+        "value": "Bachelor of Science",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "discipline--0",
+        "label": "Discipline",
+        "type": "text",
+        "canonical_field": "major",
+        "action": "fill",
+        "value": "Applied Math & Stats",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-month--0",
+        "label": "End date month",
+        "type": "text",
+        "canonical_field": "graduation_month",
+        "action": "fill",
+        "value": "May",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-year--0",
+        "label": "End date year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "fill",
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207522008",
+        "label": "LinkedIn Profile",
+        "type": "text",
+        "canonical_field": "linkedin_url",
+        "action": "fill",
+        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207523008",
+        "label": "Website",
+        "type": "text",
+        "canonical_field": "personal_website",
+        "action": "skip_empty",
+        "value": null,
+        "reason": "Profile value empty for personal_website"
+      },
+      {
+        "field_id": "question_18207524008[]",
+        "label": "How did you hear about this job?",
+        "type": "text",
+        "canonical_field": "how_heard",
+        "action": "fill",
+        "value": "LinkedIn",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_16",
+        "label": "field_16",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207525008",
+        "label": "Legal address:",
+        "type": "text",
+        "canonical_field": "address.line1",
+        "action": "fill",
+        "value": "3510 N Charles St",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207526008",
+        "label": "Are you legally authorized to work lawfully in the U.S.?",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "fill",
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_19",
+        "label": "field_19",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207527008",
+        "label": "Will you now or in the future require sponsorship for employment visa status?",
+        "type": "text",
+        "canonical_field": "requires_sponsorship",
+        "action": "fill",
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_21",
+        "label": "field_21",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207528008",
+        "label": "Are you prohibited or limited in your performance of any job duties for a company by any restrictive covenants not to compete, confidentiality agreements or any other contractual obligations?",
+        "type": "text",
+        "canonical_field": "restrictive_covenants",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_23",
+        "label": "field_23",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "4010536008",
+        "label": "How would you describe your gender identity?",
+        "type": "text",
+        "canonical_field": "gender_identity",
+        "action": "fill",
+        "value": "Man",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010537008",
+        "label": "How would you describe your racial/ethnic background?",
+        "type": "text",
+        "canonical_field": "race_ethnicity",
+        "action": "skip_essay",
+        "value": null,
+        "reason": "Essays are never auto-filled"
+      },
+      {
+        "field_id": "4010538008",
+        "label": "How would you describe your sexual orientation?",
+        "type": "text",
+        "canonical_field": "sexual_orientation",
+        "action": "fill",
+        "value": "Heterosexual",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010539008",
+        "label": "Do you identify as transgender?",
+        "type": "text",
+        "canonical_field": "transgender",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010540008",
+        "label": "Do you have a disability or chronic condition (physical, visual, auditory, cognitive, mental, emotional, or other) that substantially limits one or more of your major life activities, including mobility, communication (seeing, hearing, speaking), and learning?",
+        "type": "text",
+        "canonical_field": "disability_status",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010541008",
+        "label": "Are you a veteran or active member of the United States Armed Forces?",
+        "type": "text",
+        "canonical_field": "veteran_status",
+        "action": "fill",
+        "value": "I am not a veteran",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "gender",
+        "label": "Gender",
+        "type": "text",
+        "canonical_field": "gender",
+        "action": "fill",
+        "value": "Male",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "hispanic_ethnicity",
+        "label": "Are you Hispanic/Latino?",
+        "type": "text",
+        "canonical_field": "hispanic_latino",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "veteran_status",
+        "label": "Veteran Status",
+        "type": "text",
+        "canonical_field": "veteran_status",
+        "action": "fill",
+        "value": "I am not a veteran",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "disability_status",
+        "label": "Disability Status",
+        "type": "text",
+        "canonical_field": "disability_status",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      }
+    ],
+    "fillable_count": 25,
+    "skipped_count": 9,
+    "review_required_count": 0
+  },
+  "submit_attempted": false,
+  "notes": [
+    "heal pass: recovered 1/1; final verify passed: true",
+    "frozen after fill→verify→upload — no further field mutation; submit never called"
+  ],
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "final_url": "https://job-boards.greenhouse.io/thenuclearcompany/jobs/5383171008",
+  "identity_verification": {
+    "requestedUrl": "https://job-boards.greenhouse.io/thenuclearcompany/jobs/5383171008",
+    "finalUrl": "https://job-boards.greenhouse.io/thenuclearcompany/jobs/5383171008",
+    "requestedJobId": "5383171008",
+    "observedJobId": "5383171008",
+    "company": "thenuclearcompany",
+    "role": "Job Application for Spring 2027 Software Engineering Intern at The Nuclear Company",
+    "formDetected": true,
+    "fieldCount": 34,
+    "warnings": [],
+    "passed": true,
+    "failureCode": null,
+    "failureReason": null
+  },
+  "captcha_detection": {
+    "detected": false,
+    "confidence": "LOW",
+    "signals": [],
+    "dormantMarkers": []
+  },
+  "login_wall_detection": {
+    "detected": false,
+    "confidence": "LOW",
+    "signals": []
+  },
+  "failure_code": null,
+  "mutation_attempted": true,
+  "approved_plan": {
+    "entries": [
+      {
+        "field_id": "first_name",
+        "label": "First Name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "FILL",
+        "approved": true,
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "last_name",
+        "label": "Last Name",
+        "type": "text",
+        "canonical_field": "legal_name.last",
+        "action": "FILL",
+        "approved": true,
+        "value": "Kale",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "FILL",
+        "approved": true,
+        "value": "s***@jh.edu",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "country",
+        "label": "Country",
+        "type": "text",
+        "canonical_field": "address.country",
+        "action": "FILL",
+        "approved": true,
+        "value": "United States",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_4",
+        "label": "field_4",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "FILL",
+        "approved": true,
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "resume",
+        "label": "Attach",
+        "type": "file",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "cover_letter",
+        "label": "Attach",
+        "type": "file",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "school--0",
+        "label": "School",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "FILL",
+        "approved": true,
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "degree--0",
+        "label": "Degree",
+        "type": "text",
+        "canonical_field": "degree",
+        "action": "FILL",
+        "approved": true,
+        "value": "Bachelor of Science",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "discipline--0",
+        "label": "Discipline",
+        "type": "text",
+        "canonical_field": "major",
+        "action": "FILL",
+        "approved": true,
+        "value": "Applied Math & Stats",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-month--0",
+        "label": "End date month",
+        "type": "text",
+        "canonical_field": "graduation_month",
+        "action": "FILL",
+        "approved": true,
+        "value": "May",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-year--0",
+        "label": "End date year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207522008",
+        "label": "LinkedIn Profile",
+        "type": "text",
+        "canonical_field": "linkedin_url",
+        "action": "FILL",
+        "approved": true,
+        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207523008",
+        "label": "Website",
+        "type": "text",
+        "canonical_field": "personal_website",
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Profile value empty for personal_website"
+      },
+      {
+        "field_id": "question_18207524008[]",
+        "label": "How did you hear about this job?",
+        "type": "text",
+        "canonical_field": "how_heard",
+        "action": "FILL",
+        "approved": true,
+        "value": "LinkedIn",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_16",
+        "label": "field_16",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207525008",
+        "label": "Legal address:",
+        "type": "text",
+        "canonical_field": "address.line1",
+        "action": "FILL",
+        "approved": true,
+        "value": "3510 N Charles St",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_18207526008",
+        "label": "Are you legally authorized to work lawfully in the U.S.?",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "FILL",
+        "approved": true,
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_19",
+        "label": "field_19",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207527008",
+        "label": "Will you now or in the future require sponsorship for employment visa status?",
+        "type": "text",
+        "canonical_field": "requires_sponsorship",
+        "action": "FILL",
+        "approved": true,
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_21",
+        "label": "field_21",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_18207528008",
+        "label": "Are you prohibited or limited in your performance of any job duties for a company by any restrictive covenants not to compete, confidentiality agreements or any other contractual obligations?",
+        "type": "text",
+        "canonical_field": "restrictive_covenants",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_23",
+        "label": "field_23",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "4010536008",
+        "label": "How would you describe your gender identity?",
+        "type": "text",
+        "canonical_field": "gender_identity",
+        "action": "FILL",
+        "approved": true,
+        "value": "Man",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010537008",
+        "label": "How would you describe your racial/ethnic background?",
+        "type": "text",
+        "canonical_field": "race_ethnicity",
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Essays are never auto-filled"
+      },
+      {
+        "field_id": "4010538008",
+        "label": "How would you describe your sexual orientation?",
+        "type": "text",
+        "canonical_field": "sexual_orientation",
+        "action": "FILL",
+        "approved": true,
+        "value": "Heterosexual",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010539008",
+        "label": "Do you identify as transgender?",
+        "type": "text",
+        "canonical_field": "transgender",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010540008",
+        "label": "Do you have a disability or chronic condition (physical, visual, auditory, cognitive, mental, emotional, or other) that substantially limits one or more of your major life activities, including mobility, communication (seeing, hearing, speaking), and learning?",
+        "type": "text",
+        "canonical_field": "disability_status",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "4010541008",
+        "label": "Are you a veteran or active member of the United States Armed Forces?",
+        "type": "text",
+        "canonical_field": "veteran_status",
+        "action": "FILL",
+        "approved": true,
+        "value": "I am not a veteran",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "gender",
+        "label": "Gender",
+        "type": "text",
+        "canonical_field": "gender",
+        "action": "FILL",
+        "approved": true,
+        "value": "Male",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "hispanic_ethnicity",
+        "label": "Are you Hispanic/Latino?",
+        "type": "text",
+        "canonical_field": "hispanic_latino",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "veteran_status",
+        "label": "Veteran Status",
+        "type": "text",
+        "canonical_field": "veteran_status",
+        "action": "FILL",
+        "approved": true,
+        "value": "I am not a veteran",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      },
+      {
+        "field_id": "disability_status",
+        "label": "Disability Status",
+        "type": "text",
+        "canonical_field": "disability_status",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
+      }
+    ],
+    "answers": {
+      "legal_name.first": "Shubham",
+      "legal_name.last": "Kale",
+      "email": "s***@jh.edu",
+      "address.country": "United States",
+      "phone": "***-***-7636",
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor of Science",
+      "major": "Applied Math & Stats",
+      "graduation_month": "May",
+      "graduation_year": "2029",
+      "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+      "how_heard": "LinkedIn",
+      "address.line1": "3510 N Charles St",
+      "work_authorization": "[REDACTED_SPONSORSHIP]",
+      "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
+      "restrictive_covenants": "No",
+      "gender_identity": "Man",
+      "sexual_orientation": "Heterosexual",
+      "transgender": "No",
+      "disability_status": "No",
+      "veteran_status": "I am not a veteran",
+      "gender": "Male",
+      "hispanic_latino": "No"
+    },
+    "fillable_count": 25,
+    "skipped_count": 9,
+    "review_required_count": 0
+  },
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "address.country",
+      "phone",
+      "school",
+      "degree",
+      "major",
+      "graduation_month",
+      "graduation_year",
+      "linkedin_url",
+      "how_heard",
+      "address.line1",
+      "work_authorization",
+      "requires_sponsorship",
+      "restrictive_covenants",
+      "gender_identity",
+      "sexual_orientation",
+      "transgender",
+      "disability_status",
+      "veteran_status",
+      "gender",
+      "hispanic_latino",
+      "veteran_status",
+      "disability_status"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "country",
+        "canonical_field": "address.country",
+        "control_kind": "combobox",
+        "selected_option": "United States",
+        "match_via": "ci_exact",
+        "notes": [
+          "opened via control click",
+          "filter \"United States\" → 1 option(s); match",
+          "picked \"United States +1\" (ci_exact)",
+          "display collapsed to dial code; recording \"United States\""
+        ],
+        "options_sample": [
+          "United States +1"
+        ]
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "school--0",
+        "canonical_field": "school",
+        "control_kind": "combobox",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Johns Hopkins University\" → 1 option(s); match",
+          "picked \"Johns Hopkins University\" (exact)"
+        ],
+        "options_sample": [
+          "Johns Hopkins University"
+        ]
+      },
+      {
+        "field_id": "degree--0",
+        "canonical_field": "degree",
+        "control_kind": "combobox",
+        "selected_option": "Bachelor's Degree",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"Bachelor\" → 1 option(s); match",
+          "picked \"Bachelor's Degree\" (synonym)"
+        ],
+        "options_sample": [
+          "Bachelor's Degree"
+        ]
+      },
+      {
+        "field_id": "discipline--0",
+        "canonical_field": "major",
+        "control_kind": "combobox",
+        "selected_option": "Mathematics",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"Mathematics\" → 1 option(s); match",
+          "picked \"Mathematics\" (synonym)"
+        ],
+        "options_sample": [
+          "Mathematics"
+        ]
+      },
+      {
+        "field_id": "end-month--0",
+        "canonical_field": "graduation_month",
+        "control_kind": "combobox",
+        "selected_option": "May",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"May\" → 1 option(s); match",
+          "picked \"May\" (exact)"
+        ],
+        "options_sample": [
+          "May"
+        ]
+      },
+      {
+        "field_id": "end-year--0",
+        "canonical_field": "graduation_year",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_18207522008",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_18207524008[]",
+        "canonical_field": "how_heard",
+        "control_kind": "combobox",
+        "selected_option": "LinkedIn",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"LinkedIn\" → 1 option(s); match",
+          "picked \"LinkedIn\" (exact)"
+        ],
+        "options_sample": [
+          "LinkedIn"
+        ]
+      },
+      {
+        "field_id": "question_18207525008",
+        "canonical_field": "address.line1",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_18207526008",
+        "canonical_field": "work_authorization",
+        "control_kind": "combobox",
+        "selected_option": "Yes",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Yes\" → 1 option(s); match",
+          "picked \"Yes\" (exact)"
+        ],
+        "options_sample": [
+          "Yes"
+        ]
+      },
+      {
+        "field_id": "question_18207527008",
+        "canonical_field": "requires_sponsorship",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "question_18207528008",
+        "canonical_field": "restrictive_covenants",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "4010536008",
+        "canonical_field": "gender_identity",
+        "control_kind": "combobox",
+        "selected_option": "Man",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Man\" → 2 option(s); match",
+          "picked \"Man\" (exact)"
+        ],
+        "options_sample": [
+          "Man",
+          "Woman"
+        ]
+      },
+      {
+        "field_id": "4010538008",
+        "canonical_field": "sexual_orientation",
+        "control_kind": "combobox",
+        "selected_option": "Heterosexual",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Heterosexual\" → 1 option(s); match",
+          "picked \"Heterosexual\" (exact)"
+        ],
+        "options_sample": [
+          "Heterosexual"
+        ]
+      },
+      {
+        "field_id": "4010539008",
+        "canonical_field": "transgender",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "4010540008",
+        "canonical_field": "disability_status",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "4010541008",
+        "canonical_field": "veteran_status",
+        "control_kind": "combobox",
+        "selected_option": "No, I am not a veteran or active member",
+        "match_via": "unique_substring",
+        "notes": [
+          "opened via control click",
+          "filter \"I am not a veteran\" → 1 option(s); match",
+          "picked \"No, I am not a veteran or active member\" (unique_substring)"
+        ],
+        "options_sample": [
+          "No, I am not a veteran or active member"
+        ]
+      },
+      {
+        "field_id": "gender",
+        "canonical_field": "gender",
+        "control_kind": "combobox",
+        "selected_option": "Male",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Male\" → 2 option(s); match",
+          "picked \"Male\" (exact)"
+        ],
+        "options_sample": [
+          "Male",
+          "Female"
+        ]
+      },
+      {
+        "field_id": "hispanic_ethnicity",
+        "canonical_field": "hispanic_latino",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "veteran_status",
+        "canonical_field": "veteran_status",
+        "control_kind": "combobox",
+        "selected_option": "I am not a protected veteran",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"I am not\" → 1 option(s); match",
+          "picked \"I am not a protected veteran\" (synonym)"
+        ],
+        "options_sample": [
+          "I am not a protected veteran"
+        ]
+      },
+      {
+        "field_id": "disability_status",
+        "canonical_field": "disability_status",
+        "control_kind": "combobox",
+        "selected_option": "No, I do not have a disability and have not had one in the past",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 2 option(s); match",
+          "picked \"No, I do not have a disability and have not had one in the past\" (synonym)"
+        ],
+        "options_sample": [
+          "No, I do not have a disability and have not had one in the past",
+          "I do not want to answer"
+        ]
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "address.country",
+        "expected": "United States",
+        "observed": {
+          "value": "+1",
+          "label": "+1"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": {
+          "value": "Bachelor's Degree",
+          "label": "Bachelor's Degree"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "major",
+        "expected": "Applied Math & Stats",
+        "observed": {
+          "value": "Mathematics",
+          "label": "Mathematics"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_month",
+        "expected": "May",
+        "observed": {
+          "value": "May",
+          "label": "May"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": "2029",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "how_heard",
+        "expected": "LinkedIn",
+        "observed": {
+          "value": "LinkedIn",
+          "label": "LinkedIn"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "address.line1",
+        "expected": "3510 N Charles St",
+        "observed": "3510 N Charles St",
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "restrictive_covenants",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "gender_identity",
+        "expected": "Man",
+        "observed": {
+          "value": "Man",
+          "label": "Man"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "sexual_orientation",
+        "expected": "Heterosexual",
+        "observed": {
+          "value": "Heterosexual",
+          "label": "Heterosexual"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "transgender",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "disability_status",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "veteran_status",
+        "expected": "I am not a veteran",
+        "observed": {
+          "value": "No, I am not a veteran or active member",
+          "label": "No, I am not a veteran or active member"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "gender",
+        "expected": "Male",
+        "observed": {
+          "value": "Male",
+          "label": "Male"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "hispanic_latino",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "veteran_status",
+        "expected": "I am not a veteran",
+        "observed": {
+          "value": "I am not a protected veteran",
+          "label": "I am not a protected veteran"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "disability_status",
+        "expected": "No",
+        "observed": {
+          "value": "No, I do not have a disability and have not had one in the past",
+          "label": "No, I do not have a disability and have not had one in the past"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "heal": {
+    "attempted": 1,
+    "healed": [
+      "first_name"
+    ],
+    "still_failing": [],
+    "attempts": [
+      {
+        "field_id": "first_name",
+        "layer": "heuristic",
+        "candidate": {
+          "selector": "#first_name",
+          "via": "label_text",
+          "score": 1,
+          "inputId": "first_name"
+        },
+        "healed": true,
+        "notes": []
+      }
+    ],
+    "sidecar_used": false
+  },
+  "written_at": "2026-08-08T03:58:02.951Z"
+}

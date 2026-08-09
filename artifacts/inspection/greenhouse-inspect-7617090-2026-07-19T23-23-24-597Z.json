@@ -1,0 +1,46 @@
+{
+  "validation_level": "UNVERIFIED",
+  "requested_url": "https://boards.greenhouse.io/okta/jobs/7617090",
+  "normalized_url": "https://boards.greenhouse.io/okta/jobs/7617090",
+  "final_url": "https://www.okta.com/company/careers/",
+  "url_validation": {
+    "passed": true,
+    "normalizedUrl": "https://boards.greenhouse.io/okta/jobs/7617090",
+    "host": "boards.greenhouse.io",
+    "boardToken": "[REDACTED]",
+    "greenhouseJobId": "7617090",
+    "warnings": [],
+    "failureReason": null
+  },
+  "identity_verification": {
+    "passed": false,
+    "requestedUrl": "https://boards.greenhouse.io/okta/jobs/7617090",
+    "finalUrl": "https://www.okta.com/company/careers/",
+    "requestedJobId": "7617090",
+    "observedJobId": null,
+    "company": "okta",
+    "role": "Careers - Jobs at the Leader in Identity and Access Management | Okta",
+    "formDetected": false,
+    "fieldCount": 0,
+    "warnings": [],
+    "failureReason": "Login wall detected. Inspection stopped."
+  },
+  "ats": "unsupported",
+  "company": "okta",
+  "role": "Careers - Jobs at the Leader in Identity and Access Management | Okta",
+  "greenhouse_job_id": "7617090",
+  "field_summary": null,
+  "fields": [],
+  "proposed_fill_plan": null,
+  "warnings": [
+    "ATS \"unsupported\" is unsupported in V1 — skip and continue batch",
+    "Route: skip unsupported ATS"
+  ],
+  "inspection_started_at": "2026-07-19T23:23:09.038Z",
+  "inspection_completed_at": "2026-07-19T23:23:24.597Z",
+  "mutation_attempted": false,
+  "upload_attempted": false,
+  "submit_attempted": false,
+  "artifact_path": "C:\\dev\\jobright-application-agent\\artifacts\\inspection\\greenhouse-inspect-7617090-2026-07-19T23-23-24-597Z.json",
+  "error": "Login wall detected. Inspection stopped."
+}

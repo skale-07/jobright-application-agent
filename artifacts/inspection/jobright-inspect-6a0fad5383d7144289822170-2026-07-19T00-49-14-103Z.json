@@ -1,0 +1,97 @@
+{
+  "validation_level": "LIVE_READ_ONLY_CONFIRMED",
+  "requested_jobright_job_id": "6a0fad5383d7144289822170",
+  "application_id": "1629dc8b-8844-4063-ba51-3e0abeb9309b",
+  "stored_job": {
+    "job_db_id": "a5ea5026-6aff-4d7e-8896-15e68bbafa70",
+    "jobright_job_id": "6a0fad5383d7144289822170",
+    "job_url": "https://jobright.ai/jobs/info/6a0fad5383d7144289822170",
+    "job_path": "/jobs/info/6a0fad5383d7144289822170",
+    "company": "Amazon",
+    "role": "Software Development Engineer Internship - Fall 2026 (US)",
+    "application_state": "QUEUED"
+  },
+  "final_url": "https://jobright.ai/jobs/info/6a0fad5383d7144289822170",
+  "identity_verification": {
+    "passed": true,
+    "requestedJobrightJobId": "6a0fad5383d7144289822170",
+    "finalUrl": "https://jobright.ai/jobs/info/6a0fad5383d7144289822170",
+    "parsedJobrightJobId": "6a0fad5383d7144289822170",
+    "storedCompany": "Amazon",
+    "visibleCompany": "Amazon",
+    "storedRole": "Software Development Engineer Internship - Fall 2026 (US)",
+    "visibleRole": "Software Development Engineer Internship - Fall 2026 (US)",
+    "warnings": [],
+    "failureReason": null
+  },
+  "authentication_status": "AUTHENTICATED",
+  "control_visibility": {
+    "apply_cta_visible": true,
+    "apply_with_autofill_visible": true,
+    "improve_resume_visible": false,
+    "resume_generation_status_visible": false,
+    "resume_download_visible": false,
+    "copy_cover_letter_visible": false,
+    "cover_letter_editor_visible": false,
+    "external_ats_link_visible": false,
+    "login_wall_visible": false,
+    "captcha_visible": false,
+    "skill_tag_count": 0,
+    "details": {
+      "apply_with_autofill": {
+        "visible": true,
+        "matched_selector_name": "jobDetail.applyWithAutofill",
+        "selector_status": "REGISTRY_V1",
+        "disabled": false,
+        "aria_disabled": null,
+        "match_count": 1,
+        "visible_button_text": "Apply with Autofill"
+      },
+      "improve_resume": {
+        "visible": false,
+        "matched_selector_name": "jobDetail.improveResume",
+        "selector_status": "REGISTRY_V1",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "copy_cover_letter": {
+        "visible": false,
+        "matched_selector_name": "jobDetail.copyCoverLetter",
+        "selector_status": "REGISTRY_V1",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "apply_cta": {
+        "visible": false,
+        "matched_selector_name": "button[name=/^apply$/i]",
+        "selector_status": "UNVERIFIED_SELECTOR",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "resume_download": {
+        "visible": false,
+        "matched_selector_name": "button[name=/download.*resume/i]",
+        "selector_status": "UNVERIFIED_SELECTOR",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      }
+    },
+    "selector_registry_version": 1
+  },
+  "selector_registry_version": 1,
+  "warnings": [],
+  "inspection_started_at": "2026-07-19T00:49:06.179Z",
+  "inspection_completed_at": "2026-07-19T00:49:14.103Z",
+  "mutation_attempted": false,
+  "submit_attempted": false,
+  "artifact_path": null,
+  "error": null
+}

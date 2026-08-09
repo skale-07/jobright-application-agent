@@ -1,0 +1,136 @@
+{
+  "strategy": "BENCHMARK",
+  "mode": "executed",
+  "url": "https://boards.greenhouse.io/acme/jobs/12345",
+  "strategy_plan": {
+    "strategy": "BENCHMARK",
+    "run_jobright": true,
+    "run_native": true,
+    "compare": true,
+    "submit_forbidden": true,
+    "notes": [
+      "Run JobRight simulation and native fill independently, compare coverage",
+      "Submit is hard-blocked in BENCHMARK regardless of SUBMIT_ENABLED"
+    ]
+  },
+  "jobright": {
+    "attempted": true,
+    "settled": true,
+    "filled": {
+      "legal_name.first": "FIRST",
+      "legal_name.last": "LAST",
+      "email": "you@example.com"
+    },
+    "skipped": [
+      "phone",
+      "school",
+      "grad_year",
+      "sponsorship",
+      "resume",
+      "cover"
+    ],
+    "notes": [
+      "simulator — not a live JobRight Apply-with-Autofill click"
+    ],
+    "attempt": {
+      "attempted": true,
+      "settled": true,
+      "notes": [
+        "simulator — not a live JobRight Apply-with-Autofill click",
+        "filled=legal_name.first,legal_name.last,email"
+      ]
+    }
+  },
+  "native": {
+    "fill": {
+      "filled": [
+        "legal_name.first",
+        "legal_name.last",
+        "email",
+        "school",
+        "graduation_year",
+        "requires_sponsorship"
+      ],
+      "skipped": [],
+      "errors": []
+    },
+    "verify": {
+      "passed": true,
+      "fields": [
+        {
+          "canonical_field": "legal_name.first",
+          "expected": "FIRST",
+          "observed": "FIRST",
+          "match": true
+        },
+        {
+          "canonical_field": "legal_name.last",
+          "expected": "LAST",
+          "observed": "LAST",
+          "match": true
+        },
+        {
+          "canonical_field": "email",
+          "expected": "you@example.com",
+          "observed": "you@example.com",
+          "match": true
+        },
+        {
+          "canonical_field": "school",
+          "expected": "Johns Hopkins University",
+          "observed": "Johns Hopkins University",
+          "match": true
+        },
+        {
+          "canonical_field": "graduation_year",
+          "expected": "2029",
+          "observed": "2029",
+          "match": true
+        },
+        {
+          "canonical_field": "requires_sponsorship",
+          "expected": "No",
+          "observed": {
+            "value": "no",
+            "label": "No"
+          },
+          "match": true
+        }
+      ],
+      "uploads": [],
+      "warnings": []
+    },
+    "snapshot": {
+      "legal_name.first": "FIRST",
+      "legal_name.last": "LAST",
+      "email": "you@example.com",
+      "school": "Johns Hopkins University",
+      "graduation_year": "2029",
+      "requires_sponsorship": "No"
+    }
+  },
+  "comparison": {
+    "agreement": [
+      "email",
+      "legal_name.first",
+      "legal_name.last"
+    ],
+    "conflicts": [],
+    "only_jobright": [],
+    "only_native": [
+      "graduation_year",
+      "requires_sponsorship",
+      "school"
+    ],
+    "agreement_rate": 0.5
+  },
+  "submit_attempted": false,
+  "submit_blocked": true,
+  "notes": [
+    "Run JobRight simulation and native fill independently, compare coverage",
+    "Submit is hard-blocked in BENCHMARK regardless of SUBMIT_ENABLED",
+    "benchmark agreement_rate=0.50",
+    "submit hard-blocked in BENCHMARK"
+  ],
+  "written_at": "2026-07-18T23:43:18.204Z"
+}

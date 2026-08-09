@@ -1,0 +1,395 @@
+{
+  "fixture": "lever",
+  "inspected_at": "2026-08-08T00:04:18.649Z",
+  "inspection": {
+    "ats": "lever",
+    "adapter_version": 1,
+    "url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+    "title": "Acme — Software Engineer — Apply",
+    "requires_login": false,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "resume-upload-input",
+        "label": "Resume/CV",
+        "type": "file",
+        "required": true,
+        "name": "resume",
+        "inputId": "resume-upload-input"
+      },
+      {
+        "id": "name",
+        "label": "Full name",
+        "type": "text",
+        "required": true,
+        "name": "name",
+        "inputId": "name"
+      },
+      {
+        "id": "email",
+        "label": "Email",
+        "type": "text",
+        "required": true,
+        "name": "email",
+        "inputId": "email"
+      },
+      {
+        "id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "required": false,
+        "name": "phone",
+        "inputId": "phone"
+      },
+      {
+        "id": "org",
+        "label": "Current company",
+        "type": "text",
+        "required": false,
+        "name": "org",
+        "inputId": "org"
+      },
+      {
+        "id": "urls-linkedin",
+        "label": "LinkedIn URL",
+        "type": "text",
+        "required": false,
+        "name": "urls[LinkedIn]",
+        "inputId": "urls-linkedin"
+      },
+      {
+        "id": "urls-github",
+        "label": "GitHub URL",
+        "type": "text",
+        "required": false,
+        "name": "urls[GitHub]",
+        "inputId": "urls-github"
+      },
+      {
+        "id": "urls-portfolio",
+        "label": "Portfolio URL",
+        "type": "text",
+        "required": false,
+        "name": "urls[Portfolio]",
+        "inputId": "urls-portfolio"
+      },
+      {
+        "id": "card-hearabout",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "required": false,
+        "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field0]",
+        "inputId": "card-hearabout"
+      },
+      {
+        "id": "card-workauth",
+        "label": "Are you legally authorized to work in the United States?",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Select ...",
+          "Yes",
+          "No"
+        ],
+        "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field1]",
+        "inputId": "card-workauth"
+      },
+      {
+        "id": "comments",
+        "label": "Additional information",
+        "type": "textarea",
+        "required": false,
+        "name": "comments",
+        "inputId": "comments"
+      },
+      {
+        "id": "eeo-gender",
+        "label": "Gender",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Select ...",
+          "Male",
+          "Female",
+          "Decline to self-identify"
+        ],
+        "name": "eeo[gender]",
+        "inputId": "eeo-gender"
+      },
+      {
+        "id": "eeo-race",
+        "label": "Race",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Select ...",
+          "Asian",
+          "White",
+          "Decline to self-identify"
+        ],
+        "name": "eeo[race]",
+        "inputId": "eeo-race"
+      },
+      {
+        "id": "eeo-veteran",
+        "label": "Veteran status",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Select ...",
+          "I am not a veteran",
+          "Decline to self-identify"
+        ],
+        "name": "eeo[veteran]",
+        "inputId": "eeo-veteran"
+      }
+    ],
+    "warnings": [
+      "Dormant CAPTCHA markers ignored: data_sitekey_attribute"
+    ]
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "lever URL host",
+    "lever form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "resume-upload-input",
+      "label": "Resume/CV",
+      "type": "file",
+      "required": true,
+      "name": "resume",
+      "inputId": "resume-upload-input",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "name",
+      "label": "Full name",
+      "type": "text",
+      "required": true,
+      "name": "name",
+      "inputId": "name",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "type": "text",
+      "required": true,
+      "name": "email",
+      "inputId": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "phone",
+      "label": "Phone",
+      "type": "text",
+      "required": false,
+      "name": "phone",
+      "inputId": "phone",
+      "canonical_field": "phone",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "org",
+      "label": "Current company",
+      "type": "text",
+      "required": false,
+      "name": "org",
+      "inputId": "org",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "urls-linkedin",
+      "label": "LinkedIn URL",
+      "type": "text",
+      "required": false,
+      "name": "urls[LinkedIn]",
+      "inputId": "urls-linkedin",
+      "canonical_field": "linkedin_url",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "urls-github",
+      "label": "GitHub URL",
+      "type": "text",
+      "required": false,
+      "name": "urls[GitHub]",
+      "inputId": "urls-github",
+      "canonical_field": "github_url",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "urls-portfolio",
+      "label": "Portfolio URL",
+      "type": "text",
+      "required": false,
+      "name": "urls[Portfolio]",
+      "inputId": "urls-portfolio",
+      "canonical_field": "personal_website",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "card-hearabout",
+      "label": "How did you hear about us?",
+      "type": "text",
+      "required": false,
+      "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field0]",
+      "inputId": "card-hearabout",
+      "canonical_field": "how_heard",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "card-workauth",
+      "label": "Are you legally authorized to work in the United States?",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Select ...",
+        "Yes",
+        "No"
+      ],
+      "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field1]",
+      "inputId": "card-workauth",
+      "canonical_field": "work_authorization",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "comments",
+      "label": "Additional information",
+      "type": "textarea",
+      "required": false,
+      "name": "comments",
+      "inputId": "comments",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "eeo-gender",
+      "label": "Gender",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "Male",
+        "Female",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[gender]",
+      "inputId": "eeo-gender",
+      "canonical_field": "gender",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "eeo-race",
+      "label": "Race",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "Asian",
+        "White",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[race]",
+      "inputId": "eeo-race",
+      "canonical_field": "race_ethnicity",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "eeo-veteran",
+      "label": "Veteran status",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "I am not a veteran",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[veteran]",
+      "inputId": "eeo-veteran",
+      "canonical_field": "veteran_status",
+      "mapping_confidence": "high"
+    }
+  ],
+  "essays": [
+    {
+      "field_id": "comments",
+      "label": "Additional information",
+      "is_essay": true,
+      "reasons": [
+        "textarea",
+        "essay-like label"
+      ],
+      "estimated_min_words": 50
+    }
+  ],
+  "demographics_fields": [
+    {
+      "id": "eeo-gender",
+      "label": "Gender",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "Male",
+        "Female",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[gender]",
+      "inputId": "eeo-gender"
+    },
+    {
+      "id": "eeo-race",
+      "label": "Race",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "Asian",
+        "White",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[race]",
+      "inputId": "eeo-race"
+    },
+    {
+      "id": "eeo-veteran",
+      "label": "Veteran status",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Select ...",
+        "I am not a veteran",
+        "Decline to self-identify"
+      ],
+      "name": "eeo[veteran]",
+      "inputId": "eeo-veteran"
+    }
+  ],
+  "unmapped_required": [
+    {
+      "id": "name",
+      "label": "Full name",
+      "type": "text",
+      "required": true,
+      "name": "name",
+      "inputId": "name",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "route": "needs_review_unmapped",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "Dormant CAPTCHA markers ignored: data_sitekey_attribute",
+    "1 required field(s) unmapped to answer aliases"
+  ]
+}

@@ -1,0 +1,111 @@
+﻿BEFORE
+ {
+  "files": [
+    {
+      "id": "resume",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"resume\">Attach</label><input id=\"resume\" class=\"visually-hidden\" type=\"file\" accept=\".pdf,.doc,.docx"
+    },
+    {
+      "id": "cover_letter",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"cover_letter\">Attach</label><input id=\"cover_letter\" class=\"visually-hidden\" type=\"file\" accept=\".pd"
+    }
+  ],
+  "attach": [
+    "Attach",
+    "Attach",
+    "Attach",
+    "Attach"
+  ]
+}
+
+AFTER country {"committed":true,"selectedLabel":"United States","notes":["opened via control click","filter typed; 1 option(s) visible","picked \"United States +1\" (ci_exact)","display collapsed to dial code; recording \"United States\""]}
+{
+  "files": [
+    {
+      "id": "resume",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"resume\">Attach</label><input id=\"resume\" class=\"visually-hidden\" type=\"file\" accept=\".pdf,.doc,.docx"
+    },
+    {
+      "id": "cover_letter",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"cover_letter\">Attach</label><input id=\"cover_letter\" class=\"visually-hidden\" type=\"file\" accept=\".pd"
+    }
+  ],
+  "attach": [
+    "Attach",
+    "Attach",
+    "Attach",
+    "Attach"
+  ]
+}
+
+AFTER school--0 {"committed":true,"selectedLabel":"Johns Hopkins University","notes":["opened via control click","filter typed; 1 option(s) visible","picked \"Johns Hopkins University\" (exact)"]}
+{
+  "files": [
+    {
+      "id": "resume",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"resume\">Attach</label><input id=\"resume\" class=\"visually-hidden\" type=\"file\" accept=\".pdf,.doc,.docx"
+    },
+    {
+      "id": "cover_letter",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"cover_letter\">Attach</label><input id=\"cover_letter\" class=\"visually-hidden\" type=\"file\" accept=\".pd"
+    }
+  ],
+  "attach": [
+    "Attach",
+    "Attach",
+    "Attach",
+    "Attach"
+  ]
+}
+
+AFTER degree--0 {"committed":true,"selectedLabel":"Bachelor's Degree","notes":["opened via control click","filter yielded no options; re-collected unfiltered","picked \"Bachelor's Degree\" (synonym)"]}
+{
+  "files": [
+    {
+      "id": "resume",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"resume\">Attach</label><input id=\"resume\" class=\"visually-hidden\" type=\"file\" accept=\".pdf,.doc,.docx"
+    },
+    {
+      "id": "cover_letter",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"cover_letter\">Attach</label><input id=\"cover_letter\" class=\"visually-hidden\" type=\"file\" accept=\".pd"
+    }
+  ],
+  "attach": [
+    "Attach",
+    "Attach",
+    "Attach",
+    "Attach"
+  ]
+}
+
+AFTER discipline--0 {"committed":true,"selectedLabel":"Mathematics","notes":["opened via control click","filter yielded no options; re-collected unfiltered","picked \"Mathematics\" (unique_substring)"]}
+{
+  "files": [
+    {
+      "id": "resume",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"resume\">Attach</label><input id=\"resume\" class=\"visually-hidden\" type=\"file\" accept=\".pdf,.doc,.docx"
+    },
+    {
+      "id": "cover_letter",
+      "name": null,
+      "parent": "<div><button type=\"button\" class=\"btn btn--pill\">Attach</button><label class=\"visually-hidden\" for=\"cover_letter\">Attach</label><input id=\"cover_letter\" class=\"visually-hidden\" type=\"file\" accept=\".pd"
+    }
+  ],
+  "attach": [
+    "Attach",
+    "Attach",
+    "Attach",
+    "Attach"
+  ]
+}
+
+Discipline filter 'Applied Math' options: []

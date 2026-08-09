@@ -1,0 +1,187 @@
+﻿{"timestamp":"2026-08-07T18:25:06.856Z","level":"info","message":"greenhouse upload: resolving resume input","service":"greenhouse","action":"upload","metadata":{"kind":"resume","size_bytes":76462}}
+{"timestamp":"2026-08-07T18:25:37.379Z","level":"info","message":"greenhouse upload: resume complete","service":"greenhouse","action":"upload","metadata":{"verified":true,"file_count":0,"still_attached":false,"chip_visible":true}}
+{
+  "results": [
+    {
+      "id": "country",
+      "kind": "combobox",
+      "expected": "United States",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "United States",
+        "notes": [
+          "opened via control click",
+          "filter \"United States\" ΓåÆ 1 option(s); match",
+          "picked \"United States +1\" (ci_exact)",
+          "display collapsed to dial code; recording \"United States\""
+        ]
+      },
+      "after": "+1",
+      "sampleOptions": [
+        "United States +1",
+        "Afghanistan +93",
+        "├àland Islands +358",
+        "Albania +355",
+        "Algeria +213",
+        "American Samoa +1",
+        "Andorra +376",
+        "Angola +244",
+        "Anguilla +1",
+        "Antigua & Barbuda +1",
+        "Argentina +54",
+        "Armenia +374"
+      ]
+    },
+    {
+      "id": "school--0",
+      "kind": "combobox",
+      "expected": "Johns Hopkins University",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Johns Hopkins University",
+        "notes": [
+          "opened via control click",
+          "filter \"Johns Hopkins University\" ΓåÆ 1 option(s); match",
+          "picked \"Johns Hopkins University\" (exact)"
+        ]
+      },
+      "after": "Johns Hopkins University",
+      "sampleOptions": [
+        "Aalborg University",
+        "Aalto University",
+        "Aarhus University",
+        "Abertay University",
+        "Aberystwyth University",
+        "Abilene Christian University",
+        "Abo Akademi University",
+        "Abraham Baldwin Agricultural College",
+        "Abu Dhabi University",
+        "Academy of Art University",
+        "Acadia University",
+        "Acharya Nagarjuna University"
+      ]
+    },
+    {
+      "id": "degree--0",
+      "kind": "combobox",
+      "expected": "Bachelor of Science",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Bachelor's Degree",
+        "notes": [
+          "opened via control click",
+          "filter \"Bachelor\" ΓåÆ 1 option(s); match",
+          "picked \"Bachelor's Degree\" (synonym)"
+        ]
+      },
+      "after": "Bachelor's Degree",
+      "sampleOptions": [
+        "Associate's Degree",
+        "Bachelor's Degree",
+        "Doctor of Medicine (M.D.)",
+        "Doctor of Philosophy (Ph.D.)",
+        "Engineer's Degree",
+        "High School",
+        "Juris Doctor (J.D.)",
+        "Master of Business Administration (M.B.A.)",
+        "Master's Degree",
+        "Other"
+      ]
+    },
+    {
+      "id": "discipline--0",
+      "kind": "combobox",
+      "expected": "Applied Math & Stats",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Mathematics",
+        "notes": [
+          "opened via control click",
+          "filter \"Mathematics\" ΓåÆ 1 option(s); match",
+          "picked \"Mathematics\" (synonym)"
+        ]
+      },
+      "after": "Mathematics",
+      "sampleOptions": [
+        "Accounting",
+        "African Studies",
+        "Agriculture",
+        "Anthropology",
+        "Applied Health Services",
+        "Architecture",
+        "Art",
+        "Asian Studies",
+        "Biology",
+        "Business",
+        "Business Administration",
+        "Chemistry"
+      ]
+    },
+    {
+      "id": "end-month--0",
+      "kind": "combobox",
+      "expected": "May",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "May",
+        "notes": [
+          "opened via control click",
+          "filter \"May\" ΓåÆ 1 option(s); match",
+          "picked \"May\" (exact)"
+        ]
+      },
+      "after": "May",
+      "sampleOptions": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
+    {
+      "id": "question_11879006003",
+      "kind": "combobox",
+      "expected": "Yes",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Yes",
+        "notes": [
+          "opened via control click",
+          "filter \"Yes\" ΓåÆ 1 option(s); match",
+          "picked \"Yes\" (exact)"
+        ]
+      },
+      "after": "Yes",
+      "sampleOptions": [
+        "Yes",
+        "No"
+      ]
+    }
+  ],
+  "upload": {
+    "resolvedId": "resume",
+    "result": {
+      "field": "resume",
+      "path": "C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+      "filename": "Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+      "size_bytes": 76462,
+      "verified": true,
+      "evidence": "input files: []; stillAttached=false; chip=true"
+    }
+  },
+  "resume": "C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+}

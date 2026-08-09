@@ -1,0 +1,32 @@
+{
+  "fixture": "workday",
+  "inspected_at": "2026-08-07T17:43:36.204Z",
+  "inspection": {
+    "ats": "workday",
+    "adapter_version": 1,
+    "url": "https://acme.myworkdayjobs.com/en-US/Careers/job/Intern/123",
+    "title": "Workday Intern",
+    "requires_login": true,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [],
+    "warnings": [
+      "ATS \"workday\" is unsupported in V1 — skip and continue batch"
+    ]
+  },
+  "detection_confidence": 0.95,
+  "detection_evidence": [
+    "unsupported ATS pattern: workday"
+  ],
+  "mapped_fields": [],
+  "essays": [],
+  "demographics_fields": [],
+  "unmapped_required": [],
+  "route": "skip_unsupported_ats",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "ATS \"workday\" is unsupported in V1 — skip and continue batch",
+    "Route: skip unsupported ATS"
+  ]
+}

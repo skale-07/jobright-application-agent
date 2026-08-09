@@ -1,0 +1,28 @@
+{
+  "detail": {
+    "jobright_job_id": "6a0fad5383d7144289822170",
+    "url": "https://jobright.ai/jobs/info/6a0fad5383d7144289822170",
+    "role": "Software Development Engineer Internship - Fall 2026 (US)",
+    "company": "Amazon",
+    "location": "Seattle, WA",
+    "description_text": null,
+    "apply_with_autofill_visible": true,
+    "improve_resume_visible": false,
+    "copy_cover_letter_visible": false
+  },
+  "apply": {
+    "applyVisible": true,
+    "askOrionVisible": false
+  },
+  "resume": {
+    "improveResumeVisible": false,
+    "skillTagCount": 0
+  },
+  "cover": {
+    "copyButtonVisible": false,
+    "editorVisible": false,
+    "state": "NOT_REQUESTED"
+  },
+  "selector_registry_version": 1,
+  "selectors_note": "School/beyond/email contact selectors deferred until stronger live captures."
+}

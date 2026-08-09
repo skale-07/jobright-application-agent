@@ -1,0 +1,52 @@
+{
+  "fixture": "captcha",
+  "inspected_at": "2026-08-08T00:04:18.614Z",
+  "inspection": {
+    "ats": "greenhouse",
+    "adapter_version": 1,
+    "url": "https://boards.greenhouse.io/acme/jobs/captcha-1",
+    "title": "Captcha wall",
+    "requires_login": false,
+    "captcha_detected": true,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "email",
+        "label": "Email",
+        "type": "text",
+        "required": true,
+        "name": "email",
+        "inputId": "email"
+      }
+    ],
+    "warnings": [
+      "Blocking CAPTCHA detected: human_verification_prompt,recaptcha_widget_container,readable_application_form_present"
+    ]
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "greenhouse URL host",
+    "greenhouse form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "email",
+      "label": "Email",
+      "type": "text",
+      "required": true,
+      "name": "email",
+      "inputId": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    }
+  ],
+  "essays": [],
+  "demographics_fields": [],
+  "unmapped_required": [],
+  "route": "needs_human_captcha",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "Blocking CAPTCHA detected: human_verification_prompt,recaptcha_widget_container,readable_application_form_present"
+  ]
+}

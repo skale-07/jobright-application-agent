@@ -1,0 +1,11 @@
+﻿
+> jobright-application-agent@0.1.0 ats:fill
+> tsx src/cli/index.ts ats:fill --url https://job-boards.greenhouse.io/embed/job_app?for=thenuclearcompany&jr_id=6a76229767a1ad0bc53c8e9f&token=5383171008&utm_source=jobright
+
+node.exe : Refusing live fill: URL is not a recognizable Greenhouse job application path: /embed/job_app
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\skale\AppData\Roaming\ ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Refusing live f... /embed/job_app:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

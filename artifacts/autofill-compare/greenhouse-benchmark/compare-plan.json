@@ -1,0 +1,25 @@
+{
+  "strategy": "BENCHMARK",
+  "mode": "plan_only",
+  "url": "https://boards.greenhouse.io/acme/jobs/12345",
+  "strategy_plan": {
+    "strategy": "BENCHMARK",
+    "run_jobright": true,
+    "run_native": true,
+    "compare": true,
+    "submit_forbidden": true,
+    "notes": [
+      "Run JobRight simulation and native fill independently, compare coverage",
+      "Submit is hard-blocked in BENCHMARK regardless of SUBMIT_ENABLED"
+    ]
+  },
+  "submit_attempted": false,
+  "submit_blocked": true,
+  "notes": [
+    "Run JobRight simulation and native fill independently, compare coverage",
+    "Submit is hard-blocked in BENCHMARK regardless of SUBMIT_ENABLED",
+    "fill plan has 6 fillable fields",
+    "pass --execute with FORM_FILL_ENABLED=true DRY_RUN=false to mutate"
+  ],
+  "written_at": "2026-07-18T23:42:40.951Z"
+}

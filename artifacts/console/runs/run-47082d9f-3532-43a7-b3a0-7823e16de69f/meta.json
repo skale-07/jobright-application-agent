@@ -1,0 +1,116 @@
+{
+  "id": "run-47082d9f-3532-43a7-b3a0-7823e16de69f",
+  "kind": "automation",
+  "params": {
+    "headed": true,
+    "arm_run_id": "a966e305-f6d8-45c0-aa8b-56b191062737",
+    "armed_until": "2026-08-08T06:02:39.093Z",
+    "max_apps": 25,
+    "discover_max": 10,
+    "rediscover_every": 5
+  },
+  "granted_flags": [
+    "AUTOMATION_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "FORM_FILL_ENABLED",
+    "GMAIL_VERIFICATION_ENABLED",
+    "LIVE_MODE",
+    "MATERIALS_DOWNLOAD_ENABLED",
+    "NATIVE_AUTOFILL_ENABLED",
+    "NAVIGATION_ENABLED",
+    "OUTLOOK_DRAFTS_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [],
+  "status": "succeeded",
+  "created_at": "2026-08-08T04:02:39.101Z",
+  "started_at": "2026-08-08T04:02:39.119Z",
+  "ended_at": "2026-08-08T04:07:34.143Z",
+  "exit_code": 0,
+  "error": null,
+  "gates": {
+    "FORM_FILL_ENABLED": true,
+    "SUBMIT_ENABLED": true,
+    "MATERIALS_DOWNLOAD_ENABLED": true,
+    "NAVIGATION_ENABLED": true,
+    "GMAIL_VERIFICATION_ENABLED": true,
+    "OUTLOOK_VERIFICATION_ENABLED": false,
+    "AGENT_FALLBACK_ENABLED": false,
+    "AGENT_AUTHORING_ENABLED": false,
+    "NATIVE_AUTOFILL_ENABLED": true,
+    "JOBRIGHT_AUTOFILL_ENABLED": false,
+    "OUTLOOK_DRAFTS_ENABLED": true,
+    "EMAIL_GENERATION_ENABLED": true,
+    "LINKEDIN_ENRICHMENT_ENABLED": false,
+    "ESSAY_REQUIRED_GATE_ENABLED": false,
+    "AUTOMATION_ENABLED": true,
+    "DRY_RUN": false
+  },
+  "pending_confirmation": null,
+  "report": {
+    "arm_run_id": "a966e305-f6d8-45c0-aa8b-56b191062737",
+    "apps_started": 7,
+    "submits_used": 1,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 3,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "notes": [
+      "discover: 8 inspected",
+      "discover: 8 inspected",
+      "discover: 8 inspected"
+    ],
+    "per_app": [
+      {
+        "application_id": "7c67d36d-7074-4e9b-9739-fd96dbd7a1ca",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      },
+      {
+        "application_id": "271d8fd5-9985-4ca0-8761-fb3caa91cda7",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      },
+      {
+        "application_id": "ed3e04ee-6ae5-4c8f-8c91-4b2bf400fee5",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      },
+      {
+        "application_id": "fd6209dc-6162-468b-aab4-23acf11b66ee",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      },
+      {
+        "application_id": "ff096e7c-b563-4cd8-8e00-65db92f50bc4",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "gate",
+        "stop_reason": "submission not verified: FAILED_BEFORE_CLICK — submit control not found",
+        "submitted": false
+      },
+      {
+        "application_id": "03e34742-34e8-4312-901d-6643dd055dd3",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      },
+      {
+        "application_id": "66d32930-50ae-4df8-808a-19a79f750aab",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false
+      }
+    ]
+  },
+  "log_seq": 140
+}

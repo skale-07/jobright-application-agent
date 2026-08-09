@@ -1,0 +1,174 @@
+﻿{"timestamp":"2026-08-07T18:14:12.884Z","level":"info","message":"greenhouse upload: resolving resume input","service":"greenhouse","action":"upload","metadata":{"kind":"resume","size_bytes":76462}}
+{"timestamp":"2026-08-07T18:14:13.165Z","level":"info","message":"greenhouse upload: resume failed","service":"greenhouse","action":"upload","metadata":{"error":"Greenhouse resume file input not found (waited for attached). Saw 1 input[type=file]: [{\"frame\":\"https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003\",\"id\":\"cover_letter\",\"name\":null}]","inventory":[{"frame":"https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003","id":"cover_letter","name":null}]}}
+{
+  "results": [
+    {
+      "id": "country",
+      "kind": "combobox",
+      "expected": "United States",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "United States",
+        "notes": [
+          "opened via control click",
+          "filter \"United States\" ΓåÆ 1 option(s); match via ci_exact",
+          "picked \"United States +1\" (ci_exact)",
+          "display collapsed to dial code; recording \"United States\""
+        ]
+      },
+      "after": "+1",
+      "sampleOptions": [
+        "United States +1",
+        "Afghanistan +93",
+        "├àland Islands +358",
+        "Albania +355",
+        "Algeria +213",
+        "American Samoa +1",
+        "Andorra +376",
+        "Angola +244",
+        "Anguilla +1",
+        "Antigua & Barbuda +1",
+        "Argentina +54",
+        "Armenia +374"
+      ]
+    },
+    {
+      "id": "school--0",
+      "kind": "combobox",
+      "expected": "Johns Hopkins University",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Johns Hopkins University",
+        "notes": [
+          "opened via control click",
+          "filter \"Johns Hopkins University\" ΓåÆ 1 option(s); match via exact",
+          "picked \"Johns Hopkins University\" (exact)"
+        ]
+      },
+      "after": "Johns Hopkins University",
+      "sampleOptions": [
+        "Aalborg University",
+        "Aalto University",
+        "Aarhus University",
+        "Abertay University",
+        "Aberystwyth University",
+        "Abilene Christian University",
+        "Abo Akademi University",
+        "Abraham Baldwin Agricultural College",
+        "Abu Dhabi University",
+        "Academy of Art University",
+        "Acadia University",
+        "Acharya Nagarjuna University"
+      ]
+    },
+    {
+      "id": "degree--0",
+      "kind": "combobox",
+      "expected": "Bachelor of Science",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Bachelor's Degree",
+        "notes": [
+          "opened via control click",
+          "filter \"Bachelor\" ΓåÆ 1 option(s); match via synonym",
+          "picked \"Bachelor's Degree\" (synonym)"
+        ]
+      },
+      "after": "Bachelor's Degree",
+      "sampleOptions": [
+        "Associate's Degree",
+        "Bachelor's Degree",
+        "Doctor of Medicine (M.D.)",
+        "Doctor of Philosophy (Ph.D.)",
+        "Engineer's Degree",
+        "High School",
+        "Juris Doctor (J.D.)",
+        "Master of Business Administration (M.B.A.)",
+        "Master's Degree",
+        "Other"
+      ]
+    },
+    {
+      "id": "discipline--0",
+      "kind": "combobox",
+      "expected": "Applied Math & Stats",
+      "before": null,
+      "fill": {
+        "committed": false,
+        "selectedLabel": null,
+        "notes": [
+          "opened via control click",
+          "filter yielded no/unmatched options; re-collected unfiltered",
+          "no option matches \"Applied Math & Stats\" (options: Accounting | African Studies | Agriculture | Anthropology | Applied Health Services | Architecture | Art | Asian Studies | ΓÇª)"
+        ]
+      },
+      "after": null,
+      "sampleOptions": []
+    },
+    {
+      "id": "end-month--0",
+      "kind": "combobox",
+      "expected": "May",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "May",
+        "notes": [
+          "opened via control click",
+          "filter \"May\" ΓåÆ 1 option(s); match via exact",
+          "picked \"May\" (exact)"
+        ]
+      },
+      "after": "May",
+      "sampleOptions": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    },
+    {
+      "id": "question_11879006003",
+      "kind": "combobox",
+      "expected": "Yes",
+      "before": null,
+      "fill": {
+        "committed": true,
+        "selectedLabel": "Yes",
+        "notes": [
+          "opened via control click",
+          "filter \"Yes\" ΓåÆ 1 option(s); match via exact",
+          "picked \"Yes\" (exact)"
+        ]
+      },
+      "after": "Yes",
+      "sampleOptions": [
+        "Yes",
+        "No"
+      ]
+    }
+  ],
+  "upload": {
+    "resolvedId": "resume",
+    "result": {
+      "field": "resume",
+      "path": "C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+      "filename": "Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+      "size_bytes": 76462,
+      "verified": false,
+      "evidence": "Greenhouse resume file input not found (waited for attached). Saw 1 input[type=file]: [{\"frame\":\"https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox/jobs/4344358003\",\"id\":\"cover_letter\",\"name\":null}]"
+    }
+  },
+  "resume": "C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+}

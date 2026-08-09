@@ -1,0 +1,165 @@
+{
+  "fixture": "demographics",
+  "inspected_at": "2026-08-07T17:43:36.188Z",
+  "inspection": {
+    "ats": "greenhouse",
+    "adapter_version": 1,
+    "url": "https://boards.greenhouse.io/acme/jobs/demo-1",
+    "title": "Demographics",
+    "requires_login": false,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "email",
+        "label": "Email",
+        "type": "text",
+        "required": true,
+        "name": "job_application[email]",
+        "inputId": "email"
+      },
+      {
+        "id": "gender",
+        "label": "gender",
+        "type": "radio",
+        "required": false,
+        "name": "gender",
+        "options": [
+          "gender",
+          "gender",
+          "gender"
+        ]
+      },
+      {
+        "id": "race",
+        "label": "Race / Ethnicity",
+        "type": "select",
+        "required": false,
+        "options": [
+          "Prefer not to say",
+          "Decline to identify"
+        ],
+        "name": "race",
+        "inputId": "race"
+      },
+      {
+        "id": "veteran",
+        "label": "Veteran status",
+        "type": "select",
+        "required": false,
+        "options": [
+          "I am not a veteran",
+          "Decline to self-identify"
+        ],
+        "name": "veteran",
+        "inputId": "veteran"
+      }
+    ],
+    "warnings": []
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "greenhouse URL host",
+    "greenhouse form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "email",
+      "label": "Email",
+      "type": "text",
+      "required": true,
+      "name": "job_application[email]",
+      "inputId": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "gender",
+      "label": "gender",
+      "type": "radio",
+      "required": false,
+      "name": "gender",
+      "options": [
+        "gender",
+        "gender",
+        "gender"
+      ],
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "race",
+      "label": "Race / Ethnicity",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Prefer not to say",
+        "Decline to identify"
+      ],
+      "name": "race",
+      "inputId": "race",
+      "canonical_field": "address.city",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "veteran",
+      "label": "Veteran status",
+      "type": "select",
+      "required": false,
+      "options": [
+        "I am not a veteran",
+        "Decline to self-identify"
+      ],
+      "name": "veteran",
+      "inputId": "veteran",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "essays": [],
+  "demographics_fields": [
+    {
+      "id": "gender",
+      "label": "gender",
+      "type": "radio",
+      "required": false,
+      "name": "gender",
+      "options": [
+        "gender",
+        "gender",
+        "gender"
+      ]
+    },
+    {
+      "id": "race",
+      "label": "Race / Ethnicity",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Prefer not to say",
+        "Decline to identify"
+      ],
+      "name": "race",
+      "inputId": "race"
+    },
+    {
+      "id": "veteran",
+      "label": "Veteran status",
+      "type": "select",
+      "required": false,
+      "options": [
+        "I am not a veteran",
+        "Decline to self-identify"
+      ],
+      "name": "veteran",
+      "inputId": "veteran"
+    }
+  ],
+  "unmapped_required": [],
+  "route": "ready_for_fill_later",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "Mapped enough for a future fill phase — FORM_FILL stays off in Phase 4"
+  ]
+}

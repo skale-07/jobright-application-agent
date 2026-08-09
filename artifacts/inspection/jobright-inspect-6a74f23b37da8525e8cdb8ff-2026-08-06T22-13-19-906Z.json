@@ -1,0 +1,107 @@
+{
+  "validation_level": "LIVE_READ_ONLY_CONFIRMED",
+  "requested_jobright_job_id": "6a74f23b37da8525e8cdb8ff",
+  "application_id": "2b964c26-0f61-47c7-9bf6-a154b73dbe50",
+  "stored_job": {
+    "job_db_id": "513f5d22-add8-4ad8-a5b8-99791e933e43",
+    "jobright_job_id": "6a74f23b37da8525e8cdb8ff",
+    "job_url": "https://jobright.ai/jobs/info/6a74f23b37da8525e8cdb8ff",
+    "job_path": "/jobs/info/6a74f23b37da8525e8cdb8ff",
+    "company": "omniXM",
+    "role": "Associate/Intern and Software Engineer",
+    "application_state": "QUEUED"
+  },
+  "final_url": "https://jobright.ai/jobs/info/6a74f23b37da8525e8cdb8ff",
+  "identity_verification": {
+    "passed": true,
+    "requestedJobrightJobId": "6a74f23b37da8525e8cdb8ff",
+    "finalUrl": "https://jobright.ai/jobs/info/6a74f23b37da8525e8cdb8ff",
+    "parsedJobrightJobId": "6a74f23b37da8525e8cdb8ff",
+    "storedCompany": "omniXM",
+    "visibleCompany": "omniXM",
+    "storedRole": "Associate/Intern and Software Engineer",
+    "visibleRole": "Associate/Intern and Software Engineer",
+    "warnings": [],
+    "failureReason": null
+  },
+  "authentication_status": "AUTHENTICATED",
+  "control_visibility": {
+    "any_apply_control_visible": true,
+    "standard_apply_visible": false,
+    "apply_with_autofill_visible": true,
+    "external_apply_visible": false,
+    "improve_resume_visible": false,
+    "resume_generation_status_visible": false,
+    "resume_download_visible": false,
+    "copy_cover_letter_visible": false,
+    "cover_letter_editor_visible": false,
+    "login_wall_visible": false,
+    "captcha_visible": false,
+    "skill_tag_count": 0,
+    "details": {
+      "apply_with_autofill": {
+        "visible": true,
+        "matched_selector_name": "jobDetail.applyWithAutofill",
+        "selector_status": "REGISTRY_V1",
+        "disabled": false,
+        "aria_disabled": null,
+        "match_count": 1,
+        "visible_button_text": "Apply with Autofill"
+      },
+      "improve_resume": {
+        "visible": false,
+        "matched_selector_name": "jobDetail.improveResume",
+        "selector_status": "REGISTRY_V1",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "copy_cover_letter": {
+        "visible": false,
+        "matched_selector_name": "jobDetail.copyCoverLetter",
+        "selector_status": "REGISTRY_V1",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "standard_apply": {
+        "visible": false,
+        "matched_selector_name": "button[name=/^apply$/i]",
+        "selector_status": "UNVERIFIED_SELECTOR",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "resume_download": {
+        "visible": false,
+        "matched_selector_name": "button[name=/download.*resume/i]",
+        "selector_status": "UNVERIFIED_SELECTOR",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      },
+      "external_apply": {
+        "visible": false,
+        "matched_selector_name": "a[href*=greenhouse|lever|workday|ashby]",
+        "selector_status": "UNVERIFIED_SELECTOR",
+        "disabled": null,
+        "aria_disabled": null,
+        "match_count": 0,
+        "visible_button_text": null
+      }
+    },
+    "selector_registry_version": 1
+  },
+  "selector_registry_version": 1,
+  "warnings": [],
+  "inspection_started_at": "2026-08-06T22:13:00.310Z",
+  "inspection_completed_at": "2026-08-06T22:13:19.905Z",
+  "mutation_attempted": false,
+  "submit_attempted": false,
+  "artifact_path": "C:\\dev\\jobright-application-agent\\artifacts\\inspection\\jobright-inspect-6a74f23b37da8525e8cdb8ff-2026-08-06T22-13-19-906Z.json",
+  "error": null
+}

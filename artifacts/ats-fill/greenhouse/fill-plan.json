@@ -1,0 +1,213 @@
+{
+  "mode": "plan_only",
+  "ats": "greenhouse",
+  "url": "https://boards.greenhouse.io/acme/jobs/12345",
+  "plan": {
+    "answers": {
+      "legal_name.first": "Shubham",
+      "legal_name.last": "Kale",
+      "email": "s***@jh.edu",
+      "phone": "***-***-7636",
+      "school": "Johns Hopkins University",
+      "graduation_year": "2029",
+      "requires_sponsorship": "[REDACTED_SPONSORSHIP]"
+    },
+    "entries": [
+      {
+        "field_id": "first_name",
+        "label": "First name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "fill",
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "last_name",
+        "label": "Last name",
+        "type": "text",
+        "canonical_field": "legal_name.last",
+        "action": "fill",
+        "value": "Kale",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "fill",
+        "value": "s***@jh.edu",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "fill",
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "school",
+        "label": "School / University",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "fill",
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "grad_year",
+        "label": "Expected graduation year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "fill",
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "sponsorship",
+        "label": "Will you now or in the future require sponsorship?",
+        "type": "select",
+        "canonical_field": "requires_sponsorship",
+        "action": "fill",
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "resume",
+        "label": "Resume",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "cover",
+        "label": "Cover letter",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      }
+    ],
+    "fillable_count": 7,
+    "skipped_count": 2,
+    "review_required_count": 0
+  },
+  "approved_plan": {
+    "entries": [
+      {
+        "field_id": "first_name",
+        "label": "First name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "FILL",
+        "approved": true,
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "last_name",
+        "label": "Last name",
+        "type": "text",
+        "canonical_field": "legal_name.last",
+        "action": "FILL",
+        "approved": true,
+        "value": "Kale",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "FILL",
+        "approved": true,
+        "value": "s***@jh.edu",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "FILL",
+        "approved": true,
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "school",
+        "label": "School / University",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "FILL",
+        "approved": true,
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "grad_year",
+        "label": "Expected graduation year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "sponsorship",
+        "label": "Will you now or in the future require sponsorship?",
+        "type": "select",
+        "canonical_field": "requires_sponsorship",
+        "action": "FILL",
+        "approved": true,
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "resume",
+        "label": "Resume",
+        "type": "file",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "cover",
+        "label": "Cover letter",
+        "type": "file",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      }
+    ],
+    "answers": {
+      "legal_name.first": "Shubham",
+      "legal_name.last": "Kale",
+      "email": "s***@jh.edu",
+      "phone": "***-***-7636",
+      "school": "Johns Hopkins University",
+      "graduation_year": "2029",
+      "requires_sponsorship": "[REDACTED_SPONSORSHIP]"
+    },
+    "fillable_count": 7,
+    "skipped_count": 2,
+    "review_required_count": 0
+  },
+  "submit_attempted": false,
+  "notes": [
+    "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
+  ],
+  "written_at": "2026-08-07T23:38:09.773Z"
+}

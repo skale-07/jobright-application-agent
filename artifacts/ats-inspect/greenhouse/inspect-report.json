@@ -1,0 +1,205 @@
+{
+  "fixture": "greenhouse",
+  "inspected_at": "2026-08-08T00:04:18.233Z",
+  "inspection": {
+    "ats": "greenhouse",
+    "adapter_version": 1,
+    "url": "https://boards.greenhouse.io/acme/jobs/12345",
+    "title": "Software Engineering Intern — Acme",
+    "requires_login": false,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "first_name",
+        "label": "First name",
+        "type": "text",
+        "required": true,
+        "name": "job_application[first_name]",
+        "inputId": "first_name"
+      },
+      {
+        "id": "last_name",
+        "label": "Last name",
+        "type": "text",
+        "required": true,
+        "name": "job_application[last_name]",
+        "inputId": "last_name"
+      },
+      {
+        "id": "email",
+        "label": "Email",
+        "type": "text",
+        "required": true,
+        "name": "job_application[email]",
+        "inputId": "email"
+      },
+      {
+        "id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "required": false,
+        "name": "job_application[phone]",
+        "inputId": "phone"
+      },
+      {
+        "id": "school",
+        "label": "School / University",
+        "type": "text",
+        "required": false,
+        "name": "job_application[answers][school]",
+        "inputId": "school"
+      },
+      {
+        "id": "grad_year",
+        "label": "Expected graduation year",
+        "type": "text",
+        "required": false,
+        "name": "job_application[answers][grad]",
+        "inputId": "grad_year"
+      },
+      {
+        "id": "sponsorship",
+        "label": "Will you now or in the future require sponsorship?",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Please select",
+          "Yes",
+          "No"
+        ],
+        "name": "job_application[answers][sponsor]",
+        "inputId": "sponsorship"
+      },
+      {
+        "id": "resume",
+        "label": "Resume",
+        "type": "file",
+        "required": false,
+        "name": "job_application[resume]",
+        "inputId": "resume"
+      },
+      {
+        "id": "cover",
+        "label": "Cover letter",
+        "type": "file",
+        "required": false,
+        "name": "job_application[cover_letter]",
+        "inputId": "cover"
+      }
+    ],
+    "warnings": []
+  },
+  "detection_confidence": 1,
+  "detection_evidence": [
+    "greenhouse URL host",
+    "greenhouse form markers",
+    "greenhouse branding text"
+  ],
+  "mapped_fields": [
+    {
+      "id": "first_name",
+      "label": "First name",
+      "type": "text",
+      "required": true,
+      "name": "job_application[first_name]",
+      "inputId": "first_name",
+      "canonical_field": "legal_name.first",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "last_name",
+      "label": "Last name",
+      "type": "text",
+      "required": true,
+      "name": "job_application[last_name]",
+      "inputId": "last_name",
+      "canonical_field": "legal_name.last",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "type": "text",
+      "required": true,
+      "name": "job_application[email]",
+      "inputId": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "phone",
+      "label": "Phone",
+      "type": "text",
+      "required": false,
+      "name": "job_application[phone]",
+      "inputId": "phone",
+      "canonical_field": "phone",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "school",
+      "label": "School / University",
+      "type": "text",
+      "required": false,
+      "name": "job_application[answers][school]",
+      "inputId": "school",
+      "canonical_field": "school",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "grad_year",
+      "label": "Expected graduation year",
+      "type": "text",
+      "required": false,
+      "name": "job_application[answers][grad]",
+      "inputId": "grad_year",
+      "canonical_field": "graduation_year",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "sponsorship",
+      "label": "Will you now or in the future require sponsorship?",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Please select",
+        "Yes",
+        "No"
+      ],
+      "name": "job_application[answers][sponsor]",
+      "inputId": "sponsorship",
+      "canonical_field": "requires_sponsorship",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "resume",
+      "label": "Resume",
+      "type": "file",
+      "required": false,
+      "name": "job_application[resume]",
+      "inputId": "resume",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "cover",
+      "label": "Cover letter",
+      "type": "file",
+      "required": false,
+      "name": "job_application[cover_letter]",
+      "inputId": "cover",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "essays": [],
+  "demographics_fields": [],
+  "unmapped_required": [],
+  "route": "ready_for_fill_later",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "Mapped enough for a future fill phase — FORM_FILL stays off in Phase 4"
+  ]
+}

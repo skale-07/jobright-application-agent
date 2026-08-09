@@ -1,0 +1,126 @@
+{
+  "fixture": "essay",
+  "inspected_at": "2026-07-19T00:02:06.364Z",
+  "inspection": {
+    "ats": "greenhouse",
+    "adapter_version": 1,
+    "url": "https://boards.greenhouse.io/acme/jobs/essay-1",
+    "title": "Why Acme — Essay form",
+    "requires_login": false,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "first_name",
+        "label": "First name",
+        "type": "text",
+        "required": true,
+        "name": "job_application[first_name]",
+        "inputId": "first_name"
+      },
+      {
+        "id": "why",
+        "label": "Why do you want to work at Acme?",
+        "type": "textarea",
+        "required": true,
+        "name": "job_application[answers][why]",
+        "inputId": "why",
+        "maxLength": 2000,
+        "minLength": 200
+      },
+      {
+        "id": "extra",
+        "label": "Tell us about a project you are proud of",
+        "type": "textarea",
+        "required": false,
+        "name": "job_application[answers][project]",
+        "inputId": "extra"
+      }
+    ],
+    "warnings": []
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "greenhouse URL host",
+    "greenhouse form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "first_name",
+      "label": "First name",
+      "type": "text",
+      "required": true,
+      "name": "job_application[first_name]",
+      "inputId": "first_name",
+      "canonical_field": "legal_name.first",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "why",
+      "label": "Why do you want to work at Acme?",
+      "type": "textarea",
+      "required": true,
+      "name": "job_application[answers][why]",
+      "inputId": "why",
+      "maxLength": 2000,
+      "minLength": 200,
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "extra",
+      "label": "Tell us about a project you are proud of",
+      "type": "textarea",
+      "required": false,
+      "name": "job_application[answers][project]",
+      "inputId": "extra",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "essays": [
+    {
+      "field_id": "why",
+      "label": "Why do you want to work at Acme?",
+      "is_essay": true,
+      "reasons": [
+        "textarea",
+        "maxLength>=500 (2000)",
+        "minLength>=100 (200)",
+        "essay-like label"
+      ],
+      "estimated_min_words": 40
+    },
+    {
+      "field_id": "extra",
+      "label": "Tell us about a project you are proud of",
+      "is_essay": true,
+      "reasons": [
+        "textarea",
+        "essay-like label"
+      ],
+      "estimated_min_words": 50
+    }
+  ],
+  "demographics_fields": [],
+  "unmapped_required": [
+    {
+      "id": "why",
+      "label": "Why do you want to work at Acme?",
+      "type": "textarea",
+      "required": true,
+      "name": "job_application[answers][why]",
+      "inputId": "why",
+      "maxLength": 2000,
+      "minLength": 200,
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "route": "needs_essay",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "2 essay field(s) flagged"
+  ]
+}

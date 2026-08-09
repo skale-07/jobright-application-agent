@@ -1,0 +1,243 @@
+{
+  "fixture": "ashby",
+  "inspected_at": "2026-08-08T00:04:18.718Z",
+  "inspection": {
+    "ats": "ashby",
+    "adapter_version": 1,
+    "url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+    "title": "Acme — Software Engineer — Application",
+    "requires_login": false,
+    "captcha_detected": false,
+    "account_creation_detected": false,
+    "fields": [
+      {
+        "id": "_systemfield_name",
+        "label": "Full name",
+        "type": "text",
+        "required": true,
+        "name": "_systemfield_name",
+        "inputId": "_systemfield_name"
+      },
+      {
+        "id": "_systemfield_email",
+        "label": "Email",
+        "type": "text",
+        "required": true,
+        "name": "_systemfield_email",
+        "inputId": "_systemfield_email"
+      },
+      {
+        "id": "_systemfield_phone",
+        "label": "Phone",
+        "type": "text",
+        "required": false,
+        "name": "_systemfield_phone",
+        "inputId": "_systemfield_phone"
+      },
+      {
+        "id": "_systemfield_resume",
+        "label": "Resume",
+        "type": "file",
+        "required": true,
+        "name": "_systemfield_resume",
+        "inputId": "_systemfield_resume"
+      },
+      {
+        "id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "required": false,
+        "name": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+        "inputId": "aaaa1111-bbbb-cccc-dddd-eeee00001111"
+      },
+      {
+        "id": "dddd4444-eeee-ffff-0000-111122223333",
+        "label": "Country",
+        "type": "text",
+        "required": false,
+        "name": "dddd4444-eeee-ffff-0000-111122223333",
+        "inputId": "dddd4444-eeee-ffff-0000-111122223333"
+      },
+      {
+        "id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+        "label": "Why do you want to work at Acme?",
+        "type": "textarea",
+        "required": false,
+        "name": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+        "inputId": "bbbb2222-cccc-dddd-eeee-ffff00002222"
+      },
+      {
+        "id": "c0ffee00-1111-2222-3333-444455556666",
+        "label": "Are you legally authorized to work in the United States?",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "name": "c0ffee00-1111-2222-3333-444455556666"
+      },
+      {
+        "id": "eeee5555-6666-7777-8888-99990000aaaa",
+        "label": "Gender identity (voluntary self-identification)",
+        "type": "radio",
+        "required": false,
+        "options": [
+          "Man",
+          "Woman",
+          "Decline to self-identify"
+        ],
+        "name": "eeee5555-6666-7777-8888-99990000aaaa"
+      }
+    ],
+    "warnings": []
+  },
+  "detection_confidence": 0.8999999999999999,
+  "detection_evidence": [
+    "ashby URL host",
+    "ashby form markers"
+  ],
+  "mapped_fields": [
+    {
+      "id": "_systemfield_name",
+      "label": "Full name",
+      "type": "text",
+      "required": true,
+      "name": "_systemfield_name",
+      "inputId": "_systemfield_name",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "_systemfield_email",
+      "label": "Email",
+      "type": "text",
+      "required": true,
+      "name": "_systemfield_email",
+      "inputId": "_systemfield_email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "_systemfield_phone",
+      "label": "Phone",
+      "type": "text",
+      "required": false,
+      "name": "_systemfield_phone",
+      "inputId": "_systemfield_phone",
+      "canonical_field": "phone",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "_systemfield_resume",
+      "label": "Resume",
+      "type": "file",
+      "required": true,
+      "name": "_systemfield_resume",
+      "inputId": "_systemfield_resume",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+      "label": "How did you hear about us?",
+      "type": "text",
+      "required": false,
+      "name": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+      "inputId": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+      "canonical_field": "how_heard",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "dddd4444-eeee-ffff-0000-111122223333",
+      "label": "Country",
+      "type": "text",
+      "required": false,
+      "name": "dddd4444-eeee-ffff-0000-111122223333",
+      "inputId": "dddd4444-eeee-ffff-0000-111122223333",
+      "canonical_field": "address.country",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+      "label": "Why do you want to work at Acme?",
+      "type": "textarea",
+      "required": false,
+      "name": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+      "inputId": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "c0ffee00-1111-2222-3333-444455556666",
+      "label": "Are you legally authorized to work in the United States?",
+      "type": "radio",
+      "required": true,
+      "options": [
+        "Yes",
+        "No"
+      ],
+      "name": "c0ffee00-1111-2222-3333-444455556666",
+      "canonical_field": "work_authorization",
+      "mapping_confidence": "medium"
+    },
+    {
+      "id": "eeee5555-6666-7777-8888-99990000aaaa",
+      "label": "Gender identity (voluntary self-identification)",
+      "type": "radio",
+      "required": false,
+      "options": [
+        "Man",
+        "Woman",
+        "Decline to self-identify"
+      ],
+      "name": "eeee5555-6666-7777-8888-99990000aaaa",
+      "canonical_field": "gender_identity",
+      "mapping_confidence": "medium"
+    }
+  ],
+  "essays": [
+    {
+      "field_id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+      "label": "Why do you want to work at Acme?",
+      "is_essay": true,
+      "reasons": [
+        "textarea",
+        "essay-like label"
+      ],
+      "estimated_min_words": 50
+    }
+  ],
+  "demographics_fields": [
+    {
+      "id": "eeee5555-6666-7777-8888-99990000aaaa",
+      "label": "Gender identity (voluntary self-identification)",
+      "type": "radio",
+      "required": false,
+      "options": [
+        "Man",
+        "Woman",
+        "Decline to self-identify"
+      ],
+      "name": "eeee5555-6666-7777-8888-99990000aaaa"
+    }
+  ],
+  "unmapped_required": [
+    {
+      "id": "_systemfield_name",
+      "label": "Full name",
+      "type": "text",
+      "required": true,
+      "name": "_systemfield_name",
+      "inputId": "_systemfield_name",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
+  "route": "needs_review_unmapped",
+  "form_fill_enabled": false,
+  "inspection_only": true,
+  "notes": [
+    "1 required field(s) unmapped to answer aliases"
+  ]
+}

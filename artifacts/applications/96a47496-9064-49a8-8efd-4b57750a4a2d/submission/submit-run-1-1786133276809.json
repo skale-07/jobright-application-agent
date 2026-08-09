@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "96a47496-9064-49a8-8efd-4b57750a4a2d",
+  "submission_id": "018d782a-42f6-415c-b1e8-8f8f37fe48dd",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "submit control disabled",
+  "artifact_path": null
+}

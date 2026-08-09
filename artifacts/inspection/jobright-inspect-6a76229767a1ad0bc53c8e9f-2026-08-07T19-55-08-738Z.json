@@ -1,0 +1,26 @@
+{
+  "validation_level": "UNVERIFIED",
+  "requested_jobright_job_id": "6a76229767a1ad0bc53c8e9f",
+  "application_id": null,
+  "stored_job": {
+    "job_db_id": "",
+    "jobright_job_id": "6a76229767a1ad0bc53c8e9f",
+    "job_url": "",
+    "job_path": null,
+    "company": null,
+    "role": null,
+    "application_state": null
+  },
+  "final_url": null,
+  "identity_verification": null,
+  "authentication_status": "NOT_STARTED",
+  "control_visibility": null,
+  "selector_registry_version": 1,
+  "warnings": [],
+  "inspection_started_at": "2026-08-07T19:55:08.699Z",
+  "inspection_completed_at": "2026-08-07T19:55:08.738Z",
+  "mutation_attempted": false,
+  "submit_attempted": false,
+  "artifact_path": "C:\\dev\\jobright-application-agent\\artifacts\\inspection\\jobright-inspect-6a76229767a1ad0bc53c8e9f-2026-08-07T19-55-08-738Z.json",
+  "error": "Stored JobRight job not found: 6a76229767a1ad0bc53c8e9f\nRun discovery first or verify the job ID."
+}
