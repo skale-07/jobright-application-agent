@@ -3,6 +3,7 @@ import type { SubmissionAttempt, SubmissionReceipt } from "../adapter.js";
 import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { leverSelectorsV1 } from "./selectors.js";
+import { resolveSubmitControl } from "../shared/submitControl.js";
 
 import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
 
@@ -65,19 +66,30 @@ export function extractApplicationIdentifier(html: string): string | null {
 }
 
 /**
- * Click the Lever submit control. assertSubmitAllowed runs here as the last
- * line of defense even though callers gate earlier. NOT WIRED: nothing in
- * the pipeline invokes this until the wiring milestone.
+ * Click the Lever submit control, resolved through the shared ranked
+ * cascade (accessible name → data-qa/CSS, form-scoped, wizard names
+ * excluded); a miss carries the CTA inventory in the notes. Lever's
+ * data-qa hook usually wins immediately — the cascade is parity with
+ * Ashby, where the naïve selector actually failed live.
+ * assertSubmitAllowed runs here as the last line of defense.
  */
 export async function leverSubmit(page: Page): Promise<SubmissionAttempt> {
   assertSubmitAllowed("lever.submit");
-  const notes: string[] = [];
-  const control = page.locator(leverSelectorsV1.submit).first();
-  if ((await control.count()) === 0) {
-    return { clicked: false, notes: ["submit control not found"] };
+  const resolution = await resolveSubmitControl(page, leverSelectorsV1.submitCascade);
+  if (!resolution.found) {
+    return {
+      clicked: false,
+      notes: [
+        "submit control not found",
+        ...resolution.notes,
+        `cta inventory: ${JSON.stringify(resolution.inventory)}`,
+      ],
+    };
   }
+  const notes: string[] = [...resolution.notes];
+  const control = resolution.control;
   if (await control.isDisabled().catch(() => false)) {
-    return { clicked: false, notes: ["submit control disabled"] };
+    return { clicked: false, notes: [...notes, "submit control disabled"] };
   }
   await control.click();
   notes.push("submit control clicked");

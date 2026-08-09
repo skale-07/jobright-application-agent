@@ -332,6 +332,17 @@ export async function runNavigation(
 
     // Phase C — agent (guarded by AGENT_FALLBACK_ENABLED + reachable CDP).
     if (!agentPhasePossible) {
+      // Say WHY in the trace: an L3 session report full of bare
+      // "budget" walls hides that these apps only needed the agent phase,
+      // which an unattended headless child can never run (no operator CDP).
+      report.phase_trace.push({
+        phase: "C_agent",
+        outcome:
+          "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)",
+      });
+      report.notes.push(
+        "unresolved by deterministic phases; agent phase unavailable in this session",
+      );
       report.wall = "budget";
       return persist(report);
     }
@@ -583,8 +594,8 @@ export async function runNavigation(
         method: r.method,
         wall: r.wall,
         resolved_ats: r.resolved_ats,
-        employer_url: r.employer_application_url ?? r.resolved_url ?? null,
-        notes: r.notes?.slice?.(0, 12) ?? r.notes,
+        employer_url: r.resolved_url ?? null,
+        notes: r.notes.slice(0, 12),
         phase_trace: r.phase_trace,
         report_path: r.report_path ?? null,
         headless: input.headless ?? true,

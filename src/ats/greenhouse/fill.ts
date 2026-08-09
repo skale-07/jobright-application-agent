@@ -85,17 +85,15 @@ async function setSelectByValueOrLabel(
     await locator.selectOption({ label: partial });
     return;
   }
-  // "I am not a protected veteran" → "I am not a veteran"
-  const tokens = text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 2 && !/^(the|and|not|are|you)$/.test(t));
-  const byTokens = options.find((o) => {
-    const ol = o.toLowerCase();
-    return tokens.filter((t) => ol.includes(t)).length >= Math.min(2, tokens.length);
-  });
-  if (byTokens) {
-    await locator.selectOption({ label: byTokens });
+  // Last resort: the guarded option matcher shared with comboboxes —
+  // exact / synonym / unique-substring, with polarity-aware veteran
+  // handling ("I am not a protected veteran" ↔ "I am not a veteran").
+  // A loose token overlap is NOT safe here: dropping negation words can
+  // flip a self-ID answer to its opposite, so anything the guarded
+  // matcher cannot uniquely resolve fails closed to a fill error.
+  const pick = pickOptionLabel(options, text);
+  if (pick.ok) {
+    await locator.selectOption({ label: pick.label });
     return;
   }
   throw new Error(
@@ -347,7 +345,11 @@ function countryDialCompatible(expected: string, observed: string): boolean {
   return false;
 }
 
-function valuesMatch(expected: unknown, observed: unknown): boolean {
+function valuesMatch(
+  expected: unknown,
+  observed: unknown,
+  canonical?: string | null,
+): boolean {
   if (expected === observed) return true;
   const eRaw = String(expected ?? "").trim();
   const oRaw = String(observed ?? "").trim();
@@ -383,8 +385,16 @@ function valuesMatch(expected: unknown, observed: unknown): boolean {
   }
   // ITI phone formatting vs profile digits.
   if (phonesMatch(eRaw, oRaw)) return true;
-  // Places commit "Baltimore, MD, USA" vs plan "Baltimore" / "Baltimore, Maryland, USA"
-  if (locationsMatch(eRaw, oRaw) || locationsMatch(oRaw, eRaw)) return true;
+  // Places commit "Baltimore, MD, USA" vs plan "Baltimore" / "Baltimore,
+  // Maryland, USA". ONLY for location fields — the city-token containment
+  // inside locationsMatch is far too loose for arbitrary values and would
+  // quietly weaken the pre-click verify gate everywhere else.
+  if (
+    canonical === "address.city" &&
+    (locationsMatch(eRaw, oRaw) || locationsMatch(oRaw, eRaw))
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -683,9 +693,10 @@ export async function greenhouseVerifyFromPlan(
       ) {
         const o = observed as { value: unknown; label: unknown };
         match =
-          valuesMatch(expected, o.value) || valuesMatch(expected, o.label);
+          valuesMatch(expected, o.value, canonical) ||
+          valuesMatch(expected, o.label, canonical);
       } else {
-        match = valuesMatch(expected, observed);
+        match = valuesMatch(expected, observed, canonical);
       }
       fields.push({
         canonical_field: canonical,

@@ -744,6 +744,15 @@ apps sit at `READY_TO_SUBMIT` (budget spent) or in review (walls). Review
 items are the worklist; Outlook Drafts is the outreach review surface —
 nothing has been sent.
 
+**Where the evidence lives.** "What did automation just do?" →
+`artifacts/console/runs/<newest>/logs.jsonl` (the worker and pipeline log
+every step, stop, and error there). "Did this app actually submit?" →
+`artifacts/applications/<uuid>/submission/` (report + screenshot) plus the
+SQLite state — never the console terminal alone. A submit that failed to
+find its control now writes a CTA inventory into the submission report
+notes, and a failed resume upload writes a file-input inventory into the
+fill/submit evidence — a failure without its inventory is a bug.
+
 **Escape hatch:** the CLI one-shot submit
 (`npm run submit -- --application <id>` with `--yes` for unattended) is
 unchanged and still available; the console one-shot submit keeps its

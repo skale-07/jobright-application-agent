@@ -223,6 +223,30 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     });
   });
 
+  it("veteran: simplified board copy without 'protected' never flips polarity", () => {
+    // Some boards drop "protected" from the negative option. The full profile
+    // phrase must land on the negative row — never the "I identify as" row,
+    // even though that row also contains the token "veteran" and sits first.
+    const simplified = [
+      "I identify as one or more of the classifications of a protected veteran",
+      "I am not a veteran",
+      "I do not want to answer",
+    ];
+    expect(
+      pickOptionLabel(simplified, "I am not a protected veteran"),
+    ).toMatchObject({ ok: true, label: "I am not a veteran" });
+    // And the reverse phrasing still lands on the standard board copy.
+    const standard = [
+      "I identify as one or more of the classifications of a protected veteran",
+      "I am not a protected veteran",
+      "I do not want to answer",
+    ];
+    expect(pickOptionLabel(standard, "I am not a veteran")).toMatchObject({
+      ok: true,
+      label: "I am not a protected veteran",
+    });
+  });
+
   it("ambiguous and missing both refuse with evidence", () => {
     const ambiguous = pickOptionLabel(options, "United");
     expect(ambiguous.ok).toBe(false);
