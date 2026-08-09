@@ -1,0 +1,43 @@
+{
+  "run_id": "nav-f894d5db-55c1-476d-8ad1-1544a289539a",
+  "application_id": "6d481f2f-68d0-48c6-a6c5-a551c49ddf4a",
+  "jobright_job_id": "6a559cbc78d1443bd1e810b7",
+  "method": "agent",
+  "resolved_url": "https://jobs.ashbyhq.com/cohere/36d1f52f-8270-4652-adf5-5303a0ff341b/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 1,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found",
+    "agent[1]: elapsed 26s, steps 1"
+  ],
+  "written_at": "2026-08-09T02:36:37.191Z"
+}

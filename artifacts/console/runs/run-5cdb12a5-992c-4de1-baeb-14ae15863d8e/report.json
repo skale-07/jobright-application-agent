@@ -1,0 +1,31 @@
+{
+  "arm_run_id": "146a207e-06af-4739-aeaf-b3ccbbd0ef61",
+  "apps_started": 2,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 2,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected"
+  ],
+  "per_app": [
+    {
+      "application_id": "6d481f2f-68d0-48c6-a6c5-a551c49ddf4a",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "gate",
+      "stop_reason": "submission not verified: FAILED_BEFORE_CLICK — Refusing to click submit: 1 required question(s) unanswered — What makes you a good fit for Cohere? (if you've ever built something with Cohere, be sure to tell us and link it here!) [textarea]",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "766c107d-e55b-4e14-95b1-e077c48b17c0",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "employer URL missing at fill stage — parked for review",
+      "submitted": false,
+      "outreach": null
+    }
+  ]
+}
