@@ -11,6 +11,7 @@ import { getApplication } from "../queue/stateMachine.js";
 import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { listContacts } from "../contacts/repository.js";
 import { rankOutreachContacts } from "../contacts/rank.js";
+import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
 import {
@@ -72,6 +73,8 @@ export type AutomationSessionReport = {
   discover_runs: number;
   emails_generated: number;
   drafts_saved: number;
+  /** Essay suggestion drafts generated into review items (UNVERIFIED). */
+  essay_drafts_generated: number;
   notes: string[];
   per_app: AutomationAppResult[];
 };
@@ -113,6 +116,8 @@ export type AutomationSessionInput = {
   discoveryRunner?: DiscoveryRunner;
   /** Test seams for the post-submit outreach tail (drafts only, never send). */
   emailClient?: EmailLlmClient;
+  /** Test seam for the post-session essay draft batch. */
+  essayDraftClient?: EmailLlmClient;
   draftRunner?: DraftRunner;
   draftVerifier?: DraftVerifier;
   /** Progress sink (the runner turns this into SSE frames). */
@@ -335,6 +340,7 @@ export async function runAutomationSession(
     discover_runs: 0,
     emails_generated: 0,
     drafts_saved: 0,
+    essay_drafts_generated: 0,
     notes: [],
     per_app: [],
   };
@@ -669,6 +675,20 @@ export async function runAutomationSession(
     });
   }
 
+  // Post-session essay draft batch: the deterministic ladder parked these
+  // questions (essays are the one field class it can never answer), so the
+  // AI drafts suggestions into their review items automatically — the
+  // operator's remaining act is edit/approve, not compose. Fail-open.
+  if (seen.size > 0) {
+    const essayBatch = await generateEssayDraftBatch({
+      db,
+      applicationIds: [...seen],
+      ...(input.essayDraftClient ? { client: input.essayDraftClient } : {}),
+    });
+    report.essay_drafts_generated = essayBatch.drafts_generated;
+    for (const n of essayBatch.notes) report.notes.push(n);
+  }
+
   emit();
   logger.info("automation session finished", {
     service: "automation",
@@ -681,6 +701,7 @@ export async function runAutomationSession(
       discover_runs: report.discover_runs,
       emails_generated: report.emails_generated,
       drafts_saved: report.drafts_saved,
+      essay_drafts_generated: report.essay_drafts_generated,
       notes: report.notes,
       per_app: report.per_app.map((a) => ({
         application_id: a.application_id,

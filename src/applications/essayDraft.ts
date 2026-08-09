@@ -235,3 +235,71 @@ export async function generateEssayDrafts(input: {
   });
   return report;
 }
+
+export type EssayDraftBatchReport = {
+  applications_considered: number;
+  drafts_generated: number;
+  notes: string[];
+};
+
+/**
+ * Autonomous entry point: draft every open essay question across a set of
+ * applications (the armed worker calls this after the session loop, like
+ * the outreach batch). Fail-open per app — drafting problems become notes,
+ * never session failures. Flag-off is a single named note, not an error:
+ * autonomy degrades loudly, it doesn't crash.
+ */
+export async function generateEssayDraftBatch(input: {
+  db: Db;
+  applicationIds: string[];
+  client?: EmailLlmClient;
+}): Promise<EssayDraftBatchReport> {
+  const cfg = getConfig();
+  const report: EssayDraftBatchReport = {
+    applications_considered: 0,
+    drafts_generated: 0,
+    notes: [],
+  };
+  if (!cfg.essayDraftEnabled) {
+    report.notes.push("essay drafts skipped: ESSAY_DRAFT_ENABLED off");
+    return report;
+  }
+  if (!input.client && !cfg.openaiApiKey) {
+    report.notes.push("essay drafts skipped: OPENAI_API_KEY missing");
+    return report;
+  }
+  if (!tryLoadAboutMe()) {
+    report.notes.push(
+      "essay drafts skipped: private/candidate/about-me.md missing or too short",
+    );
+    return report;
+  }
+  for (const applicationId of input.applicationIds) {
+    try {
+      const r = await generateEssayDrafts({
+        db: input.db,
+        applicationId,
+        ...(input.client ? { client: input.client } : {}),
+      });
+      if (r.drafts.length === 0) continue;
+      report.applications_considered += 1;
+      const drafted = r.drafts.filter((d) => d.status === "drafted").length;
+      report.drafts_generated += drafted;
+      if (drafted > 0) {
+        report.notes.push(
+          `essay drafts ${applicationId}: ${drafted}/${r.drafts.length} drafted (UNVERIFIED, in review)`,
+        );
+      }
+      for (const d of r.drafts.filter((x) => x.status !== "drafted")) {
+        report.notes.push(
+          `essay draft ${applicationId} "${d.question.slice(0, 50)}": ${d.status} ${d.notes.join("; ").slice(0, 100)}`,
+        );
+      }
+    } catch (err) {
+      report.notes.push(
+        `essay drafts ${applicationId} failed: ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`,
+      );
+    }
+  }
+  return report;
+}

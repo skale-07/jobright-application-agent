@@ -13,6 +13,7 @@ import { upsertJobByFingerprint } from "../../src/jobs/repository.js";
 import { createApplication } from "../../src/queue/stateMachine.js";
 import { upsertOpenReviewItem } from "../../src/queue/reviewItems.js";
 import {
+  generateEssayDraftBatch,
   generateEssayDrafts,
   validateDraft,
 } from "../../src/applications/essayDraft.js";
@@ -178,5 +179,102 @@ describe("essay draft assistant (UNIT_CONFIRMED)", () => {
       (db.prepare(`SELECT payload_json FROM review_items WHERE id = ?`).get(itemId) as { payload_json: string }).payload_json,
     ) as Record<string, unknown>;
     expect(payload["essay_drafts"]).toBeUndefined();
+  });
+});
+
+describe("essay draft batch — the autonomous entry point (UNIT_CONFIRMED)", () => {
+  // Reuses the surrounding suite's env isolation via its own hooks.
+  let dbPath: string;
+  let db: Db;
+  let privDir: string;
+  let artDir: string;
+  const savedEnv: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const k of ["DATABASE_PATH", "PRIVATE_DIR", "ARTIFACTS_DIR", "ESSAY_DRAFT_ENABLED"]) {
+      savedEnv[k] = process.env[k];
+    }
+    resetConfigCache();
+    dbPath = path.join(os.tmpdir(), `jaa-essayb-${randomUUID()}.sqlite`);
+    privDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-essayb-priv-"));
+    artDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-essayb-art-"));
+    fs.mkdirSync(path.join(privDir, "candidate"), { recursive: true });
+    process.env.DATABASE_PATH = dbPath;
+    process.env.PRIVATE_DIR = privDir;
+    process.env.ARTIFACTS_DIR = artDir;
+    db = openDatabase(dbPath);
+    migrate(db);
+  });
+
+  afterEach(() => {
+    closeDatabase(db);
+    for (const [k, v] of Object.entries(savedEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+    for (const p of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    fs.rmSync(privDir, { recursive: true, force: true });
+    fs.rmSync(artDir, { recursive: true, force: true });
+    resetConfigCache();
+  });
+
+  const seedApp = (withEssay: boolean): string => {
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobs.ashbyhq.com/acme/${Math.floor(Math.random() * 1e6)}`,
+      company: "Acme",
+      role: "ML Intern",
+    });
+    const appId = createApplication(db, { jobId: job.id }).id;
+    if (withEssay) {
+      upsertOpenReviewItem(db, {
+        applicationId: appId,
+        kind: "ESSAY",
+        title: "Essay answers required",
+        payload: {
+          essays: [{ field_id: "fit", label: "Why us?", is_essay: true }],
+        },
+      });
+    }
+    return appId;
+  };
+
+  it("flag off degrades to a single named note — never a session failure", async () => {
+    delete process.env.ESSAY_DRAFT_ENABLED;
+    resetConfigCache();
+    const r = await generateEssayDraftBatch({
+      db,
+      applicationIds: [seedApp(true)],
+      client: { generateJson: async () => ({ text: "{}", model: "stub" }) },
+    });
+    expect(r.drafts_generated).toBe(0);
+    expect(r.notes[0]).toMatch(/ESSAY_DRAFT_ENABLED off/);
+  });
+
+  it("drafts across the batch; apps without essay questions cost nothing", async () => {
+    process.env.ESSAY_DRAFT_ENABLED = "true";
+    resetConfigCache();
+    fs.writeFileSync(
+      path.join(privDir, "candidate", "about-me.md"),
+      "# About me\nJohns Hopkins undergrad; built an anomaly-detection FastAPI service, an iOS sleep-estimation app shipped to a live pilot, and a PyTorch landmark model used by 300+ users.",
+    );
+    const withEssay = seedApp(true);
+    const without = seedApp(false);
+    let calls = 0;
+    const r = await generateEssayDraftBatch({
+      db,
+      applicationIds: [withEssay, without],
+      client: {
+        generateJson: async () => {
+          calls++;
+          return { text: JSON.stringify({ draft: GOOD_DRAFT }), model: "stub" };
+        },
+      },
+    });
+    expect(r.drafts_generated).toBe(1);
+    expect(calls).toBe(1); // only the app with an essay question hit the model
+    expect(r.notes.join(" ")).toMatch(/1\/1 drafted/);
   });
 });
