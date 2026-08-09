@@ -1,6 +1,6 @@
 {
   "fixture": "demographics",
-  "inspected_at": "2026-08-08T00:04:18.565Z",
+  "inspected_at": "2026-08-09T02:31:00.661Z",
   "inspection": {
     "ats": "greenhouse",
     "adapter_version": 1,
@@ -84,8 +84,8 @@
         "gender",
         "gender"
       ],
-      "canonical_field": "gender",
-      "mapping_confidence": "high"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     },
     {
       "id": "race",
@@ -98,7 +98,7 @@
       ],
       "name": "race",
       "inputId": "race",
-      "canonical_field": "address.city",
+      "canonical_field": "race_ethnicity",
       "mapping_confidence": "medium"
     },
     {
@@ -112,8 +112,8 @@
       ],
       "name": "veteran",
       "inputId": "veteran",
-      "canonical_field": "veteran_status",
-      "mapping_confidence": "high"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     }
   ],
   "essays": [],

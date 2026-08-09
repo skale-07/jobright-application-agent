@@ -1,0 +1,27 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "requested_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "mode": "plan_only",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply"
+  },
+  "plan_summary": {
+    "fillable_count": 2,
+    "skipped_count": 12,
+    "review_required_count": 0
+  },
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "LIVE_READ_ONLY_CONFIRMED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
+  ],
+  "written_at": "2026-08-09T02:26:31.217Z"
+}

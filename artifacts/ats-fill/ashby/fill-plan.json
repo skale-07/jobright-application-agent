@@ -1,0 +1,205 @@
+{
+  "mode": "plan_only",
+  "ats": "ashby",
+  "url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+  "plan": {
+    "answers": {
+      "legal_name.first": "Ada",
+      "email": "a***@example.com",
+      "phone": "***-***-0100"
+    },
+    "entries": [
+      {
+        "field_id": "_systemfield_name",
+        "label": "Full name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "fill",
+        "value": "Ada",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "_systemfield_email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "fill",
+        "value": "a***@example.com",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "_systemfield_phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "fill",
+        "value": "***-***-0100",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "_systemfield_resume",
+        "label": "Resume",
+        "type": "file",
+        "canonical_field": null,
+        "action": "skip_file",
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "dddd4444-eeee-ffff-0000-111122223333",
+        "label": "Country",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+        "label": "Why do you want to work at Acme?",
+        "type": "textarea",
+        "canonical_field": null,
+        "action": "skip_essay",
+        "value": null,
+        "reason": "Essays are never auto-filled"
+      },
+      {
+        "field_id": "c0ffee00-1111-2222-3333-444455556666",
+        "label": "Are you legally authorized to work in the United States?",
+        "type": "radio",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "eeee5555-6666-7777-8888-99990000aaaa",
+        "label": "Gender identity (voluntary self-identification)",
+        "type": "radio",
+        "canonical_field": null,
+        "action": "skip_demographics",
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
+      }
+    ],
+    "fillable_count": 3,
+    "skipped_count": 6,
+    "review_required_count": 0
+  },
+  "approved_plan": {
+    "entries": [
+      {
+        "field_id": "_systemfield_name",
+        "label": "Full name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "FILL",
+        "approved": true,
+        "value": "Ada Lovelace",
+        "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+      },
+      {
+        "field_id": "_systemfield_email",
+        "label": "Email",
+        "type": "text",
+        "canonical_field": "email",
+        "action": "FILL",
+        "approved": true,
+        "value": "a***@example.com",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "_systemfield_phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "FILL",
+        "approved": true,
+        "value": "***-***-0100",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "_systemfield_resume",
+        "label": "Resume",
+        "type": "file",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+      },
+      {
+        "field_id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "dddd4444-eeee-ffff-0000-111122223333",
+        "label": "Country",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
+        "label": "Why do you want to work at Acme?",
+        "type": "textarea",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Essays are never auto-filled"
+      },
+      {
+        "field_id": "c0ffee00-1111-2222-3333-444455556666",
+        "label": "Are you legally authorized to work in the United States?",
+        "type": "radio",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "eeee5555-6666-7777-8888-99990000aaaa",
+        "label": "Gender identity (voluntary self-identification)",
+        "type": "radio",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
+      }
+    ],
+    "answers": {
+      "legal_name.first": "Ada",
+      "email": "a***@example.com",
+      "phone": "***-***-0100"
+    },
+    "fillable_count": 3,
+    "skipped_count": 6,
+    "review_required_count": 0
+  },
+  "submit_attempted": false,
+  "notes": [
+    "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
+  ],
+  "written_at": "2026-08-09T02:30:49.085Z"
+}

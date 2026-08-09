@@ -1,0 +1,10 @@
+{
+  "outcome": "REFUSED",
+  "application_id": "197df648-240b-4bfd-96ae-faf92096acf7",
+  "submission_id": "3ec971a3-da55-4b78-b3da-2617b28cb168",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Unattended mode requires an explicit --yes acknowledgment",
+  "artifact_path": null
+}

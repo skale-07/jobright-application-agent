@@ -1,5 +1,10 @@
+// 'race' and 'gender' are guarded against substring hits: bare /race/
+// redacted every phase_TRACE in the navigation artifacts (real evidence
+// destroyed), and /gender/ would eat an 'agenda' key. The guard requires a
+// non-letter (or string edge) on both sides, so race_ethnicity still
+// matches while phase_trace never does.
 const SENSITIVE_KEY_PATTERN =
-  /(password|token|cookie|authorization|storage.?state|ssn|race|ethnicity|gender|sexual|disability|veteran|phone|address|email_body|access_token|requires_sponsorship|sponsorship|work_authorization|api.?key|openai)/i;
+  /(password|token|cookie|authorization|storage.?state|ssn|(?:^|[^a-z])race(?:[^a-z]|$)|ethnicity|(?:^|[^a-z])gender(?:[^a-z]|$)|sexual|disability|veteran|phone|address|email_body|access_token|requires_sponsorship|sponsorship|work_authorization|api.?key|openai)/i;
 
 export function redactValue(key: string, value: unknown): unknown {
   if (SENSITIVE_KEY_PATTERN.test(key)) {

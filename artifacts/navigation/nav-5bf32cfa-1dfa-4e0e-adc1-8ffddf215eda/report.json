@@ -1,0 +1,50 @@
+{
+  "run_id": "nav-5bf32cfa-1dfa-4e0e-adc1-8ffddf215eda",
+  "application_id": "1bb1cd1f-4b4b-407d-90bc-35f66f13f97a",
+  "jobright_job_id": "6afa0d4c2381a04851a11f5f",
+  "method": "agent",
+  "resolved_url": "https://careers.example.com/apply/form",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "captured URL lands on a login wall — not stored",
+      "evidence": "careers.example.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "login wall"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1)",
+      "evidence": "careers.example.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "careers.example.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "popup captured on attempt 1",
+    "vault: existing account for careers.example.com",
+    "agent[1]: cred_available:true",
+    "agent[1]: leaked:[REDACTED_SECRET]"
+  ],
+  "written_at": "2026-08-09T02:26:19.318Z"
+}

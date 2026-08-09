@@ -1,0 +1,41 @@
+{
+  "eligible": true,
+  "checks": [
+    {
+      "name": "internship",
+      "result": true,
+      "evidence": "Matched internship signal in role/type: Software Engineer, AI Platform - Intern"
+    },
+    {
+      "name": "graduation_year",
+      "result": true,
+      "evidence": "No conflicting graduation-year exclusion for May 2029"
+    },
+    {
+      "name": "hard_exclusion:grad_students_only",
+      "result": true,
+      "evidence": "No match"
+    },
+    {
+      "name": "hard_exclusion:seniors_only_explicit",
+      "result": true,
+      "evidence": "No match"
+    },
+    {
+      "name": "hard_exclusion:clearance_required",
+      "result": true,
+      "evidence": "No match"
+    },
+    {
+      "name": "hard_exclusion:years_experience_hard",
+      "result": true,
+      "evidence": "No match"
+    },
+    {
+      "name": "not_already_submitted",
+      "result": true,
+      "evidence": "Not previously submitted"
+    }
+  ],
+  "warnings": []
+}
