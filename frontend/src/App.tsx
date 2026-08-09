@@ -10,6 +10,7 @@ import { EnqueuePage } from "./pages/EnqueuePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { useTheme } from "./hooks/useTheme";
 import { formatCountdown, useArmStatus } from "./hooks/useArmStatus";
+import { DispatchMark } from "./components/DispatchMark";
 import { Link } from "react-router-dom";
 
 const NAV = [
@@ -29,8 +30,11 @@ export function App(): JSX.Element {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <div className="brand">
-          jobright<span>·console</span>
+        <div className="brand" title="Dispatch — every application accounted for">
+          <span className="brand-mark">
+            <DispatchMark size={18} />
+          </span>
+          dispatch<span>·console</span>
         </div>
         <nav>
           {NAV.map((item) => (
@@ -49,6 +53,8 @@ export function App(): JSX.Element {
           theme: {theme}
         </button>
         <div className="foot">
+          every application accounted for
+          <br />
           localhost only · mutations need the boot token
         </div>
       </aside>

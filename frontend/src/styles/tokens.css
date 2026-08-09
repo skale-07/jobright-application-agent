@@ -1,6 +1,11 @@
-/* Design tokens — the entire visual system lives in these variables.
-   Dark is the primary theme (operator tool, log-heavy); light is derived.
-   Manual toggle sets data-theme on <html>; otherwise the OS decides. */
+/* Dispatch design tokens — the entire visual system lives in these
+   variables; DESIGN.md (repo root) documents what each one MEANS and the
+   rules for using it. Dark is the primary theme (operator tool,
+   log-heavy); light is derived. Manual toggle sets data-theme on <html>;
+   otherwise the OS decides. Signal colors are bound to domain meanings
+   (DESIGN.md §2.3): accent=navigation/in-progress, ok=verified facts,
+   warn=needs attention, danger=needs-human/destructive/ARMED,
+   purple=agent/LLM-touched. New tokens go in BOTH palettes. */
 
 :root {
   --font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas,

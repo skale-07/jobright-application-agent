@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 84" width="160" height="84">
+  <!-- Dispatch stacked lockup: mark centered above the wordmark.
+       For square-ish placements (cards, readme badges). DESIGN.md §1.5. -->
+  <style>
+    .track { stroke: #58a6ff; }
+    .station { fill: #0d1117; stroke: #58a6ff; }
+    .delivered { fill: #58a6ff; }
+    .word { fill: #e6edf3; }
+    .segment { fill: #58a6ff; }
+    text {
+      font-family: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    @media (prefers-color-scheme: light) {
+      .track { stroke: #0969da; }
+      .station { fill: #f6f8fa; stroke: #0969da; }
+      .delivered { fill: #0969da; }
+      .word { fill: #1f2328; }
+      .segment { fill: #0969da; }
+    }
+  </style>
+  <g transform="translate(66, 8)">
+    <path class="track" d="M6 22 L22 6" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+    <circle class="station" cx="6" cy="22" r="3" stroke-width="2.4"/>
+    <circle class="station" cx="14" cy="14" r="3" stroke-width="2.4"/>
+    <circle class="delivered" cx="22" cy="6" r="3.7"/>
+  </g>
+  <text x="80" y="66" text-anchor="middle"><tspan class="word">dispatch</tspan><tspan class="segment">·console</tspan></text>
+</svg>

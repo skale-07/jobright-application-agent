@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dispatch — your time back from job apps</title>
+<link rel="icon" type="image/svg+xml" href="../frontend/public/favicon.svg" />
+<link rel="stylesheet" href="dispatch.css" />
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav" aria-label="main">
+    <a class="brand" href="#top">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+      </svg>
+      dispatch<span class="seg">·console</span>
+    </a>
+    <div class="links">
+      <a href="#loop">How it works</a>
+      <a href="#journey">The journey</a>
+      <a href="#stack">The stack</a>
+      <a href="#setup">Setup</a>
+      <a class="pill" href="pricing.html">Pricing</a>
+    </div>
+  </nav>
+</div>
+
+<header class="wrap hero" id="top">
+  <div>
+    <p class="eyebrow">for students buried in job portals</p>
+    <h1>Job apps took your nights.<br /><span class="give">Take them back.</span><span class="caret" aria-hidden="true"></span></h1>
+    <p class="sub">
+      You've typed your name into 400 portals — same twelve fields, every
+      night, after the problem sets. <strong>Dispatch</strong> runs the
+      grind while you sleep, and hands you the receipts in the morning.
+      The mission is simple: <strong>your time back.</strong>
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="pricing.html">Get access</a>
+      <a class="btn ghost" href="#loop">See how it works</a>
+    </div>
+    <p class="truth" id="truth"></p>
+  </div>
+
+  <div class="console" role="img" aria-label="Dispatch session report: one verified submission, one outreach draft, two applications parked for review, three filled and parked">
+    <div class="armed"><span class="bolt">⚡</span> ARMED · <span id="countdown">84:00</span> left · 1/10 submits · 7/25 apps</div>
+    <div class="body">
+      <div class="rpt-head">
+        <span>session a966e305 · stopped: queue_drained</span>
+        <span>7 started · 1 verified</span>
+      </div>
+      <table>
+        <tr>
+          <td><div class="co">Meridian Labs</div><div class="role">SWE Intern · Greenhouse</div></td>
+          <td style="text-align:right"><span class="chip ok glow">submitted ✓</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Northbeam</div><div class="role">Platform Intern · Lever</div></td>
+          <td style="text-align:right"><span class="chip purple">draft ready</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Helio Systems</div><div class="role">Data Intern · Ashby</div></td>
+          <td style="text-align:right"><span class="chip danger">needs-human</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">Foundry Analytics</div><div class="role">Quant Intern · Greenhouse</div></td>
+          <td style="text-align:right"><span class="chip warn">ready</span></td>
+        </tr>
+        <tr>
+          <td><div class="co">+ 3 more</div><div class="role">filled &amp; parked at the submit line</div></td>
+          <td style="text-align:right"><span class="chip warn">ready</span></td>
+        </tr>
+      </table>
+      <div class="foot">evidence → artifacts/applications/&lt;uuid&gt;/submission/ · logs.jsonl</div>
+    </div>
+  </div>
+</header>
+
+<div class="fields-strip" aria-hidden="true">
+  <span class="lane" id="lane">
+    <span class="never">the twelve fields you'll never type again →</span>
+    <s>First name</s><s>Last name</s><s>Email</s><s>Phone</s><s>Location</s><s>LinkedIn URL</s>
+    <s>GitHub URL</s><s>Portfolio</s><s>School</s><s>Graduation year</s><s>Work authorization</s><s>Resume upload</s>
+    <span class="never">the twelve fields you'll never type again →</span>
+    <s>First name</s><s>Last name</s><s>Email</s><s>Phone</s><s>Location</s><s>LinkedIn URL</s>
+    <s>GitHub URL</s><s>Portfolio</s><s>School</s><s>Graduation year</s><s>Work authorization</s><s>Resume upload</s>
+  </span>
+</div>
+
+<section class="wrap" id="loop">
+  <div class="section-head reveal">
+    <h2>The grind is a loop.<br />Now the loop runs without you.</h2>
+    <p>
+      Job portals turned applying into a nightly ritual: the guilt, the
+      forms, the maybe-reward, repeat. Dispatch keeps the loop — watch,
+      arm, report, compound — and moves the ritual onto a machine. You
+      keep the outcomes and the evenings.
+    </p>
+  </div>
+
+  <div class="loop">
+    <div class="stage reveal">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">01 · Watch</p>
+      <h3>The dread used to start the night. Now the feed does.</h3>
+      <p>
+        The old starting gun was guilt — that 11pm feeling that you should
+        be applying. Dispatch watches your feed instead, discovers new
+        postings, and queues them itself.
+        <strong>Opportunity pings you. Obligation doesn't.</strong>
+      </p>
+      <div class="cards">
+        <div class="card">
+          <p class="k">what it replaces</p>
+          <p>Portal #47 wants the <strong>same twelve fields</strong> — retyped, because autofill never works there.</p>
+        </div>
+        <div class="card">
+          <p class="k">what it replaces</p>
+          <p>An <strong>essay wall at 11pm</strong>: "Why do you want to work here?" — 500 words, before the deadline.</p>
+        </div>
+        <div class="card">
+          <p class="k">what it replaces</p>
+          <p>The <strong>silence after submit</strong>. Did it even go through? No receipt, no record, no idea.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">02 · Arm</p>
+      <h3>Your whole job: one click, with hard bounds.</h3>
+      <p>
+        You set a timer and two caps, and press one button. Inside that
+        window the machine discovers, fills, verifies, and submits.
+        Outside it, nothing moves.
+        <strong>Restart the console and it's disarmed. Always.</strong>
+      </p>
+      <div class="arm-mock" role="img" aria-label="Arm card: 120 minute duration, 10 submit cap, 25 application cap">
+        <div class="row">
+          <div class="stat"><div class="l">duration</div><div class="v">120<span>m</span></div></div>
+          <div class="stat"><div class="l">max submits</div><div class="v">10</div></div>
+          <div class="stat"><div class="l">max apps</div><div class="v">25</div></div>
+        </div>
+        <span class="arm-btn">Start L3 session</span>
+      </div>
+    </div>
+
+    <div class="stage reveal">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">03 · Report</p>
+      <h3>Wake up to a report, not a to-do list.</h3>
+      <p>
+        Every session ends differently — that's what makes opening the
+        console interesting instead of dreadful. Verified submissions with
+        receipts. Referral drafts to real people, waiting in
+        <strong>your</strong> mailbox. Walls parked with evidence attached.
+        You read what happened; you don't do it.
+      </p>
+      <div class="rewards">
+        <div class="card">
+          <p class="k">the offer path</p>
+          <p><strong>Verified submissions</strong> — screenshot, receipt, confirmation text. Never "probably went through".</p>
+        </div>
+        <div class="card">
+          <p class="k">the people path</p>
+          <p><strong>Referral drafts</strong> to alumni and engineers at each company — generated, validated, never sent without you.</p>
+        </div>
+        <div class="card">
+          <p class="k">the sanity path</p>
+          <p><strong>A cleared queue.</strong> Anything that needed a human is parked with its evidence; everything else moved.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage delivered reveal">
+      <span class="station" aria-hidden="true"></span>
+      <p class="tag">04 · Compound</p>
+      <h3>Every answer you give, you never give again.</h3>
+      <p>
+        Each thing you feed Dispatch makes the next session need less of
+        you — and overnight discovery reloads the queue, so the loop keeps
+        turning on its own.
+      </p>
+      <div class="ledger">
+        <div class="li"><span class="what">Your profile, once</span><span class="so">→ every form, every portal</span></div>
+        <div class="li"><span class="what">An essay answer you wrote</span><span class="so">→ banked for every board that asks again</span></div>
+        <div class="li"><span class="what">Your resumes, labeled by domain</span><span class="so">→ auto-attached per application</span></div>
+        <div class="li"><span class="what">A persona for outreach</span><span class="so">→ drafts that sound like you</span></div>
+        <div class="li"><span class="what">Every fill outcome</span><span class="so">→ selectors that learn which fields flake</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="journey">
+  <div class="section-head reveal">
+    <h2>One application's trip,<br />start to thank-you page.</h2>
+    <p>
+      Here's what actually happens to a single posting once Dispatch picks
+      it up — including the annoying parts companies put in the way.
+    </p>
+  </div>
+
+  <figure class="diagram reveal">
+    <div class="scroll">
+      <svg viewBox="0 0 780 200" role="img" aria-label="An application's route: found on JobRight, through the web gates, filled and verified, submitted with a receipt, referral drafted. Applications that hit a wall are parked with evidence.">
+        <defs>
+          <marker id="jarrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <!-- track -->
+        <line x1="70" y1="90" x2="690" y2="90" class="d-edge" />
+        <!-- stations -->
+        <circle cx="70" cy="90" r="9" class="d-station"/>
+        <circle cx="225" cy="90" r="9" class="d-station"/>
+        <circle cx="380" cy="90" r="9" class="d-station"/>
+        <circle cx="535" cy="90" r="9" class="d-station"/>
+        <circle cx="690" cy="90" r="10" class="d-station d-station-full"/>
+        <!-- labels above -->
+        <text x="70" y="48" text-anchor="middle" class="d-label">found</text>
+        <text x="70" y="64" text-anchor="middle" class="d-sub">on your JobRight feed</text>
+        <text x="225" y="48" text-anchor="middle" class="d-label">the gates</text>
+        <text x="225" y="64" text-anchor="middle" class="d-sub">redirects · logins · codes</text>
+        <text x="380" y="48" text-anchor="middle" class="d-label">filled</text>
+        <text x="380" y="64" text-anchor="middle" class="d-sub">then verified, field by field</text>
+        <text x="535" y="48" text-anchor="middle" class="d-label">submitted ✓</text>
+        <text x="535" y="64" text-anchor="middle" class="d-sub">screenshot + receipt</text>
+        <text x="690" y="48" text-anchor="middle" class="d-label">referral drafted</text>
+        <text x="690" y="64" text-anchor="middle" class="d-sub">in your mailbox</text>
+        <!-- wall branch -->
+        <path d="M225 100 L225 128" class="d-edge d-edge-dash" marker-end="url(#jarrow)"/>
+        <rect x="115" y="132" width="220" height="40" rx="6" class="d-box-out"/>
+        <text x="225" y="149" text-anchor="middle" class="d-label">can't pass? parked for you</text>
+        <text x="225" y="164" text-anchor="middle" class="d-sub">with the evidence attached</text>
+      </svg>
+    </div>
+    <figcaption>
+      The waypoint track, for real: five stops per application. Anything the
+      machine can't get through honestly — a CAPTCHA, a login it doesn't
+      have — parks the application for you instead of guessing.
+    </figcaption>
+  </figure>
+
+  <div class="cards four reveal">
+    <div class="card">
+      <p class="k">① found</p>
+      <p>Dispatch reads <strong>your JobRight feed</strong> and queues fresh postings. That's the beta discovery layer — more platforms are on the roadmap.</p>
+    </div>
+    <div class="card">
+      <p class="k">② the gates</p>
+      <p>"Apply now" is never the form. Redirects, "create an account", email verification codes — <strong>Dispatch navigates the maze</strong>, and fetches the code from your inbox itself. The one gate it won't fight: a CAPTCHA. That parks, for you.</p>
+    </div>
+    <div class="card">
+      <p class="k">③ the form</p>
+      <p>Your twelve fields, your resume, filled and then <strong>re-read from the page to prove it</strong>. No verified fill, no submit. Every submission ends with a receipt and a screenshot.</p>
+    </div>
+    <div class="card">
+      <p class="k">④ the referral</p>
+      <p>An application alone is a ticket in a pile. <strong>A referral is a person pulling yours out.</strong> After each verified submit, Dispatch drafts warm intros to alumni and engineers at that company — you review and hit send.</p>
+    </div>
+  </div>
+
+  <div class="section-head reveal" style="margin-top: 2.5rem; margin-bottom: 0;">
+    <p>
+      <strong>Why referrals get top billing:</strong> most applications die
+      unread in a stack of hundreds. The reliable way out of the stack has
+      always been a human on the inside who vouches for you. That's why
+      the referral draft isn't an add-on here — it's the second half of
+      every application. The submit gets you in the pile; the referral
+      gets you out of it.
+    </p>
+  </div>
+</section>
+
+<section class="wrap" id="stack">
+  <div class="section-head reveal">
+    <h2>The stack, in one picture.<br />Your machine, your data.</h2>
+    <p>
+      No cloud sits between you and your applications. Dispatch is a small
+      command center that lives on your laptop — the only thing that ever
+      leaves it is the browser, doing your applying.
+    </p>
+  </div>
+
+  <figure class="diagram reveal">
+    <div class="scroll">
+      <svg viewBox="0 0 780 350" role="img" aria-label="Everything runs on your machine: the console UI talks to a local server, which spawns a worker driving a Chromium browser. State goes to SQLite and evidence to an artifacts folder, both on disk. Only the browser reaches out — to your JobRight feed and company portals. An optional drafting model receives text only.">
+        <defs>
+          <marker id="sarrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <!-- boundary -->
+        <rect x="14" y="18" width="486" height="314" rx="10" class="d-bound"/>
+        <text x="30" y="42" class="d-tag">YOUR MACHINE</text>
+        <!-- row 1 -->
+        <rect x="30" y="60" width="130" height="46" rx="6" class="d-box"/>
+        <text x="95" y="79" text-anchor="middle" class="d-label">Console UI</text>
+        <text x="95" y="94" text-anchor="middle" class="d-sub">the cockpit, in a tab</text>
+        <rect x="230" y="60" width="150" height="46" rx="6" class="d-box"/>
+        <text x="305" y="79" text-anchor="middle" class="d-label">Local server</text>
+        <text x="305" y="94" text-anchor="middle" class="d-sub">localhost, token-gated</text>
+        <line x1="160" y1="83" x2="226" y2="83" class="d-edge" marker-end="url(#sarrow)"/>
+        <text x="193" y="76" text-anchor="middle" class="d-elabel">clicks</text>
+        <!-- row 2 -->
+        <rect x="230" y="150" width="150" height="46" rx="6" class="d-box"/>
+        <text x="305" y="169" text-anchor="middle" class="d-label">Worker</text>
+        <text x="305" y="184" text-anchor="middle" class="d-sub">one bounded run</text>
+        <line x1="305" y1="106" x2="305" y2="146" class="d-edge" marker-end="url(#sarrow)"/>
+        <text x="313" y="130" class="d-elabel">arms</text>
+        <rect x="30" y="150" width="130" height="46" rx="6" class="d-box"/>
+        <text x="95" y="169" text-anchor="middle" class="d-label">Browser</text>
+        <text x="95" y="184" text-anchor="middle" class="d-sub">real Chromium</text>
+        <line x1="226" y1="173" x2="164" y2="173" class="d-edge" marker-end="url(#sarrow)"/>
+        <text x="195" y="166" text-anchor="middle" class="d-elabel">drives</text>
+        <!-- row 3: stores -->
+        <rect x="30" y="252" width="150" height="46" rx="6" class="d-box"/>
+        <text x="105" y="271" text-anchor="middle" class="d-label">SQLite</text>
+        <text x="105" y="286" text-anchor="middle" class="d-sub">every state change</text>
+        <rect x="230" y="252" width="150" height="46" rx="6" class="d-box"/>
+        <text x="305" y="271" text-anchor="middle" class="d-label">Evidence</text>
+        <text x="305" y="286" text-anchor="middle" class="d-sub">receipts + screenshots</text>
+        <line x1="280" y1="196" x2="130" y2="248" class="d-edge" marker-end="url(#sarrow)"/>
+        <text x="180" y="216" class="d-elabel">records</text>
+        <line x1="305" y1="196" x2="305" y2="248" class="d-edge" marker-end="url(#sarrow)"/>
+        <text x="313" y="226" class="d-elabel">proves</text>
+        <!-- outside -->
+        <rect x="570" y="60" width="190" height="46" rx="6" class="d-box-out"/>
+        <text x="665" y="79" text-anchor="middle" class="d-label">JobRight feed</text>
+        <text x="665" y="94" text-anchor="middle" class="d-sub">discovery · beta layer</text>
+        <rect x="570" y="150" width="190" height="46" rx="6" class="d-box-out"/>
+        <text x="665" y="169" text-anchor="middle" class="d-label">Company portals</text>
+        <text x="665" y="184" text-anchor="middle" class="d-sub">Greenhouse · Lever · Ashby</text>
+        <rect x="570" y="252" width="190" height="46" rx="6" class="d-box-out"/>
+        <text x="665" y="271" text-anchor="middle" class="d-label">Drafting model</text>
+        <text x="665" y="286" text-anchor="middle" class="d-sub">optional · text only</text>
+        <!-- crossings (the point of the picture) -->
+        <path d="M95 150 C 95 110, 480 83, 566 83" class="d-edge-accent" marker-end="url(#sarrow)"/>
+        <text x="470" y="70" text-anchor="middle" class="d-elabel-accent">finds jobs</text>
+        <line x1="160" y1="180" x2="566" y2="176" class="d-edge-accent" marker-end="url(#sarrow)"/>
+        <text x="470" y="168" text-anchor="middle" class="d-elabel-accent">fills &amp; submits</text>
+        <path d="M380 275 L566 275" class="d-edge d-edge-dash" marker-end="url(#sarrow)"/>
+        <text x="470" y="268" text-anchor="middle" class="d-elabel">referral text</text>
+      </svg>
+    </div>
+    <figcaption>
+      The whole product inside the dashed line. Your profile, resumes,
+      answers, and history live in files and a database <em>on your disk</em>.
+      The two blue arrows are the only traffic: the browser reading your feed
+      and working the portals — the same way you would, just tireless.
+    </figcaption>
+  </figure>
+
+  <figure class="diagram reveal">
+    <div class="scroll">
+      <svg viewBox="0 0 640 190" role="img" aria-label="Permissions only narrow: what a run can do sits inside what you ticked for that run, which sits inside what your shell allows. Nothing inside can widen the ring outside it.">
+        <rect x="12" y="14" width="616" height="162" rx="10" class="d-bound"/>
+        <text x="28" y="38" class="d-tag">WHAT YOU ALLOW — set once, at launch</text>
+        <rect x="70" y="52" width="500" height="110" rx="8" class="d-box"/>
+        <text x="86" y="74" class="d-tag">WHAT YOU TICK — per run, in the console</text>
+        <rect x="130" y="86" width="380" height="58" rx="6" fill="var(--accent-dim)" stroke="var(--accent)"/>
+        <text x="320" y="111" text-anchor="middle" class="d-label">what a run can actually do</text>
+        <text x="320" y="128" text-anchor="middle" class="d-sub">never more than the two rings around it</text>
+      </svg>
+    </div>
+    <figcaption>
+      The permission model in one picture: three rings, and power only
+      narrows going inward. The console can't grant itself anything you
+      didn't allow at launch — and submitting without you watching also
+      requires an armed, timed session on top.
+    </figcaption>
+  </figure>
+
+  <div class="stack-list reveal">
+    <div class="card">
+      <p class="k">for the curious</p>
+      <p><strong>TypeScript + Node</strong> — one codebase, strict mode, no magic.</p>
+    </div>
+    <div class="card">
+      <p class="k">for the curious</p>
+      <p><strong>Playwright + Chromium</strong> — a real browser fills real forms; no fragile API guessing.</p>
+    </div>
+    <div class="card">
+      <p class="k">for the curious</p>
+      <p><strong>SQLite on disk</strong> — every application is a state machine with an audit trail.</p>
+    </div>
+    <div class="card">
+      <p class="k">for the curious</p>
+      <p><strong>React console</strong> — a local web cockpit; the terminal is the escape hatch, not the interface.</p>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="setup">
+  <div class="section-head reveal">
+    <h2>Set up once.<br />About thirty minutes, mostly waiting.</h2>
+    <p>
+      Dispatch is software you install, not an account you surrender your
+      data to. Here's the whole onboarding, honestly.
+    </p>
+  </div>
+
+  <div class="needs reveal">
+    <div class="card">
+      <p class="k">you'll need</p>
+      <p><strong>A laptop</strong> — macOS, Windows, or Linux — with Node 20+ and Chrome on it.</p>
+    </div>
+    <div class="card">
+      <p class="k">you'll need</p>
+      <p><strong>A JobRight account</strong> — Premium, for unlimited applying and referral drafting during beta. It's the discovery layer Dispatch rides on until more platforms land.</p>
+    </div>
+    <div class="card">
+      <p class="k">you'll need</p>
+      <p><strong>Your resume PDFs</strong> — a couple of versions, labeled by domain. Optional: Outlook for referral drafts, Gmail (read-only) so it can fetch verification codes.</p>
+    </div>
+  </div>
+
+  <div class="steps reveal">
+    <div class="step">
+      <span class="n">1</span>
+      <div>
+        <h4>Install it</h4>
+        <p>One block, then coffee. It pulls its own browser.</p>
+        <p class="cmd">npm install && npx playwright install chromium && npm run migrate</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">2</span>
+      <div>
+        <h4>Feed it you — once</h4>
+        <p>Your profile (the famous twelve fields), your resumes, any essay answers you've already sweated over. Everything lands in a private folder on <strong>your disk</strong>, nowhere else.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">3</span>
+      <div>
+        <h4>Log in like a human</h4>
+        <p>You sign into JobRight in <strong>your own Chrome</strong>, once — Dispatch borrows that session instead of pretending to be you from scratch. Optional: connect Outlook (drafts) and read-only Gmail (verification codes).</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">4</span>
+      <div>
+        <h4>Rehearse with the safety on</h4>
+        <p>Start the console and run a dry pass: it discovers, plans every field, and <strong>touches nothing</strong>. You read exactly what it would have typed. This is the moment you learn to trust it — because it shows its work.</p>
+        <p class="cmd">npm run console</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="n">5</span>
+      <div>
+        <h4>Arm small, watch the first hour</h4>
+        <p>First real session: short timer, low caps, you watching. After that first verified receipt lands with its screenshot — that's when you close the laptop and go get your evening.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="command" id="command">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Autonomy you arm.<br />Not autonomy you hope for.</h2>
+      <p>
+        The reason you can sleep while it runs isn't trust — it's
+        architecture. Every claim below is enforced in code, not in a
+        promise.
+      </p>
+    </div>
+    <div class="facts reveal">
+      <div class="fact">
+        <p class="f">Bounded by construction</p>
+        <p>A session is a timer and two caps backed by an atomic counter. A crash can't reset it; disarming makes further submits structurally impossible.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Every gate still runs</p>
+        <p>Arming removes exactly one thing: the per-application "are you sure". Field verification, upload verification, page identity, the approved plan — all still gate every click.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Walls park, with evidence</p>
+        <p>CAPTCHA, logins, essay questions — anything that needs a human parks the application with a review item and its evidence. Nothing is force-clicked.</p>
+      </div>
+      <div class="fact">
+        <p class="f">Your words stay yours</p>
+        <p>Essays and self-ID questions are never auto-answered. Referral outreach stops at drafts in your own mailbox — the software cannot send mail on your behalf.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M6 18 L18 6" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="6" cy="18" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="12" cy="12" r="2.4" fill="var(--bg)" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="18" cy="6" r="3" fill="var(--accent)"/>
+  </svg>
+  <p class="mission">
+    Put one operator confidently in command of many applications — every
+    submission deliberate, every state honest, every outcome accounted for.
+    And the nights? Those are yours again.
+  </p>
+  <div class="fine">
+    <span>Dispatch — every application accounted for</span>
+    <a href="pricing.html">Pricing</a>
+    <a href="#setup">Setup</a>
+    <span>closed beta · proprietary software · local-first by design</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Live countdown in the ARMED banner — the session is running, right now.
+  var secs = 84 * 60;
+  var cd = document.getElementById("countdown");
+  if (cd && !reduced) {
+    setInterval(function () {
+      secs = Math.max(0, secs - 1);
+      var m = Math.floor(secs / 60);
+      var s = String(secs % 60).padStart(2, "0");
+      cd.textContent = m + ":" + s;
+    }, 1000);
+  }
+
+  // Typed truth line under the CTAs.
+  var truth = document.getElementById("truth");
+  var line = "closed beta · runs on your machine · you hold every key";
+  if (truth) {
+    if (reduced) {
+      truth.textContent = line;
+    } else {
+      var i = 0;
+      var t = setInterval(function () {
+        truth.textContent = line.slice(0, ++i);
+        if (i >= line.length) clearInterval(t);
+      }, 28);
+    }
+  }
+
+  // Scroll reveals: sections rise in; each loop station lights as it enters.
+  var targets = document.querySelectorAll(".reveal");
+  if (reduced || !("IntersectionObserver" in window)) {
+    targets.forEach(function (el) { el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add(e.target.classList.contains("stage") ? "lit" : "in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.18 },
+    );
+    targets.forEach(function (el) { io.observe(el); });
+  }
+})();
+</script>
+
+</body>
+</html>
