@@ -25,6 +25,10 @@ import {
   type NavigationReport,
   type RunNavigationInput,
 } from "../navigation/runNavigation.js";
+import {
+  checkUrlCongruence,
+  getJobIdentity,
+} from "../navigation/congruence.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import type { Page } from "playwright";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
@@ -176,6 +180,56 @@ function routeNavigationWall(
         payload: { nav_run_id: nav.run_id },
       });
       return { to: "CAPTCHA_REQUIRED", note: "navigation captcha", stop: "review" };
+    }
+    case "mismatch": {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "FAILED_RETRYABLE",
+        reason: "navigation: resolved URL belongs to a different employer",
+        runId,
+      });
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "MANUAL",
+        title: `Navigation found the wrong company's application page${nav.congruence ? ` (got "${nav.congruence.slug ?? "?"}", expected ${nav.congruence.expected_company})` : ""}`,
+        payload: {
+          wall: nav.wall,
+          nav_run_id: nav.run_id,
+          congruence: nav.congruence,
+          report_path: nav.report_path ?? null,
+          hint: "Nothing was stored or filled. Paste the correct application URL on the application, or dismiss if the posting is gone.",
+        },
+      });
+      return {
+        to: "FAILED_RETRYABLE",
+        note: "navigation refused: wrong-employer URL",
+        stop: "review",
+      };
+    }
+    case "duplicate_url": {
+      transitionApplication(db, {
+        applicationId,
+        nextState: "FAILED_RETRYABLE",
+        reason: "navigation: employer URL already held by another application",
+        runId,
+      });
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "MANUAL",
+        title: "Duplicate posting — another application already targets this URL",
+        payload: {
+          wall: nav.wall,
+          nav_run_id: nav.run_id,
+          duplicates: nav.duplicates,
+          report_path: nav.report_path ?? null,
+          hint: "JobRight listed this posting more than once (or navigation reused a stale page). Dismiss this one; the original application keeps going.",
+        },
+      });
+      return {
+        to: "FAILED_RETRYABLE",
+        note: "navigation refused: duplicate employer URL",
+        stop: "review",
+      };
     }
     default: {
       transitionApplication(db, {
@@ -815,6 +869,32 @@ async function step(
             note: "employer URL missing at fill stage — parked for review",
             stop: "gate",
           };
+        }
+        // Never fill on a wrong-employer page: re-check the stored URL
+        // against the job's company (the nav-agent mismatch defense —
+        // filling the wrong company's form wastes budget and risks a
+        // duplicate submission later).
+        const fillIdentity = getJobIdentity(db, app.id);
+        if (fillIdentity?.company) {
+          const cong = checkUrlCongruence(fillIdentity.company, url);
+          if (cong.verdict === "mismatch") {
+            upsertOpenReviewItem(db, {
+              applicationId: app.id,
+              kind: "MANUAL",
+              title: `Stored application URL belongs to "${cong.slug}", not ${fillIdentity.company}`,
+              payload: {
+                stage: "fill",
+                employer_url: url,
+                congruence: cong,
+                hint: "Navigation stored the wrong company's page for this job. Clear/replace the URL, then requeue.",
+              },
+            });
+            return {
+              to: null,
+              note: `fill refused: stored URL is for "${cong.slug}", not ${fillIdentity.company}`,
+              stop: "gate",
+            };
+          }
         }
         const detected = detectAtsFromUrl(url);
         if (detected.ats === null) {

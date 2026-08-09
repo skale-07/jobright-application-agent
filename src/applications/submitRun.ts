@@ -44,6 +44,10 @@ import { buildHumanEssayEntries } from "./essayFill.js";
 import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
 import { SubmissionUncertainError } from "../ats/shared/submissionUncertain.js";
+import {
+  checkUrlCongruence,
+  getJobIdentity,
+} from "../navigation/congruence.js";
 import { failedApprovedEntries } from "../ats/greenhouse/liveFill.js";
 import { healFailedFillEntries } from "../ats/greenhouse/fillHealer.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -189,6 +193,19 @@ export async function runAtsSubmission(input: {
     return report;
   }
   const binding = ATS_BINDINGS[detected.ats];
+
+  // Defense in depth against wrong-employer URLs: the page identity gate
+  // below verifies the page matches the STORED URL — which is circular when
+  // the stored URL itself was mis-resolved (the live nav-agent failure).
+  // The company-vs-URL check breaks that circle before any submit machinery.
+  const jobIdentity = getJobIdentity(db, applicationId);
+  if (jobIdentity?.company) {
+    const cong = checkUrlCongruence(jobIdentity.company, detected.normalizedUrl);
+    if (cong.verdict === "mismatch") {
+      report.reason = `Refusing submit: stored employer URL belongs to "${cong.slug}", not ${jobIdentity.company} — re-run navigation for this application`;
+      return report;
+    }
+  }
 
   const resume = getRegisteredResume(db, applicationId);
   if (!resume) {
