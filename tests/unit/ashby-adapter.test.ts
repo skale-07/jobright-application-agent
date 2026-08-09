@@ -304,6 +304,6 @@ describe("ashby radiogroup discovery — live Cohere shapes (UNIT_CONFIRMED)", (
         <div role="radio">Remote</div><div role="radio">Hybrid</div><div role="radio">On-site</div>
       </div>`;
     const groups = discoverAshbyButtonGroups(html);
-    expect(groups.map((g) => g.options.length)).toEqual([2, 3]);
+    expect(groups.map((g) => g.options?.length ?? 0)).toEqual([2, 3]);
   });
 });

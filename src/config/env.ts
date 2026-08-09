@@ -58,6 +58,7 @@ const envSchema = z.object({
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
+  ESSAY_DRAFT_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
   /**
@@ -114,6 +115,7 @@ export type AppConfig = {
   emailLlmModel: string;
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
+  essayDraftEnabled: boolean;
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;
   agentCdpUrl: string;
@@ -183,6 +185,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
+    essayDraftEnabled: parsed.ESSAY_DRAFT_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,

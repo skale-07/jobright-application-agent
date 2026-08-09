@@ -15,6 +15,7 @@ import {
   dismissReviewItem,
   requeueAfterWall,
 } from "../queue/reviewResolvers.js";
+import { generateEssayDrafts } from "../applications/essayDraft.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -132,6 +133,7 @@ Commands:
   screeners:init                        Create private/candidate/screeners.json from the example answer bank
   screeners:suggest                     Verified screener predictions with no bank answer — ready-to-paste labels
   review:bulk --action dismiss|requeue-wall [--kind K] [--limit N] [--apply]   Triage open review items in bulk (dry-run by default)
+  essay:draft --application <uuid>      LLM suggestion drafts for open essay questions (ESSAY_DRAFT_ENABLED; edit/approve in review)
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -1434,6 +1436,21 @@ async function main(): Promise<void> {
     case "screeners:init":
       cmdScreenersInit();
       break;
+    case "essay:draft": {
+      const appId = flags["application"];
+      if (typeof appId !== "string") {
+        console.error("Usage: essay:draft --application <uuid>");
+        process.exit(1);
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        console.log(JSON.stringify(await generateEssayDrafts({ db, applicationId: appId }), null, 2));
+      } finally {
+        closeDatabase(db);
+      }
+      break;
+    }
     case "review:bulk":
       cmdReviewBulk(flags);
       break;

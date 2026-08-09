@@ -9,7 +9,7 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
   `EMAIL_GENERATION_ENABLED`, `AGENT_AUTHORING_ENABLED`, `AGENT_FALLBACK_ENABLED`,
   `NATIVE_AUTOFILL_ENABLED`, `JOBRIGHT_AUTOFILL_ENABLED`, `MATERIALS_DOWNLOAD_ENABLED`,
   `LINKEDIN_ENRICHMENT_ENABLED`, `NAVIGATION_ENABLED`, `GMAIL_VERIFICATION_ENABLED`,
-  `SCREENER_LLM_MATCH_ENABLED`,
+  `SCREENER_LLM_MATCH_ENABLED`, `ESSAY_DRAFT_ENABLED`,
   `OUTLOOK_VERIFICATION_ENABLED`, `AUTOMATION_ENABLED`.
   Flags are enabled only in an operator's shell for a
   specific guarded run — never hardcoded, never defaulted on, never enabled inside tests.
@@ -19,6 +19,8 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
   approved plan entry + `SUBMIT_ENABLED` + explicit operator confirmation).
 - Form values come only from the approved plan. Free-text/essay fields and demographic
   (EEO/self-ID) fields are never auto-filled — they route to review items for the human.
+  `ESSAY_DRAFT_ENABLED` may generate a SUGGESTION draft into the essay review item; the
+  human edits/approves it there, and only the approved text ever fills.
 - `chromium.launch` is allowed only in session infrastructure
   (`src/auth/serviceSession.ts`, `src/auth/loginFlow.ts`, `src/browser/fixtureSession.ts`).
   Everything else enters the browser through those seams.
