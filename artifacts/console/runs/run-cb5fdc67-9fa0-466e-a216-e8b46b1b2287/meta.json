@@ -1,0 +1,76 @@
+{
+  "id": "run-cb5fdc67-9fa0-466e-a216-e8b46b1b2287",
+  "kind": "automation",
+  "params": {
+    "headed": true,
+    "arm_run_id": "d5cbaa2b-b541-4161-94ee-182968f67b3f",
+    "armed_until": "2026-08-09T23:11:19.720Z",
+    "max_apps": 25,
+    "discover_max": 10,
+    "rediscover_every": 5
+  },
+  "granted_flags": [
+    "AGENT_FALLBACK_ENABLED",
+    "AUTOMATION_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "ESSAY_DRAFT_ENABLED",
+    "FORM_FILL_ENABLED",
+    "GMAIL_VERIFICATION_ENABLED",
+    "LIVE_MODE",
+    "MATERIALS_DOWNLOAD_ENABLED",
+    "NATIVE_AUTOFILL_ENABLED",
+    "NAVIGATION_ENABLED",
+    "OUTLOOK_DRAFTS_ENABLED",
+    "SCREENER_LLM_MATCH_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [],
+  "status": "succeeded",
+  "created_at": "2026-08-09T21:11:19.727Z",
+  "started_at": "2026-08-09T21:11:19.752Z",
+  "ended_at": "2026-08-09T21:11:46.832Z",
+  "exit_code": 0,
+  "error": null,
+  "gates": {
+    "FORM_FILL_ENABLED": true,
+    "SUBMIT_ENABLED": true,
+    "MATERIALS_DOWNLOAD_ENABLED": true,
+    "NAVIGATION_ENABLED": true,
+    "GMAIL_VERIFICATION_ENABLED": true,
+    "OUTLOOK_VERIFICATION_ENABLED": false,
+    "AGENT_FALLBACK_ENABLED": true,
+    "AGENT_AUTHORING_ENABLED": false,
+    "SCREENER_LLM_MATCH_ENABLED": true,
+    "ESSAY_DRAFT_ENABLED": true,
+    "NATIVE_AUTOFILL_ENABLED": true,
+    "JOBRIGHT_AUTOFILL_ENABLED": false,
+    "OUTLOOK_DRAFTS_ENABLED": true,
+    "EMAIL_GENERATION_ENABLED": true,
+    "LINKEDIN_ENRICHMENT_ENABLED": false,
+    "ESSAY_REQUIRED_GATE_ENABLED": false,
+    "AUTOMATION_ENABLED": true,
+    "DRY_RUN": false
+  },
+  "pending_confirmation": null,
+  "report": {
+    "arm_run_id": "d5cbaa2b-b541-4161-94ee-182968f67b3f",
+    "apps_started": 0,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 2,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "notes": [
+      "discover: 8 inspected",
+      "discover: 8 inspected"
+    ],
+    "per_app": [],
+    "nav_audit": {
+      "checked": 0,
+      "repaired": 0,
+      "parked": 0
+    }
+  },
+  "log_seq": 12
+}

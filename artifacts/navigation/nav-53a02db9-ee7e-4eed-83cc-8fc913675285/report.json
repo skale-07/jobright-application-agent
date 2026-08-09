@@ -1,0 +1,38 @@
+{
+  "run_id": "nav-53a02db9-ee7e-4eed-83cc-8fc913675285",
+  "application_id": "12acbf2e-f48a-43cb-9792-0536943684d2",
+  "jobright_job_id": "6a77c63a67a1ad0bc53cce34",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (14 external links ignored)"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "no standard Apply control found",
+    "unresolved by deterministic phases; agent phase unavailable in this session"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-09T21:07:09.941Z"
+}

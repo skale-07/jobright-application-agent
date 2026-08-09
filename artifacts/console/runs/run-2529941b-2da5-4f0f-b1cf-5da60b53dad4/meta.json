@@ -1,0 +1,56 @@
+{
+  "id": "run-2529941b-2da5-4f0f-b1cf-5da60b53dad4",
+  "kind": "automation",
+  "params": {
+    "headed": true,
+    "arm_run_id": "f3556afc-fccd-4177-be00-f4c14a16c57e",
+    "armed_until": "2026-08-09T22:49:17.722Z",
+    "max_apps": 25,
+    "discover_max": 10,
+    "rediscover_every": 5
+  },
+  "granted_flags": [
+    "AGENT_FALLBACK_ENABLED",
+    "AUTOMATION_ENABLED",
+    "EMAIL_GENERATION_ENABLED",
+    "FORM_FILL_ENABLED",
+    "LIVE_MODE",
+    "MATERIALS_DOWNLOAD_ENABLED",
+    "NATIVE_AUTOFILL_ENABLED",
+    "NAVIGATION_ENABLED",
+    "SUBMIT_ENABLED"
+  ],
+  "denied_flags": [
+    "GMAIL_VERIFICATION_ENABLED",
+    "OUTLOOK_DRAFTS_ENABLED"
+  ],
+  "status": "canceled",
+  "created_at": "2026-08-09T20:49:17.737Z",
+  "started_at": "2026-08-09T20:49:17.793Z",
+  "ended_at": null,
+  "exit_code": null,
+  "error": null,
+  "gates": {
+    "FORM_FILL_ENABLED": true,
+    "SUBMIT_ENABLED": true,
+    "MATERIALS_DOWNLOAD_ENABLED": true,
+    "NAVIGATION_ENABLED": true,
+    "GMAIL_VERIFICATION_ENABLED": false,
+    "OUTLOOK_VERIFICATION_ENABLED": false,
+    "AGENT_FALLBACK_ENABLED": true,
+    "AGENT_AUTHORING_ENABLED": false,
+    "SCREENER_LLM_MATCH_ENABLED": false,
+    "ESSAY_DRAFT_ENABLED": false,
+    "NATIVE_AUTOFILL_ENABLED": true,
+    "JOBRIGHT_AUTOFILL_ENABLED": false,
+    "OUTLOOK_DRAFTS_ENABLED": false,
+    "EMAIL_GENERATION_ENABLED": true,
+    "LINKEDIN_ENRICHMENT_ENABLED": false,
+    "ESSAY_REQUIRED_GATE_ENABLED": false,
+    "AUTOMATION_ENABLED": true,
+    "DRY_RUN": false
+  },
+  "pending_confirmation": null,
+  "report": null,
+  "log_seq": 28
+}

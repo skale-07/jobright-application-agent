@@ -1,0 +1,87 @@
+{
+  "arm_run_id": "6e736c2b-046b-443f-a683-c633c505b5f1",
+  "apps_started": 8,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 3,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "essay_drafts_generated": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "essay drafts skipped: private/candidate/about-me.md missing or too short"
+  ],
+  "per_app": [
+    {
+      "application_id": "81d8ff62-0899-4346-83ef-2e49fe84c268",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "4892b8b7-5669-43cb-b3d5-74d7663e1563",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "08862a14-69a8-4876-96d8-f9ead3fd32b1",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "12acbf2e-f48a-43cb-9792-0536943684d2",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "89ec64a7-44fe-4388-8526-5edb1a3cffec",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "15fc2bd7-ee4a-4fed-a356-84212901de91",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "0ea60924-f330-4aa5-86f4-94a61aaf5ba7",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "6cc55fec-4d4c-44fc-a1a7-333339857bc5",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    }
+  ],
+  "nav_audit": {
+    "checked": 0,
+    "repaired": 0,
+    "parked": 0
+  }
+}
