@@ -51,6 +51,7 @@
     "heal:submit-proposals": "tsx src/cli/index.ts heal:submit-proposals",
     "screeners:init": "tsx src/cli/index.ts screeners:init",
     "screeners:suggest": "tsx src/cli/index.ts screeners:suggest",
+    "review:bulk": "tsx src/cli/index.ts review:bulk",
     "enqueue": "tsx src/cli/index.ts enqueue",
     "ats:inspect": "tsx src/cli/index.ts ats:inspect",
     "ats:fill": "tsx src/cli/index.ts ats:fill",

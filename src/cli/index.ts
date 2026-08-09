@@ -11,6 +11,10 @@ import {
 import { proposeSubmitSelectorPatches } from "../heal/submitInventoryHealer.js";
 import { initScreenerBank, tryLoadScreenerBank } from "../candidate/screenersIO.js";
 import { suggestBankAdditions } from "../candidate/screenerSuggest.js";
+import {
+  dismissReviewItem,
+  requeueAfterWall,
+} from "../queue/reviewResolvers.js";
 import { getConfig, deriveRolloutStage } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { listOpenReviewItems, resolveReviewItem } from "../queue/reviewItems.js";
@@ -127,6 +131,7 @@ Commands:
   heal:submit-proposals [--limit N]     LLM selector-patch PROPOSALS from submit-miss inventories (AGENT_AUTHORING_ENABLED)
   screeners:init                        Create private/candidate/screeners.json from the example answer bank
   screeners:suggest                     Verified screener predictions with no bank answer — ready-to-paste labels
+  review:bulk --action dismiss|requeue-wall [--kind K] [--limit N] [--apply]   Triage open review items in bulk (dry-run by default)
   resume:download --job <jobright_job_id> [--yes] [--headless]
   materials:register --application <uuid> --file <path.pdf> [--label domain]
   resume-essay [--application <uuid> --field <field_id> --file <answer.txt>]
@@ -1219,6 +1224,72 @@ function cmdAtsFillOutcomes(
   }
 }
 
+function cmdReviewBulk(flags: Record<string, string | boolean>): void {
+  const action = flags["action"];
+  if (action !== "dismiss" && action !== "requeue-wall") {
+    console.error(
+      "Usage: review:bulk --action dismiss|requeue-wall [--kind KIND] [--limit N] [--apply]\n" +
+        "  dry-run by default: prints what WOULD happen; add --apply to execute.\n" +
+        "  requeue-wall handles AUTH_REQUIRED/CAPTCHA_REQUIRED items (wall cleared by hand).",
+    );
+    process.exit(1);
+  }
+  const kindFilter = typeof flags["kind"] === "string" ? flags["kind"] : null;
+  const limit = typeof flags["limit"] === "string" ? Number(flags["limit"]) || 50 : 50;
+  const apply = flags["apply"] === true;
+
+  const db = openDatabase();
+  try {
+    migrate(db);
+    let items = listOpenReviewItems(db);
+    if (kindFilter) items = items.filter((i) => i.kind === kindFilter);
+    if (action === "requeue-wall") {
+      items = items.filter(
+        (i) => i.kind === "AUTH_REQUIRED" || i.kind === "CAPTCHA_REQUIRED",
+      );
+    }
+    items = items.slice(0, limit);
+
+    const results: Array<Record<string, unknown>> = [];
+    let ok = 0;
+    let failed = 0;
+    for (const item of items) {
+      if (!apply) {
+        results.push({ id: item.id, kind: item.kind, application_id: item.application_id, would: action });
+        continue;
+      }
+      try {
+        const r =
+          action === "dismiss"
+            ? dismissReviewItem(db, { reviewItemId: item.id, note: "review:bulk" })
+            : requeueAfterWall(db, { reviewItemId: item.id, note: "review:bulk" });
+        ok++;
+        results.push({ id: item.id, kind: item.kind, action: r.action, transition_skipped: r.transition_skipped ?? null });
+      } catch (err) {
+        failed++;
+        results.push({ id: item.id, kind: item.kind, error: err instanceof Error ? err.message.slice(0, 120) : String(err) });
+      }
+    }
+    console.log(
+      JSON.stringify(
+        {
+          mode: apply ? "APPLIED" : "DRY_RUN (add --apply to execute)",
+          action,
+          kind_filter: kindFilter,
+          matched: items.length,
+          applied: ok,
+          failed,
+          items: results,
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
 function cmdScreenersInit(): void {
   const result = initScreenerBank();
   const bank = tryLoadScreenerBank();
@@ -1362,6 +1433,9 @@ async function main(): Promise<void> {
       return;
     case "screeners:init":
       cmdScreenersInit();
+      break;
+    case "review:bulk":
+      cmdReviewBulk(flags);
       break;
     case "screeners:suggest":
       console.log(JSON.stringify({ suggestions: suggestBankAdditions() }, null, 2));

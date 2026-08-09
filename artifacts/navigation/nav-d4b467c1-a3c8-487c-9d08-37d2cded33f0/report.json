@@ -1,0 +1,54 @@
+{
+  "run_id": "nav-d4b467c1-a3c8-487c-9d08-37d2cded33f0",
+  "application_id": "888d0355-8340-4ef9-8d3b-b0b450dcbd8a",
+  "jobright_job_id": "6a09b36e209dfc48f2b9ca44",
+  "method": "agent",
+  "resolved_url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "D_gmail",
+      "outcome": "verification code retrieved"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 2)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 2,
+    "steps_used": 6,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": {
+    "polls_used": 2,
+    "matched_message_id": "msg-9"
+  },
+  "need": {
+    "kind": "verification_email",
+    "sent_to": "candidate@example.com",
+    "requested_at": "2026-08-07T00:00:00Z"
+  },
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found",
+    "agent[2]: continuation ok"
+  ],
+  "written_at": "2026-08-09T02:27:35.015Z"
+}

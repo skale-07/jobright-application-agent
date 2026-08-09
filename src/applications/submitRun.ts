@@ -8,6 +8,7 @@ import {
   type ConfirmSubmission,
 } from "./submitConfirmation.js";
 import { diagnoseDisabledSubmit } from "../ats/shared/submitDiagnostics.js";
+import { scanRequiredCompleteness } from "../ats/shared/requiredCompleteness.js";
 import type { SubmitClickOptions } from "../ats/adapter.js";
 import { recoverEmailVerification } from "../verification/recoverSubmitVerification.js";
 import {
@@ -446,6 +447,47 @@ export async function runAtsSubmission(input: {
               "Refusing to click submit: field verification or upload did not pass";
             report.operator_brief = operatorBrief;
             return persist(report);
+          }
+
+          // Required-completeness gate: the run data's #1 real failure was
+          // clicking Submit with required screener/essay questions untouched
+          // (client-side validation bounced it; the run ended UNCERTAIN).
+          // Scan the live page and refuse BEFORE the click, naming each
+          // unanswered question — no budget spent, precise review item.
+          const completeness = await scanRequiredCompleteness(page);
+          if (completeness.unanswered.length > 0) {
+            const names = completeness.unanswered
+              .map((u) => `${u.label} [${u.control}]`)
+              .join("; ");
+            markSubmissionFailed(
+              db,
+              pending.id,
+              `required questions unanswered: ${names}`,
+            );
+            failIdempotencyKey(db, idemKey, "required_incomplete");
+            const { item } = upsertOpenReviewItem(db, {
+              applicationId,
+              kind: "MANUAL",
+              title: `${completeness.unanswered.length} required question(s) unanswered — answer via screeners.json/essay workflow, then requeue`,
+              payload: {
+                ats: binding.id,
+                unanswered: completeness.unanswered,
+              },
+            });
+            transitionApplication(db, {
+              applicationId,
+              nextState: "FAILED_RETRYABLE",
+              reason: "required questions unanswered — click withheld",
+              runId,
+            });
+            report.outcome = "FAILED_BEFORE_CLICK";
+            report.review_item_id = item.id;
+            report.reason = `Refusing to click submit: ${completeness.unanswered.length} required question(s) unanswered — ${names}`;
+            return persist(report);
+          }
+          if (completeness.notes.length > 0) {
+            // Scan failed open — proceed, but the report says so.
+            report.reason = completeness.notes.join("; ");
           }
 
           let attempt = await binding.submit(page, clickGate);

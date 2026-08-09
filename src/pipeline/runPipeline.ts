@@ -801,7 +801,20 @@ async function step(
       } else {
         const url = getEmployerApplicationUrl(db, app.id);
         if (!url) {
-          return { to: null, note: "employer URL missing at fill stage", stop: "gate" };
+          // Without a review item this app is a zombie: no URL, no progress,
+          // re-picked every armed session (the two post-merge sessions each
+          // burned their pick on one). Park it visibly instead.
+          upsertOpenReviewItem(db, {
+            applicationId: app.id,
+            kind: "MANUAL",
+            title: "Employer application URL missing — resolve navigation or re-enqueue with --employer-url",
+            payload: { stage: "fill", state: app.state },
+          });
+          return {
+            to: null,
+            note: "employer URL missing at fill stage — parked for review",
+            stop: "gate",
+          };
         }
         const detected = detectAtsFromUrl(url);
         if (detected.ats === null) {

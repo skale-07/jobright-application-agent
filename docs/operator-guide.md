@@ -768,6 +768,19 @@ only — your answers never reach a model); `npm run screeners:suggest`
 lists verified predictions ready to paste into the bank. Full set +
 policies: `docs/screener-questions.md`.
 
+**Pre-click completeness.** Immediately before any submit click, the page
+is scanned for required-but-unanswered controls (native and ARIA widgets).
+Any hit refuses BEFORE the click — no unattended budget spent — parks the
+app `FAILED_RETRYABLE`, and the review item names every unanswered
+question. Answer them via `screeners.json` / the essay workflow, then
+requeue.
+
+**Bulk review triage.** `npm run review:bulk -- --action dismiss|requeue-wall
+[--kind KIND] [--limit N] [--apply]` — dry-run by default; `requeue-wall`
+re-queues AUTH/CAPTCHA items after you cleared the wall by hand. Use this
+when the queue clogs (the run data showed armed sessions draining after a
+single pick because everything held an open item).
+
 **Nav agent while armed.** The ArmCard shows `nav agent:
 available/unavailable` before you arm. Available means the shell exported
 `AGENT_FALLBACK_ENABLED=true` AND your CDP Chrome

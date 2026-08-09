@@ -137,6 +137,34 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     );
   });
 
+  it("missing employer URL at fill stage parks with a review item — no zombie re-picks", async () => {
+    // The two post-merge armed sessions each burned their only pick on an
+    // app stuck in NATIVE_AUTOFILL_RUNNING with no URL and no review item.
+    const jobNo = Math.floor(Math.random() * 1_000_000);
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobright.ai/jobs/info/${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      company: `Acme${jobNo}`,
+      role: "SWE Intern",
+    });
+    const appId = createApplication(db, { jobId: job.id }).id;
+    db.prepare(`UPDATE applications SET state = 'NATIVE_AUTOFILL_RUNNING' WHERE id = ?`).run(appId);
+
+    applyControlledFillEnv({
+      FORM_FILL_ENABLED: "true",
+      DRY_RUN: "false",
+      SUBMIT_ENABLED: "false",
+    });
+    const report = await runPipeline({ db, applicationId: appId });
+    const appReport = report.applications[0]!;
+    expect(appReport.stop_reason ?? "").toMatch(/employer URL missing.*parked/);
+
+    const items = listOpenReviewItems(db).filter((i) => i.application_id === appId);
+    expect(items.length).toBe(1);
+    expect(items[0]!.title).toMatch(/Employer application URL missing/);
+    // With an OPEN review item the worker's picker now skips this app.
+  });
+
   it("stops at materials with a MANUAL review item when no resume registered", async () => {
     // Pin the default to a guaranteed-missing path so the auto-attach is a
     // no-op and the sticky-review behavior is what's under test.

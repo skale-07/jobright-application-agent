@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "2842dff4-e923-48d8-a407-3458dcd89e93",
+  "submission_id": "ffb70093-0e16-4796-9b11-f06366d85939",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": "19e94f6e-6731-4759-82ff-cec08d9cda05",
+  "reason": "Refusing to click submit: 1 required question(s) unanswered — Are you legally authorized to work in the United States? * [select]",
+  "artifact_path": null
+}

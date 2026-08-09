@@ -1,0 +1,36 @@
+{
+  "run_id": "nav-5592f90e-163c-467e-91b8-24a07b343086",
+  "application_id": "b3f986bf-77c7-4d47-b58d-d2bc5b780fc3",
+  "jobright_job_id": "6ab938ca62bde341b0b22a46",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "error"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found",
+    "agent phase failed: sidecar final_url host evil.example.com is outside allowed domains"
+  ],
+  "written_at": "2026-08-09T02:26:18.460Z"
+}
