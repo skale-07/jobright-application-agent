@@ -68,6 +68,13 @@ export function describeReviewItem(item: ReviewItemView): PlainItem {
         weight: 25,
       };
     default: {
+      if (payload["source"] === "screener_prediction") {
+        return {
+          action: "Approve a suggested answer",
+          why: `Dispatch met a new question — "${String(payload["question"] ?? "").slice(0, 80)}" — and suggests "${String(payload["predicted_answer"] ?? "")}". Approve or edit once; it fills automatically forever after.`,
+          weight: 30,
+        };
+      }
       const title = item.title.toLowerCase();
       if (title.includes("wrong company")) {
         return {

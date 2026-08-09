@@ -797,6 +797,19 @@ only — your answers never reach a model); `npm run screeners:suggest`
 lists verified predictions ready to paste into the bank. Full set +
 policies: `docs/screener-questions.md`.
 
+**New-question predictions (one-click promote).** With
+`SCREENER_PREDICT_LLM_ENABLED=true`, questions that NOTHING could answer
+(no registry key, no custom entry, no profile rule) are captured at plan
+time and, after each armed session, the LLM proposes an answer from your
+about-me + your existing bank answers. The proposal only ever lands in a
+review item — the console shows the question, the suggested answer (an
+exact page option when the question had options), and the fact it's based
+on. **Approve & save** (or edit first) writes it into `screeners.json`
+under a `custom` entry keyed to that exact question, so every future form
+asking it fills deterministically with zero AI involvement. Predictions
+never fill anything before that approval; a dismissed suggestion never
+comes back. Your bank compounds — the model's job shrinks every week.
+
 **Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
 `private/candidate/about-me.md` and write your context once. With
 `ESSAY_DRAFT_ENABLED=true`, **armed sessions draft automatically**: after

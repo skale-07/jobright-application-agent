@@ -13,6 +13,7 @@ import {
   markSubmissionVerified,
 } from "./submissionsRepo.js";
 import { setEmployerApplicationUrl } from "../applications/employerUrl.js";
+import { addCustomScreenerAnswer } from "../candidate/screenersIO.js";
 
 /**
  * Operator review-item resolvers — the domain layer behind both the CLI
@@ -312,4 +313,87 @@ export function dismissReviewItem(
     "DISMISSED",
   );
   return result(db, item, "dismiss", null);
+}
+
+/**
+ * Screener-prediction promote — the one-click that turns a model proposal
+ * into a deterministic bank answer. Only valid on MANUAL items created by
+ * the prediction batch (payload.source === "screener_prediction"). The
+ * operator may override the answer text; for choice questions the final
+ * answer must still match one of the captured page options, so an edit
+ * can't drift off the form. This function is the ONLY write path into the
+ * bank's custom section.
+ */
+export function promoteScreenerPrediction(
+  db: Db,
+  input: { reviewItemId: string; answer?: string },
+): ResolverResult & { bank_key: string; saved_answer: string } {
+  const item = requireOpenItem(db, input.reviewItemId);
+  let payload: Record<string, unknown> = {};
+  try {
+    payload = JSON.parse(
+      (item as unknown as { payload_json?: string }).payload_json ?? "{}",
+    ) as Record<string, unknown>;
+  } catch {
+    payload = {};
+  }
+  if (item.kind !== "MANUAL" || payload["source"] !== "screener_prediction") {
+    throw new ReviewResolverError(
+      "promote handles screener-prediction items only",
+      400,
+    );
+  }
+  const question = typeof payload["question"] === "string" ? payload["question"] : "";
+  const predicted =
+    typeof payload["predicted_answer"] === "string" ? payload["predicted_answer"] : "";
+  const key =
+    typeof payload["suggested_key"] === "string" &&
+    /^[a-z0-9_]{2,60}$/.test(payload["suggested_key"])
+      ? payload["suggested_key"]
+      : null;
+  if (!question || !key) {
+    throw new ReviewResolverError("prediction item payload is incomplete", 400);
+  }
+  const answer = (input.answer ?? predicted).trim();
+  if (answer === "" || answer.length > 200) {
+    throw new ReviewResolverError("answer must be 1-200 characters", 400);
+  }
+  const options = Array.isArray(payload["options"])
+    ? (payload["options"] as unknown[]).filter((o): o is string => typeof o === "string")
+    : [];
+  if (options.length > 0) {
+    const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
+    const hit =
+      options.find((o) => o === answer) ??
+      (options.filter((o) => norm(o) === norm(answer)).length === 1
+        ? options.find((o) => norm(o) === norm(answer))
+        : undefined);
+    if (hit === undefined) {
+      throw new ReviewResolverError(
+        `answer must match one of the question's options: ${options.join(" | ")}`,
+        400,
+      );
+    }
+  }
+
+  const saved = addCustomScreenerAnswer({ key, answer, label: question });
+  const predictionId =
+    typeof payload["prediction_id"] === "string" ? payload["prediction_id"] : null;
+  if (predictionId) {
+    db.prepare(
+      `UPDATE screener_predictions
+       SET status = 'PROMOTED', updated_at = ? WHERE id = ?`,
+    ).run(new Date().toISOString(), predictionId);
+  }
+  resolveReviewItem(db, item.id, {
+    action: "promoted",
+    by: "console",
+    bank_key: key,
+    edited: input.answer !== undefined && input.answer !== predicted,
+  });
+  return {
+    ...result(db, item, "promote-screener", null),
+    bank_key: saved.key,
+    saved_answer: answer,
+  };
 }

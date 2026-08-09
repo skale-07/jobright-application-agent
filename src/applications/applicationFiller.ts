@@ -39,10 +39,12 @@ import type { FillPlanEntry } from "./resolveAnswers.js";
 import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
 import {
   matchScreenerKey,
+  resolveCustomScreener,
   resolveScreenerForField,
   type ScreenerResolution,
 } from "../candidate/screenerMatch.js";
 import { mapScreenerLabels } from "./screenerLlmMap.js";
+import { recordUnmappedScreenerQuestions } from "./screenerPredictionLlm.js";
 import { isDemographicsField as screenerIsDemographic } from "./essayDetector.js";
 import type { ApprovedFillPlan } from "./approvedFillPlan.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
@@ -167,9 +169,19 @@ export async function planApplicationFill(input: {
           profile,
         );
         if (r) screenerResolutions.set(f.id, r);
-      } else {
-        unmatchedForLlm.push(f);
+        continue;
       }
+      // Promoted custom entries: exact normalized-label match against
+      // answers the operator approved via the prediction review flow.
+      const custom = resolveCustomScreener(
+        { label: f.label, type: f.type, options: f.options },
+        bank,
+      );
+      if (custom) {
+        screenerResolutions.set(f.id, custom);
+        continue;
+      }
+      unmatchedForLlm.push(f);
     }
     if (unmatchedForLlm.length > 0) {
       const mappings = await mapScreenerLabels({
@@ -180,9 +192,13 @@ export async function planApplicationFill(input: {
         })),
       });
       const byLabel = new Map(mappings.map((m) => [m.label, m.key]));
+      const stillUnmapped: typeof unmatchedForLlm = [];
       for (const f of unmatchedForLlm) {
         const key = byLabel.get(f.label);
-        if (!key) continue;
+        if (!key) {
+          stillUnmapped.push(f);
+          continue;
+        }
         const r = resolveScreenerForField(
           { label: f.label, type: f.type, options: f.options },
           bank,
@@ -190,6 +206,23 @@ export async function planApplicationFill(input: {
           profile,
         );
         if (r) screenerResolutions.set(f.id, r);
+        else stillUnmapped.push(f);
+      }
+      // Nothing could answer these: queue them for the flag-gated
+      // prediction batch (local write only — no model call here).
+      if (stillUnmapped.length > 0) {
+        try {
+          recordUnmappedScreenerQuestions({
+            ats: adapter.id,
+            questions: stillUnmapped.map((f) => ({
+              label: f.label,
+              type: f.type,
+              options: f.options,
+            })),
+          });
+        } catch {
+          // capture is best-effort; a queue error must never break a plan
+        }
       }
     }
   }

@@ -23,6 +23,9 @@ export const AUTOMATION_RUN_BODY = {
     // Screener label→bank-key mapping assist (answers always come from the
     // operator's screeners.json; options must match deterministically).
     SCREENER_LLM_MATCH_ENABLED: true,
+    // New-question answer predictions into review items (one-click promote
+    // into the bank; predictions never fill without that approval).
+    SCREENER_PREDICT_LLM_ENABLED: true,
     // Essay SUGGESTION drafts into review items after the session —
     // approval stays human; nothing is auto-filled.
     ESSAY_DRAFT_ENABLED: true,
