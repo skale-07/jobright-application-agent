@@ -57,6 +57,7 @@ const envSchema = z.object({
   EMAIL_LLM_MODEL: z.string().default("gpt-5-mini"),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
+  SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
   /**
@@ -112,6 +113,7 @@ export type AppConfig = {
   openaiApiKey: string | undefined;
   emailLlmModel: string;
   agentAuthoringEnabled: boolean;
+  screenerLlmMatchEnabled: boolean;
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;
   agentCdpUrl: string;
@@ -180,6 +182,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     openaiApiKey: parsed.OPENAI_API_KEY,
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
+    screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,

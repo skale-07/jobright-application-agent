@@ -9,6 +9,7 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
   `EMAIL_GENERATION_ENABLED`, `AGENT_AUTHORING_ENABLED`, `AGENT_FALLBACK_ENABLED`,
   `NATIVE_AUTOFILL_ENABLED`, `JOBRIGHT_AUTOFILL_ENABLED`, `MATERIALS_DOWNLOAD_ENABLED`,
   `LINKEDIN_ENRICHMENT_ENABLED`, `NAVIGATION_ENABLED`, `GMAIL_VERIFICATION_ENABLED`,
+  `SCREENER_LLM_MATCH_ENABLED`,
   `OUTLOOK_VERIFICATION_ENABLED`, `AUTOMATION_ENABLED`.
   Flags are enabled only in an operator's shell for a
   specific guarded run — never hardcoded, never defaulted on, never enabled inside tests.

@@ -2,6 +2,7 @@ import type { DiscoveredField, ResolvedApplicationAnswers } from "../ats/adapter
 import { isDemographicsField } from "./essayDetector.js";
 import type { FillPlanEntry } from "./resolveAnswers.js";
 import { isWorkAuthorizationField } from "./resolveAnswers.js";
+import { screenerDef } from "../candidate/screeners.js";
 
 /** Canonical keys safe to auto-fill from the public profile (factual only). */
 export const SAFE_FACTUAL_CANONICALS = new Set([
@@ -48,8 +49,24 @@ export const SENSITIVE_FILL_CANONICALS = new Set([
   "disability_status",
 ]);
 
+/**
+ * screener:<key>[:<field_id>] canonicals are allowlisted iff the key's
+ * REGISTRY policy permits filling — the registry is code-reviewed, so this
+ * stays a curated allowlist, just sourced from screeners.ts. review_required
+ * keys (salary, notice period) are structurally unfillable here too.
+ */
+export function isScreenerFillCanonical(
+  canonical: string | null | undefined,
+): boolean {
+  if (!canonical?.startsWith("screener:")) return false;
+  const key = canonical.slice("screener:".length).split(":")[0] ?? "";
+  const def = screenerDef(key);
+  return def?.policy === "auto_fill" || def?.policy === "skip_if_empty";
+}
+
 export function isAllowlistedCanonical(canonical: string | null | undefined): boolean {
   if (!canonical) return false;
+  if (isScreenerFillCanonical(canonical)) return true;
   return (
     SAFE_FACTUAL_CANONICALS.has(canonical) ||
     SENSITIVE_FILL_CANONICALS.has(canonical)

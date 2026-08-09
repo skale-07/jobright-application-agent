@@ -23,6 +23,9 @@ const AUTOMATION_RUN_BODY = {
     // when the shell ceiling carries the flag AND the operator's CDP
     // Chrome is reachable at nav time; otherwise phase C self-skips.
     AGENT_FALLBACK_ENABLED: true,
+    // Screener label→bank-key mapping assist (answers always come from the
+    // operator's screeners.json; options must match deterministically).
+    SCREENER_LLM_MATCH_ENABLED: true,
     // Outreach tail (drafts only, never send) — granted only if the shell
     // ceiling carries these; otherwise the tail is simply skipped.
     EMAIL_GENERATION_ENABLED: true,
