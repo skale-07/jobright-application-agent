@@ -31,6 +31,7 @@
     "gmail:auth": "tsx src/cli/index.ts gmail:auth",
     "gmail:check": "tsx src/cli/index.ts gmail:check",
     "verify:mailbox": "tsx src/cli/index.ts verify:mailbox",
+    "auto:cycle": "tsx src/cli/index.ts auto:cycle",
     "review": "tsx src/cli/index.ts review",
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",
