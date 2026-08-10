@@ -7,22 +7,27 @@ import {
   type VerificationWaitResult,
 } from "../gmail/waitForVerification.js";
 import { outlookCodeProvider } from "./codeProviders.js";
+import { gmailWebCodeProvider } from "./gmailWebProvider.js";
 
 /**
  * The one nav-time email-verification seam: a portal said "we emailed you
  * a code/link" and Dispatch must retrieve it to continue signing in or
  * creating an account. Providers, in preference order:
  *
- *   1. Gmail — readonly REST client (GMAIL_VERIFICATION_ENABLED + saved
- *      token). Retrieves both OTP codes and magic links.
- *   2. Outlook — read-only DOM scan of the operator's authenticated web
- *      session (OUTLOOK_VERIFICATION_ENABLED). Codes only in v1: link
- *      extraction from a rendered reading pane cannot be domain-validated
- *      as strictly as raw MIME, so links stay Gmail-only for now.
+ *   1. Gmail REST — only when a saved API token exists (it usually will
+ *      not: Google restricts the readonly scope to verified OAuth apps).
+ *      The one transport that retrieves magic LINKS (domain-validated).
+ *   2. Gmail WEB — read-only Playwright scan of mail.google.com in the
+ *      operator's Google-authenticated session (GMAIL_VERIFICATION_ENABLED,
+ *      no token needed). Codes only.
+ *   3. Outlook — read-only DOM scan of the operator's authenticated web
+ *      session (OUTLOOK_VERIFICATION_ENABLED). Codes only.
  *
- * Both fail closed behind their flags; neither ever composes or sends
- * (sendGuards discipline unchanged). Codes/links are transient secrets —
- * callers scrub them from anything persisted.
+ * Rendered mailboxes are codes-only because a reading pane cannot be
+ * domain-validated as strictly as raw MIME. All fail closed behind their
+ * flags; none ever composes or sends (sendGuards discipline unchanged).
+ * Codes/links are transient secrets — callers scrub them from anything
+ * persisted.
  */
 
 export type EmailVerificationNeed = {
@@ -37,13 +42,14 @@ export type NavVerificationWaiter = (
   allowedDomains: string[],
 ) => Promise<VerificationWaitResult>;
 
-/** True when ANY mailbox provider could service a verification wait. */
+/**
+ * True when ANY mailbox provider could service a verification wait. The
+ * Gmail flag alone is enough: the browser-based mailbox scan needs no API
+ * token (the REST API is unavailable for this operator).
+ */
 export function emailVerificationAvailable(): boolean {
   const cfg = getConfig();
-  return (
-    (cfg.gmailVerificationEnabled && readGmailToken() !== null) ||
-    cfg.outlookVerificationEnabled
-  );
+  return cfg.gmailVerificationEnabled || cfg.outlookVerificationEnabled;
 }
 
 /**
@@ -51,22 +57,29 @@ export function emailVerificationAvailable(): boolean {
  * an Outlook fallback runs only when Gmail is unavailable OR timed out
  * (a second mailbox is a second chance, not a race).
  */
+type CodeFetch = (input: {
+  requestedAt: string;
+  emailHint: string | null;
+}) => Promise<{ code: string; source: string } | null>;
+
 export function resolveNavVerificationWaiter(overrides?: {
   gmailWaiter?: NavVerificationWaiter;
-  outlookFetch?: (input: {
-    requestedAt: string;
-    emailHint: string | null;
-  }) => Promise<{ code: string; source: string } | null>;
+  gmailWebFetch?: CodeFetch;
+  outlookFetch?: CodeFetch;
 }): NavVerificationWaiter | null {
   const cfg = getConfig();
-  const gmailOn =
+  // Gmail REST rides only when a token exists (the API is unavailable for
+  // this operator — the WEB mailbox scan is the primary Gmail transport).
+  const gmailRestOn =
     overrides?.gmailWaiter !== undefined ||
     (cfg.gmailVerificationEnabled && readGmailToken() !== null);
+  const gmailWebOn =
+    overrides?.gmailWebFetch !== undefined || cfg.gmailVerificationEnabled;
   const outlookOn =
     overrides?.outlookFetch !== undefined || cfg.outlookVerificationEnabled;
-  if (!gmailOn && !outlookOn) return null;
+  if (!gmailRestOn && !gmailWebOn && !outlookOn) return null;
 
-  const gmailWaiter: NavVerificationWaiter | null = gmailOn
+  const gmailWaiter: NavVerificationWaiter | null = gmailRestOn
     ? (overrides?.gmailWaiter ??
       (async (need, allowedDomains) => {
         const client = new GmailClient();
@@ -78,9 +91,11 @@ export function resolveNavVerificationWaiter(overrides?: {
       }))
     : null;
 
-  const outlookFetch = outlookOn
-    ? (overrides?.outlookFetch ?? outlookCodeProvider())
-    : null;
+  // Mailbox-scan fallbacks in order: Gmail web first (same account the
+  // portal mailed), Outlook second. Codes only — links stay REST-only.
+  const scanFetchers: Array<CodeFetch> = [];
+  if (gmailWebOn) scanFetchers.push(overrides?.gmailWebFetch ?? gmailWebCodeProvider());
+  if (outlookOn) scanFetchers.push(overrides?.outlookFetch ?? outlookCodeProvider());
 
   return async (need, allowedDomains) => {
     let pollsUsed = 0;
@@ -89,8 +104,8 @@ export function resolveNavVerificationWaiter(overrides?: {
       if (viaGmail.kind !== "timeout") return viaGmail;
       pollsUsed += viaGmail.pollsUsed;
     }
-    if (outlookFetch) {
-      const fetched = await outlookFetch({
+    for (const fetch of scanFetchers) {
+      const fetched = await fetch({
         requestedAt: need.requested_at,
         emailHint: need.sent_to || null,
       });

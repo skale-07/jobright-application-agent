@@ -444,7 +444,7 @@ contract rather than trusted.
 | `AGENT_AUTHORING_ENABLED` | `false` | Phase 6 J1 sidecar |
 | `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) + nav agent phase |
 | `NAVIGATION_ENABLED` | `false` | Navigation: clicking Apply on JobRight (mutates applied-state) |
-| `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail readonly OTP/magic-link retrieval during nav |
+| `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail verification retrieval during nav — browser mailbox scan primary (no token); REST only if a token exists |
 | `ESSAY_REQUIRED_GATE_ENABLED` | `false` | Hard-stop on heuristic essay detection (`ESSAY_REQUIRED`); off until heuristics are better |
 | `OUTLOOK_VERIFICATION_ENABLED` | `false` | Read-only Outlook mailbox scan for submit verification codes (§17) |
 
@@ -662,7 +662,7 @@ To let it recover automatically, enable a mailbox reader in the shell:
 ```powershell
 $env:OUTLOOK_VERIFICATION_ENABLED="true"   # reads your Outlook web session
 # or
-$env:GMAIL_VERIFICATION_ENABLED="true"     # readonly Gmail API (needs gmail:auth)
+$env:GMAIL_VERIFICATION_ENABLED="true"     # browser mailbox scan (no token needed); REST only if gmail:auth token exists
 ```
 
 The run then fetches the code, types it in, waits for the button to enable,

@@ -7,6 +7,7 @@ import { waitForVerificationEmail } from "../gmail/waitForVerification.js";
 import { extractOtpCode } from "../gmail/verificationParsers.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { outlookSelectorsV1 } from "../outlook/selectors.js";
+import { gmailWebCodeProvider } from "./gmailWebProvider.js";
 
 /**
  * Verification-code providers for the submit recovery layer. Both are
@@ -24,12 +25,33 @@ export type FetchVerificationCode = (input: {
   emailHint: string | null;
 }) => Promise<{ code: string; source: string } | null>;
 
-/** Pick the enabled provider; Outlook wins when both are on (per request). */
+/** Try fetchers in order; the first code wins, all-dry returns null. */
+export function chainVerificationCodeProviders(
+  fetchers: FetchVerificationCode[],
+): FetchVerificationCode {
+  return async (input) => {
+    for (const fetch of fetchers) {
+      const result = await fetch(input);
+      if (result) return result;
+    }
+    return null;
+  };
+}
+
+/**
+ * Every enabled provider, chained: Outlook first (per request), then the
+ * Gmail WEB mailbox scan (browser-based — the REST API is unavailable for
+ * this operator), then Gmail REST as a last resort when a token exists.
+ */
 export function resolveVerificationCodeProvider(): FetchVerificationCode | null {
   const cfg = getConfig();
-  if (cfg.outlookVerificationEnabled) return outlookCodeProvider();
-  if (cfg.gmailVerificationEnabled && readGmailToken()) return gmailCodeProvider();
-  return null;
+  const fetchers: FetchVerificationCode[] = [];
+  if (cfg.outlookVerificationEnabled) fetchers.push(outlookCodeProvider());
+  if (cfg.gmailVerificationEnabled) {
+    fetchers.push(gmailWebCodeProvider());
+    if (readGmailToken()) fetchers.push(gmailCodeProvider());
+  }
+  return fetchers.length > 0 ? chainVerificationCodeProviders(fetchers) : null;
 }
 
 export function gmailCodeProvider(): FetchVerificationCode {
