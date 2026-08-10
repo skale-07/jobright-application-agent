@@ -31,25 +31,53 @@ export async function navigateViaSidecar(input: {
   const result = agentNavigateResultSchema.parse(JSON.parse(stdout.trim()));
 
   if (result.final_url !== null) {
-    let parsed: URL;
-    try {
-      parsed = new URL(result.final_url);
-    } catch {
-      throw new Error(`sidecar returned an unparseable final_url`);
-    }
-    const host = parsed.hostname.toLowerCase();
-    const allowed = task.allowed_domains.some(
-      (d) => host === d.toLowerCase() || host.endsWith(`.${d.toLowerCase()}`),
-    );
-    if (parsed.protocol !== "https:") {
-      throw new Error(`sidecar final_url is not https (${parsed.protocol})`);
-    }
-    if (/(^|\.)jobright\.ai$/i.test(host)) {
-      throw new Error("sidecar final_url is jobright-hosted — not an employer URL");
-    }
-    if (!allowed) {
-      throw new Error(`sidecar final_url host ${host} is outside allowed domains`);
+    const problem = finalUrlProblem(result.final_url, task.allowed_domains);
+    if (problem) {
+      // A bad final_url is a FAILED TURN, not a crashed phase: the live
+      // regression was a stuck-stopped agent whose jobright final_url got
+      // THROWN here, skipping turn accounting, notes, and telemetry — six
+      // apps died as bare "budget" with the cause invisible. Demote an ok
+      // result to an error result; strip the URL from any other status.
+      if (result.status === "ok") {
+        return {
+          ...result,
+          status: "error",
+          wall: result.wall === "none" ? "budget" : result.wall,
+          final_url: null,
+          notes: [...result.notes, `final_url rejected: ${problem}`].slice(0, 20),
+          reason: `sidecar final_url rejected: ${problem}`,
+        };
+      }
+      return {
+        ...result,
+        final_url: null,
+        notes: [...result.notes, `final_url dropped: ${problem}`].slice(0, 20),
+      };
     }
   }
   return result;
+}
+
+/** Why this URL cannot be an employer application URL, or null when fine. */
+function finalUrlProblem(url: string, allowedDomains: string[]): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "unparseable URL";
+  }
+  const host = parsed.hostname.toLowerCase();
+  if (parsed.protocol !== "https:") {
+    return `not https (${parsed.protocol})`;
+  }
+  if (/(^|\.)jobright\.ai$/i.test(host)) {
+    return "jobright-hosted — not an employer URL";
+  }
+  const allowed = allowedDomains.some(
+    (d) => host === d.toLowerCase() || host.endsWith(`.${d.toLowerCase()}`),
+  );
+  if (!allowed) {
+    return `host ${host} is outside allowed domains`;
+  }
+  return null;
 }

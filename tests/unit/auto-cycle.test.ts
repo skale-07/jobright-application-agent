@@ -172,6 +172,31 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
     expect(r.preflight.notes.join(" ")).toMatch(/ENOENT/);
   });
 
+  it("every cycle persists its report under artifacts/console/auto-cycle", async () => {
+    const artDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-cycle-art-"));
+    process.env.ARTIFACTS_DIR = artDir;
+    resetConfigCache();
+    try {
+      const r = await runAutoCycle(
+        { skipUpdate: true },
+        { db, exec: noExec, sessionRunner: async () => { throw new Error("must not run"); } },
+      );
+      expect(r.outcome).toBe("refused"); // safe env — flags off
+      const dir = path.join(artDir, "console", "auto-cycle");
+      const files = fs.readdirSync(dir);
+      expect(files.length).toBe(1);
+      const persisted = JSON.parse(
+        fs.readFileSync(path.join(dir, files[0]!), "utf8"),
+      ) as { outcome: string; preflight: { notes: string[] } };
+      expect(persisted.outcome).toBe("refused");
+      expect(persisted.preflight.notes.join(" ")).toMatch(/AUTOMATION_ENABLED/);
+    } finally {
+      delete process.env.ARTIFACTS_DIR;
+      resetConfigCache();
+      fs.rmSync(artDir, { recursive: true, force: true });
+    }
+  });
+
   it("never double-arms when a session is already live", async () => {
     armEnv();
     const { armSession, hashArmToken } = await import(

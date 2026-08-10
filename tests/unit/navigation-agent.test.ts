@@ -396,23 +396,27 @@ describe("navigation agent phase (N3)", () => {
     45_000,
   );
 
-  it("navigateViaSidecar rejects a jobright-hosted final_url (UNIT_CONFIRMED)", async () => {
-    await expect(
-      navigateViaSidecar({
-        task: {
-          task_version: 1,
-          task_type: "navigate",
-          goal: "test",
-          start_url: "https://jobright.ai/jobs/info/abc",
-          cdp_url: "http://127.0.0.1:9222",
-          allowed_domains: ["jobright.ai"],
-          max_steps: 5,
-          timeout_ms: 30_000,
-          credentials: { available: false },
-          gmail_available: false,
-        },
-        commandOverride: fakeSidecar(okResult("https://jobright.ai/jobs/info/abc")),
-      }),
-    ).rejects.toThrow(/jobright-hosted/);
+  it("a jobright-hosted final_url DEMOTES the result to a failed turn — never a thrown phase (UNIT_CONFIRMED)", async () => {
+    // Live regression: a stuck-stopped agent's jobright final_url was
+    // THROWN here, so six apps died as bare 'budget' with no turn notes.
+    const result = await navigateViaSidecar({
+      task: {
+        task_version: 1,
+        task_type: "navigate",
+        goal: "test",
+        start_url: "https://jobright.ai/jobs/info/abc",
+        cdp_url: "http://127.0.0.1:9222",
+        allowed_domains: ["jobright.ai"],
+        max_steps: 5,
+        timeout_ms: 30_000,
+        credentials: { available: false },
+        gmail_available: false,
+      },
+      commandOverride: fakeSidecar(okResult("https://jobright.ai/jobs/info/abc")),
+    });
+    expect(result.status).toBe("error");
+    expect(result.final_url).toBeNull();
+    expect(result.reason).toMatch(/jobright-hosted/);
+    expect(result.notes.join(" ")).toMatch(/final_url rejected/);
   });
 });

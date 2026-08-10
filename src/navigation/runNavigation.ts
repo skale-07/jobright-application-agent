@@ -36,6 +36,10 @@ import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
 import { codeVersion } from "../storage/codeVersion.js";
 import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 import {
+  selectCandidateApplyLinks,
+  traversalHosts,
+} from "./candidateLinks.js";
+import {
   checkUrlCongruence,
   findApplicationsWithEmployerUrl,
   getJobIdentity,
@@ -489,17 +493,18 @@ export async function runNavigation(
     // jobright+known-ATS-only cage made "find Apply on the company site"
     // structurally unwinnable. Traversal ≠ acceptance: congruence and the
     // final_url validation in navigateViaSidecar still gate what is stored.
+    const jobPageHosts = traversalHosts(hrefs);
     const allowedDomains = Array.from(
       new Set([
         "jobright.ai",
         ...KNOWN_ATS_HOSTS,
         ...(startUrl.startsWith("https://") ? [new URL(startUrl).hostname] : []),
-        ...externalHosts,
+        ...jobPageHosts,
       ]),
     ).slice(0, 25);
-    if (externalHosts.length > 0) {
+    if (jobPageHosts.length > 0) {
       report.notes.push(
-        `agent allowed_domains widened with job-page hosts: ${externalHosts
+        `agent allowed_domains widened with job-page hosts: ${jobPageHosts
           .slice(0, 10)
           .join(", ")}`,
       );
@@ -537,12 +542,28 @@ export async function runNavigation(
     const targetLabel = jobIdentity
       ? `the posting "${jobIdentity.role}" at ${jobIdentity.company}`
       : "this posting";
+    // The job page's own external links are the strongest leads — the run
+    // that resolved navigated DIRECTLY; the runs that thrashed scrolled
+    // jobright hunting for a control that isn't there. Name the links.
+    const candidateLinks = selectCandidateApplyLinks(hrefs);
+    const linksHint =
+      candidateLinks.length > 0
+        ? ` The job page links to these external pages which likely lead to the ` +
+          `application — OPEN THE MOST PROMISING ONE DIRECTLY (navigate to its URL) ` +
+          `instead of searching the current page: ${candidateLinks.join(" | ")}.`
+        : "";
+    if (candidateLinks.length > 0) {
+      report.notes.push(
+        `agent goal seeded with ${candidateLinks.length} candidate link(s) from the job page`,
+      );
+    }
     const baseGoal =
       `Reach the employer's job-application form page for ${targetLabel}, ` +
       `starting from the current page. Only an application page belonging to ` +
       `${jobIdentity?.company ?? "this job's employer"} counts — never return ` +
       `an application form for a different company, and do not reuse ` +
-      `previously open tabs for other jobs.`;
+      `previously open tabs for other jobs.` +
+      linksHint;
     let correction: string | null = null;
     let lastMismatch:
       | (CongruenceVerdict & { url: string })
