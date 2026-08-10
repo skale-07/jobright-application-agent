@@ -5,6 +5,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { Db } from "./db/client.js";
 import { migrate, openDatabase } from "./db/client.js";
+import { codeVersion } from "./codeVersion.js";
 import type {
   FieldFillMeta,
   FillResult,
@@ -453,13 +454,13 @@ export function recordFillRun(
         company, role, application_id, job_db_id, mutation_attempted,
         validation_level, verify_passed, fillable_count, skipped_count,
         upload_resume_verified, heal_attempted, heal_healed, heal_still_failing,
-        report_artifact_relpath, schema_version, metadata_json
+        report_artifact_relpath, schema_version, metadata_json, code_version
       ) VALUES (
         @id, @created_at, @mode, @source, @ats, @job_url, @job_host, @job_id_observed,
         @company, @role, @application_id, @job_db_id, @mutation_attempted,
         @validation_level, @verify_passed, @fillable_count, @skipped_count,
         @upload_resume_verified, @heal_attempted, @heal_healed, @heal_still_failing,
-        @report_artifact_relpath, @schema_version, @metadata_json
+        @report_artifact_relpath, @schema_version, @metadata_json, @code_version
       )
     `);
 
@@ -483,6 +484,7 @@ export function recordFillRun(
       insertRun.run({
         id: fill_run_id,
         created_at,
+        code_version: codeVersion(),
         mode: input.mode,
         source: input.source,
         ats: input.ats,

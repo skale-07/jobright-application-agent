@@ -7,8 +7,19 @@ import path from "node:path";
  * duplicated bodies in authorRun.ts and locateField.ts — non-zero exits
  * still carry a machine-readable result on stdout, so they resolve; only
  * empty stdout rejects. Callers own schema validation of the returned raw
- * stdout; this module never parses.
+ * stdout; this module never parses the RESULT.
+ *
+ * Progress stream (observability + training capture): the sidecar may
+ * write NDJSON lines to STDERR shaped {"jaa_progress":1, ...}. Those are
+ * surfaced live through onProgress as they arrive — stdout's one-JSON
+ * result contract is untouched, so a sidecar that never emits progress
+ * (or an old one) behaves exactly as before. Progress is telemetry, never
+ * a contract result: a caller must not treat any progress line as the
+ * outcome. Capped at 500 lines per run so a thrashing agent can't melt
+ * the log store.
  */
+const PROGRESS_LINE_CAP = 500;
+
 export async function runSidecarTask(input: {
   task: unknown;
   timeoutMs: number;
@@ -16,6 +27,8 @@ export async function runSidecarTask(input: {
   graceMs: number;
   /** Override for tests: command to run instead of python. */
   commandOverride?: { command: string; args: string[] };
+  /** Live progress sink for {"jaa_progress":1,...} stderr lines. */
+  onProgress?: (event: Record<string, unknown>) => void;
 }): Promise<string> {
   const { command, args } = input.commandOverride ?? {
     command: "python",
@@ -30,8 +43,31 @@ export async function runSidecarTask(input: {
     });
     let out = "";
     let err = "";
+    let errLineBuf = "";
+    let progressSeen = 0;
+    const handleErrChunk = (chunk: string): void => {
+      err += chunk;
+      if (!input.onProgress) return;
+      errLineBuf += chunk;
+      let nl: number;
+      while ((nl = errLineBuf.indexOf("\n")) >= 0) {
+        const line = errLineBuf.slice(0, nl).trim();
+        errLineBuf = errLineBuf.slice(nl + 1);
+        if (!line.startsWith('{"jaa_progress"')) continue;
+        if (progressSeen >= PROGRESS_LINE_CAP) continue;
+        try {
+          const parsed = JSON.parse(line) as Record<string, unknown>;
+          if (parsed["jaa_progress"] === 1) {
+            progressSeen += 1;
+            input.onProgress(parsed);
+          }
+        } catch {
+          // malformed progress is ignored — stderr is untrusted output
+        }
+      }
+    };
     child.stdout.on("data", (d: Buffer) => (out += d.toString()));
-    child.stderr.on("data", (d: Buffer) => (err += d.toString()));
+    child.stderr.on("data", (d: Buffer) => handleErrChunk(d.toString()));
     child.on("error", (e) =>
       reject(new Error(`sidecar spawn failed: ${e.message}`)),
     );

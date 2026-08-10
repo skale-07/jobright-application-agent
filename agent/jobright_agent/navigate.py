@@ -42,6 +42,30 @@ def _emit(result: dict, code: int = 0) -> None:
     sys.exit(code)
 
 
+_PROGRESS_CAP = 400
+_progress_count = 0
+
+
+def _progress(event: str, **fields) -> None:
+    """NDJSON progress on STDERR — telemetry only, never the result.
+
+    The stdout one-JSON contract is untouched; the Node side tails these
+    lines live ({"jaa_progress":1,...}) for run-log streaming and the
+    per-run agent trace. Hard rules: never include typed values, secrets,
+    or model thoughts here — actions, hosts, and timings only. Capped so
+    a thrashing agent can't flood the pipe.
+    """
+    global _progress_count
+    if _progress_count >= _PROGRESS_CAP:
+        return
+    _progress_count += 1
+    try:
+        line = json.dumps({"jaa_progress": 1, "event": event, "t": round(time.time(), 3), **fields})
+        print(line, file=sys.stderr, flush=True)
+    except Exception:  # noqa: BLE001 — progress must never kill the task
+        pass
+
+
 def _fail_navigate(reason: str, wall: str = "budget", code: int = 1) -> None:
     # The reason ALSO rides in notes: a zero-step failure whose cause lives
     # only in `reason` proved undiagnosable from the nav artifact alone
@@ -139,12 +163,14 @@ def _extract_email(final_text: str) -> str:
 async def _navigate(task: dict) -> dict:
     from browser_use import Agent, Browser  # type: ignore[import-not-found]
 
+    _progress("imports_ready")
     if not os.environ.get("OPENAI_API_KEY"):
         raise RuntimeError("OPENAI_API_KEY not set in the sidecar environment")
 
     from browser_use.llm import ChatOpenAI  # type: ignore[import-not-found]
 
     llm = ChatOpenAI(model=os.environ.get("NAV_AGENT_MODEL", "gpt-5-mini"))
+    _progress("browser_attaching", cdp_host=_host(task["cdp_url"]) or task["cdp_url"][:40])
     browser = Browser(cdp_url=task["cdp_url"])
 
     resume = task.get("resume")
@@ -190,7 +216,50 @@ async def _navigate(task: dict) -> dict:
         except Exception:  # noqa: BLE001
             pass
 
-    agent = Agent(**agent_kwargs)
+    # Per-step telemetry (scrubbed): action names + destination host only —
+    # never typed values, never model thoughts. The callback API is
+    # version-sensitive across browser-use releases, so registration is
+    # best-effort; without it the heartbeats above still bound the silence.
+    step_counter = {"i": 0}
+
+    def _on_step(*cb_args, **cb_kwargs) -> None:  # noqa: ANN002, ANN003
+        try:
+            step_counter["i"] += 1
+            actions: list[str] = []
+            url_host = ""
+            for a in cb_args:
+                model_output = getattr(a, "model_output", None) or (
+                    a if hasattr(a, "action") else None
+                )
+                acts = getattr(model_output, "action", None)
+                if isinstance(acts, list):
+                    for act in acts[:4]:
+                        try:
+                            dumped = act.model_dump(exclude_none=True)
+                            actions.extend(list(dumped.keys())[:2])
+                        except Exception:  # noqa: BLE001
+                            actions.append(type(act).__name__)
+                state_url = getattr(a, "url", None)
+                if isinstance(state_url, str) and state_url.startswith("http"):
+                    url_host = _host(state_url)
+            _progress(
+                "step",
+                i=step_counter["i"],
+                actions=actions[:6],
+                host=url_host,
+                elapsed_ms=int((time.monotonic() - started) * 1000),
+            )
+        except Exception:  # noqa: BLE001 — telemetry must never break a step
+            pass
+
+    try:
+        agent_kwargs["register_new_step_callback"] = _on_step
+        agent = Agent(**agent_kwargs)
+    except TypeError:
+        agent_kwargs.pop("register_new_step_callback", None)
+        notes.append("step telemetry unavailable (browser-use version lacks step callback)")
+        agent = Agent(**agent_kwargs)
+    _progress("agent_running", max_steps=int(task["max_steps"]))
     try:
         history = await asyncio.wait_for(
             agent.run(max_steps=int(task["max_steps"])),
@@ -272,6 +341,7 @@ def run(task: dict) -> None:
             _fail_navigate(f"task missing {key}")
             return
 
+    _progress("sidecar_spawned", start_host=_host(task.get("start_url", "")))
     try:
         result = asyncio.run(_navigate(task))
     except asyncio.TimeoutError:
