@@ -7,7 +7,10 @@ import {
   type VerificationWaitResult,
 } from "../gmail/waitForVerification.js";
 import { outlookCodeProvider } from "./codeProviders.js";
-import { gmailWebCodeProvider } from "./gmailWebProvider.js";
+import {
+  gmailWebNavFetch,
+  type MailboxVerificationHit,
+} from "./gmailWebProvider.js";
 
 /**
  * The one nav-time email-verification seam: a portal said "we emailed you
@@ -19,15 +22,15 @@ import { gmailWebCodeProvider } from "./gmailWebProvider.js";
  *      The one transport that retrieves magic LINKS (domain-validated).
  *   2. Gmail WEB — read-only Playwright scan of mail.google.com in the
  *      operator's Google-authenticated session (GMAIL_VERIFICATION_ENABLED,
- *      no token needed). Codes only.
+ *      no token needed). Codes AND magic links: sender trust + freshness
+ *      gate the link (tracking-domain wrappers are legitimate); where a
+ *      link lands is still judged by congruence + final-URL validation.
  *   3. Outlook — read-only DOM scan of the operator's authenticated web
- *      session (OUTLOOK_VERIFICATION_ENABLED). Codes only.
+ *      session (OUTLOOK_VERIFICATION_ENABLED). Codes.
  *
- * Rendered mailboxes are codes-only because a reading pane cannot be
- * domain-validated as strictly as raw MIME. All fail closed behind their
- * flags; none ever composes or sends (sendGuards discipline unchanged).
- * Codes/links are transient secrets — callers scrub them from anything
- * persisted.
+ * All fail closed behind their flags; none ever composes or sends
+ * (sendGuards discipline unchanged). Codes/links are transient secrets —
+ * callers scrub them from anything persisted.
  */
 
 export type EmailVerificationNeed = {
@@ -57,15 +60,16 @@ export function emailVerificationAvailable(): boolean {
  * an Outlook fallback runs only when Gmail is unavailable OR timed out
  * (a second mailbox is a second chance, not a race).
  */
-type CodeFetch = (input: {
+/** A mailbox-scan fetch: code or magic link, from a verified-fresh email. */
+type ScanFetch = (input: {
   requestedAt: string;
   emailHint: string | null;
-}) => Promise<{ code: string; source: string } | null>;
+}) => Promise<(MailboxVerificationHit & { source: string }) | null>;
 
 export function resolveNavVerificationWaiter(overrides?: {
   gmailWaiter?: NavVerificationWaiter;
-  gmailWebFetch?: CodeFetch;
-  outlookFetch?: CodeFetch;
+  gmailWebFetch?: ScanFetch;
+  outlookFetch?: ScanFetch;
 }): NavVerificationWaiter | null {
   const cfg = getConfig();
   // Gmail REST rides only when a token exists (the API is unavailable for
@@ -92,10 +96,21 @@ export function resolveNavVerificationWaiter(overrides?: {
     : null;
 
   // Mailbox-scan fallbacks in order: Gmail web first (same account the
-  // portal mailed), Outlook second. Codes only — links stay REST-only.
-  const scanFetchers: Array<CodeFetch> = [];
-  if (gmailWebOn) scanFetchers.push(overrides?.gmailWebFetch ?? gmailWebCodeProvider());
-  if (outlookOn) scanFetchers.push(overrides?.outlookFetch ?? outlookCodeProvider());
+  // portal mailed; codes AND magic links — sender trust gates links, the
+  // nav result gates still judge where they land), Outlook second (codes).
+  const scanFetchers: Array<ScanFetch> = [];
+  if (gmailWebOn) scanFetchers.push(overrides?.gmailWebFetch ?? gmailWebNavFetch());
+  if (outlookOn) {
+    scanFetchers.push(
+      overrides?.outlookFetch ??
+        (async (input) => {
+          const fetched = await outlookCodeProvider()(input);
+          return fetched
+            ? { kind: "code", value: fetched.code, source: fetched.source }
+            : null;
+        }),
+    );
+  }
 
   return async (need, allowedDomains) => {
     let pollsUsed = 0;
@@ -105,23 +120,30 @@ export function resolveNavVerificationWaiter(overrides?: {
       pollsUsed += viaGmail.pollsUsed;
     }
     for (const fetch of scanFetchers) {
-      const fetched = await fetch({
+      const hit = await fetch({
         requestedAt: need.requested_at,
         emailHint: need.sent_to || null,
       });
       pollsUsed += 1;
-      if (fetched) {
-        logger.info("verification code retrieved", {
+      if (hit) {
+        logger.info(`verification ${hit.kind} retrieved`, {
           service: "verification",
           action: "nav_code",
-          metadata: { provider: fetched.source, code_length: fetched.code.length },
+          metadata: { provider: hit.source, kind: hit.kind },
         });
-        return {
-          kind: "code",
-          code: fetched.code,
-          messageId: `${fetched.source}:mailbox-scan`,
-          pollsUsed,
-        };
+        return hit.kind === "code"
+          ? {
+              kind: "code",
+              code: hit.value,
+              messageId: `${hit.source}:mailbox-scan`,
+              pollsUsed,
+            }
+          : {
+              kind: "link",
+              url: hit.value,
+              messageId: `${hit.source}:mailbox-scan`,
+              pollsUsed,
+            };
       }
     }
     return { kind: "timeout", pollsUsed };

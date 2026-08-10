@@ -117,11 +117,11 @@ describe("gmail web verification", () => {
       gmailWaiter: async () => ({ kind: "timeout", pollsUsed: 10 }),
       gmailWebFetch: async () => {
         order.push("gmail-web");
-        return { code: "808080", source: "gmail-web" };
+        return { kind: "code" as const, value: "808080", source: "gmail-web" };
       },
       outlookFetch: async () => {
         order.push("outlook");
-        return { code: "909090", source: "outlook" };
+        return { kind: "code" as const, value: "909090", source: "outlook" };
       },
     })!;
     const r = await waiter(
@@ -136,9 +136,57 @@ describe("gmail web verification", () => {
     expect(order).toEqual(["gmail-web"]);
   });
 
+  it(
+    "scan returns the MAGIC LINK when a fresh verification mail has no code (FIXTURE_CONFIRMED)",
+    async () => {
+      const { scanGmailInboxForVerification } = await import(
+        "../../src/verification/gmailWebProvider.js"
+      );
+      const inbox = `<html><body><div role="main"><table>
+        <tr class="zA"><td>Acme Careers — Confirm your email</td></tr>
+      </table>
+      <div class="a3s">Click to continue:
+        <a href="https://links.mailer-acme.net/ls/click?u=abc123">Verify my email</a>
+        <a href="https://acme.example.com/unsubscribe">Unsubscribe</a>
+      </div>
+      </div></body></html>`;
+      await withFixtureHtmlPage(inbox, async (page) => {
+        const hit = await scanGmailInboxForVerification(page, {
+          requestedAt: new Date().toISOString(),
+          accept: "code_or_link",
+        });
+        // The tracking-domain link qualifies (verified sender + fresh +
+        // verification-ish); the unsubscribe footer link never does.
+        expect(hit).toEqual({
+          kind: "link",
+          value: "https://links.mailer-acme.net/ls/click?u=abc123",
+        });
+      });
+    },
+    45_000,
+  );
+
+  it("nav waiter maps a link hit to kind=link (UNIT_CONFIRMED)", async () => {
+    const waiter = resolveNavVerificationWaiter({
+      gmailWebFetch: async () => ({
+        kind: "link" as const,
+        value: "https://links.mailer.net/click?t=xyz",
+        source: "gmail-web",
+      }),
+    })!;
+    const r = await waiter(
+      { sent_to: "candidate@example.com", requested_at: new Date().toISOString() },
+      [],
+    );
+    expect(r.kind).toBe("link");
+    if (r.kind === "link") {
+      expect(r.url).toBe("https://links.mailer.net/click?t=xyz");
+    }
+  });
+
   it("nav waiter works gmail-web-only — no REST waiter, no outlook (UNIT_CONFIRMED)", async () => {
     const waiter = resolveNavVerificationWaiter({
-      gmailWebFetch: async () => ({ code: "606060", source: "gmail-web" }),
+      gmailWebFetch: async () => ({ kind: "code" as const, value: "606060", source: "gmail-web" }),
     })!;
     const r = await waiter(
       { sent_to: "candidate@example.com", requested_at: new Date().toISOString() },

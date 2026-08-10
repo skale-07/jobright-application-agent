@@ -210,8 +210,16 @@ async def _navigate(task: dict) -> dict:
                 + goal
             )
         else:
+            # Verified-sender trust: the link came from a fresh verification
+            # email addressed to us. Tracking-domain wrappers are common and
+            # legitimate — widen the traversal allowlist instead of failing.
+            # Acceptance is still gated downstream (final_url validation +
+            # congruence), so a bad link can waste a turn, never store a URL.
             if not _in_allowed(injected["url"], task["allowed_domains"]):
-                raise RuntimeError("magic link outside allowed domains")
+                link_host = _host(injected["url"])
+                if link_host:
+                    task["allowed_domains"] = [*task["allowed_domains"], link_host]
+                    _progress("magic_link_host_added", host=link_host)
             start_url = injected["url"]
             goal = (
                 f"Open the verification link you are starting on, then continue.\n\n"

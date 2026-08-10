@@ -130,7 +130,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
         }),
         outlookFetch: async () => {
           outlookCalls++;
-          return { code: "999999", source: "outlook" };
+          return { kind: "code" as const, value: "999999", source: "outlook" };
         },
       })!;
       const r = await waiter(NEED, []);
@@ -141,7 +141,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
     it("falls back to outlook (codes only) when gmail times out", async () => {
       const waiter = resolveNavVerificationWaiter({
         gmailWaiter: async () => ({ kind: "timeout", pollsUsed: 10 }),
-        outlookFetch: async () => ({ code: "424242", source: "outlook" }),
+        outlookFetch: async () => ({ kind: "code" as const, value: "424242", source: "outlook" }),
       })!;
       const r = await waiter(NEED, ["example.com"]);
       expect(r.kind).toBe("code");
@@ -163,7 +163,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
 
     it("outlook-only shells still get a waiter (gmail token absent)", async () => {
       const waiter = resolveNavVerificationWaiter({
-        outlookFetch: async () => ({ code: "777777", source: "outlook" }),
+        outlookFetch: async () => ({ kind: "code" as const, value: "777777", source: "outlook" }),
       })!;
       const r = await waiter(NEED, []);
       expect(r.kind).toBe("code");
