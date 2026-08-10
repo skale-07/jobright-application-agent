@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import type { Db } from "./db/client.js";
 import { migrate, openDatabase } from "./db/client.js";
 import { logger } from "../logging/logger.js";
+import { codeVersion } from "./codeVersion.js";
 import type { NavigationReport } from "../navigation/runNavigation.js";
 
 let migratedFor: Db | null = null;
@@ -34,6 +35,8 @@ export type RecordNavigationAttemptInput = {
   startUrl?: string | null;
   armRunId?: string | null;
   durationMs?: number | null;
+  /** Relative path of the per-run agent trace (training corpus join). */
+  traceRelpath?: string | null;
 };
 
 export function recordNavigationAttempt(
@@ -56,8 +59,9 @@ export function recordNavigationAttempt(
          id, created_at, run_id, application_id, arm_run_id, session_kind,
          method, wall, resolved, resolved_ats, start_host, end_host,
          phase_trace_json, agent_turns, agent_steps, agent_domains_json,
-         gmail_polls, duration_ms, report_artifact_relpath
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         gmail_polls, duration_ms, report_artifact_relpath,
+         code_version, congruence_verdict, trace_relpath
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       new Date().toISOString(),
@@ -78,6 +82,9 @@ export function recordNavigationAttempt(
       r.gmail?.polls_used ?? null,
       input.durationMs ?? null,
       r.report_path ?? null,
+      codeVersion(),
+      r.congruence?.verdict ?? null,
+      input.traceRelpath ?? null,
     );
     return { id };
   } catch (err) {
@@ -131,8 +138,8 @@ export function recordSubmitAttempt(
          id, created_at, run_id, application_id, submission_id, ats,
          outcome, clicked, control_resolved_via, cap_hit_at_click,
          verify_recovery_used, url_host, reason, cta_inventory_count,
-         duration_ms, report_artifact_relpath
-       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         duration_ms, report_artifact_relpath, code_version
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       new Date().toISOString(),
@@ -150,6 +157,7 @@ export function recordSubmitAttempt(
       input.ctaInventoryCount ?? null,
       input.durationMs ?? null,
       input.reportArtifactRelpath ?? null,
+      codeVersion(),
     );
     return { id };
   } catch (err) {

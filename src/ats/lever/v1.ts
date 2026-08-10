@@ -16,6 +16,7 @@ import type {
 } from "../adapter.js";
 import { getConfig } from "../../config/index.js";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import { applyLeverCardQuestions } from "./cardQuestions.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { detectBlockingCaptcha } from "../greenhouse/captchaDetection.js";
 import { detectLoginWall } from "../greenhouse/loginWallDetection.js";
@@ -150,7 +151,13 @@ export class LeverAdapterV1 implements ApplicationAdapter {
   }
 
   async discoverFields(input: { html: string }): Promise<DiscoveredField[]> {
-    return discoverFieldsFromHtml(input.html);
+    // Custom-question cards keep their label in a sibling div, not the
+    // input's <label> — overlay the real question text/options/required
+    // so the bank, completeness naming, and prediction queue see them.
+    return applyLeverCardQuestions(
+      discoverFieldsFromHtml(input.html),
+      input.html,
+    );
   }
 
   /**

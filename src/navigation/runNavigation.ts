@@ -35,6 +35,7 @@ import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
+import { codeVersion } from "../storage/codeVersion.js";
 import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 import {
   checkUrlCongruence,
@@ -200,6 +201,51 @@ export async function runNavigation(
   /** Values that must never reach the artifact, whatever echoes them. */
   const secretValues: string[] = [];
 
+  /**
+   * Streaming phase markers: every phase_trace entry ALSO logs the moment
+   * it happens, so the console run log shows live progress instead of
+   * multi-minute silence followed by end-of-run archaeology. Progress is
+   * telemetry, never a result — outcomes still come from the return path.
+   */
+  const trace = (entry: NavigationPhaseTrace): void => {
+    report.phase_trace.push(entry);
+    logger.info(`nav phase: ${entry.phase}`, {
+      service: "navigation",
+      action: "nav_phase",
+      metadata: {
+        run_id: report.run_id,
+        application_id: applicationId,
+        phase: entry.phase,
+        outcome: entry.outcome,
+        ...(entry.evidence ? { evidence: entry.evidence } : {}),
+      },
+    });
+  };
+
+  /**
+   * Sidecar step/heartbeat stream, kept for the per-run trace artifact
+   * (training corpus: scrubbed action + host + timing per step) and
+   * re-logged live. Secrets are scrubbed the same way the artifact is.
+   */
+  const agentEvents: Array<Record<string, unknown>> = [];
+  const onAgentProgress = (event: Record<string, unknown>): void => {
+    let serialized = JSON.stringify(event);
+    for (const secret of secretValues) {
+      if (secret) serialized = serialized.split(secret).join("[REDACTED_SECRET]");
+    }
+    const clean = JSON.parse(serialized) as Record<string, unknown>;
+    if (agentEvents.length < 400) agentEvents.push({ ...clean, at: new Date().toISOString() });
+    logger.info(`nav agent ${String(clean["event"] ?? "progress")}`, {
+      service: "navigation",
+      action: "nav_agent_progress",
+      metadata: {
+        run_id: report.run_id,
+        application_id: applicationId,
+        ...clean,
+      },
+    });
+  };
+
   const resolved = getStoredJobInspectionTargetByApplicationId(db, applicationId);
   if (!resolved.ok) {
     report.wall = "budget";
@@ -253,10 +299,10 @@ export async function runNavigation(
         detail: "navigation: JobRight session unauthenticated",
       });
       report.wall = "jobright_auth";
-      report.phase_trace.push({ phase: "open", outcome: "jobright auth loss" });
+      trace({ phase: "open", outcome: "jobright auth loss" });
       return persist(report);
     }
-    report.phase_trace.push({ phase: "open", outcome: "job page loaded" });
+    trace({ phase: "open", outcome: "job page loaded" });
 
     // Phase A — zero mutation. Only a KNOWN-ATS href resolves here: the
     // any-anchor fallback also matches footer/social links, and phase A
@@ -273,14 +319,14 @@ export async function runNavigation(
       );
     }
     if (atsHref) {
-      report.phase_trace.push({
+      trace({
         phase: "A_anchor_hrefs",
         outcome: `resolved (known ATS, ${hrefs.length} candidates, employer match)`,
         evidence: new URL(atsHref).hostname,
       });
       return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
     }
-    report.phase_trace.push({
+    trace({
       phase: "A_anchor_hrefs",
       outcome:
         hrefs.length > 0
@@ -318,13 +364,13 @@ export async function runNavigation(
         report.notes.push(
           `phase B: captured URL rejected — ${captureCong.detail}`,
         );
-        report.phase_trace.push({
+        trace({
           phase: "B_apply_click",
           outcome: "captured URL belongs to a different employer — not stored",
           evidence: new URL(capture.url).hostname,
         });
       } else if (!landingWall) {
-        report.phase_trace.push({
+        trace({
           phase: "B_apply_click",
           outcome: `resolved via ${capture.via}`,
           evidence: new URL(capture.url).hostname,
@@ -340,7 +386,7 @@ export async function runNavigation(
         // A wrong-employer capture must NOT become the agent's start page —
         // only a genuine same-employer login wall is worth continuing from.
         capturedWallUrl = capture.url;
-        report.phase_trace.push({
+        trace({
           phase: "B_apply_click",
           outcome: "captured URL lands on a login wall — not stored",
           evidence: new URL(capture.url).hostname,
@@ -365,19 +411,19 @@ export async function runNavigation(
     });
     if (captcha.detected) {
       report.wall = "captcha";
-      report.phase_trace.push({ phase: "B_apply_click", outcome: "blocking captcha" });
+      trace({ phase: "B_apply_click", outcome: "blocking captcha" });
       return persist(report);
     }
     const loginWall = detectLoginWall({ finalUrl, html, title });
     if (loginWall.detected) {
-      report.phase_trace.push({ phase: "B_apply_click", outcome: "login wall" });
+      trace({ phase: "B_apply_click", outcome: "login wall" });
       if (!agentPhasePossible) {
         report.wall = "auth";
         return persist(report);
       }
       // The agent phase can attempt the wall (sign-in / account flow).
     } else {
-      report.phase_trace.push({
+      trace({
         phase: "B_apply_click",
         outcome: "unresolved by deterministic phases",
       });
@@ -388,7 +434,7 @@ export async function runNavigation(
       // Say WHY in the trace: an L3 session report full of bare
       // "budget" walls hides that these apps only needed the agent phase,
       // which an unattended headless child can never run (no operator CDP).
-      report.phase_trace.push({
+      trace({
         phase: "C_agent",
         outcome:
           "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)",
@@ -415,7 +461,7 @@ export async function runNavigation(
       : null;
     const hostPolicy = evaluateAgentHostPolicy(db, policyHost);
     if (!hostPolicy.runAgent) {
-      report.phase_trace.push({
+      trace({
         phase: "C_agent",
         outcome: `skipped: ${hostPolicy.reason}`,
       });
@@ -505,7 +551,21 @@ export async function runNavigation(
       | null = null;
     try {
       while (turns < 3 && Date.now() < deadline) {
+        logger.info("nav agent turn starting", {
+          service: "navigation",
+          action: "nav_agent_turn_begin",
+          metadata: {
+            run_id: report.run_id,
+            application_id: applicationId,
+            turn: turns + 1,
+            start_host: turnStartUrl.startsWith("https://")
+              ? new URL(turnStartUrl).hostname
+              : null,
+            corrective: correction !== null,
+          },
+        });
         const agentResult = await navigateViaSidecar({
+          onProgress: onAgentProgress,
           task: {
             task_version: 1,
             task_type: "navigate",
@@ -534,6 +594,23 @@ export async function runNavigation(
           steps_used: totalSteps,
           domains_visited: [...visited],
         };
+        // Turn summary streams even on zero-step failures — the live case
+        // this exists for (a wedged CDP attach dies before the first step,
+        // which no step stream can ever show).
+        logger.info("nav agent turn finished", {
+          service: "navigation",
+          action: "nav_agent_turn_end",
+          metadata: {
+            run_id: report.run_id,
+            application_id: applicationId,
+            turn: turns,
+            status: agentResult.status,
+            wall: agentResult.wall,
+            steps_used: agentResult.steps_used,
+            domains_visited: agentResult.domains_visited,
+            ...(agentResult.reason ? { reason: agentResult.reason.slice(0, 200) } : {}),
+          },
+        });
         report.notes.push(...agentResult.notes.map((n) => `agent[${turns}]: ${n}`));
         // A zero-step error's cause lives ONLY in `reason` — three live
         // failures shipped with empty notes and were undiagnosable until
@@ -554,7 +631,7 @@ export async function runNavigation(
           const cong = congruent(agentResult.final_url);
           if (cong.verdict === "mismatch") {
             lastMismatch = { ...cong, url: agentResult.final_url };
-            report.phase_trace.push({
+            trace({
               phase: "C_agent",
               outcome: `rejected (turn ${turns}): wrong employer — ${cong.detail}`,
               evidence: new URL(agentResult.final_url).hostname,
@@ -572,7 +649,7 @@ export async function runNavigation(
             resume = undefined;
             continue;
           }
-          report.phase_trace.push({
+          trace({
             phase: "C_agent",
             outcome: `resolved (turn ${turns}, employer ${cong.verdict === "match" ? "match" : "unverified"})`,
             evidence: new URL(agentResult.final_url).hostname,
@@ -591,7 +668,7 @@ export async function runNavigation(
           const waiter = input.gmailWaiterOverride ?? defaultGmailWaiter;
           if (!gmailAvailable && !input.gmailWaiterOverride) {
             report.wall = "auth";
-            report.phase_trace.push({
+            trace({
               phase: "C_agent",
               outcome:
                 "needs email verification — GMAIL_VERIFICATION_ENABLED=false, human review",
@@ -607,13 +684,13 @@ export async function runNavigation(
           };
           if (wait.kind === "timeout") {
             report.wall = "auth";
-            report.phase_trace.push({
+            trace({
               phase: "D_gmail",
               outcome: "verification email not found within the poll budget",
             });
             return persist(report);
           }
-          report.phase_trace.push({
+          trace({
             phase: "D_gmail",
             outcome: `verification ${wait.kind} retrieved`,
           });
@@ -634,7 +711,7 @@ export async function runNavigation(
         }
 
         report.wall = agentResult.wall === "none" ? "budget" : agentResult.wall;
-        report.phase_trace.push({
+        trace({
           phase: "C_agent",
           outcome: `wall: ${report.wall} (turn ${turns})`,
         });
@@ -648,14 +725,14 @@ export async function runNavigation(
           ...lastMismatch,
           expected_company: jobIdentity?.company ?? "(unknown)",
         };
-        report.phase_trace.push({
+        trace({
           phase: "C_agent",
           outcome: `exhausted turns — every candidate URL belonged to a different employer (last: ${lastMismatch.slug ?? "?"})`,
         });
         return persist(report);
       }
       report.wall = "budget";
-      report.phase_trace.push({
+      trace({
         phase: "C_agent",
         outcome: "turn/deadline budget exhausted",
       });
@@ -665,7 +742,7 @@ export async function runNavigation(
         `agent phase failed: ${err instanceof Error ? err.message : String(err)}`,
       );
       report.wall = "budget";
-      report.phase_trace.push({ phase: "C_agent", outcome: "error" });
+      trace({ phase: "C_agent", outcome: "error" });
       return persist(report);
     }
   } finally {
@@ -736,6 +813,40 @@ export async function runNavigation(
     const outDir = path.join(cfg.artifactsDir, "navigation", r.run_id);
     fs.mkdirSync(outDir, { recursive: true });
     const outPath = path.join(outDir, "report.json");
+
+    // Agent trace artifact — the behavioral-cloning corpus row for this
+    // episode: era-stamped, scrubbed step/heartbeat events joined to the
+    // deterministic outcome label (congruence verdict + wall). One JSONL
+    // line per event, header first. Written only when the agent ran.
+    let traceRelpath: string | null = null;
+    if (agentEvents.length > 0) {
+      try {
+        const tracePath = path.join(outDir, "agent-trace.jsonl");
+        const header = {
+          kind: "nav_agent_trace",
+          version: 1,
+          run_id: r.run_id,
+          application_id: r.application_id,
+          code_version: codeVersion(),
+          session: r.session,
+          outcome: {
+            wall: r.wall,
+            method: r.method,
+            resolved: r.resolved_url !== null,
+            congruence: r.congruence?.verdict ?? null,
+          },
+        };
+        let body =
+          [header, ...agentEvents].map((e) => JSON.stringify(e)).join("\n") + "\n";
+        for (const secret of secretValues) {
+          if (secret) body = body.split(secret).join("[REDACTED_SECRET]");
+        }
+        fs.writeFileSync(tracePath, body, "utf8");
+        traceRelpath = path.relative(cfg.artifactsDir, tracePath);
+      } catch {
+        // trace is telemetry — never fail the run over it
+      }
+    }
     const redacted = redactObject({
       ...r,
       written_at: new Date().toISOString(),
@@ -760,6 +871,7 @@ export async function runNavigation(
         report: r,
         startUrl: resolved.ok ? resolved.target.jobUrl : null,
         durationMs: Date.now() - startedAt,
+        traceRelpath,
       },
       { db },
     );

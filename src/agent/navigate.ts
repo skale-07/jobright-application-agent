@@ -17,6 +17,8 @@ import { runSidecarTask } from "./sidecarRunner.js";
 export async function navigateViaSidecar(input: {
   task: AgentNavigateTask;
   commandOverride?: { command: string; args: string[] };
+  /** Live sidecar progress (heartbeats + scrubbed step telemetry). */
+  onProgress?: (event: Record<string, unknown>) => void;
 }): Promise<AgentNavigateResult> {
   const task = agentNavigateTaskSchema.parse(input.task);
   const stdout = await runSidecarTask({
@@ -24,6 +26,7 @@ export async function navigateViaSidecar(input: {
     timeoutMs: task.timeout_ms,
     graceMs: 30_000,
     ...(input.commandOverride ? { commandOverride: input.commandOverride } : {}),
+    ...(input.onProgress ? { onProgress: input.onProgress } : {}),
   });
   const result = agentNavigateResultSchema.parse(JSON.parse(stdout.trim()));
 
