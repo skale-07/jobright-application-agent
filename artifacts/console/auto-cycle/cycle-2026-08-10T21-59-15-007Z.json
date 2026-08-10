@@ -1,0 +1,59 @@
+{
+  "started_at": "2026-08-10T21:59:15.007Z",
+  "updated": {
+    "pulled": false,
+    "head": "69f04e8a",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "agent_leg": "available (debug Chrome autolaunched)"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "edc4d38f-5962-43c6-a12c-bc26d0a7dcab",
+    "armed_until": "2026-08-10T23:59:28.582Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "edc4d38f-5962-43c6-a12c-bc26d0a7dcab",
+    "apps_started": 0,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 2,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 1 parked for review",
+      "discover: 8 inspected",
+      "discover: 8 inspected",
+      "artifact autopush: nothing new to push"
+    ],
+    "per_app": [],
+    "nav_audit": {
+      "checked": 3,
+      "repaired": 0,
+      "parked": 1
+    },
+    "artifact_autopush": {
+      "pushed": false,
+      "commit": null,
+      "files_staged": 0
+    }
+  },
+  "outcome": "completed",
+  "notes": [
+    "CDP autolaunch: started debug Chrome on port 9222"
+  ]
+}
