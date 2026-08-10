@@ -326,12 +326,41 @@ export async function runNavigation(
       });
       return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
     }
+    // Name the hosts phase A saw but could not accept: an "N links
+    // ignored" count hid that the answer was often sitting in a
+    // career-site href the agent was then forbidden to traverse.
+    const externalHosts = Array.from(
+      new Set(
+        hrefs
+          .map((h) => {
+            try {
+              return new URL(h).hostname.toLowerCase();
+            } catch {
+              return null;
+            }
+          })
+          .filter((h): h is string => h !== null),
+      ),
+    );
+    const ignoredHosts = externalHosts.filter(
+      (h) => !atsHrefs.some((a) => new URL(a).hostname.toLowerCase() === h),
+    );
+    if (ignoredHosts.length > 0) {
+      report.notes.push(
+        `phase A: ${ignoredHosts.length} non-ATS external host(s) seen: ${ignoredHosts
+          .slice(0, 10)
+          .join(", ")}`,
+      );
+    }
     trace({
       phase: "A_anchor_hrefs",
       outcome:
         hrefs.length > 0
           ? `no known-ATS anchors (${hrefs.length} external links ignored)`
           : "no external anchors",
+      ...(ignoredHosts.length > 0
+        ? { evidence: ignoredHosts.slice(0, 6).join(", ") }
+        : {}),
     });
 
     if (Date.now() > deadline) {
@@ -469,17 +498,26 @@ export async function runNavigation(
       report.wall = "budget";
       return persist(report);
     }
+    // The agent may traverse every external host the job page itself
+    // linked to (career sites that front the real ATS) — the previous
+    // jobright+known-ATS-only cage made "find Apply on the company site"
+    // structurally unwinnable. Traversal ≠ acceptance: congruence and the
+    // final_url validation in navigateViaSidecar still gate what is stored.
     const allowedDomains = Array.from(
-      new Set(
-        [
-          "jobright.ai",
-          ...KNOWN_ATS_HOSTS,
-          ...(startUrl.startsWith("https://")
-            ? [new URL(startUrl).hostname]
-            : []),
-        ].slice(0, 20),
-      ),
-    );
+      new Set([
+        "jobright.ai",
+        ...KNOWN_ATS_HOSTS,
+        ...(startUrl.startsWith("https://") ? [new URL(startUrl).hostname] : []),
+        ...externalHosts,
+      ]),
+    ).slice(0, 25);
+    if (externalHosts.length > 0) {
+      report.notes.push(
+        `agent allowed_domains widened with job-page hosts: ${externalHosts
+          .slice(0, 10)
+          .join(", ")}`,
+      );
+    }
 
     // Account credentials (N5): reuse a vault entry for the wall host, or
     // mint one when the landing page is a login wall (an account will be

@@ -59,6 +59,42 @@ export type ApplyClickCapture = {
 };
 
 /**
+ * Tiered Apply-control lookup. Tier 1: exact-ish name ("Apply", "Apply
+ * now"). Tier 2: any button/link whose accessible name contains "apply",
+ * minus the exclusions (JobRight's own "Apply with Autofill", past-tense
+ * "Applied", "Easy Apply"). Live runs proved tier 1 alone misses real
+ * controls — the agent phase then thrashed on a page a click could solve.
+ */
+async function findApplyControl(
+  page: Page,
+): Promise<{ target: ReturnType<Page["locator"]>; tier: 1 | 2 } | null> {
+  const { standardApplyRole, broadApplyRole, applyNameExclusions } =
+    jobrightSelectorsV1.navigation;
+
+  for (const role of ["button", "link"] as const) {
+    const exact = page.getByRole(role, { name: standardApplyRole }).first();
+    if ((await exact.count().catch(() => 0)) > 0) return { target: exact, tier: 1 };
+  }
+  for (const role of ["button", "link"] as const) {
+    const candidates = await page
+      .getByRole(role, { name: broadApplyRole })
+      .all()
+      .catch(() => []);
+    for (const candidate of candidates.slice(0, 10)) {
+      let name = ((await candidate.textContent().catch(() => null)) ?? "").trim();
+      if (!name) {
+        name = (
+          (await candidate.getAttribute("aria-label").catch(() => null)) ?? ""
+        ).trim();
+      }
+      if (!name || applyNameExclusions.test(name)) continue;
+      return { target: candidate, tier: 2 };
+    }
+  }
+  return null;
+}
+
+/**
  * Phase B — mutation (guard first): click the standard Apply control and
  * capture where it leads, via popup (listener registered BEFORE the click,
  * recorder precedent) or same-tab navigation off jobright.ai. Cap: 2 click
@@ -73,24 +109,12 @@ export async function clickApplyAndCaptureExternalUrl(
   const notes: string[] = [];
   const context = session.getContext();
 
-  const applyButton = page
-    .getByRole("button", {
-      name: jobrightSelectorsV1.navigation.standardApplyRole,
-    })
-    .first();
-  const applyLink = page
-    .getByRole("link", { name: jobrightSelectorsV1.navigation.standardApplyRole })
-    .first();
-
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const target =
-      (await applyButton.count()) > 0
-        ? applyButton
-        : (await applyLink.count()) > 0
-          ? applyLink
-          : null;
-    if (target === null) {
-      notes.push("no standard Apply control found");
+    const found = await findApplyControl(page);
+    if (found === null) {
+      notes.push(
+        "no standard Apply control found (exact and broad name tiers both empty)",
+      );
       return {
         url: null,
         via: null,
@@ -99,6 +123,10 @@ export async function clickApplyAndCaptureExternalUrl(
         landingHtml: null,
         landingTitle: null,
       };
+    }
+    const target = found.target;
+    if (found.tier === 2 && attempt === 1) {
+      notes.push("Apply control matched via broad name tier");
     }
 
     const popupPromise = context

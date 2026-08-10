@@ -221,6 +221,16 @@ async def _navigate(task: dict) -> dict:
     # version-sensitive across browser-use releases, so registration is
     # best-effort; without it the heartbeats above still bound the silence.
     step_counter = {"i": 0}
+    # Fail-fast when the agent thrashes on jobright.ai: a live run burned
+    # ~9 steps (and the full 3-minute timeout) re-reading the job page it
+    # started on. If this many CONSECUTIVE steps stay on jobright.ai with
+    # no host change, the Apply control is not findable this way — stop the
+    # agent instead of burning the wall-clock budget. Best-effort: stop()
+    # is version-sensitive, and without the step callback there is no
+    # counter (the outer timeout still bounds the run either way).
+    _JOBRIGHT_STUCK_LIMIT = 8
+    stuck = {"jobright_streak": 0, "stopped_early": False}
+    agent_ref: dict = {"agent": None}
 
     def _on_step(*cb_args, **cb_kwargs) -> None:  # noqa: ANN002, ANN003
         try:
@@ -249,6 +259,26 @@ async def _navigate(task: dict) -> dict:
                 host=url_host,
                 elapsed_ms=int((time.monotonic() - started) * 1000),
             )
+            if url_host.endswith("jobright.ai"):
+                stuck["jobright_streak"] += 1
+            elif url_host:
+                stuck["jobright_streak"] = 0
+            if (
+                stuck["jobright_streak"] >= _JOBRIGHT_STUCK_LIMIT
+                and not stuck["stopped_early"]
+            ):
+                stuck["stopped_early"] = True
+                _progress(
+                    "stuck_stop",
+                    streak=stuck["jobright_streak"],
+                    elapsed_ms=int((time.monotonic() - started) * 1000),
+                )
+                agent_obj = agent_ref.get("agent")
+                if agent_obj is not None:
+                    try:
+                        agent_obj.stop()
+                    except Exception:  # noqa: BLE001 — stop() is best-effort
+                        pass
         except Exception:  # noqa: BLE001 — telemetry must never break a step
             pass
 
@@ -259,6 +289,7 @@ async def _navigate(task: dict) -> dict:
         agent_kwargs.pop("register_new_step_callback", None)
         notes.append("step telemetry unavailable (browser-use version lacks step callback)")
         agent = Agent(**agent_kwargs)
+    agent_ref["agent"] = agent
     _progress("agent_running", max_steps=int(task["max_steps"]))
     try:
         history = await asyncio.wait_for(
@@ -307,6 +338,11 @@ async def _navigate(task: dict) -> dict:
         status, wall = "error", "budget"
         notes.append("FORM_REACHED without a usable on-domain final URL")
 
+    if stuck["stopped_early"]:
+        notes.append(
+            f"stopped early: {_JOBRIGHT_STUCK_LIMIT} consecutive steps stayed on "
+            "jobright.ai with no host change — Apply is not reachable this way"
+        )
     notes.append(f"elapsed {elapsed:.0f}s, steps {steps_used}")
     result: dict = {
         "status": status,
@@ -325,7 +361,11 @@ async def _navigate(task: dict) -> dict:
             ).isoformat(),
         }
     if status == "error":
-        result["reason"] = f"agent stopped: {wall}"
+        result["reason"] = (
+            "agent stopped early: stuck on jobright.ai with no host change"
+            if stuck["stopped_early"]
+            else f"agent stopped: {wall}"
+        )
     return result
 
 
