@@ -12,7 +12,9 @@ import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
 import { autopushArtifacts } from "./artifactAutopush.js";
+import { requeueNavStarvedApplications } from "./navRequeue.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
+import { probeCdpEndpoint } from "../navigation/runNavigation.js";
 import {
   runOutreachTail,
   OUTREACH_TAIL_STATES,
@@ -94,7 +96,13 @@ export type AutomationProgress = {
   last_error_code: string | null;
 };
 
-type DiscoveryRunner = (maxJobs: number) => Promise<{ jobs_inspected: number }>;
+type DiscoveryRunner = (maxJobs: number) => Promise<{
+  jobs_inspected: number;
+  jobs_eligible?: number;
+  jobs_reused?: number;
+  jobs_filtered_out?: number;
+  jobs_skipped_submitted?: number;
+}>;
 
 export type AutomationSessionInput = {
   db: Db;
@@ -112,6 +120,8 @@ export type AutomationSessionInput = {
   contactsFixtureHtmlPath?: string;
   /** Test seam replacing live discovery. */
   discoveryRunner?: DiscoveryRunner;
+  /** Test seam: is the nav agent leg (flag + CDP Chrome) available? */
+  agentLegProbe?: () => Promise<boolean>;
   /** Test seams for the post-submit outreach tail (drafts only, never send). */
   emailClient?: EmailLlmClient;
   /** Test seam for the post-session essay draft batch. */
@@ -232,7 +242,13 @@ export async function runAutomationSession(
     try {
       const r = await discover(discoverMax);
       report.discover_runs += 1;
-      report.notes.push(`discover: ${r.jobs_inspected} inspected`);
+      // Session edc4d38f: "8 inspected" twice hid that every job was
+      // already known — say what the inspection actually produced.
+      report.notes.push(
+        `discover: ${r.jobs_inspected} inspected, ${r.jobs_eligible ?? 0} eligible, ` +
+          `${r.jobs_reused ?? 0} already known, ${r.jobs_filtered_out ?? 0} filtered out, ` +
+          `${r.jobs_skipped_submitted ?? 0} already submitted`,
+      );
       logger.info("automation discover finished", {
         service: "automation",
         action: "discover_end",
@@ -295,6 +311,31 @@ export async function runAutomationSession(
   } catch (err) {
     report.notes.push(
       `nav audit failed (continuing): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+    );
+  }
+
+  // Second-chance sweep: apps parked as "navigation unresolved (budget)"
+  // by an agent-less session get ONE requeue when this session has the
+  // agent leg (session edc4d38f drained an "empty" queue past seven of
+  // them). Fail-open; the once-per-app marker makes loops impossible.
+  try {
+    const agentLegUp = await (input.agentLegProbe ??
+      (async () => {
+        const cfg = getConfig();
+        return cfg.agentFallbackEnabled && (await probeCdpEndpoint(cfg.agentCdpUrl));
+      }))();
+    if (agentLegUp) {
+      const rq = requeueNavStarvedApplications(db);
+      if (rq.requeued > 0) {
+        report.notes.push(
+          `nav requeue: ${rq.requeued} navigation-starved app(s) requeued (agent leg available)`,
+        );
+      }
+      report.notes.push(...rq.notes);
+    }
+  } catch (err) {
+    report.notes.push(
+      `nav requeue failed (continuing): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
     );
   }
 

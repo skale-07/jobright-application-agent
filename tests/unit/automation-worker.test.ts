@@ -119,6 +119,48 @@ describe("L3 automation worker (FIXTURE_CONFIRMED)", () => {
   );
 
   it(
+    "requeues nav-starved apps ONLY when the agent leg is up",
+    async () => {
+      // An app parked by an agent-less session: FAILED_RETRYABLE with the
+      // budget-nav reason and no review item — invisible to selection.
+      const starved = seedQueuedApp();
+      const { transitionApplication } = await import(
+        "../../src/queue/stateMachine.js"
+      );
+      transitionApplication(db, {
+        applicationId: starved,
+        nextState: "FAILED_RETRYABLE",
+        reason: "navigation unresolved (budget)",
+      });
+
+      // Agent leg DOWN: the app stays parked and the queue drains.
+      const down = await runAutomationSession({
+        db,
+        armRunId: arm(5, 25),
+        fixtureHtmlPath: GREENHOUSE_FIXTURE,
+        sleep: noSleep,
+        agentLegProbe: async () => false,
+      });
+      expect(down.per_app).toEqual([]);
+      expect(getApplication(db, starved)?.state).toBe("FAILED_RETRYABLE");
+      const { disarmSession } = await import("../../src/automation/armSession.js");
+      disarmSession(db);
+
+      // Agent leg UP: one requeue, and the session actually processes it.
+      const up = await runAutomationSession({
+        db,
+        armRunId: arm(5, 25),
+        fixtureHtmlPath: GREENHOUSE_FIXTURE,
+        sleep: noSleep,
+        agentLegProbe: async () => true,
+      });
+      expect(up.notes.join(" ")).toMatch(/nav requeue: 1 navigation-starved/);
+      expect(up.per_app.map((r) => r.application_id)).toEqual([starved]);
+    },
+    60_000,
+  );
+
+  it(
     "respects max_apps: stops with apps_cap after the cap",
     async () => {
       seedQueuedApp();
