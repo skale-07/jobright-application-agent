@@ -17,7 +17,8 @@ import type { EmailLlmClient } from "../../src/contacts/emailLlm.js";
 import type { GeneratedEmail } from "../../src/contacts/emailGenerate.js";
 import { NON_ALUM_SUBJECT_PREFIX } from "../../src/contacts/emailGenerate.js";
 import { personaSchema, type Persona } from "../../src/candidate/personas.js";
-import { runOutreachTail } from "../../src/automation/worker.js";
+// Import from the isolated subsystem directly — the worker only delegates.
+import { runOutreachTail } from "../../src/outreach/outreachTail.js";
 import {
   applyControlledFillEnv,
   useIsolatedFillEnv,
