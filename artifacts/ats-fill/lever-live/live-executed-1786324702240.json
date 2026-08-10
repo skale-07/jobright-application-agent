@@ -1,0 +1,722 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+  "requested_url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply"
+  },
+  "plan_summary": {
+    "fillable_count": 8,
+    "skipped_count": 60,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "resume-upload-input",
+      "label": "resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "name",
+      "label": "name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+    },
+    {
+      "field_id": "email",
+      "label": "email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "location-input",
+      "label": "location",
+      "type": "text",
+      "canonical_field": "address.city",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "org",
+      "label": "org",
+      "type": "text",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[LinkedIn]",
+      "label": "urls[LinkedIn]",
+      "type": "text",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[Twitter]",
+      "label": "urls[Twitter]",
+      "type": "text",
+      "canonical_field": "screener:twitter_url",
+      "action": "SKIP",
+      "reason": "twitter_url empty in bank — optional, skipped"
+    },
+    {
+      "field_id": "urls[GitHub]",
+      "label": "urls[GitHub]",
+      "type": "text",
+      "canonical_field": "github_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[Portfolio]",
+      "label": "urls[Portfolio]",
+      "type": "text",
+      "canonical_field": "personal_website",
+      "action": "SKIP",
+      "reason": "Profile value empty for personal_website"
+    },
+    {
+      "field_id": "urls[Other]",
+      "label": "urls[Other]",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field0]",
+      "label": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field0]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field1]",
+      "label": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field1]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field2]",
+      "label": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field2]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field3]",
+      "label": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field3]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field0]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field1]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field2]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field3]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field4]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field5]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field6]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field7]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a3958a48-cdc5-473b-b74c-273b8f748504][field0]",
+      "label": "cards[a3958a48-cdc5-473b-b74c-273b8f748504][field0]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "university-picker-8cb1864d-c814-4b70-9896-13d655e2ab39-0",
+      "label": "Select a university or college",
+      "type": "select",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field2]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field3]",
+      "label": "Type your response",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field5]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field5]",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field6]",
+      "label": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field6]",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "consent[marketing]",
+      "label": "consent[marketing]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\lever-live\\form-snapshot-1786324691992.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "current_company",
+      "linkedin_url",
+      "github_url",
+      "school"
+    ],
+    "skipped": [],
+    "errors": [
+      "location-input: location autocomplete did not commit (typed \"Baltimore, Maryland, USA\"; tried click-first + ArrowDown/Enter). no clickable suggestion list within timeout — ArrowDown+Enter; keyboard ArrowDown+Enter; location still empty after suggestion pick — will fail verify"
+    ],
+    "field_meta": [
+      {
+        "field_id": "name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "org",
+        "canonical_field": "current_company",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[LinkedIn]",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[GitHub]",
+        "canonical_field": "github_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "university-picker-8cb1864d-c814-4b70-9896-13d655e2ab39-0",
+        "canonical_field": "school",
+        "control_kind": "native_select",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham Kale",
+        "observed": "Shubham Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "address.city",
+        "expected": "Baltimore, Maryland, USA",
+        "observed": "",
+        "match": false
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": "Summer Atlantic Capital",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "github_url",
+        "expected": "https://github.com/skale-07",
+        "observed": "https://github.com/skale-07",
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "submit not attempted — live fill never submits"
+  ],
+  "operator_brief": {
+    "title": "Live fill — lever https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+    "summary": "2 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:address.city",
+        "question": "location",
+        "field_id": "location-input",
+        "canonical_field": "address.city",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Baltimore, Maryland, USA\"; page shows \"(empty)\"",
+        "expected": "Baltimore, Maryland, USA",
+        "observed": "",
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Baltimore, Maryland, USA). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Baltimore, Maryland, USA\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.city",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.city\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:location-input: location autocomplete did not commit (typed \"Baltimore, Maryland",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "location-input: location autocomplete did not commit (typed \"Baltimore, Maryland, USA\"; tried click-first + ArrowDown/Enter). no clickable suggestion list within timeout — ArrowDown+Enter; keyboard ArrowDown+Enter; location still empty after suggestion pick — will fail verify",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 7,
+    "fail_count": 2
+  },
+  "written_at": "2026-08-10T01:18:22.289Z"
+}

@@ -1,10 +1,10 @@
 {
-  "id": "run-278068c0-f323-4987-bf2a-b028d83831dd",
+  "id": "run-82f389ba-8c8c-4168-803a-5e4524e89663",
   "kind": "automation",
   "params": {
     "headed": true,
-    "arm_run_id": "b13d6327-8197-478b-8abe-9f662d9bfd5e",
-    "armed_until": "2026-08-09T23:14:23.640Z",
+    "arm_run_id": "69492490-6afd-4d90-a00e-c0663c01d145",
+    "armed_until": "2026-08-10T03:09:55.439Z",
     "max_apps": 25,
     "discover_max": 10,
     "rediscover_every": 5
@@ -24,10 +24,12 @@
     "SCREENER_LLM_MATCH_ENABLED",
     "SUBMIT_ENABLED"
   ],
-  "denied_flags": [],
-  "status": "canceled",
-  "created_at": "2026-08-09T21:14:23.648Z",
-  "started_at": "2026-08-09T21:14:23.664Z",
+  "denied_flags": [
+    "SCREENER_PREDICT_LLM_ENABLED"
+  ],
+  "status": "running",
+  "created_at": "2026-08-10T01:09:55.450Z",
+  "started_at": "2026-08-10T01:09:55.494Z",
   "ended_at": null,
   "exit_code": null,
   "error": null,
@@ -41,6 +43,7 @@
     "AGENT_FALLBACK_ENABLED": true,
     "AGENT_AUTHORING_ENABLED": false,
     "SCREENER_LLM_MATCH_ENABLED": true,
+    "SCREENER_PREDICT_LLM_ENABLED": false,
     "ESSAY_DRAFT_ENABLED": true,
     "NATIVE_AUTOFILL_ENABLED": true,
     "JOBRIGHT_AUTOFILL_ENABLED": false,
@@ -53,5 +56,5 @@
   },
   "pending_confirmation": null,
   "report": null,
-  "log_seq": 135
+  "log_seq": 0
 }

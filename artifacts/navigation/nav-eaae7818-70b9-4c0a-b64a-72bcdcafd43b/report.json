@@ -1,0 +1,41 @@
+{
+  "run_id": "nav-eaae7818-70b9-4c0a-b64a-72bcdcafd43b",
+  "application_id": "26a60e25-e178-44ed-b595-89e21bfa3ff7",
+  "jobright_job_id": "6a5f96d5193b5113096794f0",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 0,
+    "domains_visited": []
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-09T21:30:18.097Z"
+}
