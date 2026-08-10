@@ -34,6 +34,8 @@ export async function autopushArtifacts(input: {
   armRunId: string;
   /** Repo root override (tests use a temp repo). */
   cwd?: string;
+  /** Commit message override (still artifact-only staging either way). */
+  message?: string;
 }): Promise<ArtifactAutopushReport> {
   const cwd = input.cwd ?? process.cwd();
   const report: ArtifactAutopushReport = {
@@ -78,7 +80,8 @@ export async function autopushArtifacts(input: {
     await git(
       "commit",
       "-m",
-      `art: automation session ${input.armRunId.slice(0, 8)} (autopush)`,
+      input.message ??
+        `art: automation session ${input.armRunId.slice(0, 8)} (autopush)`,
     );
     report.commit = await git("rev-parse", "--short", "HEAD");
 
