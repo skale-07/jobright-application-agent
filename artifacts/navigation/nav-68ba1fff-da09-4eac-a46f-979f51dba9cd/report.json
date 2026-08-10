@@ -1,0 +1,41 @@
+{
+  "run_id": "nav-68ba1fff-da09-4eac-a46f-979f51dba9cd",
+  "application_id": "56d6a4d7-9394-4aa0-9fba-243dc6a9ea9b",
+  "jobright_job_id": "6a559cbc78d1443bd1e810b7",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "error"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "agent phase failed: sidecar final_url is jobright-hosted — not an employer URL"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T05:12:29.021Z"
+}

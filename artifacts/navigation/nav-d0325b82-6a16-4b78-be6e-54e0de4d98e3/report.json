@@ -1,0 +1,34 @@
+{
+  "run_id": "nav-d0325b82-6a16-4b78-be6e-54e0de4d98e3",
+  "application_id": "f1cddf7a-7626-4fa7-995e-c3ffa274f101",
+  "jobright_job_id": "6a791a9667a1ad0bc53ce780",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+  "resolved_ats": "lever",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (known ATS, 10 candidates, employer match)",
+      "evidence": "jobs.lever.co"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "field-ai",
+    "detail": "token \"fieldai\" ~ slug \"field-ai\"",
+    "expected_company": "FieldAI",
+    "url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply?utm_source=jobright&jr_id=6a791a9667a1ad0bc53ce780"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-10T05:13:10.086Z"
+}

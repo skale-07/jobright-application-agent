@@ -1,0 +1,41 @@
+{
+  "run_id": "nav-13a8dd74-1c00-40d8-90a6-29e0561567e6",
+  "application_id": "42eb925c-fce6-4514-a2a8-ca055c2469d1",
+  "jobright_job_id": "6a5f96d5193b5113096794f0",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "error"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com",
+    "agent phase failed: sidecar final_url is jobright-hosted — not an employer URL"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T05:02:48.922Z"
+}

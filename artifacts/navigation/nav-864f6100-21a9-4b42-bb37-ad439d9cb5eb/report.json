@@ -1,0 +1,55 @@
+{
+  "run_id": "nav-864f6100-21a9-4b42-bb37-ad439d9cb5eb",
+  "application_id": "42d9e25e-f578-4a66-8082-5dfd92fd11c5",
+  "jobright_job_id": "6a53be69d007ee02d95fc5f5",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/flyzipline/jobs/7765240003",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 7,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "agent[1]: elapsed 126s, steps 7"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "flyzipline",
+    "detail": "token \"zipline\" ~ slug \"flyzipline\"",
+    "expected_company": "Zipline",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=flyzipline&token=7765240003"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-10T04:57:09.638Z"
+}

@@ -1,0 +1,1018 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+  "requested_url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply"
+  },
+  "plan_summary": {
+    "fillable_count": 28,
+    "skipped_count": 20,
+    "review_required_count": 20
+  },
+  "plan_fields": [
+    {
+      "field_id": "resume-upload-input",
+      "label": "resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "name",
+      "label": "name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+    },
+    {
+      "field_id": "email",
+      "label": "email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "location-input",
+      "label": "location",
+      "type": "text",
+      "canonical_field": "address.city",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "org",
+      "label": "org",
+      "type": "text",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[LinkedIn]",
+      "label": "urls[LinkedIn]",
+      "type": "text",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[Twitter]",
+      "label": "urls[Twitter]",
+      "type": "text",
+      "canonical_field": "screener:twitter_url",
+      "action": "SKIP",
+      "reason": "twitter_url empty in bank — optional, skipped"
+    },
+    {
+      "field_id": "urls[GitHub]",
+      "label": "urls[GitHub]",
+      "type": "text",
+      "canonical_field": "github_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "urls[Portfolio]",
+      "label": "urls[Portfolio]",
+      "type": "text",
+      "canonical_field": "personal_website",
+      "action": "SKIP",
+      "reason": "Profile value empty for personal_website"
+    },
+    {
+      "field_id": "urls[Other]",
+      "label": "urls[Other]",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field0]",
+      "label": "Are you legally authorized to work in the country where this position is located?",
+      "type": "radio",
+      "canonical_field": "work_authorization",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field1]",
+      "label": "Will you now or in the future require employer sponsorship for a work visa or employment authorization to work in the country where this position is located?",
+      "type": "radio",
+      "canonical_field": "requires_sponsorship",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field2]",
+      "label": "Are you at least 18 years of age and legally eligible to perform the duties of this position?",
+      "type": "radio",
+      "canonical_field": "screener:age_over_18",
+      "action": "FILL",
+      "reason": "Screener bank answer (exact_option)"
+    },
+    {
+      "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field3]",
+      "label": "I certify that the information provided in this application is true, complete, and accurate to the best of my knowledge. I understand that providing false or misleading information may result in the rejection of my application or termination of employment if discovered after hire.",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field0]",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field1]",
+      "label": "Middle Name",
+      "type": "text",
+      "canonical_field": "legal_name.middle",
+      "action": "SKIP",
+      "reason": "Profile value empty for legal_name.middle"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field2]",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field3]",
+      "label": "Address Line 1",
+      "type": "text",
+      "canonical_field": "address.line1",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field4]",
+      "label": "Address Line 2",
+      "type": "text",
+      "canonical_field": "address.line2",
+      "action": "SKIP",
+      "reason": "Profile value empty for address.line2"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field5]",
+      "label": "City",
+      "type": "text",
+      "canonical_field": "address.city",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field6]",
+      "label": "State",
+      "type": "text",
+      "canonical_field": "address.state",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field7]",
+      "label": "Zip Code",
+      "type": "text",
+      "canonical_field": "address.postal_code",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "label": "Are you authorized to work in the United States?",
+      "type": "checkbox",
+      "canonical_field": "work_authorization",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+      "label": "Are you authorized to work in the United States?",
+      "type": "checkbox",
+      "canonical_field": "work_authorization",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "Will you now, or in the future, require sponsorship (i.e. H-1B visa, etc.) to legally work in the U.S.?",
+      "type": "checkbox",
+      "canonical_field": "requires_sponsorship",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "Will you now, or in the future, require sponsorship (i.e. H-1B visa, etc.) to legally work in the U.S.?",
+      "type": "checkbox",
+      "canonical_field": "requires_sponsorship",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+      "label": "Will you now, or in the future, require sponsorship (i.e. H-1B visa, etc.) to legally work in the U.S.?",
+      "type": "checkbox",
+      "canonical_field": "requires_sponsorship",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "Are you currently in a period of Optional Practical Training (OPT)?",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "Are you currently in a period of Optional Practical Training (OPT)?",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field2]",
+      "label": "Are you currently in a period of Optional Practical Training (OPT)?",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "Do you hold a degree in a Science, Technology, Engineering, or Mathematics (STEM) field from a U.S. accredited institution that would allow you to apply for a 24-month OPT extension?",
+      "type": "checkbox",
+      "canonical_field": "degree",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "Do you hold a degree in a Science, Technology, Engineering, or Mathematics (STEM) field from a U.S. accredited institution that would allow you to apply for a 24-month OPT extension?",
+      "type": "checkbox",
+      "canonical_field": "degree",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+      "label": "Do you hold a degree in a Science, Technology, Engineering, or Mathematics (STEM) field from a U.S. accredited institution that would allow you to apply for a 24-month OPT extension?",
+      "type": "checkbox",
+      "canonical_field": "degree",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[631785a2-31a3-4f63-b226-13d3d23f85e0][field0]",
+      "label": "How did you learn about this opportunity?",
+      "type": "checkbox",
+      "canonical_field": "screener:how_heard",
+      "action": "REVIEW_REQUIRED",
+      "reason": "how_heard: bank answer \"JobRight\" matches none of the 13 page options — review"
+    },
+    {
+      "field_id": "cards[a3958a48-cdc5-473b-b74c-273b8f748504][field0]",
+      "label": "Are you able to work onsite?",
+      "type": "radio",
+      "canonical_field": "screener:remote_or_onsite",
+      "action": "REVIEW_REQUIRED",
+      "reason": "remote_or_onsite: bank answer \"Remote\" matches none of the 2 page options — review"
+    },
+    {
+      "field_id": "university-picker-8cb1864d-c814-4b70-9896-13d655e2ab39-0",
+      "label": "School / University",
+      "type": "select",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+      "label": "Degree Type",
+      "type": "radio",
+      "canonical_field": "degree",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field2]",
+      "label": "Major / Field of Study",
+      "type": "text",
+      "canonical_field": "major",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field3]",
+      "label": "Expected Graduation Date (Month/Year)",
+      "type": "text",
+      "canonical_field": "graduation_year",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field4]",
+      "label": "Which areas are you most interested in? (Select all that apply)",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field5]",
+      "label": "What type of problems are you most passionate to tackle?",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field6]",
+      "label": "Are you actively interviewing for roles starting in the next 6 months?",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "cards[59debaa2-5176-4710-939f-293b52c27284][field0]",
+      "label": "Please let us know you would be able to begin a new opportunity.",
+      "type": "checkbox",
+      "canonical_field": "screener:start_availability",
+      "action": "REVIEW_REQUIRED",
+      "reason": "start_availability: bank answer \"Flexible — aligned to the posted term\" matches none of the 6 page options — review"
+    },
+    {
+      "field_id": "consent[marketing]",
+      "label": "consent[marketing]",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\lever-live\\form-snapshot-1786338835597.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "address.city",
+      "current_company",
+      "linkedin_url",
+      "github_url",
+      "work_authorization",
+      "requires_sponsorship",
+      "screener:age_over_18",
+      "legal_name.first",
+      "legal_name.last",
+      "address.line1",
+      "address.city",
+      "address.state",
+      "address.postal_code",
+      "work_authorization",
+      "work_authorization",
+      "requires_sponsorship",
+      "requires_sponsorship",
+      "requires_sponsorship",
+      "degree",
+      "degree",
+      "degree",
+      "school",
+      "major",
+      "graduation_year"
+    ],
+    "skipped": [],
+    "errors": [
+      "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]: No radio option for \"Bachelor of Science\""
+    ],
+    "field_meta": [
+      {
+        "field_id": "name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "location-input",
+        "canonical_field": "address.city",
+        "control_kind": "text",
+        "notes": [
+          "no clickable suggestion list within timeout — ArrowDown+Enter",
+          "keyboard ArrowDown+Enter",
+          "location cleared on blur — retrying with city token only",
+          "retry: keyboard ArrowDown+Enter",
+          "location committed (blur-stable): Baltimore, MD, USA"
+        ]
+      },
+      {
+        "field_id": "org",
+        "canonical_field": "current_company",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[LinkedIn]",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "urls[GitHub]",
+        "canonical_field": "github_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field0]",
+        "canonical_field": "work_authorization",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field1]",
+        "canonical_field": "requires_sponsorship",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[a74e185d-d12d-407a-9087-fb45c6ad1892][field2]",
+        "canonical_field": "screener:age_over_18",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field0]",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field2]",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field3]",
+        "canonical_field": "address.line1",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field5]",
+        "canonical_field": "address.city",
+        "control_kind": "text",
+        "notes": [
+          "no clickable suggestion list within timeout — ArrowDown+Enter",
+          "keyboard ArrowDown+Enter",
+          "location committed (blur-stable): Baltimore, Maryland, USA"
+        ]
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field6]",
+        "canonical_field": "address.state",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[34f38e63-654c-4d2c-afd3-2b9bef7598a5][field7]",
+        "canonical_field": "address.postal_code",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+        "canonical_field": "work_authorization",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field0]",
+        "canonical_field": "work_authorization",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+        "canonical_field": "requires_sponsorship",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+        "canonical_field": "requires_sponsorship",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field1]",
+        "canonical_field": "requires_sponsorship",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+        "canonical_field": "degree",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+        "canonical_field": "degree",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[1a118c0e-edbb-485f-a0e2-8481dde47964][field3]",
+        "canonical_field": "degree",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "university-picker-8cb1864d-c814-4b70-9896-13d655e2ab39-0",
+        "canonical_field": "school",
+        "control_kind": "native_select",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field2]",
+        "canonical_field": "major",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field3]",
+        "canonical_field": "graduation_year",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham Kale",
+        "observed": "Shubham Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "address.city",
+        "expected": "Baltimore, Maryland, USA",
+        "observed": "Baltimore, MD, USA",
+        "match": true
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": "Summer Atlantic Capital",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "github_url",
+        "expected": "https://github.com/skale-07",
+        "observed": "https://github.com/skale-07",
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:age_over_18",
+        "expected": "Yes",
+        "observed": true,
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "address.line1",
+        "expected": "3510 N Charles St",
+        "observed": "3510 N Charles St",
+        "match": true
+      },
+      {
+        "canonical_field": "address.city",
+        "expected": "Baltimore, Maryland, USA",
+        "observed": "Baltimore, Maryland, USA",
+        "match": true
+      },
+      {
+        "canonical_field": "address.state",
+        "expected": "Maryland",
+        "observed": "Maryland",
+        "match": true
+      },
+      {
+        "canonical_field": "address.postal_code",
+        "expected": "21218",
+        "observed": "21218",
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "requires_sponsorship",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": false,
+        "match": false
+      },
+      {
+        "canonical_field": "major",
+        "expected": "Applied Math & Stats",
+        "observed": "Applied Math & Stats",
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": "2029",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "submit not attempted — live fill never submits"
+  ],
+  "operator_brief": {
+    "title": "Live fill — lever https://jobs.lever.co/field-ai/88f05d6e-ee93-4fc5-80cd-efe6854e22bc/apply",
+    "summary": "5 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:degree",
+        "question": "Degree Type",
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+        "canonical_field": "degree",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Bachelor of Science\"; page shows \"true\"",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"Bachelor of Science\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: degree)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"degree\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:degree",
+        "question": "Degree Type",
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+        "canonical_field": "degree",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Bachelor of Science\"; page shows \"true\"",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"Bachelor of Science\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: degree)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"degree\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:degree",
+        "question": "Degree Type",
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+        "canonical_field": "degree",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Bachelor of Science\"; page shows \"true\"",
+        "expected": "Bachelor of Science",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"Bachelor of Science\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: degree)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"degree\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:degree",
+        "question": "Degree Type",
+        "field_id": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]",
+        "canonical_field": "degree",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Bachelor of Science\"; page shows \"false\"",
+        "expected": "Bachelor of Science",
+        "observed": false,
+        "how_to_answer": [
+          "DOM shows \"false\" but plan expected \"Bachelor of Science\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: degree)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"degree\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]: No radio option for \"Bachel",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "cards[8cb1864d-c814-4b70-9896-13d655e2ab39][field1]: No radio option for \"Bachelor of Science\"",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 24,
+    "fail_count": 5
+  },
+  "written_at": "2026-08-10T05:14:15.590Z"
+}

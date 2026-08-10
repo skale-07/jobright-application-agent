@@ -1,0 +1,15 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-68ba1fff-da09-4eac-a46f-979f51dba9cd","application_id":"56d6a4d7-9394-4aa0-9fba-243dc6a9ea9b","code_version":"023295ee8ba3","session":"cdp","outcome":{"wall":"budget","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786338623.226,"start_host":"jobright.ai","at":"2026-08-10T05:10:23.227Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786338627.506,"at":"2026-08-10T05:10:27.506Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786338629.341,"provider":"anthropic","at":"2026-08-10T05:10:29.340Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786338629.341,"cdp_host":"127.0.0.1","at":"2026-08-10T05:10:29.368Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786338631.173,"max_steps":25,"at":"2026-08-10T05:10:31.173Z"}
+{"jaa_progress":1,"event":"step","t":1786338660.868,"i":1,"actions":["switch"],"host":"jobright.ai","elapsed_ms":30155,"at":"2026-08-10T05:11:00.868Z"}
+{"jaa_progress":1,"event":"step","t":1786338673.292,"i":2,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":42578,"at":"2026-08-10T05:11:13.292Z"}
+{"jaa_progress":1,"event":"step","t":1786338685.952,"i":3,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":55234,"at":"2026-08-10T05:11:25.953Z"}
+{"jaa_progress":1,"event":"step","t":1786338699.819,"i":4,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":69109,"at":"2026-08-10T05:11:39.818Z"}
+{"jaa_progress":1,"event":"step","t":1786338712.93,"i":5,"actions":["click"],"host":"jobright.ai","elapsed_ms":82219,"at":"2026-08-10T05:11:52.930Z"}
+{"jaa_progress":1,"event":"step","t":1786338723.728,"i":6,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":93016,"at":"2026-08-10T05:12:03.732Z"}
+{"jaa_progress":1,"event":"step","t":1786338735.67,"i":7,"actions":["click"],"host":"jobright.ai","elapsed_ms":104953,"at":"2026-08-10T05:12:15.671Z"}
+{"jaa_progress":1,"event":"step","t":1786338746.202,"i":8,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":115484,"at":"2026-08-10T05:12:26.230Z"}
+{"jaa_progress":1,"event":"stuck_stop","t":1786338746.202,"streak":8,"elapsed_ms":115484,"at":"2026-08-10T05:12:26.242Z"}
