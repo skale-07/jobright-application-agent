@@ -78,6 +78,13 @@ const envSchema = z.object({
   AUTOMATION_ENABLED: boolFromEnv.default(false),
   /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
+  /**
+   * Hands-off cycle may LAUNCH the debug Chrome itself when the CDP
+   * endpoint is unreachable (same executable + persistent profile as
+   * chrome:debug:jobright, so logins survive). Fail closed — an
+   * unattended process starting a browser is a mutation capability.
+   */
+  CDP_AUTOLAUNCH_ENABLED: boolFromEnv.default(false),
   DASHBOARD_HOST: z.string().default("127.0.0.1"),
   DASHBOARD_PORT: z.coerce.number().int().positive().default(8788),
   /** Operator console (frontend + guarded mutation API). Localhost only. */
@@ -134,6 +141,7 @@ export type AppConfig = {
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;
   agentCdpUrl: string;
+  cdpAutolaunchEnabled: boolean;
   dashboardHost: string;
   dashboardPort: number;
   consoleHost: string;
@@ -208,6 +216,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
+    cdpAutolaunchEnabled: parsed.CDP_AUTOLAUNCH_ENABLED,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
     consoleHost: parsed.CONSOLE_HOST,

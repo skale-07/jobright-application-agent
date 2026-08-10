@@ -21,7 +21,7 @@ import {
   autopushArtifacts,
   type ArtifactAutopushReport,
 } from "./artifactAutopush.js";
-import { resolveAgentAvailability } from "../navigation/runNavigation.js";
+import { ensureCdpChrome, type EnsureCdpReport } from "./cdpChrome.js";
 
 /**
  * Hands-off cycle for the OPERATOR'S OWN MACHINE — the "coding in loops"
@@ -98,6 +98,8 @@ export type AutoCycleSeams = {
   }) => Promise<ArtifactAutopushReport>;
   /** Test seam: replaces the CDP reachability probe. */
   probeCdp?: (cdpUrl: string) => Promise<boolean>;
+  /** Test seam: replaces the detached debug-Chrome spawn. */
+  chromeSpawner?: (command: string, args: string[]) => void;
   db?: Db;
   now?: () => Date;
 };
@@ -231,16 +233,24 @@ async function runAutoCycleInner(
   // Advisory only — a cycle without the agent leg still runs (phases A/B
   // resolve some apps), but the operator must SEE it before the session
   // burns the queue, not archaeologize it from seven identical nav reports.
+  // With CDP_AUTOLAUNCH_ENABLED the cycle repairs the common case itself:
+  // the scheduled task fired while the debug Chrome was closed.
   try {
-    const agentLeg = await resolveAgentAvailability({
-      override: undefined,
-      flagEnabled: cfg.agentFallbackEnabled,
-      cdpUrl: cfg.agentCdpUrl,
-      ...(seams.probeCdp ? { probe: seams.probeCdp } : {}),
-    });
-    report.preflight.agent_leg = agentLeg.possible
-      ? "available"
-      : `UNAVAILABLE — ${agentLeg.reason}; nav phase C will be skipped for every app`;
+    if (!cfg.agentFallbackEnabled) {
+      report.preflight.agent_leg =
+        "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app";
+    } else {
+      const cdp: EnsureCdpReport = await ensureCdpChrome({
+        ...(seams.probeCdp ? { probe: seams.probeCdp } : {}),
+        ...(seams.chromeSpawner ? { spawner: seams.chromeSpawner } : {}),
+      });
+      report.notes.push(...cdp.notes);
+      report.preflight.agent_leg = cdp.reachable
+        ? cdp.launched
+          ? "available (debug Chrome autolaunched)"
+          : "available"
+        : `UNAVAILABLE — CDP Chrome unreachable at ${cfg.agentCdpUrl}; nav phase C will be skipped for every app`;
+    }
   } catch (err) {
     report.preflight.agent_leg = `probe failed: ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`;
   }
