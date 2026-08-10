@@ -3,6 +3,7 @@ import type { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { jobrightSelectorsV1 } from "./selectors/v1.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { assertNavigationAllowed } from "../navigation/navigationGuards.js";
+import { dismissPageObstructions } from "../browser/obstructions.js";
 
 /**
  * Page-level primitives for resolving the employer application URL from a
@@ -108,6 +109,14 @@ export async function clickApplyAndCaptureExternalUrl(
   assertNavigationAllowed("clickApplyAndCaptureExternalUrl");
   const notes: string[] = [];
   const context = session.getContext();
+
+  // JobRight interleaves upsell/promo modals over the job page — clear
+  // them first so the Apply control is reachable. Bounded, never-click
+  // screened (see obstructions.ts); already inside the NAVIGATION gate.
+  const obstructions = await dismissPageObstructions(page);
+  if (obstructions.dismissed.length > 0) {
+    notes.push(`popups dismissed: ${obstructions.dismissed.join(", ")}`);
+  }
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     const found = await findApplyControl(page);

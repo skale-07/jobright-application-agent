@@ -1,4 +1,5 @@
 import type { Db } from "../storage/db/client.js";
+import { dismissPageObstructions } from "../browser/obstructions.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -208,6 +209,16 @@ export async function runAtsLiveFill(input: {
         return persist(report);
       }
 
+      // Cookie banners / consent modals block clicks under them — clear
+      // before mutating. Execute-only: plan_only stays zero-mutation.
+      if (input.execute) {
+        const obstructions = await dismissPageObstructions(page);
+        if (obstructions.dismissed.length > 0) {
+          report.notes.push(
+            `popups dismissed: ${obstructions.dismissed.join(", ")}`,
+          );
+        }
+      }
       const { adapter, plan, approvedPlan } = await planApplicationFill({
         url: gate.finalUrl,
         html: gate.html,
