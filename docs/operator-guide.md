@@ -896,29 +896,55 @@ npm run auto:cycle -- --no-update        # skip the git pull (offline)
 npm run auto:cycle -- --duration 60 --max-submits 5 --max-apps 10
 ```
 
-Install it as a Windows scheduled task once (adjust the repo path; the
-task's environment IS the standing authorization — every capability flag
-lives in the wrapper script, so editing or deleting it is the kill switch):
+### Standing live environment (set once, never again)
+
+Every entry point (CLI, console, auto:cycle) loads a local `.env` at the
+repo root via dotenv. Put the live-run flags there ONCE and stop exporting
+them per shell — the file is gitignored and the pre-commit hook blocks it
+from ever being committed. **This file IS the standing authorization**:
+deleting it (or flipping `AUTOMATION_ENABLED=false` in it) is the kill
+switch, exactly like the scheduled task itself.
+
+```ini
+# C:\dev\jobright-application-agent\.env   (gitignored — NEVER commit)
+AUTOMATION_ENABLED=true
+FORM_FILL_ENABLED=true
+SUBMIT_ENABLED=true
+DRY_RUN=false
+NAVIGATION_ENABLED=true
+NATIVE_AUTOFILL_ENABLED=true
+GMAIL_VERIFICATION_ENABLED=true
+AGENT_FALLBACK_ENABLED=true
+CDP_AUTOLAUNCH_ENABLED=true
+SCREENER_LLM_MATCH_ENABLED=true
+SCREENER_PREDICT_LLM_ENABLED=true
+ESSAY_DRAFT_ENABLED=true
+ARTIFACT_AUTOPUSH_ENABLED=true
+SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false
+MAX_UNATTENDED_SUBMISSIONS_PER_RUN=10
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Code defaults stay fail-closed — a fresh clone without this file can
+mutate nothing. Delete or rename the file any time you want a machine
+that is read-only again.
+
+### Debug Chrome starts itself
+
+With `CDP_AUTOLAUNCH_ENABLED=true`, the cycle launches the debug Chrome
+on its own whenever the CDP endpoint is down — same executable and same
+persistent profile as `npm run chrome:debug:jobright`, so the
+JobRight/Google logins you did once in that window survive every
+relaunch. You only ever intervene if a session actually expires (the nav
+reports will say so). The cycle report's `preflight.agent_leg` line tells
+you the agent phase's exact status every run.
+
+### Schedule it
 
 ```powershell
-# 1. Create private\auto-cycle.cmd (gitignored) with your flags:
+# 1. Create private\auto-cycle.cmd (gitignored) — with .env in place it is just:
 #    @echo off
 #    cd /d C:\dev\jobright-application-agent
-#    set AUTOMATION_ENABLED=true
-#    set FORM_FILL_ENABLED=true
-#    set SUBMIT_ENABLED=true
-#    set DRY_RUN=false
-#    set NAVIGATION_ENABLED=true
-#    set NATIVE_AUTOFILL_ENABLED=true
-#    set GMAIL_VERIFICATION_ENABLED=true
-#    set AGENT_FALLBACK_ENABLED=true
-#    set SCREENER_LLM_MATCH_ENABLED=true
-#    set SCREENER_PREDICT_LLM_ENABLED=true
-#    set ESSAY_DRAFT_ENABLED=true
-#    set ARTIFACT_AUTOPUSH_ENABLED=true
-#    set SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false
-#    set MAX_UNATTENDED_SUBMISSIONS_PER_RUN=10
-#    set ANTHROPIC_API_KEY=sk-ant-...
 #    npm run auto:cycle >> artifacts\console\auto-cycle.log 2>&1
 
 # 2. Schedule it (every 4 hours while the machine is on):
@@ -935,9 +961,10 @@ flag missing, run when `SUBMIT_REQUIRES_LOCAL_CONFIRMATION` is still true,
 run after a failed typecheck, or double-arm over a session you started
 from the console (yours is left untouched). Every in-run gate — the arm
 row's submit/app budget, page identity, verification, walls, caps — is
-exactly the console path's. Keep the debug Chrome (`chrome:debug:jobright`)
-running for the nav agent phase; without it, wall'd apps park with the
-reason named, same as always.
+exactly the console path's. The nav agent phase needs the debug Chrome —
+with `CDP_AUTOLAUNCH_ENABLED=true` the cycle starts it itself; without
+that flag, keep `chrome:debug:jobright` running yourself or wall'd apps
+park with the reason named, same as always.
 
 Full-autonomy loop with this installed: scheduled cycle runs → artifacts
 autopush → the cloud analysis agent scores its last prediction, fixes,

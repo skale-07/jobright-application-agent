@@ -254,6 +254,64 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
     expect(okR.preflight.agent_leg).toBe("available");
   });
 
+  it("autolaunches the debug Chrome when CDP is dead and the operator opted in", async () => {
+    armEnv();
+    // A real file for CHROME_PATH — findChromeExecutable checks existence.
+    const fakeChromeDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-chrome-"));
+    const fakeChrome = path.join(fakeChromeDir, "chrome.exe");
+    fs.writeFileSync(fakeChrome, "");
+    process.env.CHROME_PATH = fakeChrome;
+    applyControlledFillEnv({
+      AGENT_FALLBACK_ENABLED: "true",
+      CDP_AUTOLAUNCH_ENABLED: "true",
+    });
+    try {
+      const spawns: Array<{ command: string; args: string[] }> = [];
+      let chromeUp = false;
+      const r = await runAutoCycle(
+        { skipUpdate: true },
+        {
+          db,
+          exec: noExec,
+          sessionRunner: async (_d, id) => fakeSession(id),
+          probeCdp: async () => chromeUp,
+          chromeSpawner: (command, args) => {
+            spawns.push({ command, args });
+            chromeUp = true; // the launched Chrome comes up
+          },
+        },
+      );
+      expect(spawns.length).toBe(1);
+      expect(spawns[0]!.command).toBe(fakeChrome);
+      expect(spawns[0]!.args.join(" ")).toMatch(/--remote-debugging-port=\d+/);
+      expect(spawns[0]!.args.join(" ")).toMatch(/--user-data-dir=/);
+      expect(r.preflight.agent_leg).toBe("available (debug Chrome autolaunched)");
+      expect(r.notes.join(" ")).toMatch(/started debug Chrome/);
+    } finally {
+      delete process.env.CHROME_PATH;
+      fs.rmSync(fakeChromeDir, { recursive: true, force: true });
+    }
+  });
+
+  it("CDP dead + autolaunch flag OFF ⇒ probes only, never spawns (fail closed)", async () => {
+    armEnv();
+    applyControlledFillEnv({ AGENT_FALLBACK_ENABLED: "true" });
+    const r = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        probeCdp: async () => false,
+        chromeSpawner: () => {
+          throw new Error("must not spawn without CDP_AUTOLAUNCH_ENABLED");
+        },
+      },
+    );
+    expect(r.preflight.agent_leg).toMatch(/CDP Chrome unreachable at/);
+    expect(r.notes.join(" ")).toMatch(/CDP_AUTOLAUNCH_ENABLED is off — not launching/);
+  });
+
   it("the cycle report rides its OWN autopush (the worker's push predates it)", async () => {
     armEnv();
     applyControlledFillEnv({ ARTIFACT_AUTOPUSH_ENABLED: "true" });
