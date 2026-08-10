@@ -822,18 +822,26 @@ only — your answers never reach a model); `npm run screeners:suggest`
 lists verified predictions ready to paste into the bank. Full set +
 policies: `docs/screener-questions.md`.
 
+**Blank fields ask you directly ("Answer needed").** Whenever a live fill
+meets a question NOTHING could answer (no registry key, no custom entry,
+no profile rule), Dispatch leaves the field blank on the form and
+immediately opens an **Answer needed** to-do showing the company, the
+exact question, and — for choice questions — the page's real options. It
+appears near the top of the Home "Needs you" list and expands in place:
+pick or type the answer, hit **Save answer**, and it joins
+`screeners.json` as a `custom` entry keyed to that exact question — every
+future form asking it fills deterministically with zero AI involvement.
+No flag needed; this works even with all LLM features off.
+
 **New-question predictions (one-click promote).** With
-`SCREENER_PREDICT_LLM_ENABLED=true`, questions that NOTHING could answer
-(no registry key, no custom entry, no profile rule) are captured at plan
-time and, after each armed session, the LLM proposes an answer from your
-about-me + your existing bank answers. The proposal only ever lands in a
-review item — the console shows the question, the suggested answer (an
-exact page option when the question had options), and the fact it's based
-on. **Approve & save** (or edit first) writes it into `screeners.json`
-under a `custom` entry keyed to that exact question, so every future form
-asking it fills deterministically with zero AI involvement. Predictions
-never fill anything before that approval; a dismissed suggestion never
-comes back. Your bank compounds — the model's job shrinks every week.
+`SCREENER_PREDICT_LLM_ENABLED=true` (plus an LLM key), the post-session
+batch additionally pre-fills those same Answer-needed items with a
+suggested answer drawn from your about-me + existing bank answers (an
+exact page option when the question had options), and shows the fact it's
+based on. **Approve & save** (or edit first) does exactly what a manual
+answer does. Predictions never fill anything before that approval; a
+dismissed question never comes back. Your bank compounds — the model's
+job shrinks every week.
 
 **Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
 `private/candidate/about-me.md` and write your context once. With

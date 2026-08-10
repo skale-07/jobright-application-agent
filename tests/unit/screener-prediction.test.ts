@@ -94,20 +94,69 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     generateJson: async () => ({ text: JSON.stringify(payload), model: "stub" }),
   });
 
-  it("capture is flag-gated and deduped by label", () => {
+  it("capture works with the LLM flag OFF, opens an Answer-needed item, and dedupes", () => {
+    // The LLM flag gates only the prediction batch — a blank field must
+    // surface to the operator even in a shell with no LLM at all. This is
+    // the live-run regression: SCREENER_PREDICT_LLM_ENABLED was off and
+    // unanswered questions vanished silently.
     delete process.env.SCREENER_PREDICT_LLM_ENABLED;
     resetConfigCache();
+    const appId = seedApp();
+    const q = {
+      label: "What is your expected graduation date?",
+      type: "text" as const,
+    };
     expect(
-      recordUnmappedScreenerQuestions({
-        db,
-        questions: [{ label: "What is your expected graduation date?", type: "text" }],
-      }),
-    ).toBe(0);
-
-    enable();
-    const q = { label: "What is your expected graduation date?", type: "text" };
-    expect(recordUnmappedScreenerQuestions({ db, questions: [q] })).toBe(1);
+      recordUnmappedScreenerQuestions({ db, applicationId: appId, questions: [q] }),
+    ).toBe(1);
     expect(recordUnmappedScreenerQuestions({ db, questions: [q] })).toBe(0); // dedupe
+
+    const items = listOpenReviewItems(db);
+    expect(items.length).toBe(1);
+    expect(items[0]!.title).toMatch(/^Answer needed:/);
+    expect(items[0]!.application_id).toBe(appId);
+    const payload = JSON.parse(
+      (items[0] as unknown as { payload_json: string }).payload_json,
+    ) as Record<string, unknown>;
+    expect(payload["source"]).toBe("screener_question");
+    expect(payload["predicted_answer"]).toBeNull();
+    expect(payload["suggested_key"]).toMatch(/^[a-z0-9_]{2,60}$/);
+  });
+
+  it("operator answers a captured question directly — no LLM involved", () => {
+    delete process.env.SCREENER_PREDICT_LLM_ENABLED;
+    resetConfigCache();
+    recordUnmappedScreenerQuestions({
+      db,
+      questions: [
+        {
+          label: "Which internship track interests you most?",
+          type: "radio",
+          options: ["Engineering", "Research", "Product"],
+        },
+      ],
+    });
+    const item = listOpenReviewItems(db)[0]!;
+    // No answer supplied and none predicted: refused, item stays open.
+    expect(() => promoteScreenerPrediction(db, { reviewItemId: item.id })).toThrow(
+      /1-200 characters/,
+    );
+    // Off-option operator answer: refused.
+    expect(() =>
+      promoteScreenerPrediction(db, { reviewItemId: item.id, answer: "ML" }),
+    ).toThrow(/must match one of the question's options/);
+    // A real option: saved to the bank, item resolved, queue row PROMOTED.
+    const res = promoteScreenerPrediction(db, {
+      reviewItemId: item.id,
+      answer: "Engineering",
+    });
+    expect(res.saved_answer).toBe("Engineering");
+    expect(tryLoadScreenerBank()!.custom[res.bank_key]?.answer).toBe("Engineering");
+    expect(listOpenReviewItems(db).length).toBe(0);
+    const row = db
+      .prepare(`SELECT status FROM screener_predictions LIMIT 1`)
+      .get() as { status: string };
+    expect(row.status).toBe("PROMOTED");
   });
 
   it("flag off degrades the batch to a named note", async () => {
@@ -145,10 +194,15 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
       }),
     });
     expect(r.predicted).toBe(1);
-    const item = listOpenReviewItems(db).find(
-      (i) => i.title.includes("New question learned"),
-    );
-    expect(item).toBeDefined();
+    // The capture item is enriched IN PLACE — no duplicate item.
+    const items = listOpenReviewItems(db);
+    expect(items.length).toBe(1);
+    expect(items[0]!.title).toMatch(/^Answer needed:/);
+    const payload = JSON.parse(
+      (items[0] as unknown as { payload_json: string }).payload_json,
+    ) as Record<string, unknown>;
+    expect(payload["source"]).toBe("screener_prediction");
+    expect(payload["predicted_answer"]).toBe("May 2029");
     // The bank is untouched — predictions never write it.
     expect(tryLoadScreenerBank()).toBeNull();
     // Second batch: nothing pending, no re-open.
@@ -188,7 +242,10 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
       .prepare(`SELECT status FROM screener_predictions LIMIT 1`)
       .get() as { status: string };
     expect(row.status).toBe("REJECTED");
-    expect(listOpenReviewItems(db).length).toBe(0);
+    // The capture item survives rejection — the operator can still answer
+    // by hand; only the model gave up.
+    expect(listOpenReviewItems(db).length).toBe(1);
+    expect(listOpenReviewItems(db)[0]!.title).toMatch(/^Answer needed:/);
   });
 
   it("promote writes the bank custom entry; future forms resolve deterministically", async () => {
@@ -219,7 +276,7 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
       }),
     });
     const item = listOpenReviewItems(db).find((i) =>
-      i.title.includes("New question learned"),
+      i.title.startsWith("Answer needed:"),
     )!;
 
     const res = promoteScreenerPrediction(db, { reviewItemId: item.id });
@@ -302,7 +359,7 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
       payload: {},
     });
     expect(() => promoteScreenerPrediction(db, { reviewItemId: item.id })).toThrow(
-      /screener-prediction items only/,
+      /screener question\/prediction items only/,
     );
   });
 

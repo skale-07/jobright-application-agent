@@ -1,3 +1,4 @@
+import type { Db } from "../../storage/db/client.js";
 import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "playwright";
@@ -267,6 +268,8 @@ export async function runGreenhouseLiveFill(input: {
   resumePath?: string;
   coverLetterPath?: string;
   headless?: boolean;
+  /** Forwarded to planApplicationFill: unanswered questions become "Answer needed" review items on this application. */
+  capture?: { db: Db; applicationId: string | null };
   /**
    * Session handoff (nav N6): run on this page — typically CDP-attached so
    * cookies survive from navigation. Caller owns its lifetime; this runner
@@ -363,6 +366,7 @@ export async function runGreenhouseLiveFill(input: {
         url: gate.finalUrl,
         html: gate.html,
         ...(input.profile ? { profile: input.profile } : {}),
+        ...(input.capture ? { capture: input.capture } : {}),
       });
       base.plan = plan;
       base.approved_plan = approvedPlan;

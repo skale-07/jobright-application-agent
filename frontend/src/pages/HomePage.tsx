@@ -6,6 +6,10 @@ import { usePoll } from "../hooks/usePoll";
 import { formatCountdown, useArmStatus } from "../hooks/useArmStatus";
 import { describeReviewItem, jobLabel } from "../lib/plainLanguage";
 import { ARM_DEFAULTS, AUTOMATION_RUN_BODY } from "../lib/automationRun";
+import {
+  isAnswerableScreenerItem,
+  ScreenerAnswerCard,
+} from "../components/ScreenerAnswerCard";
 
 /**
  * Home — the non-technical front door. One question per section:
@@ -39,6 +43,8 @@ export function HomePage(): JSX.Element {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Which to-do row has its inline answer form open. */
+  const [openAnswerId, setOpenAnswerId] = useState<string | null>(null);
 
   const armed = arm?.armed === true;
 
@@ -167,21 +173,59 @@ export function HomePage(): JSX.Element {
           </p>
         ) : (
           <ul className="todo-list">
-            {todo.map(({ item, plain }) => (
-              <li key={item.id}>
-                <Link
-                  to={
-                    item.application_id
-                      ? `/applications/${item.application_id}`
-                      : "/review"
-                  }
-                >
-                  <span className="todo-action">{plain.action}</span>
-                  <span className="todo-job">{jobLabel(item)}</span>
-                  <span className="todo-why">{plain.why}</span>
-                </Link>
-              </li>
-            ))}
+            {todo.map(({ item, plain }) =>
+              isAnswerableScreenerItem(item) ? (
+                // Answerable in place: the question + a real input right in
+                // the to-do list — no navigating to another page to teach
+                // Dispatch one answer.
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    className="todo-inline-toggle"
+                    onClick={() =>
+                      setOpenAnswerId(openAnswerId === item.id ? null : item.id)
+                    }
+                  >
+                    <span className="todo-action">{plain.action}</span>
+                    <span className="todo-job">{jobLabel(item)}</span>
+                    <span className="todo-why">
+                      {plain.why}{" "}
+                      <span style={{ color: "var(--purple)" }}>
+                        {openAnswerId === item.id ? "▲ close" : "▼ answer here"}
+                      </span>
+                    </span>
+                  </button>
+                  {openAnswerId === item.id ? (
+                    <div
+                      style={{
+                        padding: "0.6rem 0.75rem 0.75rem",
+                        borderLeft: "2px solid var(--purple)",
+                        margin: "0.25rem 0 0.5rem",
+                      }}
+                    >
+                      <ScreenerAnswerCard
+                        item={item}
+                        onSaved={() => reviews.refresh()}
+                      />
+                    </div>
+                  ) : null}
+                </li>
+              ) : (
+                <li key={item.id}>
+                  <Link
+                    to={
+                      item.application_id
+                        ? `/applications/${item.application_id}`
+                        : "/review"
+                    }
+                  >
+                    <span className="todo-action">{plain.action}</span>
+                    <span className="todo-job">{jobLabel(item)}</span>
+                    <span className="todo-why">{plain.why}</span>
+                  </Link>
+                </li>
+              ),
+            )}
           </ul>
         )}
         {todoTotal > todo.length ? (

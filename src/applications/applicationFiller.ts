@@ -119,6 +119,13 @@ export async function planApplicationFill(input: {
   url: string;
   html: string;
   profile?: PublicProfile;
+  /**
+   * When set, questions nothing could answer are captured into the
+   * prediction queue AND surfaced as "Answer needed" review items carrying
+   * this application (so the console shows company/role next to the
+   * question). Absent (fixture/plan-only paths), nothing is written.
+   */
+  capture?: { db: Db; applicationId: string | null };
 }): Promise<{
   adapter: FillCapableAdapter;
   plan: ReturnType<typeof buildFillPlan>;
@@ -208,11 +215,15 @@ export async function planApplicationFill(input: {
         if (r) screenerResolutions.set(f.id, r);
         else stillUnmapped.push(f);
       }
-      // Nothing could answer these: queue them for the flag-gated
-      // prediction batch (local write only — no model call here).
-      if (stillUnmapped.length > 0) {
+      // Nothing could answer these: capture them (queue row + "Answer
+      // needed" review item — local writes only, no model call). Only when
+      // the caller provided capture context: fixture/plan-only paths must
+      // never write to the operator's DB.
+      if (stillUnmapped.length > 0 && input.capture) {
         try {
           recordUnmappedScreenerQuestions({
+            db: input.capture.db,
+            applicationId: input.capture.applicationId,
             ats: adapter.id,
             questions: stillUnmapped.map((f) => ({
               label: f.label,

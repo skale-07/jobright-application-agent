@@ -38,7 +38,10 @@ import { normalizeScreenerLabel } from "../candidate/screenerMatch.js";
 import { labelFingerprint } from "./screenerLlmMap.js";
 import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
 import { tryLoadAboutMe } from "./essayDraft.js";
-import { upsertOpenReviewItem } from "../queue/reviewItems.js";
+import {
+  updateReviewItemPayload,
+  upsertOpenReviewItem,
+} from "../queue/reviewItems.js";
 
 let migratedFor: Db | null = null;
 function ensureMigrated(db: Db): void {
@@ -55,9 +58,13 @@ export type UnmappedScreenerQuestion = {
 };
 
 /**
- * Plan-time capture: remember questions nothing could answer. Local-only
- * (no LLM here), deduped by label fingerprint, and flag-gated so a
- * disabled install never even opens the queue table.
+ * Plan-time capture: remember questions nothing could answer, and open a
+ * review item for each NEW one immediately — the operator sees "this form
+ * asked X and Dispatch left it blank" in the console right away and can
+ * type the answer in place, whether or not the LLM prediction batch ever
+ * runs. Local-only (no LLM here, no spend), deduped by label fingerprint.
+ * Only the PREDICTION batch below stays behind SCREENER_PREDICT_LLM_ENABLED;
+ * capture is telemetry-class and always on when a caller provides context.
  */
 export function recordUnmappedScreenerQuestions(input: {
   questions: UnmappedScreenerQuestion[];
@@ -65,8 +72,7 @@ export function recordUnmappedScreenerQuestions(input: {
   applicationId?: string | null;
   db?: Db;
 }): number {
-  const cfg = getConfig();
-  if (!cfg.screenerPredictLlmEnabled || input.questions.length === 0) return 0;
+  if (input.questions.length === 0) return 0;
   let ownedDb = false;
   const db =
     input.db ??
@@ -82,26 +88,56 @@ export function recordUnmappedScreenerQuestions(input: {
           first_seen_application_id, status, attempts, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', 0, ?, ?)`,
     );
+    const setItem = db.prepare(
+      `UPDATE screener_predictions SET review_item_id = ?, updated_at = ? WHERE id = ?`,
+    );
     const now = new Date().toISOString();
     let recorded = 0;
     for (const q of input.questions) {
       const norm = normalizeScreenerLabel(q.label);
       if (norm.length < 8) continue; // too short to be a real question
+      const rowId = randomUUID();
+      const options =
+        q.options && q.options.length > 0 ? q.options.slice(0, 20) : null;
       const r = stmt.run(
-        randomUUID(),
+        rowId,
         labelFingerprint(q.label),
         norm,
         q.label.slice(0, 300),
         q.type,
-        q.options && q.options.length > 0
-          ? JSON.stringify(q.options.slice(0, 20))
-          : null,
+        options ? JSON.stringify(options) : null,
         input.ats ?? null,
         input.applicationId ?? null,
         now,
         now,
       );
       recorded += r.changes;
+      if (r.changes === 0) continue; // known question — an item exists or was handled
+      // Surface immediately: the operator answers in the console and the
+      // answer joins the bank via the promote resolver (sole write path).
+      // Best-effort — a review-item failure must never break a fill plan.
+      try {
+        const raw = q.label.slice(0, 300);
+        const { item } = upsertOpenReviewItem(db, {
+          ...(input.applicationId ? { applicationId: input.applicationId } : {}),
+          kind: "MANUAL",
+          title: `Answer needed: "${raw.slice(0, 80)}"`,
+          payload: {
+            source: "screener_question",
+            prediction_id: rowId,
+            question: raw,
+            control: q.type,
+            options,
+            predicted_answer: null,
+            suggested_key: suggestKey(undefined, norm),
+            validation_level: "UNVERIFIED",
+            hint: "Dispatch left this blank on the form. Answer once and it joins your bank — every future form fills it automatically.",
+          },
+        });
+        setItem.run(item.id, new Date().toISOString(), rowId);
+      } catch {
+        // queue row still exists; the prediction batch can open an item later
+      }
     }
     return recorded;
   } finally {
@@ -189,7 +225,8 @@ export async function generateScreenerPredictions(input: {
   ensureMigrated(db);
   const rows = db
     .prepare(
-      `SELECT id, label, raw_label, control, options_json, first_seen_application_id, attempts
+      `SELECT id, label, raw_label, control, options_json, first_seen_application_id,
+              attempts, review_item_id
        FROM screener_predictions
        WHERE status = 'PENDING' AND attempts < 2
        ORDER BY created_at ASC LIMIT ?`,
@@ -202,6 +239,7 @@ export async function generateScreenerPredictions(input: {
     options_json: string | null;
     first_seen_application_id: string | null;
     attempts: number;
+    review_item_id: string | null;
   }>;
   if (rows.length === 0) return report;
   report.questions_considered = rows.length;
@@ -272,28 +310,49 @@ export async function generateScreenerPredictions(input: {
     const key = suggestKey(p["key"], row.label);
     const basis = typeof p["basis"] === "string" ? p["basis"].slice(0, 200) : "";
     const prediction = { answer: check.value, key, basis, match: check.reason };
-    const { item } = upsertOpenReviewItem(db, {
-      ...(row.first_seen_application_id
-        ? { applicationId: row.first_seen_application_id }
-        : {}),
-      kind: "MANUAL",
-      title: `New question learned: "${row.raw_label.slice(0, 80)}"`,
-      payload: {
-        source: "screener_prediction",
-        prediction_id: row.id,
-        question: row.raw_label,
-        control: row.control,
-        options,
-        predicted_answer: check.value,
-        suggested_key: key,
-        basis,
-        validation_level: "UNVERIFIED",
-        hint: "Approve (or edit) once and this answer joins your bank — future forms fill it automatically.",
-      },
-    });
+    // Capture already opened an "Answer needed" item — enrich it in place
+    // with the suggestion rather than opening a duplicate. A capture item
+    // the operator already resolved/dismissed stays resolved: the
+    // suggestion is recorded on the row but never resurrects the item.
+    let itemId: string | null = row.review_item_id;
+    const enriched = itemId
+      ? updateReviewItemPayload(db, itemId, {
+          source: "screener_prediction",
+          predicted_answer: check.value,
+          suggested_key: key,
+          basis,
+          hint: "Approve (or edit) once and this answer joins your bank — future forms fill it automatically.",
+        })
+      : null;
+    if (!enriched && !itemId) {
+      const { item } = upsertOpenReviewItem(db, {
+        ...(row.first_seen_application_id
+          ? { applicationId: row.first_seen_application_id }
+          : {}),
+        kind: "MANUAL",
+        title: `New question learned: "${row.raw_label.slice(0, 80)}"`,
+        payload: {
+          source: "screener_prediction",
+          prediction_id: row.id,
+          question: row.raw_label,
+          control: row.control,
+          options,
+          predicted_answer: check.value,
+          suggested_key: key,
+          basis,
+          validation_level: "UNVERIFIED",
+          hint: "Approve (or edit) once and this answer joins your bank — future forms fill it automatically.",
+        },
+      });
+      itemId = item.id;
+    } else if (!enriched && itemId) {
+      report.notes.push(
+        `suggestion for "${row.raw_label.slice(0, 50)}" recorded, but its review item was already closed — not reopened`,
+      );
+    }
     markPredicted.run(
       JSON.stringify(prediction),
-      item.id,
+      itemId,
       new Date().toISOString(),
       row.id,
     );

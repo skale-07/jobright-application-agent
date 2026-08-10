@@ -1,3 +1,4 @@
+import type { Db } from "../storage/db/client.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -108,6 +109,8 @@ export async function runAtsLiveFill(input: {
   profile?: PublicProfile;
   resumePath?: string;
   headless?: boolean;
+  /** Forwarded to planApplicationFill: unanswered questions become "Answer needed" review items on this application. */
+  capture?: { db: Db; applicationId: string | null };
   /**
    * Test seam (liveInspect precedent): serve this HTML at the normalized
    * URL instead of navigating the network. Any resulting validation level
@@ -209,6 +212,7 @@ export async function runAtsLiveFill(input: {
         url: gate.finalUrl,
         html: gate.html,
         ...(input.profile ? { profile: input.profile } : {}),
+        ...(input.capture ? { capture: input.capture } : {}),
       });
       if (adapter.id !== binding.id) {
         report.gate.failure_code = "ATS_MISMATCH";

@@ -912,6 +912,7 @@ async function step(
               url,
               execute: true,
               headless: ctx.options.headless ?? false,
+              capture: { db, applicationId: app.id },
               ...(handoff ? { existingPage: handoff } : {}),
             });
             if (!liveReport.gate.ok) {
@@ -933,6 +934,7 @@ async function step(
             url,
             execute: true,
             headless: ctx.options.headless ?? false,
+            capture: { db, applicationId: app.id },
             ...(handoff ? { existingPage: handoff } : {}),
           });
           return {
