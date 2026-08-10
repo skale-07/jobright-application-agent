@@ -49,6 +49,25 @@ export type AutoCycleReport = {
   notes: string[];
 };
 
+/**
+ * Windows ships npm/npx as .cmd shims, which execFileSync cannot spawn
+ * directly (ENOENT — and since Node's CVE-2024-27980 hardening, EINVAL
+ * even with an explicit .cmd path unless a shell is used). shell:true on
+ * win32 resolves the shims; every argument this module passes is a fixed
+ * literal, so nothing user-controlled ever reaches that shell.
+ */
+export function execOptionsForPlatform(platform: NodeJS.Platform): {
+  encoding: "utf8";
+  timeout: number;
+  shell: boolean;
+} {
+  return {
+    encoding: "utf8",
+    timeout: 600_000,
+    shell: platform === "win32",
+  };
+}
+
 export type AutoCycleSeams = {
   /** Test seam: replaces child-process execution (git/npm). */
   exec?: (command: string, args: string[]) => string;
@@ -80,7 +99,7 @@ export async function runAutoCycle(
   const exec =
     seams.exec ??
     ((command: string, args: string[]): string =>
-      execFileSync(command, args, { encoding: "utf8", timeout: 600_000 }));
+      execFileSync(command, args, execOptionsForPlatform(process.platform)));
 
   const report: AutoCycleReport = {
     started_at: now().toISOString(),
@@ -141,8 +160,12 @@ export async function runAutoCycle(
   if (report.preflight.notes.length === 0 && !input.skipUpdate) {
     try {
       exec("npm", ["run", "typecheck"]);
-    } catch {
-      report.preflight.notes.push("refusing: typecheck failed after self-update");
+    } catch (err) {
+      // Name the ACTUAL failure: a spawn error (ENOENT on a machine where
+      // npm resolution breaks) must never masquerade as a bad tree.
+      report.preflight.notes.push(
+        `refusing: typecheck failed after self-update: ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`,
+      );
     }
   }
   report.preflight.ok = report.preflight.notes.length === 0;
