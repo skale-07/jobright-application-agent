@@ -10,7 +10,10 @@ import {
   type Db,
 } from "../../src/storage/db/client.js";
 import { resetConfigCache } from "../../src/config/index.js";
-import { runAutoCycle } from "../../src/automation/autoCycle.js";
+import {
+  execOptionsForPlatform,
+  runAutoCycle,
+} from "../../src/automation/autoCycle.js";
 import { getActiveArmSession, getArmStatus } from "../../src/automation/armSession.js";
 import {
   applyControlledFillEnv,
@@ -138,6 +141,35 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
     expect(r.outcome).toBe("error");
     expect(r.notes.join(" ")).toMatch(/browser exploded/);
     expect(getActiveArmSession(db)).toBeFalsy();
+  });
+
+  it("windows spawns npm via a shell (cmd shims); unix does not", () => {
+    // The live regression: execFileSync("npm") ENOENTs on win32 because
+    // npm is npm.cmd — a shell is required to resolve the shim.
+    expect(execOptionsForPlatform("win32").shell).toBe(true);
+    expect(execOptionsForPlatform("linux").shell).toBe(false);
+    expect(execOptionsForPlatform("darwin").shell).toBe(false);
+  });
+
+  it("a typecheck spawn failure surfaces the REAL error, not a bare refusal", async () => {
+    armEnv();
+    const r = await runAutoCycle(
+      {},
+      {
+        db,
+        exec: (cmd: string, args: string[]): string => {
+          // Self-update phase succeeds with no movement...
+          if (cmd === "git") return "abc12345";
+          // ...then npm dies the way Windows kills a shim spawn.
+          throw new Error("spawnSync npm ENOENT");
+        },
+        sessionRunner: async () => {
+          throw new Error("must not run");
+        },
+      },
+    );
+    expect(r.outcome).toBe("refused");
+    expect(r.preflight.notes.join(" ")).toMatch(/ENOENT/);
   });
 
   it("never double-arms when a session is already live", async () => {
