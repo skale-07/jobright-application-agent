@@ -24,7 +24,7 @@ drafts only, enforced by CI-level banned-identifier checks.
 0. [One-time setup](#0-one-time-setup)
 1. [Login (JobRight via CDP, Outlook)](#1-login)
 2. [Discover jobs](#2-discover)
-3. [Inspect (JobRight detail + ATS form: greenhouse/lever/ashby)](#3-inspect)
+3. [Inspect (JobRight detail + ATS form: greenhouse/lever/ashby/workable)](#3-inspect)
 4. [Register a domain resume](#4-materials)
 5. [Rehearse the fill](#5-fill)
 6. [Essays (ATS-form questions — human-written)](#6-essays)

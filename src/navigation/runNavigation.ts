@@ -56,6 +56,7 @@ const KNOWN_ATS_HOSTS = [
   "jobs.lever.co",
   "jobs.eu.lever.co",
   "jobs.ashbyhq.com",
+  "apply.workable.com",
 ];
 
 /** Bounded reachability probe for the operator's CDP Chrome. */

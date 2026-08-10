@@ -25,12 +25,13 @@ describe("ATS registry wiring (W1, UNIT_CONFIRMED)", () => {
     applySafeFillEnv();
   });
 
-  it("registers all five adapters", () => {
+  it("registers all six adapters", () => {
     expect(listAdapters().map((a) => a.id)).toEqual([
       "unsupported",
       "greenhouse",
       "lever",
       "ashby",
+      "workable",
       "generic",
     ]);
   });

@@ -9,6 +9,7 @@ import type { PublicProfile } from "../candidate/publicProfile.js";
 import { GreenhouseAdapterV1 } from "../ats/greenhouse/v1.js";
 import { LeverAdapterV1, leverFullNameMatcher } from "../ats/lever/v1.js";
 import { AshbyAdapterV1, ashbyFullNameMatcher } from "../ats/ashby/v1.js";
+import { WorkableAdapterV1 } from "../ats/workable/v1.js";
 import {
   annotateFullNameField,
   type FullNameFieldMatcher,
@@ -77,6 +78,7 @@ const FILLABLE_ADAPTERS: Record<string, () => FillCapableAdapter> = {
   greenhouse: () => new GreenhouseAdapterV1(),
   lever: () => new LeverAdapterV1(),
   ashby: () => new AshbyAdapterV1(),
+  workable: () => new WorkableAdapterV1(),
 };
 
 /** Single full-name fields need annotation before planning (see nameComposition). */
@@ -139,7 +141,7 @@ export async function planApplicationFill(input: {
   const makeAdapter = FILLABLE_ADAPTERS[detected.id];
   if (!makeAdapter) {
     throw new Error(
-      `Fill supports greenhouse/lever/ashby only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
+      `Fill supports greenhouse/lever/ashby/workable only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
     );
   }
   const adapter = makeAdapter();
