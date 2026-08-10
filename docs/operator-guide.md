@@ -678,6 +678,30 @@ until a six-digit code is entered. The Outlook mailbox selectors are
 synthetic and `UNVERIFIED` against a real inbox; the Gmail path reuses the
 parser already used by navigation.
 
+## 17b. Stage-1 self-improvement loop
+
+The analyze→fix→PR cycle that has driven this repo's recent fixes, with the
+human courier steps removed. Three pieces:
+
+1. **Artifact autopush** (`ARTIFACT_AUTOPUSH_ENABLED=true`): after an armed
+   session ends, the worker commits `artifacts/` and pushes to the current
+   branch. Only `artifacts/` is ever staged — pre-staged code changes are
+   set aside, never swept along — and the pre-commit secret gate runs
+   normally (`--no-verify` is never used; a hook refusal aborts the push
+   loudly). Session reports gain `artifact_autopush`.
+2. **`/improve`** (`.claude/commands/improve.md`): one bounded improvement
+   cycle for any Claude agent — analyze the newest run artifacts, score the
+   previous cycle's prediction, fix at most three things with regression
+   tests, run the full gate, open a PR whose body states a falsifiable
+   prediction for the next session. A protected-paths list (guards, secret
+   checks, house rules) is off-limits to the loop by construction.
+3. **Standing wake**: a scheduled Claude session polls master for new
+   artifact pushes and runs `/improve` when it finds them.
+
+You keep exactly two touches per cycle: **merge the PR** and **arm the next
+session**. Arming stays human by contract; nothing in this loop can widen a
+capability, weaken a gate, or submit anything.
+
 ## 18. L3 — armed unattended sessions (contract)
 
 L3 lets the console click Submit **without a per-application confirmation**,
