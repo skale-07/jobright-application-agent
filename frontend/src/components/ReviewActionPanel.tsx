@@ -54,8 +54,40 @@ export function ReviewActionPanel({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
+  const isPrediction =
+    item.kind === "MANUAL" && item.payload?.["source"] === "screener_prediction";
+  const [predAnswer, setPredAnswer] = useState<string>(
+    typeof item.payload?.["predicted_answer"] === "string"
+      ? (item.payload["predicted_answer"] as string)
+      : "",
+  );
+  const predOptions = Array.isArray(item.payload?.["options"])
+    ? (item.payload["options"] as unknown[]).filter(
+        (o): o is string => typeof o === "string",
+      )
+    : [];
+
   const actions = ACTIONS[item.kind] ?? [{ action: "dismiss", label: "Dismiss" }];
   const essayFields = essayFieldIds(item);
+
+  const promote = async (): Promise<void> => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await apiPost<{ bank_key: string; saved_answer: string }>(
+        `/api/review-items/${item.id}/resolve`,
+        { action: "promote-screener", answer: predAnswer },
+      );
+      setResult(
+        `saved "${res.saved_answer}" — this question now fills automatically on every form`,
+      );
+      onResolved();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const run = async (action: string): Promise<void> => {
     setBusy(true);
@@ -164,6 +196,42 @@ export function ReviewActionPanel({
               disabled={busy || !essayField || essayText.trim().length === 0}
             >
               Save answer
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {isPrediction ? (
+        <div style={{ display: "grid", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <p className="muted" style={{ margin: 0 }}>
+            {String(item.payload?.["question"] ?? "")}
+          </p>
+          {typeof item.payload?.["basis"] === "string" && item.payload["basis"] ? (
+            <p className="mono" style={{ fontSize: "11.5px", color: "var(--purple)", margin: 0 }}>
+              AI suggestion (UNVERIFIED), based on: {item.payload["basis"] as string}
+            </p>
+          ) : null}
+          <label className="field">
+            Your answer (approving saves it for every future form)
+            {predOptions.length > 0 ? (
+              <select value={predAnswer} onChange={(e) => setPredAnswer(e.target.value)}>
+                {predOptions.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input value={predAnswer} onChange={(e) => setPredAnswer(e.target.value)} />
+            )}
+          </label>
+          <div>
+            <button
+              className="primary"
+              onClick={() => void promote()}
+              disabled={busy || predAnswer.trim().length === 0}
+            >
+              Approve &amp; save answer
             </button>
           </div>
         </div>

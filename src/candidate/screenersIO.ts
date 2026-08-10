@@ -30,6 +30,32 @@ export function tryLoadScreenerBank(filePath?: string): ScreenerAnswerBank | nul
   return parseScreenerBank(raw);
 }
 
+/**
+ * Promote an approved prediction into the bank's custom section. Called
+ * ONLY by the review promote resolver — this is the single write path by
+ * which a model-proposed answer becomes fillable, and it runs after the
+ * human clicked approve. Merges labels when the key already exists.
+ */
+export function addCustomScreenerAnswer(input: {
+  key: string;
+  answer: string;
+  label: string;
+}): { path: string; key: string } {
+  const { bankPath } = screenerBankPaths();
+  const existing = tryLoadScreenerBank();
+  const bank: ScreenerAnswerBank =
+    existing ?? { version: 1, answers: {}, custom: {} };
+  const prior = bank.custom[input.key];
+  bank.custom[input.key] = {
+    answer: input.answer,
+    labels: [...new Set([...(prior?.labels ?? []), input.label])],
+    promoted_at: new Date().toISOString(),
+  };
+  fs.mkdirSync(path.dirname(bankPath), { recursive: true });
+  fs.writeFileSync(bankPath, `${JSON.stringify(bank, null, 2)}\n`, "utf8");
+  return { path: bankPath, key: input.key };
+}
+
 /** CLI seam: copy the example into place without overwriting. */
 export function initScreenerBank(): { created: boolean; path: string } {
   const { bankPath, examplePath } = screenerBankPaths();

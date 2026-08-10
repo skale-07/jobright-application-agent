@@ -13,6 +13,7 @@ import {
   ReviewResolverError,
   abandonApplication,
   dismissReviewItem,
+  promoteScreenerPrediction,
   requeueAfterWall,
   requeueAmbiguousField,
   requeueUnsupportedAts,
@@ -38,7 +39,9 @@ export const REVIEW_ACTION_MATRIX: Record<string, string[]> = {
   UNSUPPORTED_ATS: ["requeue", "abandon", "dismiss"],
   AMBIGUOUS_FIELD: ["requeue", "abandon", "dismiss"],
   ESSAY: ["dismiss"], // answers go through POST /api/essays/answer
-  MANUAL: ["dismiss"],
+  // promote-screener applies only to prediction items (payload.source
+  // === "screener_prediction"); the resolver rejects everything else.
+  MANUAL: ["dismiss", "promote-screener"],
   DUPLICATE_RISK: ["dismiss"],
 };
 
@@ -164,6 +167,18 @@ export function buildMutationRoutes(deps: { db: Db }): Route[] {
                 res,
                 200,
                 abandonApplication(db, { reviewItemId: id, ...(note ? { note } : {}) }),
+              );
+              return;
+            case "promote-screener":
+              json(
+                res,
+                200,
+                promoteScreenerPrediction(db, {
+                  reviewItemId: id,
+                  ...(str(body, "answer") !== undefined
+                    ? { answer: str(body, "answer")! }
+                    : {}),
+                }),
               );
               return;
             case "dismiss":

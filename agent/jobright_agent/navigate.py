@@ -43,6 +43,9 @@ def _emit(result: dict, code: int = 0) -> None:
 
 
 def _fail_navigate(reason: str, wall: str = "budget", code: int = 1) -> None:
+    # The reason ALSO rides in notes: a zero-step failure whose cause lives
+    # only in `reason` proved undiagnosable from the nav artifact alone
+    # (three live runs shipped with empty notes).
     _emit(
         {
             "status": "error",
@@ -50,7 +53,7 @@ def _fail_navigate(reason: str, wall: str = "budget", code: int = 1) -> None:
             "wall": wall if wall in _WALLS else "budget",
             "steps_used": 0,
             "domains_visited": [],
-            "notes": [],
+            "notes": [reason[:490]],
             "reason": reason,
         },
         code,

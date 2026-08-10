@@ -184,6 +184,61 @@ export function resolveScreenerAnswer(input: {
   return { status: "fill", key, value: bankAnswer, basis: "free_text" };
 }
 
+/**
+ * Custom-entry resolution: promoted answers match by EXACT normalized
+ * label, and choice controls still require a literal option match (exact
+ * → case-insensitive; no synonyms — custom entries were approved against
+ * a real form, so their spelling should already be literal). No match ⇒
+ * review, same as everything else.
+ */
+export function resolveCustomScreener(
+  field: { label: string; type: string; options?: string[] | undefined },
+  bank: ScreenerAnswerBank,
+): ScreenerResolution | null {
+  const norm = normalizeScreenerLabel(field.label);
+  if (!norm) return null;
+  const hit = Object.entries(bank.custom).find(([, e]) =>
+    e.labels.some((l) => normalizeScreenerLabel(l) === norm),
+  );
+  if (!hit) return null;
+  const [key, entry] = hit;
+  const scopedKey = `custom:${key}`;
+  const answer = entry.answer.trim();
+  if (answer === "") {
+    return { status: "review", key: scopedKey, reason: `${scopedKey}: empty answer in bank` };
+  }
+  const isChoice =
+    field.type === "select" ||
+    field.type === "radio" ||
+    (field.options?.length ?? 0) > 0;
+  if (isChoice) {
+    const options = field.options ?? [];
+    if (options.length === 0) {
+      return field.type === "select"
+        ? { status: "fill", key: scopedKey, value: answer, basis: "free_text" }
+        : {
+            status: "review",
+            key: scopedKey,
+            reason: `${scopedKey}: choice control with undiscovered options — review`,
+          };
+    }
+    const exact = options.find((o) => o === answer);
+    if (exact !== undefined) {
+      return { status: "fill", key: scopedKey, value: exact, basis: "exact_option" };
+    }
+    const ci = options.filter((o) => normOpt(o) === normOpt(answer));
+    if (ci.length === 1) {
+      return { status: "fill", key: scopedKey, value: ci[0]!, basis: "ci_option" };
+    }
+    return {
+      status: "review",
+      key: scopedKey,
+      reason: `${scopedKey}: promoted answer "${answer}" matches none of the ${options.length} page options — review`,
+    };
+  }
+  return { status: "fill", key: scopedKey, value: answer, basis: "free_text" };
+}
+
 /** One-call convenience used by the fill planner. */
 export function resolveScreenerForField(
   field: { label: string; type: string; options?: string[] | undefined },

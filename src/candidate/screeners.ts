@@ -256,14 +256,32 @@ export const SCREENER_REGISTRY: ScreenerDef[] = [
   },
 ];
 
+/**
+ * A promoted custom entry: a question the registry doesn't model, whose
+ * answer the operator approved once via the prediction review flow. It
+ * matches future forms by EXACT normalized label (no regex authoring) and
+ * fills through the same deterministic option-verification as registry
+ * keys. Only the promote resolver writes these — the model never does.
+ */
+export type CustomScreenerEntry = {
+  answer: string;
+  /** Normalized labels (screenerMatch.normalizeScreenerLabel) this covers. */
+  labels: string[];
+  promoted_at: string;
+};
+
 /** The operator's answers, keyed by registry key. Values are the LITERAL
- *  strings to type/pick — this file is authored by the human, once. */
+ *  strings to type/pick — this file is authored by the human, once.
+ *  `custom` holds promoted entries from the prediction review flow. */
 export type ScreenerAnswerBank = {
   version: 1;
   answers: Record<string, string>;
+  custom: Record<string, CustomScreenerEntry>;
 };
 
 export class ScreenerBankParseError extends Error {}
+
+const CUSTOM_KEY_RE = /^[a-z0-9_]{2,60}$/;
 
 export function parseScreenerBank(raw: unknown): ScreenerAnswerBank {
   if (typeof raw !== "object" || raw === null) {
@@ -290,7 +308,46 @@ export function parseScreenerBank(raw: unknown): ScreenerAnswerBank {
     }
     out[k] = v;
   }
-  return { version: 1, answers: out };
+
+  const custom: Record<string, CustomScreenerEntry> = {};
+  const rawCustom = obj["custom"];
+  if (rawCustom !== undefined) {
+    if (typeof rawCustom !== "object" || rawCustom === null || Array.isArray(rawCustom)) {
+      throw new ScreenerBankParseError('"custom" must be an object when present');
+    }
+    for (const [k, v] of Object.entries(rawCustom as Record<string, unknown>)) {
+      if (!CUSTOM_KEY_RE.test(k)) {
+        throw new ScreenerBankParseError(
+          `Custom key "${k}" must be snake_case [a-z0-9_], 2-60 chars`,
+        );
+      }
+      if (known.has(k)) {
+        throw new ScreenerBankParseError(
+          `Custom key "${k}" collides with a registry key — use "answers" for it`,
+        );
+      }
+      const e = v as Partial<CustomScreenerEntry> | null;
+      if (
+        typeof e !== "object" ||
+        e === null ||
+        typeof e.answer !== "string" ||
+        e.answer.trim() === "" ||
+        !Array.isArray(e.labels) ||
+        e.labels.length === 0 ||
+        !e.labels.every((l) => typeof l === "string" && l.trim() !== "")
+      ) {
+        throw new ScreenerBankParseError(
+          `Custom entry "${k}" needs {answer: string, labels: string[]}`,
+        );
+      }
+      custom[k] = {
+        answer: e.answer,
+        labels: e.labels.map((l) => l.trim()),
+        promoted_at: typeof e.promoted_at === "string" ? e.promoted_at : "",
+      };
+    }
+  }
+  return { version: 1, answers: out, custom };
 }
 
 export function screenerDef(key: string): ScreenerDef | undefined {

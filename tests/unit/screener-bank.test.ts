@@ -30,6 +30,7 @@ const BANK: ScreenerAnswerBank = {
     willing_to_relocate: "Yes",
     previously_applied_or_worked: "No",
   },
+  custom: {},
 };
 
 /**
@@ -119,7 +120,7 @@ describe("screener registry + matcher (UNIT_CONFIRMED)", () => {
 
     const noAnswer = resolveField(
       { label: "Are you willing to relocate?", type: "radio", options: ["Yes", "No"] },
-      { version: 1, answers: {} },
+      { version: 1, answers: {}, custom: {} },
     );
     expect(noAnswer?.status).toBe("review");
   });
@@ -127,7 +128,7 @@ describe("screener registry + matcher (UNIT_CONFIRMED)", () => {
   it("salary is review-only by policy even with a bank answer", () => {
     const r = resolveField(
       { label: "What are your salary expectations?", type: "text" },
-      { version: 1, answers: {} },
+      { version: 1, answers: {}, custom: {} },
     );
     expect(r?.status).toBe("review");
     if (r?.status === "review") expect(r.reason).toMatch(/human decision/);
@@ -213,7 +214,7 @@ describe("buildFillPlan screener integration (UNIT_CONFIRMED)", () => {
         type: "radio",
         options: ["Undergrad", "Master's/MBA", "PhD"],
       },
-      { version: 1, answers: {} },
+      { version: 1, answers: {}, custom: {} },
       undefined,
       profile,
     );
@@ -232,7 +233,7 @@ describe("buildFillPlan screener integration (UNIT_CONFIRMED)", () => {
         type: "radio",
         options: ["Canada", "Europe", "United Kingdom", "United States"],
       },
-      { version: 1, answers: {} },
+      { version: 1, answers: {}, custom: {} },
       undefined,
       profile,
     );
@@ -256,7 +257,7 @@ describe("buildFillPlan screener integration (UNIT_CONFIRMED)", () => {
     // availability is a commitment: no predictor exists, parks without a bank answer.
     const commitment = resolveField(
       { label: "Are you available for a full-time internship?", type: "radio", options: ["Yes", "No"] },
-      { version: 1, answers: {} },
+      { version: 1, answers: {}, custom: {} },
       undefined,
       profile,
     );

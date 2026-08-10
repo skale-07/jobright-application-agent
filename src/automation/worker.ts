@@ -12,6 +12,7 @@ import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { listContacts } from "../contacts/repository.js";
 import { rankOutreachContacts } from "../contacts/rank.js";
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
+import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
@@ -76,6 +77,8 @@ export type AutomationSessionReport = {
   drafts_saved: number;
   /** Essay suggestion drafts generated into review items (UNVERIFIED). */
   essay_drafts_generated: number;
+  /** New-question predictions opened as review items (UNVERIFIED). */
+  screener_predictions_generated: number;
   /** Session-start employer-URL audit (wrong-company/duplicate repair). */
   nav_audit?: { checked: number; repaired: number; parked: number };
   notes: string[];
@@ -344,6 +347,7 @@ export async function runAutomationSession(
     emails_generated: 0,
     drafts_saved: 0,
     essay_drafts_generated: 0,
+    screener_predictions_generated: 0,
     notes: [],
     per_app: [],
   };
@@ -714,6 +718,24 @@ export async function runAutomationSession(
     for (const n of essayBatch.notes) report.notes.push(n);
   }
 
+  // Post-session screener prediction batch: questions the whole ladder
+  // (registry, custom entries, LLM mapping, profile rules) couldn't
+  // answer were queued at plan time; the LLM now proposes answers from
+  // the operator's own context into review items with one-click promote.
+  // Fail-open, and predictions never fill anything themselves.
+  try {
+    const predictBatch = await generateScreenerPredictions({
+      db,
+      ...(input.essayDraftClient ? { client: input.essayDraftClient } : {}),
+    });
+    report.screener_predictions_generated = predictBatch.predicted;
+    for (const n of predictBatch.notes) report.notes.push(n);
+  } catch (err) {
+    report.notes.push(
+      `screener predictions failed (continuing): ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`,
+    );
+  }
+
   emit();
   logger.info("automation session finished", {
     service: "automation",
@@ -727,6 +749,7 @@ export async function runAutomationSession(
       emails_generated: report.emails_generated,
       drafts_saved: report.drafts_saved,
       essay_drafts_generated: report.essay_drafts_generated,
+      screener_predictions_generated: report.screener_predictions_generated,
       notes: report.notes,
       per_app: report.per_app.map((a) => ({
         application_id: a.application_id,

@@ -535,6 +535,17 @@ export async function runNavigation(
           domains_visited: [...visited],
         };
         report.notes.push(...agentResult.notes.map((n) => `agent[${turns}]: ${n}`));
+        // A zero-step error's cause lives ONLY in `reason` — three live
+        // failures shipped with empty notes and were undiagnosable until
+        // the operator's logs were correlated by hand. Never again.
+        if (agentResult.status === "error" && agentResult.reason) {
+          report.notes.push(`agent[${turns}] reason: ${agentResult.reason.slice(0, 300)}`);
+          if (/cdp|connect|websocket|timeout/i.test(agentResult.reason) && agentResult.steps_used === 0) {
+            report.notes.push(
+              "agent could not attach to the debug Chrome (port answers but the session is wedged) — close ALL Chrome windows, re-run chrome:debug:jobright, then requeue",
+            );
+          }
+        }
 
         if (agentResult.status === "ok" && agentResult.final_url) {
           // The agent's word is a proposal, not a result: verify the URL

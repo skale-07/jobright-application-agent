@@ -59,7 +59,15 @@ export function isScreenerFillCanonical(
   canonical: string | null | undefined,
 ): boolean {
   if (!canonical?.startsWith("screener:")) return false;
-  const key = canonical.slice("screener:".length).split(":")[0] ?? "";
+  const segments = canonical.slice("screener:".length).split(":");
+  const key = segments[0] ?? "";
+  // screener:custom:<key> — promoted entries from the prediction review
+  // flow. Allowlisted because the ONLY writer of custom bank entries is
+  // the human-approved promote resolver, and the value still comes off
+  // the operator's disk at fill time (never from a model at plan time).
+  if (key === "custom") {
+    return (segments[1] ?? "").length >= 2;
+  }
   const def = screenerDef(key);
   return def?.policy === "auto_fill" || def?.policy === "skip_if_empty";
 }

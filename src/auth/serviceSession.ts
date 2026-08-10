@@ -65,7 +65,19 @@ export class PlaywrightServiceSession implements ServiceSession {
       // We do not own this browser: close() disconnects and must never kill
       // it or close its real contexts/pages.
       const cdpUrl = this.cdpUrlOverride ?? getConfig().agentCdpUrl;
-      this.browser = await chromium.connectOverCDP(cdpUrl);
+      try {
+        this.browser = await chromium.connectOverCDP(cdpUrl, { timeout: 20_000 });
+      } catch (err) {
+        // The live failure this names: the debug port answers HTTP (so the
+        // availability probe passes) but the websocket handshake hangs —
+        // a wedged Chrome. The raw Playwright timeout text told the
+        // operator nothing actionable.
+        const raw = err instanceof Error ? err.message : String(err);
+        throw new Error(
+          `Debug Chrome at ${cdpUrl} is unresponsive (port answers but the CDP session won't attach). ` +
+            `Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [${raw.slice(0, 120)}]`,
+        );
+      }
       this.context =
         this.browser.contexts()[0] ?? (await this.browser.newContext());
     } else if (this.mode === "PERSISTENT_CONTEXT") {
