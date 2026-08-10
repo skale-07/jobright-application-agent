@@ -143,6 +143,7 @@ Commands:
   gmail:auth --email <mailbox> --client-id <id> --client-secret <secret>   One-time readonly OAuth
   gmail:check                           Read-only Gmail token smoke test
   verify:mailbox [--since <minutes>] [--show]   Smoke-test the mailbox verification scan (gmail-web/outlook)
+  auto:cycle [--no-update] [--headed] [--duration <min>] [--max-submits N] [--max-apps N]   One hands-off session cycle (operator-guide §19)
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
@@ -1560,6 +1561,23 @@ async function main(): Promise<void> {
     case "verify:mailbox":
       await cmdVerifyMailbox(flags);
       return;
+    case "auto:cycle": {
+      const { runAutoCycle } = await import("../automation/autoCycle.js");
+      const num = (k: string): number | undefined =>
+        typeof flags[k] === "string" && Number.isFinite(Number(flags[k]))
+          ? Number(flags[k])
+          : undefined;
+      const report = await runAutoCycle({
+        skipUpdate: flags["no-update"] === true,
+        headless: flags["headed"] !== true,
+        ...(num("duration") !== undefined ? { durationMinutes: num("duration")! } : {}),
+        ...(num("max-submits") !== undefined ? { maxSubmits: num("max-submits")! } : {}),
+        ...(num("max-apps") !== undefined ? { maxApps: num("max-apps")! } : {}),
+      });
+      console.log(JSON.stringify(report, null, 2));
+      process.exit(report.outcome === "completed" || report.outcome === "skipped_already_armed" ? 0 : 1);
+      return;
+    }
     case "review":
       cmdReview();
       return;

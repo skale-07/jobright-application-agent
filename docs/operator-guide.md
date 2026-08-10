@@ -40,6 +40,7 @@ drafts only, enforced by CI-level banned-identifier checks.
 16. [Operator console (web UI)](#16-operator-console-web-ui)
 17. [When Submit stays greyed out](#17-when-submit-stays-greyed-out)
 18. [L3 — armed unattended sessions (contract)](#18-l3--armed-unattended-sessions-contract)
+19. [Hands-off schedule (auto:cycle)](#19-hands-off-schedule-autocycle)
 
 Essays (§6) vs outreach emails (§10) are different things: essays are
 free-text questions **on the employer's application form**, always written
@@ -880,3 +881,67 @@ with the reason named in the trace.
 (`npm run submit -- --application <id>` with `--yes` for unattended) is
 unchanged and still available; the console one-shot submit keeps its
 confirmation modal regardless of arm.
+
+## 19. Hands-off schedule (auto:cycle)
+
+For when you cannot be at this machine: one command runs an entire session
+cycle — self-update from master, deterministic preflight, arm with the
+standard caps, run the SAME autonomous worker the console button runs,
+disarm, and let the post-session batches (essays, predictions, artifact
+autopush) feed the improvement loop.
+
+```powershell
+npm run auto:cycle                       # one full cycle now
+npm run auto:cycle -- --no-update        # skip the git pull (offline)
+npm run auto:cycle -- --duration 60 --max-submits 5 --max-apps 10
+```
+
+Install it as a Windows scheduled task once (adjust the repo path; the
+task's environment IS the standing authorization — every capability flag
+lives in the wrapper script, so editing or deleting it is the kill switch):
+
+```powershell
+# 1. Create private\auto-cycle.cmd (gitignored) with your flags:
+#    @echo off
+#    cd /d C:\dev\jobright-application-agent
+#    set AUTOMATION_ENABLED=true
+#    set FORM_FILL_ENABLED=true
+#    set SUBMIT_ENABLED=true
+#    set DRY_RUN=false
+#    set NAVIGATION_ENABLED=true
+#    set NATIVE_AUTOFILL_ENABLED=true
+#    set GMAIL_VERIFICATION_ENABLED=true
+#    set AGENT_FALLBACK_ENABLED=true
+#    set SCREENER_LLM_MATCH_ENABLED=true
+#    set SCREENER_PREDICT_LLM_ENABLED=true
+#    set ESSAY_DRAFT_ENABLED=true
+#    set ARTIFACT_AUTOPUSH_ENABLED=true
+#    set SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false
+#    set MAX_UNATTENDED_SUBMISSIONS_PER_RUN=10
+#    set ANTHROPIC_API_KEY=sk-ant-...
+#    npm run auto:cycle >> artifacts\console\auto-cycle.log 2>&1
+
+# 2. Schedule it (every 4 hours while the machine is on):
+schtasks /Create /TN "DispatchAutoCycle" /TR "C:\dev\jobright-application-agent\private\auto-cycle.cmd" /SC HOURLY /MO 4
+
+# Pause / resume / kill:
+schtasks /Change /TN "DispatchAutoCycle" /DISABLE
+schtasks /Change /TN "DispatchAutoCycle" /ENABLE
+schtasks /Delete /TN "DispatchAutoCycle" /F
+```
+
+What the cycle refuses to do, loudly and by name: run with any capability
+flag missing, run when `SUBMIT_REQUIRES_LOCAL_CONFIRMATION` is still true,
+run after a failed typecheck, or double-arm over a session you started
+from the console (yours is left untouched). Every in-run gate — the arm
+row's submit/app budget, page identity, verification, walls, caps — is
+exactly the console path's. Keep the debug Chrome (`chrome:debug:jobright`)
+running for the nav agent phase; without it, wall'd apps park with the
+reason named, same as always.
+
+Full-autonomy loop with this installed: scheduled cycle runs → artifacts
+autopush → the cloud analysis agent scores its last prediction, fixes,
+opens AND (by standing operator grant) merges the gated loop PR → the next
+scheduled cycle pulls that merge before running. The human watches from
+anywhere via GitHub and the pushed run reports; disabling the task or the
+`AUTOMATION_ENABLED` line stops the world.

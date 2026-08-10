@@ -1,0 +1,230 @@
+import { execFileSync } from "node:child_process";
+import { getConfig, resetConfigCache } from "../config/index.js";
+import { logger } from "../logging/logger.js";
+import type { Db } from "../storage/db/client.js";
+import { migrate, openDatabase } from "../storage/db/client.js";
+import {
+  armSession,
+  disarmSession,
+  getActiveArmSession,
+  getArmStatus,
+  hashArmToken,
+  type ArmStatus,
+} from "./armSession.js";
+import {
+  runAutomationSession,
+  type AutomationSessionReport,
+} from "./worker.js";
+
+/**
+ * Hands-off cycle for the OPERATOR'S OWN MACHINE — the "coding in loops"
+ * runtime leg when the human cannot be at the desktop. Installed once as a
+ * scheduled task (operator-guide §19); each firing:
+ *
+ *   1. self-updates (git pull --ff-only origin master, npm install when the
+ *      lockfile moved, frontend build when frontend/ moved),
+ *   2. preflights the environment deterministically (typecheck + the same
+ *      env coherence the console ceiling would enforce),
+ *   3. arms a session with the standard defaults and runs the SAME
+ *      autonomous worker the console button runs,
+ *   4. lets the worker's post-session batches (essays, predictions,
+ *      artifact autopush) close the loop back to the analysis agent.
+ *
+ * Governance: installing/enabling the scheduled task IS the standing human
+ * authorization — the task's environment carries every capability flag,
+ * so deleting the task, or flipping AUTOMATION_ENABLED off in it, kills
+ * everything. Every in-run gate (arm budget, submit gates, walls, caps)
+ * is unchanged: this module only automates the two button presses the
+ * operator used to do by hand (arm + start). Refusals are loud and the
+ * cycle NEVER weakens a gate to proceed.
+ */
+
+export type AutoCycleReport = {
+  started_at: string;
+  updated: { pulled: boolean; head: string | null; installed: boolean; notes: string[] };
+  preflight: { ok: boolean; notes: string[] };
+  arm: ArmStatus | null;
+  session: AutomationSessionReport | null;
+  outcome: "completed" | "refused" | "skipped_already_armed" | "error";
+  notes: string[];
+};
+
+export type AutoCycleSeams = {
+  /** Test seam: replaces child-process execution (git/npm). */
+  exec?: (command: string, args: string[]) => string;
+  /** Test seam: replaces the worker. */
+  sessionRunner?: (db: Db, armRunId: string) => Promise<AutomationSessionReport>;
+  db?: Db;
+  now?: () => Date;
+};
+
+const REQUIRED_FLAGS: Array<{ key: string; check: (cfg: ReturnType<typeof getConfig>) => boolean }> = [
+  { key: "AUTOMATION_ENABLED", check: (c) => c.automationEnabled },
+  { key: "FORM_FILL_ENABLED", check: (c) => c.formFillEnabled },
+  { key: "SUBMIT_ENABLED", check: (c) => c.submitEnabled },
+  { key: "NAVIGATION_ENABLED", check: (c) => c.navigationEnabled },
+  { key: "DRY_RUN=false", check: (c) => !c.dryRun },
+];
+
+export async function runAutoCycle(
+  input: {
+    skipUpdate?: boolean;
+    durationMinutes?: number;
+    maxSubmits?: number;
+    maxApps?: number;
+    headless?: boolean;
+  } = {},
+  seams: AutoCycleSeams = {},
+): Promise<AutoCycleReport> {
+  const now = seams.now ?? (() => new Date());
+  const exec =
+    seams.exec ??
+    ((command: string, args: string[]): string =>
+      execFileSync(command, args, { encoding: "utf8", timeout: 600_000 }));
+
+  const report: AutoCycleReport = {
+    started_at: now().toISOString(),
+    updated: { pulled: false, head: null, installed: false, notes: [] },
+    preflight: { ok: false, notes: [] },
+    arm: null,
+    session: null,
+    outcome: "error",
+    notes: [],
+  };
+
+  // ---- 1. Self-update (fail-open into notes: an offline machine still runs
+  // the code it has; a conflicted tree refuses loudly instead of guessing).
+  if (!input.skipUpdate) {
+    try {
+      const before = exec("git", ["rev-parse", "HEAD"]).trim();
+      exec("git", ["fetch", "origin", "master"]);
+      exec("git", ["merge", "--ff-only", "origin/master"]);
+      const after = exec("git", ["rev-parse", "HEAD"]).trim();
+      report.updated.pulled = before !== after;
+      report.updated.head = after.slice(0, 8);
+      if (report.updated.pulled) {
+        const changed = exec("git", ["diff", "--name-only", before, after]);
+        if (/package-lock\.json/.test(changed)) {
+          exec("npm", ["install", "--no-audit", "--no-fund"]);
+          report.updated.installed = true;
+        }
+        if (/^frontend\//m.test(changed)) {
+          exec("npm", ["run", "frontend:build"]);
+          report.updated.notes.push("frontend rebuilt");
+        }
+        report.updated.notes.push(`updated to ${report.updated.head}`);
+      }
+    } catch (err) {
+      report.updated.notes.push(
+        `self-update failed (running current code): ${err instanceof Error ? err.message.slice(0, 200) : String(err)}`,
+      );
+    }
+  } else {
+    report.updated.notes.push("update skipped (--no-update)");
+  }
+
+  // ---- 2. Deterministic preflight. Config is re-read AFTER the pull so a
+  // merged flag-list change is honored; the typecheck catches a broken pull
+  // before any browser opens.
+  resetConfigCache();
+  const cfg = getConfig();
+  for (const flag of REQUIRED_FLAGS) {
+    if (!flag.check(cfg)) {
+      report.preflight.notes.push(`refusing: ${flag.key} not satisfied in the task environment`);
+    }
+  }
+  if (cfg.submitRequiresLocalConfirmation) {
+    report.preflight.notes.push(
+      "refusing: SUBMIT_REQUIRES_LOCAL_CONFIRMATION must be false in the task environment (the arm row budget is the control)",
+    );
+  }
+  if (report.preflight.notes.length === 0 && !input.skipUpdate) {
+    try {
+      exec("npm", ["run", "typecheck"]);
+    } catch {
+      report.preflight.notes.push("refusing: typecheck failed after self-update");
+    }
+  }
+  report.preflight.ok = report.preflight.notes.length === 0;
+  if (!report.preflight.ok) {
+    report.outcome = "refused";
+    logger.warn("auto-cycle refused", {
+      service: "automation",
+      action: "auto_cycle_refused",
+      metadata: { notes: report.preflight.notes },
+    });
+    return report;
+  }
+
+  // ---- 3. Arm + run — the same worker the console button runs.
+  let ownedDb = false;
+  let armedByThisCycle = false;
+  const db =
+    seams.db ??
+    (() => {
+      ownedDb = true;
+      const d = openDatabase();
+      migrate(d);
+      return d;
+    })();
+  try {
+    // NOT sweepStaleArmSessions: that is console-BOOT semantics (kill every
+    // running arm). A live arm someone else holds must survive this cycle;
+    // getActiveArmSession already completes genuinely expired rows itself.
+    if (getActiveArmSession(db, now())) {
+      report.arm = getArmStatus(db, now());
+      report.outcome = "skipped_already_armed";
+      report.notes.push("an armed session is already live — not double-arming");
+      return report;
+    }
+    armedByThisCycle = true;
+    report.arm = armSession(
+      db,
+      {
+        ...(input.durationMinutes !== undefined
+          ? { durationMinutes: input.durationMinutes }
+          : {}),
+        ...(input.maxSubmits !== undefined ? { maxSubmits: input.maxSubmits } : {}),
+        ...(input.maxApps !== undefined ? { maxApps: input.maxApps } : {}),
+        armedByTokenHash: hashArmToken("auto-cycle"),
+      },
+      now(),
+    );
+    const armRunId = report.arm.arm_run_id;
+    if (!armRunId) {
+      report.outcome = "error";
+      report.notes.push("arm produced no run id");
+      return report;
+    }
+    const runner =
+      seams.sessionRunner ??
+      ((database: Db, id: string) =>
+        runAutomationSession({
+          db: database,
+          armRunId: id,
+          headless: input.headless ?? false,
+          discoverMax: report.arm?.discover_max ?? 8,
+        }));
+    report.session = await runner(db, armRunId);
+    report.outcome = "completed";
+    return report;
+  } catch (err) {
+    report.notes.push(
+      `cycle error: ${err instanceof Error ? err.message.slice(0, 300) : String(err)}`,
+    );
+    report.outcome = "error";
+    return report;
+  } finally {
+    // Restart-=-disarmed law, scheduled edition: never leave OUR arm live
+    // past the cycle that created it. An arm someone ELSE holds (console
+    // session in progress) is never touched.
+    try {
+      if (armedByThisCycle && getActiveArmSession(db, now())) {
+        disarmSession(db, now());
+      }
+    } catch {
+      // sweep on next cycle
+    }
+    if (ownedDb) db.close();
+  }
+}
