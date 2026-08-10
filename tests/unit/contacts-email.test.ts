@@ -317,6 +317,8 @@ describe("generateEmailForContact with stub client (UNIT_CONFIRMED, no network)"
     process.env.PRIVATE_DIR = privateDir;
     process.env.EMAIL_GENERATION_ENABLED = "true";
     process.env.OPENAI_API_KEY = "sk-test-not-a-real-key-000000000000";
+    // Hermetic: an ambient Anthropic key must not flip the provider choice.
+    delete process.env.ANTHROPIC_API_KEY;
     resetConfigCache();
 
     db = openDatabase(dbPath);
@@ -360,8 +362,9 @@ describe("generateEmailForContact with stub client (UNIT_CONFIRMED, no network)"
     );
     process.env.EMAIL_GENERATION_ENABLED = "true";
     delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
     resetConfigCache();
-    expect(() => assertEmailGenerationAllowed()).toThrow(/OPENAI_API_KEY/);
+    expect(() => assertEmailGenerationAllowed()).toThrow(/ANTHROPIC_API_KEY or OPENAI_API_KEY/);
   });
 
   it("VALIDATED path writes the row with the model id and advances state", async () => {

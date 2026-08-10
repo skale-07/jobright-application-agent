@@ -29,7 +29,7 @@ No production `sendEmail` — ever. Drafts only: `createOutlookDraft` / `verifyO
 
 ## Outreach LLM boundary
 
-Outreach email generation is the only LLM call in the codebase (OpenAI, `EMAIL_GENERATION_ENABLED` + `OPENAI_API_KEY` gated). The key lives in `.env` (gitignored), is covered by log redaction, and is never written to artifacts. Generated text is deterministically re-validated; rejected output cannot become a draft.
+Every LLM call goes through one client boundary (`src/contacts/emailLlm.ts` — Anthropic preferred when `ANTHROPIC_API_KEY` is set, OpenAI fallback), and every surface is gated by its own fail-closed flag (e.g. `EMAIL_GENERATION_ENABLED`). The keys live in `.env` (gitignored), are covered by log redaction, and are never written to artifacts. Generated text is deterministically re-validated; rejected output cannot become a draft.
 
 ## Checks
 

@@ -21,7 +21,7 @@
  *   - Demographic questions never reach this module (filtered upstream,
  *     same as the bank path).
  *
- * Gated by SCREENER_PREDICT_LLM_ENABLED (fail closed) + OPENAI_API_KEY.
+ * Gated by SCREENER_PREDICT_LLM_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
  */
 import { randomUUID } from "node:crypto";
 import type { Db } from "../storage/db/client.js";
@@ -29,7 +29,9 @@ import { migrate, openDatabase } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import {
-  OpenAiEmailClient,
+  hasLlmKey,
+  LLM_KEY_HINT,
+  makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
 import { normalizeScreenerLabel } from "../candidate/screenerMatch.js";
@@ -170,8 +172,8 @@ export async function generateScreenerPredictions(input: {
     report.notes.push("screener predictions skipped: SCREENER_PREDICT_LLM_ENABLED off");
     return report;
   }
-  if (!input.client && !cfg.openaiApiKey) {
-    report.notes.push("screener predictions skipped: OPENAI_API_KEY missing");
+  if (!input.client && !hasLlmKey(cfg)) {
+    report.notes.push(`screener predictions skipped: no LLM key (${LLM_KEY_HINT})`);
     return report;
   }
   const about = tryLoadAboutMe();
@@ -210,7 +212,7 @@ export async function generateScreenerPredictions(input: {
   const now = new Date().toISOString();
   for (const r of rows) bump.run(now, r.id);
 
-  const client = input.client ?? new OpenAiEmailClient();
+  const client = input.client ?? makeLlmClient();
   let parsed: { predictions?: Array<Record<string, unknown>> };
   try {
     const { text } = await client.generateJson({

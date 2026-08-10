@@ -54,7 +54,7 @@ import { runAgentAuthoring } from "../agent/authorRun.js";
 import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
-import { OpenAiEmailClient } from "../contacts/emailLlm.js";
+import { LLM_KEY_HINT, makeLlmClient } from "../contacts/emailLlm.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -661,7 +661,7 @@ async function cmdEmailGenerate(
       "Usage: email:generate --application <uuid> [--contact <id>] [--persona <id>]",
     );
     console.error(
-      "Requires EMAIL_GENERATION_ENABLED=true and OPENAI_API_KEY in .env.",
+      `Requires EMAIL_GENERATION_ENABLED=true and ${LLM_KEY_HINT} in .env.`,
     );
     process.exit(2);
     return;
@@ -681,7 +681,7 @@ async function cmdEmailGenerate(
       process.exit(1);
       return;
     }
-    const client = new OpenAiEmailClient();
+    const client = makeLlmClient();
     const results = [];
     for (const contact of targets) {
       results.push(

@@ -116,6 +116,7 @@ describe("L3 outreach tail (FIXTURE_CONFIRMED, drafts only)", () => {
     process.env.DATABASE_PATH = dbPath;
     process.env.PRIVATE_DIR = privateDir;
     process.env.OPENAI_API_KEY = "sk-test-not-a-real-key-000000000000";
+    delete process.env.ANTHROPIC_API_KEY;
     resetConfigCache();
 
     db = openDatabase(dbPath);

@@ -8,7 +8,7 @@
  * (via the existing saveHumanEssayAnswer path). Essays are still never
  * auto-filled — this module writes suggestions, never form values.
  *
- * Gated by ESSAY_DRAFT_ENABLED (fail closed) + OPENAI_API_KEY.
+ * Gated by ESSAY_DRAFT_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -22,7 +22,9 @@ import {
 } from "../queue/reviewItems.js";
 import { ensureApplicationArtifactDirs } from "../storage/atomicJson.js";
 import {
-  OpenAiEmailClient,
+  hasLlmKey,
+  LLM_KEY_HINT,
+  makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
 
@@ -155,7 +157,7 @@ export async function generateEssayDrafts(input: {
     | { company: string; role: string; raw_json: string }
     | undefined;
 
-  const client = input.client ?? new OpenAiEmailClient();
+  const client = input.client ?? makeLlmClient();
   const dirs = ensureApplicationArtifactDirs(applicationId);
   const essayDir = path.join(dirs.root, "essays");
   fs.mkdirSync(essayDir, { recursive: true });
@@ -264,8 +266,8 @@ export async function generateEssayDraftBatch(input: {
     report.notes.push("essay drafts skipped: ESSAY_DRAFT_ENABLED off");
     return report;
   }
-  if (!input.client && !cfg.openaiApiKey) {
-    report.notes.push("essay drafts skipped: OPENAI_API_KEY missing");
+  if (!input.client && !hasLlmKey(cfg)) {
+    report.notes.push(`essay drafts skipped: no LLM key (${LLM_KEY_HINT})`);
     return report;
   }
   if (!tryLoadAboutMe()) {

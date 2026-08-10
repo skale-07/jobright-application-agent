@@ -20,9 +20,9 @@ validates the result shape, rejects off-domain/jobright final URLs, and
 only a deterministic URL store + detectAtsFromUrl verdict counts as nav
 success.
 
-LLM key: environment at spawn time only (OPENAI_API_KEY); never stored or
-echoed. browser-use is pinned in pyproject; all browser-use usage stays in
-this module.
+LLM key: environment at spawn time only (ANTHROPIC_API_KEY preferred,
+OPENAI_API_KEY fallback); never stored or echoed. browser-use is pinned in
+pyproject; all browser-use usage stays in this module.
 """
 
 from __future__ import annotations
@@ -164,12 +164,36 @@ async def _navigate(task: dict) -> dict:
     from browser_use import Agent, Browser  # type: ignore[import-not-found]
 
     _progress("imports_ready")
-    if not os.environ.get("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY not set in the sidecar environment")
+    # Provider preference: Anthropic first (operator has more credit there),
+    # OpenAI as fallback. NAV_AGENT_MODEL, when set, must name a model of
+    # the ACTIVE provider. ChatAnthropic import is defensive — a browser-use
+    # build without it falls back to OpenAI rather than dying.
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if not anthropic_key and not openai_key:
+        raise RuntimeError(
+            "no LLM key in the sidecar environment (set ANTHROPIC_API_KEY or OPENAI_API_KEY)"
+        )
 
-    from browser_use.llm import ChatOpenAI  # type: ignore[import-not-found]
+    llm = None
+    if anthropic_key:
+        try:
+            from browser_use.llm import ChatAnthropic  # type: ignore[import-not-found]
 
-    llm = ChatOpenAI(model=os.environ.get("NAV_AGENT_MODEL", "gpt-5-mini"))
+            llm = ChatAnthropic(
+                model=os.environ.get("NAV_AGENT_MODEL", "claude-sonnet-4-6")
+            )
+            _progress("llm_provider", provider="anthropic")
+        except ImportError:
+            if not openai_key:
+                raise RuntimeError(
+                    "browser-use build lacks ChatAnthropic and OPENAI_API_KEY is not set"
+                )
+    if llm is None:
+        from browser_use.llm import ChatOpenAI  # type: ignore[import-not-found]
+
+        llm = ChatOpenAI(model=os.environ.get("NAV_AGENT_MODEL", "gpt-5-mini"))
+        _progress("llm_provider", provider="openai")
     _progress("browser_attaching", cdp_host=_host(task["cdp_url"]) or task["cdp_url"][:40])
     browser = Browser(cdp_url=task["cdp_url"])
 

@@ -38,6 +38,7 @@ import {
   getRegisteredResume,
 } from "../jobright/materialsRegister.js";
 import { withPublicUrlPage } from "../browser/fixtureSession.js";
+import { hasLlmKey } from "../contacts/emailLlm.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import {
@@ -1105,7 +1106,7 @@ async function step(
     }
 
     case "CONTACTS_EXTRACTED": {
-      if (!cfg.emailGenerationEnabled || !cfg.openaiApiKey) {
+      if (!cfg.emailGenerationEnabled || !hasLlmKey(cfg)) {
         transitionApplication(db, {
           applicationId: app.id,
           nextState: "COMPLETED",

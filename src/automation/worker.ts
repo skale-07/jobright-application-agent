@@ -16,7 +16,7 @@ import { generateScreenerPredictions } from "../applications/screenerPredictionL
 import { autopushArtifacts } from "./artifactAutopush.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
-import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
+import { hasLlmKey, makeLlmClient, type EmailLlmClient } from "../contacts/emailLlm.js";
 import {
   createOutlookDraft,
   verifyOutlookDraft,
@@ -222,7 +222,7 @@ export async function runOutreachTail(input: {
     // Phase 1 — outreach generation (spend surface; generateEmailForContact
     // re-asserts the gate itself). REJECTED already opened a review item.
     if (getApplication(db, applicationId)?.state === "CONTACTS_EXTRACTED") {
-      if (!cfg.emailGenerationEnabled || !cfg.openaiApiKey) {
+      if (!cfg.emailGenerationEnabled || !hasLlmKey(cfg)) {
         result.email_status = "skipped";
         result.notes.push("email generation gated off");
         return result;
@@ -249,7 +249,7 @@ export async function runOutreachTail(input: {
         db,
         applicationId,
         contactId: contact.id,
-        client: input.emailClient ?? new OpenAiEmailClient(),
+        client: input.emailClient ?? makeLlmClient(),
       });
       if (gen.validation_status !== "VALIDATED") {
         result.email_status = "rejected";

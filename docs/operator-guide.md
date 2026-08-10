@@ -320,11 +320,12 @@ you email most; pick one per generation with `--persona <id>`.
 
 ## 10. Email generation
 
-The **only** LLM boundary in this codebase. It is a spend surface, so it is
-fail-closed:
+An LLM boundary (shared client: Anthropic preferred, OpenAI fallback). It
+is a spend surface, so it is fail-closed:
 
 ```powershell
-# .env:  EMAIL_GENERATION_ENABLED=true, OPENAI_API_KEY=sk-…, EMAIL_LLM_MODEL=<confirm current model id>
+# .env:  EMAIL_GENERATION_ENABLED=true, plus an LLM key — ANTHROPIC_API_KEY=sk-ant-… (preferred;
+#         model via ANTHROPIC_LLM_MODEL, default claude-opus-5) or OPENAI_API_KEY=sk-… (EMAIL_LLM_MODEL)
 npm run email:generate -- --application <uuid> --persona swe
 ```
 
