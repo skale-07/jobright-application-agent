@@ -54,6 +54,20 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
     resetConfigCache();
   });
 
+  const fakeSession = (armRunId: string) => ({
+    arm_run_id: armRunId,
+    stopped_reason: "queue_drained" as const,
+    apps_started: 0,
+    submits_used: 0,
+    discover_runs: 0,
+    emails_generated: 0,
+    drafts_saved: 0,
+    essay_drafts_generated: 0,
+    screener_predictions_generated: 0,
+    notes: [],
+    per_app: [],
+  });
+
   const armEnv = (): void => {
     applyControlledFillEnv({
       AUTOMATION_ENABLED: "true",
@@ -195,6 +209,109 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
       resetConfigCache();
       fs.rmSync(artDir, { recursive: true, force: true });
     }
+  });
+
+  it("preflight names the agent leg: flag off, CDP unreachable, available", async () => {
+    armEnv();
+    // Default env: AGENT_FALLBACK_ENABLED off — the named cause, no probe.
+    const offR = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        probeCdp: async () => {
+          throw new Error("must not probe when the flag is off");
+        },
+      },
+    );
+    expect(offR.preflight.agent_leg).toMatch(/AGENT_FALLBACK_ENABLED is off/);
+    expect(offR.preflight.agent_leg).toMatch(/phase C will be skipped/);
+
+    // Flag on, CDP dead — the OTHER cause, with the probed URL named.
+    applyControlledFillEnv({ AGENT_FALLBACK_ENABLED: "true" });
+    const deadR = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        probeCdp: async () => false,
+      },
+    );
+    expect(deadR.preflight.agent_leg).toMatch(/CDP Chrome unreachable at/);
+
+    // Flag on, CDP alive — no warning.
+    const okR = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        probeCdp: async () => true,
+      },
+    );
+    expect(okR.preflight.agent_leg).toBe("available");
+  });
+
+  it("the cycle report rides its OWN autopush (the worker's push predates it)", async () => {
+    armEnv();
+    applyControlledFillEnv({ ARTIFACT_AUTOPUSH_ENABLED: "true" });
+    const pushes: Array<{ armRunId: string; message?: string }> = [];
+    const r = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        artifactPusher: async (input) => {
+          pushes.push(input);
+          return { pushed: true, commit: "abc1234", files_staged: 1, notes: ["pushed"] };
+        },
+      },
+    );
+    expect(r.outcome).toBe("completed");
+    expect(pushes.length).toBe(1);
+    expect(pushes[0]!.armRunId).toBe(r.arm?.arm_run_id);
+    expect(pushes[0]!.message).toMatch(/auto-cycle report/);
+    // A REFUSED cycle also ships its report — refusals were invisible to
+    // the analysis loop before (worker never ran, so nothing ever pushed).
+    applySafeFillEnv();
+    applyControlledFillEnv({ ARTIFACT_AUTOPUSH_ENABLED: "true" });
+    resetConfigCache();
+    const refused = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async () => { throw new Error("must not run"); },
+        artifactPusher: async (input) => {
+          pushes.push(input);
+          return { pushed: true, commit: "def5678", files_staged: 1, notes: [] };
+        },
+      },
+    );
+    expect(refused.outcome).toBe("refused");
+    expect(pushes.length).toBe(2);
+    expect(pushes[1]!.armRunId).toBe("auto-cycle");
+  });
+
+  it("no autopush flag ⇒ the cycle report stays local (pusher never called)", async () => {
+    armEnv(); // ARTIFACT_AUTOPUSH_ENABLED not set — fail closed
+    const r = await runAutoCycle(
+      { skipUpdate: true },
+      {
+        db,
+        exec: noExec,
+        sessionRunner: async (_d, id) => fakeSession(id),
+        artifactPusher: async () => {
+          throw new Error("must not push without ARTIFACT_AUTOPUSH_ENABLED");
+        },
+      },
+    );
+    expect(r.outcome).toBe("completed");
+    // A pusher throw would be caught into notes — prove it never ran.
+    expect(r.notes.join(" ")).not.toMatch(/must not push/);
   });
 
   it("never double-arms when a session is already live", async () => {

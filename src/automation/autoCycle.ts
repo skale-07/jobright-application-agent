@@ -17,6 +17,11 @@ import {
   runAutomationSession,
   type AutomationSessionReport,
 } from "./worker.js";
+import {
+  autopushArtifacts,
+  type ArtifactAutopushReport,
+} from "./artifactAutopush.js";
+import { resolveAgentAvailability } from "../navigation/runNavigation.js";
 
 /**
  * Hands-off cycle for the OPERATOR'S OWN MACHINE — the "coding in loops"
@@ -44,7 +49,18 @@ import {
 export type AutoCycleReport = {
   started_at: string;
   updated: { pulled: boolean; head: string | null; installed: boolean; notes: string[] };
-  preflight: { ok: boolean; notes: string[] };
+  preflight: {
+    ok: boolean;
+    notes: string[];
+    /**
+     * Whether the nav agent phase (phase C) would run in this environment —
+     * "available" or the named cause. Advisory, never a refusal: the
+     * deterministic phases still run without it, but a session where every
+     * app needs the agent (the 4a7c199b run: 7/7) is wasted silently
+     * without this line telling the operator which lever to pull.
+     */
+    agent_leg?: string;
+  };
   arm: ArmStatus | null;
   session: AutomationSessionReport | null;
   outcome: "completed" | "refused" | "skipped_already_armed" | "error";
@@ -75,6 +91,13 @@ export type AutoCycleSeams = {
   exec?: (command: string, args: string[]) => string;
   /** Test seam: replaces the worker. */
   sessionRunner?: (db: Db, armRunId: string) => Promise<AutomationSessionReport>;
+  /** Test seam: replaces the cycle-report artifact push. */
+  artifactPusher?: (input: {
+    armRunId: string;
+    message?: string;
+  }) => Promise<ArtifactAutopushReport>;
+  /** Test seam: replaces the CDP reachability probe. */
+  probeCdp?: (cdpUrl: string) => Promise<boolean>;
   db?: Db;
   now?: () => Date;
 };
@@ -101,7 +124,7 @@ export async function runAutoCycle(
   // Persist the cycle-level report — the first hands-off run's summary
   // existed only in the operator's terminal, so the analysis loop had
   // per-app artifacts but no session frame (stop reason, refusals, update
-  // state). It lands in artifacts/ and rides the NEXT session's autopush.
+  // state).
   try {
     const cfg = getConfig();
     const stamp = report.started_at.replace(/[:.]/g, "-");
@@ -112,8 +135,23 @@ export async function runAutoCycle(
       `cycle-${stamp}.json`,
     );
     writeJsonAtomic(outPath, report as unknown as Record<string, unknown>);
-  } catch {
+    // The worker's autopush runs INSIDE the session — before this report
+    // exists — so session 4a7c199b's push carried per-app artifacts but no
+    // cycle frame, and a refused cycle pushed nothing at all. Ship the
+    // report on its own follow-up push (same staging rules, same secret
+    // gate, fail-open into notes).
+    if (cfg.artifactAutopushEnabled) {
+      const push = await (seams.artifactPusher ?? autopushArtifacts)({
+        armRunId: report.arm?.arm_run_id ?? "auto-cycle",
+        message: `art: auto-cycle report ${stamp} (autopush)`,
+      });
+      report.notes.push(...push.notes);
+    }
+  } catch (err) {
     // reporting is telemetry — never fail the cycle over it
+    report.notes.push(
+      `cycle report persist/push failed (cycle unaffected): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+    );
   }
   return report;
 }
@@ -189,6 +227,22 @@ async function runAutoCycleInner(
     report.preflight.notes.push(
       "refusing: SUBMIT_REQUIRES_LOCAL_CONFIRMATION must be false in the task environment (the arm row budget is the control)",
     );
+  }
+  // Advisory only — a cycle without the agent leg still runs (phases A/B
+  // resolve some apps), but the operator must SEE it before the session
+  // burns the queue, not archaeologize it from seven identical nav reports.
+  try {
+    const agentLeg = await resolveAgentAvailability({
+      override: undefined,
+      flagEnabled: cfg.agentFallbackEnabled,
+      cdpUrl: cfg.agentCdpUrl,
+      ...(seams.probeCdp ? { probe: seams.probeCdp } : {}),
+    });
+    report.preflight.agent_leg = agentLeg.possible
+      ? "available"
+      : `UNAVAILABLE — ${agentLeg.reason}; nav phase C will be skipped for every app`;
+  } catch (err) {
+    report.preflight.agent_leg = `probe failed: ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`;
   }
   if (report.preflight.notes.length === 0 && !input.skipUpdate) {
     try {

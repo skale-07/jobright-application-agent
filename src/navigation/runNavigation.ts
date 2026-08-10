@@ -36,6 +36,7 @@ import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
 import { codeVersion } from "../storage/codeVersion.js";
 import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 import {
+  explainAtsAnchorMisses,
   selectCandidateApplyLinks,
   traversalHosts,
 } from "./candidateLinks.js";
@@ -60,6 +61,37 @@ const KNOWN_ATS_HOSTS = [
   "jobs.ashbyhq.com",
   "apply.workable.com",
 ];
+
+/**
+ * Why the agent phase can or cannot run, as one named cause. The 4a7c199b
+ * session showed 7/7 apps dying behind "AGENT_FALLBACK_ENABLED off or CDP
+ * Chrome unreachable" — a message that names two causes is evidence for
+ * neither, and the operator fix differs (set the flag vs start the debug
+ * Chrome).
+ */
+export async function resolveAgentAvailability(input: {
+  override: boolean | undefined;
+  flagEnabled: boolean;
+  cdpUrl: string;
+  probe?: (cdpUrl: string) => Promise<boolean>;
+}): Promise<{ possible: boolean; reason: string | null }> {
+  if (input.override !== undefined) {
+    return {
+      possible: input.override,
+      reason: input.override ? null : "agent phase disabled for this run",
+    };
+  }
+  if (!input.flagEnabled) {
+    return { possible: false, reason: "AGENT_FALLBACK_ENABLED is off" };
+  }
+  if (!(await (input.probe ?? probeCdpEndpoint)(input.cdpUrl))) {
+    return {
+      possible: false,
+      reason: `CDP Chrome unreachable at ${input.cdpUrl}`,
+    };
+  }
+  return { possible: true, reason: null };
+}
 
 /** Bounded reachability probe for the operator's CDP Chrome. */
 export async function probeCdpEndpoint(cdpUrl: string): Promise<boolean> {
@@ -260,9 +292,12 @@ export async function runNavigation(
   // Agent phase (N3) needs the operator's CDP Chrome; when it's available,
   // phases A/B run in the SAME Chrome so the agent continues seamlessly.
   const cfg0 = getConfig();
-  const agentPhasePossible =
-    input.agentPhaseOverride ??
-    (cfg0.agentFallbackEnabled && (await probeCdpEndpoint(cfg0.agentCdpUrl)));
+  const agentAvailability = await resolveAgentAvailability({
+    override: input.agentPhaseOverride,
+    flagEnabled: cfg0.agentFallbackEnabled,
+    cdpUrl: cfg0.agentCdpUrl,
+  });
+  const agentPhasePossible = agentAvailability.possible;
   if (agentPhasePossible) report.session = "cdp";
 
   const session: NavSession =
@@ -342,6 +377,7 @@ export async function runNavigation(
           .join(", ")}`,
       );
     }
+    report.notes.push(...explainAtsAnchorMisses(hrefs));
     trace({
       phase: "A_anchor_hrefs",
       outcome:
@@ -455,11 +491,10 @@ export async function runNavigation(
       // which an unattended headless child can never run (no operator CDP).
       trace({
         phase: "C_agent",
-        outcome:
-          "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)",
+        outcome: `skipped: agent phase unavailable (${agentAvailability.reason ?? "unknown"})`,
       });
       report.notes.push(
-        "unresolved by deterministic phases; agent phase unavailable in this session",
+        `unresolved by deterministic phases; agent phase unavailable: ${agentAvailability.reason ?? "unknown"}`,
       );
       report.wall = "budget";
       return persist(report);
