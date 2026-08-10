@@ -1,0 +1,40 @@
+{
+  "run_id": "nav-32f6e2af-6343-44e6-a0f2-f6c48fbc1756",
+  "application_id": "4c5d19d3-d35a-4890-9fba-2392baf2ace1",
+  "jobright_job_id": "6a79ff519ee17f276dbf0a03",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, apnews.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "unresolved by deterministic phases; agent phase unavailable in this session"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T21:12:41.650Z"
+}

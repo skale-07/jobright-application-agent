@@ -1,0 +1,40 @@
+{
+  "run_id": "nav-17fce8bc-faf1-4b8e-9db3-e55b2c286e96",
+  "application_id": "2a48470c-0958-41a5-acf4-7b099f1369cc",
+  "jobright_job_id": "69d53223891d7b11cfcfffe2",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (13 external links ignored)",
+      "evidence": "interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "unresolved by deterministic phases; agent phase unavailable in this session"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T21:11:02.843Z"
+}

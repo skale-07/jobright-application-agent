@@ -1,0 +1,42 @@
+{
+  "run_id": "nav-168b01fa-6e8e-4088-b3f9-3b200bcd4651",
+  "application_id": "832a6730-5b2b-40ab-9a25-528cd9275ff0",
+  "jobright_job_id": "6a7a308fbb6ca93ae561a556",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com, www.cnbc.com, www.hedgeweek.com",
+    "Apply control matched via broad name tier",
+    "click attempt 2 failed: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /apply/i }).first()\u001b[",
+    "no external URL captured after 2 attempts",
+    "unresolved by deterministic phases; agent phase unavailable in this session"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T21:14:48.033Z"
+}
