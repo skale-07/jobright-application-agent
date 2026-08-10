@@ -75,6 +75,13 @@ export function describeReviewItem(item: ReviewItemView): PlainItem {
           weight: 30,
         };
       }
+      if (payload["source"] === "screener_question") {
+        return {
+          action: "Answer a question Dispatch couldn't fill",
+          why: `A form asked "${String(payload["question"] ?? "").slice(0, 80)}" and Dispatch had no saved answer, so it left the field blank. Answer once here; every future form fills it automatically.`,
+          weight: 12,
+        };
+      }
       const title = item.title.toLowerCase();
       if (title.includes("wrong company")) {
         return {

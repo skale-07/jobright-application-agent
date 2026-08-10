@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme — Software Engineer — Apply</title>
+</head>
+<body>
+  <header>
+    <h1>Software Engineer</h1>
+    <p>Acme · Full time · Powered by Workable</p>
+  </header>
+
+  <form data-ui="application-form" id="application-form" action="/acme/j/AB12CD34EF/apply/" method="post" enctype="multipart/form-data">
+    <div data-ui="application-question" class="form-field">
+      <label for="firstname">First name *</label>
+      <input id="firstname" type="text" name="firstname" required>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="lastname">Last name *</label>
+      <input id="lastname" type="text" name="lastname" required>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="email">Email *</label>
+      <input id="email" type="email" name="email" required>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="phone">Phone *</label>
+      <input id="phone" type="tel" name="phone" required>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="resume">Resume *</label>
+      <input id="resume" type="file" name="resume" data-ui="resume" required>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="linkedin">LinkedIn URL</label>
+      <input id="linkedin" type="text" name="linkedin">
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="qa-workauth">Are you legally authorized to work in the United States? *</label>
+      <select id="qa-workauth" name="QA_5551212" required>
+        <option value=""></option>
+        <option>Yes</option>
+        <option>No</option>
+      </select>
+    </div>
+
+    <div data-ui="application-question" class="form-field">
+      <label for="qa-coverletter">Cover letter</label>
+      <textarea id="qa-coverletter" name="QA_5551213" rows="6"></textarea>
+    </div>
+
+    <button data-ui="submit-application" type="submit">Submit application</button>
+  </form>
+</body>
+</html>

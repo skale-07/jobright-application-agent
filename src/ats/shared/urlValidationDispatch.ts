@@ -10,6 +10,10 @@ import {
   validateAshbyApplicationUrl,
   type AshbyUrlValidation,
 } from "../ashby/urlValidation.js";
+import {
+  validateWorkableApplicationUrl,
+  type WorkableUrlValidation,
+} from "../workable/urlValidation.js";
 
 /**
  * Multi-ATS employer-URL gate. Each per-ATS validator carries its own
@@ -19,7 +23,7 @@ import {
  * every seam that previously hardcoded validateGreenhouseApplicationUrl.
  */
 
-export type SupportedAtsId = "greenhouse" | "lever" | "ashby";
+export type SupportedAtsId = "greenhouse" | "lever" | "ashby" | "workable";
 
 export type AtsUrlDetection =
   | {
@@ -39,6 +43,12 @@ export type AtsUrlDetection =
       normalizedUrl: string;
       warnings: string[];
       validation: AshbyUrlValidation;
+    }
+  | {
+      ats: "workable";
+      normalizedUrl: string;
+      warnings: string[];
+      validation: WorkableUrlValidation;
     }
   | { ats: null; failureReason: string };
 
@@ -70,8 +80,17 @@ export function detectAtsFromUrl(rawUrl: string): AtsUrlDetection {
       validation: ashby,
     };
   }
+  const workable = validateWorkableApplicationUrl(rawUrl);
+  if (workable.passed) {
+    return {
+      ats: "workable",
+      normalizedUrl: workable.normalizedUrl ?? rawUrl,
+      warnings: workable.warnings,
+      validation: workable,
+    };
+  }
   return {
     ats: null,
-    failureReason: `no supported ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}`,
+    failureReason: `no supported ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}; workable: ${workable.failureReason}`,
   };
 }

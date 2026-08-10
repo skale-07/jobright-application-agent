@@ -55,6 +55,14 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   /** Operator-confirmed OpenAI model id for outreach generation. */
   EMAIL_LLM_MODEL: z.string().default("gpt-5-mini"),
+  /**
+   * Anthropic key. When set it is the PREFERRED provider at every LLM
+   * boundary (text generation and the nav sidecar); OpenAI becomes the
+   * fallback. Never logged or artifacted.
+   */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** Anthropic model id used when the Anthropic provider is active. */
+  ANTHROPIC_LLM_MODEL: z.string().default("claude-opus-5"),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
@@ -115,6 +123,9 @@ export type AppConfig = {
   /** Present only when the operator configured it; consumers must not log it. */
   openaiApiKey: string | undefined;
   emailLlmModel: string;
+  /** Present only when the operator configured it; consumers must not log it. */
+  anthropicApiKey: string | undefined;
+  anthropicLlmModel: string;
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
   screenerPredictLlmEnabled: boolean;
@@ -187,6 +198,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailGenerationEnabled: parsed.EMAIL_GENERATION_ENABLED,
     openaiApiKey: parsed.OPENAI_API_KEY,
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
+    anthropicApiKey: parsed.ANTHROPIC_API_KEY,
+    anthropicLlmModel: parsed.ANTHROPIC_LLM_MODEL,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,

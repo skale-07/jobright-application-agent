@@ -1,3 +1,5 @@
+import type { Db } from "../storage/db/client.js";
+import { dismissPageObstructions } from "../browser/obstructions.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -108,6 +110,8 @@ export async function runAtsLiveFill(input: {
   profile?: PublicProfile;
   resumePath?: string;
   headless?: boolean;
+  /** Forwarded to planApplicationFill: unanswered questions become "Answer needed" review items on this application. */
+  capture?: { db: Db; applicationId: string | null };
   /**
    * Test seam (liveInspect precedent): serve this HTML at the normalized
    * URL instead of navigating the network. Any resulting validation level
@@ -205,10 +209,21 @@ export async function runAtsLiveFill(input: {
         return persist(report);
       }
 
+      // Cookie banners / consent modals block clicks under them — clear
+      // before mutating. Execute-only: plan_only stays zero-mutation.
+      if (input.execute) {
+        const obstructions = await dismissPageObstructions(page);
+        if (obstructions.dismissed.length > 0) {
+          report.notes.push(
+            `popups dismissed: ${obstructions.dismissed.join(", ")}`,
+          );
+        }
+      }
       const { adapter, plan, approvedPlan } = await planApplicationFill({
         url: gate.finalUrl,
         html: gate.html,
         ...(input.profile ? { profile: input.profile } : {}),
+        ...(input.capture ? { capture: input.capture } : {}),
       });
       if (adapter.id !== binding.id) {
         report.gate.failure_code = "ATS_MISMATCH";

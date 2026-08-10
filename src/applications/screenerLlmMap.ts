@@ -8,7 +8,7 @@
  * screenerMatch.ts. Mappings are cached per normalized label, so a label
  * costs at most one call ever — and the cache doubles as training data.
  *
- * Gated by SCREENER_LLM_MATCH_ENABLED (fail closed) + OPENAI_API_KEY.
+ * Gated by SCREENER_LLM_MATCH_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
  * Fail-open operationally: any error just means "no mapping" and the
  * field parks for review as it would have anyway.
  */
@@ -18,7 +18,8 @@ import { migrate, openDatabase } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import {
-  OpenAiEmailClient,
+  hasLlmKey,
+  makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
 import { SCREENER_REGISTRY } from "../candidate/screeners.js";
@@ -126,11 +127,11 @@ export async function mapScreenerLabels(input: {
       }
     }
     if (toAsk.length === 0) return results;
-    if (!cfg.openaiApiKey && !input.client) {
+    if (!hasLlmKey(cfg) && !input.client) {
       return results; // flag on but no key: cache-only mode
     }
 
-    const client = input.client ?? new OpenAiEmailClient();
+    const client = input.client ?? makeLlmClient();
     const validKeys = new Set(SCREENER_REGISTRY.map((d) => d.key));
     try {
       const { text } = await client.generateJson({

@@ -278,6 +278,7 @@ export async function runAtsSubmission(input: {
         const { adapter, approvedPlan, fields } = await planApplicationFill({
           url: gate.finalUrl,
           html: gate.html,
+          capture: { db, applicationId },
         });
         if (adapter.id !== binding.id) {
           markSubmissionFailed(

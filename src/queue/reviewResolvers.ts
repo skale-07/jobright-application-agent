@@ -316,13 +316,14 @@ export function dismissReviewItem(
 }
 
 /**
- * Screener-prediction promote — the one-click that turns a model proposal
- * into a deterministic bank answer. Only valid on MANUAL items created by
- * the prediction batch (payload.source === "screener_prediction"). The
- * operator may override the answer text; for choice questions the final
- * answer must still match one of the captured page options, so an edit
- * can't drift off the form. This function is the ONLY write path into the
- * bank's custom section.
+ * Screener answer save — turns a proposal OR a typed operator answer into
+ * a deterministic bank answer. Valid on MANUAL items from either the
+ * capture path (payload.source === "screener_question" — Dispatch left the
+ * field blank, no suggestion yet) or the prediction batch
+ * ("screener_prediction" — a model suggestion to approve/edit). For choice
+ * questions the final answer must still match one of the captured page
+ * options, so nothing can drift off the form. This function is the ONLY
+ * write path into the bank's custom section.
  */
 export function promoteScreenerPrediction(
   db: Db,
@@ -337,9 +338,13 @@ export function promoteScreenerPrediction(
   } catch {
     payload = {};
   }
-  if (item.kind !== "MANUAL" || payload["source"] !== "screener_prediction") {
+  const source = payload["source"];
+  if (
+    item.kind !== "MANUAL" ||
+    (source !== "screener_prediction" && source !== "screener_question")
+  ) {
     throw new ReviewResolverError(
-      "promote handles screener-prediction items only",
+      "promote handles screener question/prediction items only",
       400,
     );
   }

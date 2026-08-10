@@ -1,5 +1,6 @@
 import OpenAI from "openai";
-import { getConfig } from "../config/index.js";
+import Anthropic from "@anthropic-ai/sdk";
+import { getConfig, type AppConfig } from "../config/index.js";
 
 /**
  * One of the sanctioned LLM boundaries in this codebase — all of which
@@ -9,6 +10,11 @@ import { getConfig } from "../config/index.js";
  * essay DRAFT suggestions into review items (applications/essayDraft.ts —
  * never filled without human approval). Never demographics, never live
  * ATS interaction. Tests use stubs; no test ever calls out.
+ *
+ * Two providers, one preference order: Anthropic when ANTHROPIC_API_KEY is
+ * set (the operator's better-funded account), OpenAI otherwise. Every
+ * production call site goes through makeLlmClient()/hasLlmKey() so the
+ * preference can never drift per-surface.
  */
 export interface EmailLlmClient {
   /** Returns the raw model output string (expected to be JSON). */
@@ -48,4 +54,75 @@ export class OpenAiEmailClient implements EmailLlmClient {
     const text = response.choices[0]?.message?.content ?? "";
     return { text, model: response.model ?? this.model };
   }
+}
+
+export class AnthropicLlmClient implements EmailLlmClient {
+  private readonly client: Anthropic;
+  private readonly model: string;
+
+  constructor() {
+    const cfg = getConfig();
+    if (!cfg.anthropicApiKey) {
+      throw new Error(
+        "ANTHROPIC_API_KEY is not set — the Anthropic LLM client needs it in .env",
+      );
+    }
+    this.client = new Anthropic({ apiKey: cfg.anthropicApiKey });
+    this.model = cfg.anthropicLlmModel;
+  }
+
+  async generateJson(input: {
+    system: string;
+    user: string;
+  }): Promise<{ text: string; model: string }> {
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 4096,
+      // Every consumer's system prompt already demands a JSON object and
+      // deterministically re-validates the output; the reinforcement here
+      // covers models that would otherwise preface JSON with prose.
+      system: `${input.system}\n\nRespond with ONLY the JSON object — no prose, no code fences.`,
+      messages: [{ role: "user", content: input.user }],
+    });
+    const text = response.content
+      .filter(
+        (block): block is Extract<typeof block, { type: "text" }> =>
+          block.type === "text",
+      )
+      .map((block) => block.text)
+      .join("");
+    return { text: stripJsonFences(text), model: response.model ?? this.model };
+  }
+}
+
+/** Models sometimes fence JSON despite instructions; unwrap deterministically. */
+function stripJsonFences(text: string): string {
+  const trimmed = text.trim();
+  const fenced = /^```(?:json)?\s*([\s\S]*?)\s*```$/.exec(trimmed);
+  return fenced?.[1] ?? trimmed;
+}
+
+/**
+ * True when ANY provider key is configured — the shared precondition every
+ * flag-gated LLM surface checks before constructing a client.
+ */
+export function hasLlmKey(cfg?: Pick<AppConfig, "anthropicApiKey" | "openaiApiKey">): boolean {
+  const c = cfg ?? getConfig();
+  return Boolean(c.anthropicApiKey ?? c.openaiApiKey);
+}
+
+/** Human-readable name of what hasLlmKey() looks for, for skip notes. */
+export const LLM_KEY_HINT = "ANTHROPIC_API_KEY or OPENAI_API_KEY";
+
+/**
+ * The one production client factory: Anthropic preferred, OpenAI fallback.
+ * Throws when neither key is configured (callers gate with hasLlmKey()).
+ */
+export function makeLlmClient(): EmailLlmClient {
+  const cfg = getConfig();
+  if (cfg.anthropicApiKey) return new AnthropicLlmClient();
+  if (cfg.openaiApiKey) return new OpenAiEmailClient();
+  throw new Error(
+    `no LLM provider key configured — set ${LLM_KEY_HINT} in .env`,
+  );
 }

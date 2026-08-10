@@ -23,14 +23,12 @@ import type {
   AgentNavigateResult,
   AgentNavigateTask,
 } from "../agent/contract.js";
-import { GmailClient } from "../gmail/client.js";
+import type { VerificationWaitResult } from "../gmail/waitForVerification.js";
 import {
-  waitForVerificationEmail,
-  type VerificationWaitResult,
-} from "../gmail/waitForVerification.js";
-import { readGmailToken } from "../gmail/tokenStore.js";
-import { getAccount, getOrCreateAccount } from "../accounts/vault.js";
-import { loadPublicProfile } from "../candidate/publicProfileIO.js";
+  emailVerificationAvailable,
+  resolveNavVerificationWaiter,
+} from "../verification/emailVerification.js";
+import { prepareCredentialsForHost } from "../verification/accountCredentials.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -56,6 +54,7 @@ const KNOWN_ATS_HOSTS = [
   "jobs.lever.co",
   "jobs.eu.lever.co",
   "jobs.ashbyhq.com",
+  "apply.workable.com",
 ];
 
 /** Bounded reachability probe for the operator's CDP Chrome. */
@@ -147,19 +146,6 @@ export type RunNavigationInput = {
     allowedDomains: string[],
   ) => Promise<VerificationWaitResult>;
 };
-
-/** Production Gmail waiter — bounded polls against the readonly client. */
-async function defaultGmailWaiter(
-  need: NonNullable<AgentNavigateResult["need"]>,
-  allowedDomains: string[],
-): Promise<VerificationWaitResult> {
-  const client = new GmailClient();
-  return waitForVerificationEmail({
-    client,
-    need,
-    extraAllowedDomains: allowedDomains,
-  });
-}
 
 const TOTAL_WALLCLOCK_MS = 8 * 60_000;
 
@@ -326,12 +312,41 @@ export async function runNavigation(
       });
       return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
     }
+    // Name the hosts phase A saw but could not accept: an "N links
+    // ignored" count hid that the answer was often sitting in a
+    // career-site href the agent was then forbidden to traverse.
+    const externalHosts = Array.from(
+      new Set(
+        hrefs
+          .map((h) => {
+            try {
+              return new URL(h).hostname.toLowerCase();
+            } catch {
+              return null;
+            }
+          })
+          .filter((h): h is string => h !== null),
+      ),
+    );
+    const ignoredHosts = externalHosts.filter(
+      (h) => !atsHrefs.some((a) => new URL(a).hostname.toLowerCase() === h),
+    );
+    if (ignoredHosts.length > 0) {
+      report.notes.push(
+        `phase A: ${ignoredHosts.length} non-ATS external host(s) seen: ${ignoredHosts
+          .slice(0, 10)
+          .join(", ")}`,
+      );
+    }
     trace({
       phase: "A_anchor_hrefs",
       outcome:
         hrefs.length > 0
           ? `no known-ATS anchors (${hrefs.length} external links ignored)`
           : "no external anchors",
+      ...(ignoredHosts.length > 0
+        ? { evidence: ignoredHosts.slice(0, 6).join(", ") }
+        : {}),
     });
 
     if (Date.now() > deadline) {
@@ -469,65 +484,48 @@ export async function runNavigation(
       report.wall = "budget";
       return persist(report);
     }
+    // The agent may traverse every external host the job page itself
+    // linked to (career sites that front the real ATS) — the previous
+    // jobright+known-ATS-only cage made "find Apply on the company site"
+    // structurally unwinnable. Traversal ≠ acceptance: congruence and the
+    // final_url validation in navigateViaSidecar still gate what is stored.
     const allowedDomains = Array.from(
-      new Set(
-        [
-          "jobright.ai",
-          ...KNOWN_ATS_HOSTS,
-          ...(startUrl.startsWith("https://")
-            ? [new URL(startUrl).hostname]
-            : []),
-        ].slice(0, 20),
-      ),
-    );
+      new Set([
+        "jobright.ai",
+        ...KNOWN_ATS_HOSTS,
+        ...(startUrl.startsWith("https://") ? [new URL(startUrl).hostname] : []),
+        ...externalHosts,
+      ]),
+    ).slice(0, 25);
+    if (externalHosts.length > 0) {
+      report.notes.push(
+        `agent allowed_domains widened with job-page hosts: ${externalHosts
+          .slice(0, 10)
+          .join(", ")}`,
+      );
+    }
 
-    // Account credentials (N5): reuse a vault entry for the wall host, or
-    // mint one when the landing page is a login wall (an account will be
-    // needed either way). Secrets ride only the in-memory task → sidecar
-    // stdin; the artifact path scrubs them (see persist).
+    // Account credentials (N5) — the isolated verification subsystem owns
+    // the policy (reuse vault entry; mint only on a live login wall; never
+    // for jobright). Secrets ride only the in-memory task → sidecar stdin;
+    // the artifact path scrubs them (see persist).
     const wallHost = startUrl.startsWith("https://")
       ? new URL(startUrl).hostname
       : null;
-    let credentials: AgentNavigateTask["credentials"] = { available: false };
-    if (wallHost && !/(^|\.)jobright\.ai$/i.test(wallHost)) {
-      const existing = getAccount(wallHost);
-      if (existing) {
-        credentials = {
-          available: true,
-          username: existing.username,
-          password: existing.password,
-        };
-        report.notes.push(`vault: existing account for ${wallHost}`);
-      } else if (loginWall.detected) {
-        const email =
-          readGmailToken()?.account_email ??
-          (() => {
-            try {
-              return loadPublicProfile().email;
-            } catch {
-              return "";
-            }
-          })();
-        if (email) {
-          const { account, created } = getOrCreateAccount(wallHost, {
-            email,
-            runId: report.run_id,
-          });
-          credentials = {
-            available: true,
-            username: account.username,
-            password: account.password,
-          };
-          report.notes.push(
-            `vault: ${created ? "created" : "loaded"} account for ${wallHost}`,
-          );
-        }
-      }
-    }
-    if (credentials.password) secretValues.push(credentials.password);
+    const credPrep = prepareCredentialsForHost({
+      host: wallHost,
+      runId: report.run_id,
+      loginWallDetected: loginWall.detected,
+    });
+    const credentials: AgentNavigateTask["credentials"] = credPrep.credentials;
+    report.notes.push(...credPrep.notes);
+    secretValues.push(...credPrep.secrets);
 
-    // Turn loop: 1 initial spawn + up to 2 Gmail continuations.
-    const gmailAvailable = cfg0.gmailVerificationEnabled;
+    // Turn loop: 1 initial spawn + up to 2 mailbox continuations. The
+    // verification subsystem decides availability (Gmail readonly client,
+    // Outlook read-only session — both fail-closed behind their flags).
+    const gmailAvailable =
+      input.gmailWaiterOverride !== undefined || emailVerificationAvailable();
     let turns = 0;
     let totalSteps = 0;
     const visited = new Set<string>();
@@ -665,13 +663,14 @@ export async function runNavigation(
 
         if (agentResult.status === "needs_input" && agentResult.need) {
           report.need = agentResult.need;
-          const waiter = input.gmailWaiterOverride ?? defaultGmailWaiter;
-          if (!gmailAvailable && !input.gmailWaiterOverride) {
+          const waiter =
+            input.gmailWaiterOverride ?? resolveNavVerificationWaiter();
+          if (!waiter) {
             report.wall = "auth";
             trace({
               phase: "C_agent",
               outcome:
-                "needs email verification — GMAIL_VERIFICATION_ENABLED=false, human review",
+                "needs email verification — no mailbox provider enabled (GMAIL_VERIFICATION_ENABLED / OUTLOOK_VERIFICATION_ENABLED), human review",
             });
             return persist(report);
           }

@@ -1,0 +1,38 @@
+{
+  "run_id": "nav-f1f2d633-0b10-4daf-b130-0ddfd505b9f4",
+  "application_id": "b483c855-13e7-4dae-b3aa-e7dad6d69a5a",
+  "jobright_job_id": "6a25a72c4025af4566b2bf4f",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "error"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent phase failed: Unexpected token 'o', \"not json at all\" is not valid JSON"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T03:05:15.352Z"
+}

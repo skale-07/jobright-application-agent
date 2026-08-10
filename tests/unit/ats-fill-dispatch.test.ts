@@ -57,7 +57,7 @@ describe("applicationFiller multi-ATS dispatch (W2)", () => {
         html: "<html><body><form><input name='q'></form></body></html>",
         profile: PROFILE,
       }),
-    ).rejects.toThrow(/supports greenhouse\/lever\/ashby only/);
+    ).rejects.toThrow(/supports greenhouse\/lever\/ashby\/workable only/);
   });
 
   it("still refuses non-fillable fixture names", async () => {

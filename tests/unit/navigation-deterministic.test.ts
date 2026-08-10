@@ -104,6 +104,73 @@ describe("navigation deterministic phases (N2)", () => {
     },
     45_000,
   );
+
+  it(
+    "phase B broad tier matches 'Apply on company site' and skips autofill/easy-apply decoys (FIXTURE_CONFIRMED)",
+    async () => {
+      // Live-run regression: pages whose only real control was named
+      // "Apply now" / "Apply on company site" fell through the exact-name
+      // tier and burned the agent phase. Decoys come FIRST in the DOM to
+      // prove the exclusion filter is doing the choosing, not luck.
+      const html = `<!DOCTYPE html><html><body>
+        <button onclick="window.open('https://evil.example.com/autofill')">Apply with Autofill</button>
+        <button onclick="window.open('https://evil.example.com/easy')">Easy Apply</button>
+        <button onclick="window.open('${LEVER_URL}')">Apply on company site</button>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const fakeSession = {
+          getContext: () => page.context(),
+        } as Parameters<typeof clickApplyAndCaptureExternalUrl>[0];
+        applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+        resetConfigCache();
+        try {
+          await page.context().route("**/*", (route) =>
+            route.fulfill({
+              body: "<html><body>lever form</body></html>",
+              contentType: "text/html",
+            }),
+          );
+          const capture = await clickApplyAndCaptureExternalUrl(
+            fakeSession,
+            page,
+          );
+          expect(capture.url).toBe(LEVER_URL);
+          expect(capture.notes.join(" ")).toMatch(/broad name tier/);
+        } finally {
+          applySafeFillEnv();
+        }
+      });
+    },
+    45_000,
+  );
+
+  it(
+    "phase B reports no control when only excluded apply-like names exist (FIXTURE_CONFIRMED)",
+    async () => {
+      const html = `<!DOCTYPE html><html><body>
+        <button>Apply with Autofill</button>
+        <button>Easy Apply</button>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const fakeSession = {
+          getContext: () => page.context(),
+        } as Parameters<typeof clickApplyAndCaptureExternalUrl>[0];
+        applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+        resetConfigCache();
+        try {
+          const capture = await clickApplyAndCaptureExternalUrl(
+            fakeSession,
+            page,
+          );
+          expect(capture.url).toBeNull();
+          expect(capture.notes.join(" ")).toMatch(/no standard Apply control/);
+        } finally {
+          applySafeFillEnv();
+        }
+      });
+    },
+    45_000,
+  );
 });
 
 describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {

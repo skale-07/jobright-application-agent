@@ -58,6 +58,7 @@ describe("ATS bindings table (W4, UNIT_CONFIRMED)", () => {
       "ashby",
       "greenhouse",
       "lever",
+      "workable",
     ]);
     expect(ATS_BINDINGS.greenhouse.supportsEssayFill).toBe(true);
     expect(ATS_BINDINGS.greenhouse.supportsHealing).toBe(true);

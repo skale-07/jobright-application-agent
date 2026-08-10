@@ -63,11 +63,20 @@ export const jobrightSelectorsV1 = {
   navigation: {
     /** Anchors pointing at known ATS hosts — read hrefs, don't just count. */
     externalAtsAnchors:
-      'a[href*="greenhouse.io"], a[href*="lever.co"], a[href*="myworkdayjobs"], a[href*="ashbyhq.com"]',
+      'a[href*="greenhouse.io"], a[href*="lever.co"], a[href*="myworkdayjobs"], a[href*="ashbyhq.com"], a[href*="workable.com"]',
     /** Fallback: any external https anchor opening a new tab. */
     externalAnyAnchor: 'a[target="_blank"][href^="https://"]',
-    /** Standard Apply (NOT "Apply with Autofill" — that is JobRight's own flow). */
-    standardApplyRole: /^apply$/i,
+    /**
+     * Standard Apply (NOT "Apply with Autofill" — that is JobRight's own
+     * flow). Tiered matching: live runs showed the exact-name tier missing
+     * real controls named "Apply now" / "Apply on company site", which sent
+     * every such job to the agent phase. Tier 1 is exact-ish; tier 2 is any
+     * name containing "apply", filtered by the exclusion regex (JobRight's
+     * own autofill CTA, past-tense "Applied", LinkedIn-style "Easy Apply").
+     */
+    standardApplyRole: /^apply(?:\s+(?:now|today|here))?$/i,
+    broadApplyRole: /apply/i,
+    applyNameExclusions: /autofill|applied|easy\s*apply|ask\s*orion/i,
     status: "UNVERIFIED_SELECTOR" as const,
   },
 

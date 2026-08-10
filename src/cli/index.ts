@@ -54,7 +54,8 @@ import { runAgentAuthoring } from "../agent/authorRun.js";
 import { buildReportSummary } from "../dashboard/reportData.js";
 import { listContacts } from "../contacts/repository.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
-import { OpenAiEmailClient } from "../contacts/emailLlm.js";
+import { LLM_KEY_HINT, makeLlmClient } from "../contacts/emailLlm.js";
+import { resolveNavVerificationWaiter } from "../verification/emailVerification.js";
 import { runLoginFlow } from "../auth/loginFlow.js";
 import {
   parseServiceName,
@@ -141,6 +142,7 @@ Commands:
   nav:resolve --app <uuid> [--headed]   Resolve employer URL from JobRight (NAVIGATION_ENABLED)
   gmail:auth --email <mailbox> --client-id <id> --client-secret <secret>   One-time readonly OAuth
   gmail:check                           Read-only Gmail token smoke test
+  verify:mailbox [--since <minutes>] [--show]   Smoke-test the mailbox verification scan (gmail-web/outlook)
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
@@ -661,7 +663,7 @@ async function cmdEmailGenerate(
       "Usage: email:generate --application <uuid> [--contact <id>] [--persona <id>]",
     );
     console.error(
-      "Requires EMAIL_GENERATION_ENABLED=true and OPENAI_API_KEY in .env.",
+      `Requires EMAIL_GENERATION_ENABLED=true and ${LLM_KEY_HINT} in .env.`,
     );
     process.exit(2);
     return;
@@ -681,7 +683,7 @@ async function cmdEmailGenerate(
       process.exit(1);
       return;
     }
-    const client = new OpenAiEmailClient();
+    const client = makeLlmClient();
     const results = [];
     for (const contact of targets) {
       results.push(
@@ -812,6 +814,77 @@ async function cmdGmailCheck(): Promise<void> {
         account: client.accountEmail,
         recent_message_count: messages.length,
         scope: "gmail.readonly",
+      },
+      null,
+      2,
+    ),
+  );
+}
+
+/**
+ * Smoke test for the browser-based mailbox verification scan: run the
+ * SAME provider chain a nav wall / submit recovery would use, against the
+ * live inbox, and say which provider found what. The retrieved value is
+ * masked by default (codes are transient secrets — never logged or
+ * persisted); --show prints it to stdout only.
+ */
+async function cmdVerifyMailbox(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  resetConfigCache();
+  const cfg = getConfig();
+  if (!cfg.gmailVerificationEnabled && !cfg.outlookVerificationEnabled) {
+    console.error(
+      "No mailbox provider enabled — set GMAIL_VERIFICATION_ENABLED=true (browser scan, no token needed) and/or OUTLOOK_VERIFICATION_ENABLED=true.",
+    );
+    process.exit(2);
+    return;
+  }
+  const sinceMinutes =
+    typeof flags["since"] === "string" ? Number(flags["since"]) : 10;
+  const requestedAt = new Date(
+    Date.now() - Math.max(1, sinceMinutes) * 60_000,
+  ).toISOString();
+  console.log(
+    `Scanning enabled mailboxes for a verification email newer than ${sinceMinutes}m (bounded ~1 min per provider)...`,
+  );
+  const waiter = resolveNavVerificationWaiter();
+  if (!waiter) {
+    console.error("no provider resolved despite flags — check the shell env");
+    process.exit(2);
+    return;
+  }
+  const result = await waiter(
+    { sent_to: "", requested_at: requestedAt },
+    [],
+  );
+  if (result.kind === "timeout") {
+    console.log(
+      JSON.stringify(
+        {
+          outcome: "nothing_found",
+          polls_used: result.pollsUsed,
+          hint: "send yourself a test email with subject 'verification code' and body 'your code is 123456', then re-run",
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(1);
+    return;
+  }
+  const value = result.kind === "code" ? result.code : result.url;
+  const masked =
+    value.length <= 4 ? "****" : `${value.slice(0, 4)}${"*".repeat(Math.min(value.length - 4, 12))}`;
+  console.log(
+    JSON.stringify(
+      {
+        outcome: "found",
+        kind: result.kind,
+        provider: result.messageId,
+        polls_used: result.pollsUsed,
+        value: flags["show"] === true ? value : masked,
+        ...(flags["show"] === true ? {} : { note: "masked — pass --show to print in full" }),
       },
       null,
       2,
@@ -1483,6 +1556,9 @@ async function main(): Promise<void> {
       return;
     case "gmail:check":
       await cmdGmailCheck();
+      return;
+    case "verify:mailbox":
+      await cmdVerifyMailbox(flags);
       return;
     case "review":
       cmdReview();

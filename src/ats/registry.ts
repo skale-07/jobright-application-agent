@@ -2,17 +2,19 @@ import type { ApplicationAdapter, DetectionResult } from "./adapter.js";
 import { GreenhouseAdapterV1 } from "./greenhouse/v1.js";
 import { LeverAdapterV1 } from "./lever/v1.js";
 import { AshbyAdapterV1 } from "./ashby/v1.js";
+import { WorkableAdapterV1 } from "./workable/v1.js";
 import { GenericAdapterV1 } from "./generic.js";
 import { UnsupportedAtsAdapter } from "./unsupported.js";
 
 const greenhouse = new GreenhouseAdapterV1();
 const lever = new LeverAdapterV1();
 const ashby = new AshbyAdapterV1();
+const workable = new WorkableAdapterV1();
 const generic = new GenericAdapterV1();
 const unsupported = new UnsupportedAtsAdapter();
 
 export function listAdapters(): ApplicationAdapter[] {
-  return [unsupported, greenhouse, lever, ashby, generic];
+  return [unsupported, greenhouse, lever, ashby, workable, generic];
 }
 
 export async function detectAts(input: {
@@ -40,6 +42,11 @@ export async function detectAts(input: {
   const a = await ashby.detect(input);
   if (a.matched && a.confidence >= 0.5) {
     return { adapter: ashby, detection: a };
+  }
+
+  const w = await workable.detect(input);
+  if (w.matched && w.confidence >= 0.5) {
+    return { adapter: workable, detection: w };
   }
 
   const gen = await generic.detect(input);

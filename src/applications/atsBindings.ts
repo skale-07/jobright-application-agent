@@ -14,6 +14,12 @@ import { leverSubmit, leverVerifySubmission } from "../ats/lever/submission.js";
 import { ashbySubmit, ashbyVerifySubmission } from "../ats/ashby/submission.js";
 import { isTrustedLeverHost } from "../ats/lever/urlValidation.js";
 import { isTrustedAshbyHost } from "../ats/ashby/urlValidation.js";
+import { isTrustedWorkableHost } from "../ats/workable/urlValidation.js";
+import {
+  workableSubmit,
+  workableVerifySubmission,
+} from "../ats/workable/submission.js";
+import { workableSelectorsV1 } from "../ats/workable/selectors.js";
 import { greenhouseSelectorsV1 } from "../ats/greenhouse/selectors.js";
 import { leverSelectorsV1 } from "../ats/lever/selectors.js";
 import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
@@ -95,6 +101,20 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submit: (page, opts) => ashbySubmit(page, opts),
     submitSelector: ashbySelectorsV1.submit,
     verifySubmission: (page, opts) => ashbyVerifySubmission(page, opts),
+    supportsEssayFill: false,
+    supportsHealing: false,
+  },
+  workable: {
+    id: "workable",
+    gate: (page, _employerUrl, normalizedUrl) =>
+      verifyPageBeforeMutationGeneric(page, {
+        isTrustedHost: isTrustedWorkableHost,
+        formMarkers: workableSelectorsV1.formMarkers,
+        ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
+      }),
+    submit: (page, opts) => workableSubmit(page, opts),
+    submitSelector: workableSelectorsV1.submit,
+    verifySubmission: (page, opts) => workableVerifySubmission(page, opts),
     supportsEssayFill: false,
     supportsHealing: false,
   },

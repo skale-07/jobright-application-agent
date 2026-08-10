@@ -8,7 +8,7 @@
  *     never runs during a live session — it is an offline CLI step, and a
  *     human applies (or rejects) each patch by hand. A healer's
  *     self-report carries no validation level (UNVERIFIED by definition).
- *   - Gated by AGENT_AUTHORING_ENABLED + OPENAI_API_KEY; fail closed.
+ *   - Gated by AGENT_AUTHORING_ENABLED + an LLM key (Anthropic preferred, OpenAI fallback); fail closed.
  *   - Input is already PII-safe (tag/type/text/aria of buttons); nothing
  *     else is sent to the model.
  */
@@ -20,7 +20,7 @@ import { logger } from "../logging/logger.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
 import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import {
-  OpenAiEmailClient,
+  makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
 
@@ -175,7 +175,7 @@ export async function proposeSubmitSelectorPatches(input: {
       "AGENT_AUTHORING_ENABLED=false — refusing healer proposal generation",
     );
   }
-  const client = input.client ?? new OpenAiEmailClient();
+  const client = input.client ?? makeLlmClient();
   const { db } = input;
 
   const report: HealProposalsReport = {

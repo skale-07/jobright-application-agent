@@ -93,6 +93,14 @@ export function extractOrgSlug(url: string): string | null {
   const segments = parsed.pathname.split("/").filter((s) => s.length > 0);
   const first = segments[0]?.toLowerCase() ?? null;
   if (host === "jobs.ashbyhq.com") return first;
+  if (host === "apply.workable.com") return first;
+  {
+    // Legacy Workable company subdomains: <company>.workable.com/j/<code>
+    const sub = host.match(/^([a-z0-9][a-z0-9-]*)\.workable\.com$/);
+    if (sub && sub[1] !== "apply" && sub[1] !== "www" && sub[1] !== "jobs") {
+      return sub[1] ?? null;
+    }
+  }
   if (host === "jobs.lever.co" || host === "jobs.eu.lever.co") return first;
   if (
     host === "boards.greenhouse.io" ||

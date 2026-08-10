@@ -5,6 +5,9 @@ description = "browser-use authoring sidecar for jobright-application-agent (Pha
 requires-python = ">=3.11"
 dependencies = [
     "browser-use==0.13.7",
+    # Anthropic client for browser_use.llm.ChatAnthropic (preferred nav
+    # provider when ANTHROPIC_API_KEY is set; OpenAI remains the fallback).
+    "anthropic>=0.40",
 ]
 
 [tool.setuptools]

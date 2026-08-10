@@ -39,8 +39,9 @@ export const REVIEW_ACTION_MATRIX: Record<string, string[]> = {
   UNSUPPORTED_ATS: ["requeue", "abandon", "dismiss"],
   AMBIGUOUS_FIELD: ["requeue", "abandon", "dismiss"],
   ESSAY: ["dismiss"], // answers go through POST /api/essays/answer
-  // promote-screener applies only to prediction items (payload.source
-  // === "screener_prediction"); the resolver rejects everything else.
+  // promote-screener applies only to screener answer items (payload.source
+  // "screener_question" or "screener_prediction"); the resolver rejects
+  // everything else.
   MANUAL: ["dismiss", "promote-screener"],
   DUPLICATE_RISK: ["dismiss"],
 };

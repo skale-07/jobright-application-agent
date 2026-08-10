@@ -47,23 +47,29 @@ export function registrableDomain(host: string): string {
 }
 
 /**
- * Extract the verification/magic link. Only https links whose host shares
- * the sender's registrable domain (or an entry in the allowlist) qualify;
- * verification-ish paths are preferred over bare homepage links.
+ * Extract the verification/magic link. Sender trust is the gate: this
+ * parser only ever runs on a message that already passed the freshness /
+ * addressee / verification-subject filters, so ANY https link in it may be
+ * the real one — legitimate verification links routinely route through
+ * mail-service tracking domains (sendgrid.net-style wrappers) that a
+ * strict employer-domain filter would wrongly reject. Domain affinity to
+ * the sender or the allowlist is a RANKING boost, not a filter; the only
+ * hard rejections are non-https and unsubscribe/footer-ish links. What a
+ * link ultimately resolves to is still judged downstream (congruence +
+ * final-URL validation) — a wrong link wastes a turn, never stores a URL.
  */
 export function extractMagicLink(
   body: string,
-  options: { senderAddress: string; extraAllowedDomains?: string[] },
+  options: { senderAddress?: string; extraAllowedDomains?: string[] },
 ): string | null {
-  const senderHost = options.senderAddress.split("@")[1] ?? "";
+  const senderHost = (options.senderAddress ?? "").split("@")[1] ?? "";
   // Allowlist entries may be full hostnames (jobs.lever.co) — fold them to
   // registrable domains so link hosts on sibling subdomains still qualify.
-  const allowed = new Set(
+  const preferred = new Set(
     [senderHost, ...(options.extraAllowedDomains ?? [])]
       .map((d) => registrableDomain(d.toLowerCase()))
       .filter(Boolean),
   );
-  if (allowed.size === 0) return null;
 
   const urls = body.match(/https:\/\/[^\s"'<>)\]]+/g) ?? [];
   const qualified: Array<{ url: string; score: number }> = [];
@@ -75,14 +81,17 @@ export function extractMagicLink(
     } catch {
       continue;
     }
-    const domain = registrableDomain(host);
-    if (!allowed.has(domain)) continue;
-    let score = 1;
-    if (/verify|confirm|magic|auth|token|activate|login/i.test(cleaned)) score += 2;
-    if (/unsubscribe|preferences|privacy|terms/i.test(cleaned)) score -= 3;
+    let score = 0;
+    if (preferred.has(registrableDomain(host))) score += 2;
+    if (/verify|confirm|magic|auth|token|activate|login|click/i.test(cleaned)) score += 2;
+    if (/unsubscribe|preferences|privacy|terms|browser|view.?online/i.test(cleaned)) {
+      score -= 4;
+    }
     qualified.push({ url: cleaned, score });
   }
   qualified.sort((a, b) => b.score - a.score);
   const best = qualified[0];
+  // A bare off-domain homepage link (no verification path, no domain
+  // affinity) scores 0 and still does not qualify — footer links are noise.
   return best && best.score > 0 ? best.url : null;
 }

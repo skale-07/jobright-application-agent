@@ -590,6 +590,30 @@ details.json-block > summary {
   border-color: var(--accent);
   background: var(--bg-hover);
 }
+/* Same visual row as a todo link, but a button that expands an inline
+   answer form (teach-Dispatch-an-answer flow) instead of navigating. */
+.todo-inline-toggle {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "action job"
+    "why why";
+  gap: 0.1rem 0.75rem;
+  align-items: baseline;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.todo-inline-toggle:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
 .todo-action {
   grid-area: action;
   font-weight: 650;

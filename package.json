@@ -1,7 +1,7 @@
 {
   "name": "jobright-application-agent",
   "version": "0.1.0",
-  "description": "Deterministic Playwright job-application processor for JobRight \u2192 ATS \u2192 Outlook drafts",
+  "description": "Deterministic Playwright job-application processor for JobRight → ATS → Outlook drafts",
   "type": "module",
   "private": true,
   "engines": {
@@ -30,6 +30,7 @@
     "nav:resolve": "tsx src/cli/index.ts nav:resolve",
     "gmail:auth": "tsx src/cli/index.ts gmail:auth",
     "gmail:check": "tsx src/cli/index.ts gmail:check",
+    "verify:mailbox": "tsx src/cli/index.ts verify:mailbox",
     "review": "tsx src/cli/index.ts review",
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",
@@ -68,6 +69,7 @@
     "verify:phase5": "tsx scripts/verify-phase5.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "better-sqlite3": "^11.10.0",
     "dotenv": "^16.5.0",
     "openai": "^7.4.0",

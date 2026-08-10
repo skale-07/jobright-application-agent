@@ -1,0 +1,5 @@
+{
+  "kind": "synthetic_dom",
+  "note": "Hand-authored on Workable's public form conventions (data-ui='application-form'/'submit-application'/'application-question', firstname/lastname/email/phone names, QA_<id> custom questions). NOT captured from a live page — selectors proven against this fixture are FIXTURE_CONFIRMED at most. The live-fill form-snapshot instrumentation captures the real DOM on first live encounter; replace this fixture from that snapshot and re-run before any live milestone claim.",
+  "personal_data": "none — Ada Lovelace convention, no real values"
+}

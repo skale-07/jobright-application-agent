@@ -9,7 +9,7 @@ import { getApplication, transitionApplication } from "../queue/stateMachine.js"
 import { upsertOpenReviewItem } from "../queue/reviewItems.js";
 import { loadPersona, type Persona } from "../candidate/personas.js";
 import { getContact, type ContactRow } from "./repository.js";
-import type { EmailLlmClient } from "./emailLlm.js";
+import { hasLlmKey, LLM_KEY_HINT, type EmailLlmClient } from "./emailLlm.js";
 
 export const OUTREACH_PROMPT_VERSION = "outreach-email.v1";
 export const ALUM_SUBJECT_PREFIX = "Hopkins student interested in ";
@@ -34,12 +34,12 @@ export function assertEmailGenerationAllowed(): void {
   const cfg = getConfig();
   if (!cfg.emailGenerationEnabled) {
     throw new Error(
-      "EMAIL_GENERATION_ENABLED=false — refusing outreach generation. Set it to true (and OPENAI_API_KEY) to enable.",
+      `EMAIL_GENERATION_ENABLED=false — refusing outreach generation. Set it to true (and ${LLM_KEY_HINT}) to enable.`,
     );
   }
-  if (!cfg.openaiApiKey) {
+  if (!hasLlmKey(cfg)) {
     throw new Error(
-      "OPENAI_API_KEY is not set — outreach generation refused. Add it to .env.",
+      `no LLM key set (${LLM_KEY_HINT}) — outreach generation refused. Add one to .env.`,
     );
   }
 }
@@ -190,7 +190,7 @@ export type EmailGenerationResult = {
 
 /**
  * Generate one outreach email for one contact via the injected client
- * (OpenAiEmailClient in production, a stub in tests) and persist the result.
+ * (makeLlmClient() in production, a stub in tests) and persist the result.
  * REJECTED output never reaches a draft.
  */
 export async function generateEmailForContact(input: {

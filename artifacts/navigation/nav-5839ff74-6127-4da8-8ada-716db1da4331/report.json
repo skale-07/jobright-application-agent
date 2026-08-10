@@ -1,0 +1,47 @@
+{
+  "run_id": "nav-5839ff74-6127-4da8-8ada-716db1da4331",
+  "application_id": "d04c6289-fd40-4f84-867e-c9bcbde26208",
+  "jobright_job_id": "6aeb14884379c34a729349d2",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "auth",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "needs email verification — no mailbox provider enabled (GMAIL_VERIFICATION_ENABLED / OUTLOOK_VERIFICATION_ENABLED), human review"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 8,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": null,
+  "need": {
+    "kind": "verification_email",
+    "sent_to": "candidate@example.com",
+    "requested_at": "2026-08-07T00:00:00Z"
+  },
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found (exact and broad name tiers both empty)"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T03:05:14.700Z"
+}

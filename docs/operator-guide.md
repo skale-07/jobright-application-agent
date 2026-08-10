@@ -24,7 +24,7 @@ drafts only, enforced by CI-level banned-identifier checks.
 0. [One-time setup](#0-one-time-setup)
 1. [Login (JobRight via CDP, Outlook)](#1-login)
 2. [Discover jobs](#2-discover)
-3. [Inspect (JobRight detail + ATS form: greenhouse/lever/ashby)](#3-inspect)
+3. [Inspect (JobRight detail + ATS form: greenhouse/lever/ashby/workable)](#3-inspect)
 4. [Register a domain resume](#4-materials)
 5. [Rehearse the fill](#5-fill)
 6. [Essays (ATS-form questions — human-written)](#6-essays)
@@ -320,11 +320,12 @@ you email most; pick one per generation with `--persona <id>`.
 
 ## 10. Email generation
 
-The **only** LLM boundary in this codebase. It is a spend surface, so it is
-fail-closed:
+An LLM boundary (shared client: Anthropic preferred, OpenAI fallback). It
+is a spend surface, so it is fail-closed:
 
 ```powershell
-# .env:  EMAIL_GENERATION_ENABLED=true, OPENAI_API_KEY=sk-…, EMAIL_LLM_MODEL=<confirm current model id>
+# .env:  EMAIL_GENERATION_ENABLED=true, plus an LLM key — ANTHROPIC_API_KEY=sk-ant-… (preferred;
+#         model via ANTHROPIC_LLM_MODEL, default claude-opus-5) or OPENAI_API_KEY=sk-… (EMAIL_LLM_MODEL)
 npm run email:generate -- --application <uuid> --persona swe
 ```
 
@@ -443,7 +444,7 @@ contract rather than trusted.
 | `AGENT_AUTHORING_ENABLED` | `false` | Phase 6 J1 sidecar |
 | `AGENT_FALLBACK_ENABLED` | `false` | Sidecar escalation in the fill healer (6a′) + nav agent phase |
 | `NAVIGATION_ENABLED` | `false` | Navigation: clicking Apply on JobRight (mutates applied-state) |
-| `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail readonly OTP/magic-link retrieval during nav |
+| `GMAIL_VERIFICATION_ENABLED` | `false` | Gmail verification retrieval during nav — browser mailbox scan primary (no token); REST only if a token exists |
 | `ESSAY_REQUIRED_GATE_ENABLED` | `false` | Hard-stop on heuristic essay detection (`ESSAY_REQUIRED`); off until heuristics are better |
 | `OUTLOOK_VERIFICATION_ENABLED` | `false` | Read-only Outlook mailbox scan for submit verification codes (§17) |
 
@@ -661,7 +662,7 @@ To let it recover automatically, enable a mailbox reader in the shell:
 ```powershell
 $env:OUTLOOK_VERIFICATION_ENABLED="true"   # reads your Outlook web session
 # or
-$env:GMAIL_VERIFICATION_ENABLED="true"     # readonly Gmail API (needs gmail:auth)
+$env:GMAIL_VERIFICATION_ENABLED="true"     # browser mailbox scan (no token needed); REST only if gmail:auth token exists
 ```
 
 The run then fetches the code, types it in, waits for the button to enable,
@@ -821,18 +822,26 @@ only — your answers never reach a model); `npm run screeners:suggest`
 lists verified predictions ready to paste into the bank. Full set +
 policies: `docs/screener-questions.md`.
 
+**Blank fields ask you directly ("Answer needed").** Whenever a live fill
+meets a question NOTHING could answer (no registry key, no custom entry,
+no profile rule), Dispatch leaves the field blank on the form and
+immediately opens an **Answer needed** to-do showing the company, the
+exact question, and — for choice questions — the page's real options. It
+appears near the top of the Home "Needs you" list and expands in place:
+pick or type the answer, hit **Save answer**, and it joins
+`screeners.json` as a `custom` entry keyed to that exact question — every
+future form asking it fills deterministically with zero AI involvement.
+No flag needed; this works even with all LLM features off.
+
 **New-question predictions (one-click promote).** With
-`SCREENER_PREDICT_LLM_ENABLED=true`, questions that NOTHING could answer
-(no registry key, no custom entry, no profile rule) are captured at plan
-time and, after each armed session, the LLM proposes an answer from your
-about-me + your existing bank answers. The proposal only ever lands in a
-review item — the console shows the question, the suggested answer (an
-exact page option when the question had options), and the fact it's based
-on. **Approve & save** (or edit first) writes it into `screeners.json`
-under a `custom` entry keyed to that exact question, so every future form
-asking it fills deterministically with zero AI involvement. Predictions
-never fill anything before that approval; a dismissed suggestion never
-comes back. Your bank compounds — the model's job shrinks every week.
+`SCREENER_PREDICT_LLM_ENABLED=true` (plus an LLM key), the post-session
+batch additionally pre-fills those same Answer-needed items with a
+suggested answer drawn from your about-me + existing bank answers (an
+exact page option when the question had options), and shows the fact it's
+based on. **Approve & save** (or edit first) does exactly what a manual
+answer does. Predictions never fill anything before that approval; a
+dismissed question never comes back. Your bank compounds — the model's
+job shrinks every week.
 
 **Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
 `private/candidate/about-me.md` and write your context once. With
