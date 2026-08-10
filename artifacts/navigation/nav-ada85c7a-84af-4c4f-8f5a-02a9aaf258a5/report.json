@@ -1,0 +1,44 @@
+{
+  "run_id": "nav-ada85c7a-84af-4c4f-8f5a-02a9aaf258a5",
+  "application_id": "dd852fac-0052-4d62-b292-a4891d10df7a",
+  "jobright_job_id": "6a78ff5ba26ccc369f839501",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (7 external links ignored)"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 0,
+    "domains_visited": []
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found",
+    "agent[1]: agent wall-clock timeout",
+    "agent[1] reason: agent wall-clock timeout",
+    "agent could not attach to the debug Chrome (port answers but the session is wedged) — close ALL Chrome windows, re-run chrome:debug:jobright, then requeue"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-10T01:46:06.652Z"
+}

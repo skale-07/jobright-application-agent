@@ -1,0 +1,14 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-ada85c7a-84af-4c4f-8f5a-02a9aaf258a5","application_id":"dd852fac-0052-4d62-b292-a4891d10df7a","code_version":"abeada8088a3","session":"cdp","outcome":{"wall":"budget","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786326178.896,"start_host":"jobright.ai","at":"2026-08-10T01:42:58.896Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786326180.08,"at":"2026-08-10T01:43:00.081Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786326181.365,"cdp_host":"127.0.0.1","at":"2026-08-10T01:43:01.365Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786326183.128,"max_steps":25,"at":"2026-08-10T01:43:03.129Z"}
+{"jaa_progress":1,"event":"step","t":1786326200.412,"i":1,"actions":["search_page"],"host":"jobright.ai","elapsed_ms":18344,"at":"2026-08-10T01:43:20.412Z"}
+{"jaa_progress":1,"event":"step","t":1786326213.238,"i":2,"actions":["search_page"],"host":"jobright.ai","elapsed_ms":31171,"at":"2026-08-10T01:43:33.238Z"}
+{"jaa_progress":1,"event":"step","t":1786326237.677,"i":3,"actions":["search_page"],"host":"jobright.ai","elapsed_ms":55609,"at":"2026-08-10T01:43:57.677Z"}
+{"jaa_progress":1,"event":"step","t":1786326248.373,"i":4,"actions":["search_page","search_page"],"host":"jobright.ai","elapsed_ms":66296,"at":"2026-08-10T01:44:08.373Z"}
+{"jaa_progress":1,"event":"step","t":1786326272.575,"i":5,"actions":["find_elements"],"host":"jobright.ai","elapsed_ms":90500,"at":"2026-08-10T01:44:32.574Z"}
+{"jaa_progress":1,"event":"step","t":1786326283.998,"i":6,"actions":["search_page"],"host":"jobright.ai","elapsed_ms":101921,"at":"2026-08-10T01:44:43.997Z"}
+{"jaa_progress":1,"event":"step","t":1786326309.801,"i":7,"actions":["scroll"],"host":"jobright.ai","elapsed_ms":127734,"at":"2026-08-10T01:45:09.800Z"}
+{"jaa_progress":1,"event":"step","t":1786326335.454,"i":8,"actions":["find_elements"],"host":"jobright.ai","elapsed_ms":153390,"at":"2026-08-10T01:45:35.454Z"}
+{"jaa_progress":1,"event":"step","t":1786326347.617,"i":9,"actions":["find_elements"],"host":"jobright.ai","elapsed_ms":165546,"at":"2026-08-10T01:45:47.617Z"}

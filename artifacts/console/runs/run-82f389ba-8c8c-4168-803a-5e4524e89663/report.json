@@ -1,0 +1,65 @@
+{
+  "arm_run_id": "69492490-6afd-4d90-a00e-c0663c01d145",
+  "apps_started": 5,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 3,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "essay_drafts_generated": 0,
+  "screener_predictions_generated": 0,
+  "notes": [
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "discover: 8 inspected",
+    "essay drafts skipped: private/candidate/about-me.md missing or too short",
+    "screener predictions skipped: SCREENER_PREDICT_LLM_ENABLED off"
+  ],
+  "per_app": [
+    {
+      "application_id": "d1720752-ad7c-4ba3-b485-73fa79870017",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "e28c7b99-7ad0-451d-8f78-c2cb8e738c57",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "04350b8f-1c76-48e1-83c1-3a7c64995f0c",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "18219f27-4004-4e1e-9ba7-9f622d6a3d50",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "c4ef0510-84d0-4628-b033-9efdd7046cd5",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation unresolved: budget",
+      "submitted": false,
+      "outreach": null
+    }
+  ],
+  "nav_audit": {
+    "checked": 0,
+    "repaired": 0,
+    "parked": 0
+  }
+}
