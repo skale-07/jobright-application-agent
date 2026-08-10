@@ -23,14 +23,12 @@ import type {
   AgentNavigateResult,
   AgentNavigateTask,
 } from "../agent/contract.js";
-import { GmailClient } from "../gmail/client.js";
+import type { VerificationWaitResult } from "../gmail/waitForVerification.js";
 import {
-  waitForVerificationEmail,
-  type VerificationWaitResult,
-} from "../gmail/waitForVerification.js";
-import { readGmailToken } from "../gmail/tokenStore.js";
-import { getAccount, getOrCreateAccount } from "../accounts/vault.js";
-import { loadPublicProfile } from "../candidate/publicProfileIO.js";
+  emailVerificationAvailable,
+  resolveNavVerificationWaiter,
+} from "../verification/emailVerification.js";
+import { prepareCredentialsForHost } from "../verification/accountCredentials.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -148,19 +146,6 @@ export type RunNavigationInput = {
     allowedDomains: string[],
   ) => Promise<VerificationWaitResult>;
 };
-
-/** Production Gmail waiter — bounded polls against the readonly client. */
-async function defaultGmailWaiter(
-  need: NonNullable<AgentNavigateResult["need"]>,
-  allowedDomains: string[],
-): Promise<VerificationWaitResult> {
-  const client = new GmailClient();
-  return waitForVerificationEmail({
-    client,
-    need,
-    extraAllowedDomains: allowedDomains,
-  });
-}
 
 const TOTAL_WALLCLOCK_MS = 8 * 60_000;
 
@@ -520,53 +505,27 @@ export async function runNavigation(
       );
     }
 
-    // Account credentials (N5): reuse a vault entry for the wall host, or
-    // mint one when the landing page is a login wall (an account will be
-    // needed either way). Secrets ride only the in-memory task → sidecar
-    // stdin; the artifact path scrubs them (see persist).
+    // Account credentials (N5) — the isolated verification subsystem owns
+    // the policy (reuse vault entry; mint only on a live login wall; never
+    // for jobright). Secrets ride only the in-memory task → sidecar stdin;
+    // the artifact path scrubs them (see persist).
     const wallHost = startUrl.startsWith("https://")
       ? new URL(startUrl).hostname
       : null;
-    let credentials: AgentNavigateTask["credentials"] = { available: false };
-    if (wallHost && !/(^|\.)jobright\.ai$/i.test(wallHost)) {
-      const existing = getAccount(wallHost);
-      if (existing) {
-        credentials = {
-          available: true,
-          username: existing.username,
-          password: existing.password,
-        };
-        report.notes.push(`vault: existing account for ${wallHost}`);
-      } else if (loginWall.detected) {
-        const email =
-          readGmailToken()?.account_email ??
-          (() => {
-            try {
-              return loadPublicProfile().email;
-            } catch {
-              return "";
-            }
-          })();
-        if (email) {
-          const { account, created } = getOrCreateAccount(wallHost, {
-            email,
-            runId: report.run_id,
-          });
-          credentials = {
-            available: true,
-            username: account.username,
-            password: account.password,
-          };
-          report.notes.push(
-            `vault: ${created ? "created" : "loaded"} account for ${wallHost}`,
-          );
-        }
-      }
-    }
-    if (credentials.password) secretValues.push(credentials.password);
+    const credPrep = prepareCredentialsForHost({
+      host: wallHost,
+      runId: report.run_id,
+      loginWallDetected: loginWall.detected,
+    });
+    const credentials: AgentNavigateTask["credentials"] = credPrep.credentials;
+    report.notes.push(...credPrep.notes);
+    secretValues.push(...credPrep.secrets);
 
-    // Turn loop: 1 initial spawn + up to 2 Gmail continuations.
-    const gmailAvailable = cfg0.gmailVerificationEnabled;
+    // Turn loop: 1 initial spawn + up to 2 mailbox continuations. The
+    // verification subsystem decides availability (Gmail readonly client,
+    // Outlook read-only session — both fail-closed behind their flags).
+    const gmailAvailable =
+      input.gmailWaiterOverride !== undefined || emailVerificationAvailable();
     let turns = 0;
     let totalSteps = 0;
     const visited = new Set<string>();
@@ -704,13 +663,14 @@ export async function runNavigation(
 
         if (agentResult.status === "needs_input" && agentResult.need) {
           report.need = agentResult.need;
-          const waiter = input.gmailWaiterOverride ?? defaultGmailWaiter;
-          if (!gmailAvailable && !input.gmailWaiterOverride) {
+          const waiter =
+            input.gmailWaiterOverride ?? resolveNavVerificationWaiter();
+          if (!waiter) {
             report.wall = "auth";
             trace({
               phase: "C_agent",
               outcome:
-                "needs email verification — GMAIL_VERIFICATION_ENABLED=false, human review",
+                "needs email verification — no mailbox provider enabled (GMAIL_VERIFICATION_ENABLED / OUTLOOK_VERIFICATION_ENABLED), human review",
             });
             return persist(report);
           }

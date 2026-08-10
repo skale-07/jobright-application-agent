@@ -1,0 +1,59 @@
+{
+  "run_id": "nav-8a83be6e-03d1-4a3f-a95f-5a07a8b292f9",
+  "application_id": "34d7c521-c769-4110-a687-2e9e6c478caa",
+  "jobright_job_id": "6ae12085e294554ded85413d",
+  "method": "agent",
+  "resolved_url": "https://careers.example.com/apply/form",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "captured URL lands on a login wall — not stored",
+      "evidence": "careers.example.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "login wall"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "careers.example.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "careers.example.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "popup captured on attempt 1",
+    "vault: existing account for careers.example.com",
+    "agent[1]: cred_available:true",
+    "agent[1]: leaked:[REDACTED_SECRET]",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "Acme",
+    "url": "https://careers.example.com/apply/form"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-10T03:05:16.613Z"
+}
