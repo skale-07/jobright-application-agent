@@ -378,7 +378,11 @@ async def _navigate(task: dict) -> dict:
     notes.append(f"elapsed {elapsed:.0f}s, steps {steps_used}")
     result: dict = {
         "status": status,
-        "final_url": final_url if status != "error" or final_url else None,
+        # An error turn PROPOSES nothing: the live failure this fixes was a
+        # stuck-stopped agent whose history ended on jobright.ai — that URL
+        # rode out as final_url and the Node validator killed the whole
+        # phase over it. Errors carry no URL, ever.
+        "final_url": final_url if status != "error" else None,
         "wall": wall,
         "steps_used": steps_used,
         "domains_visited": sorted({_host(u) for u in urls if u})[:50],

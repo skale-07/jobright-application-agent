@@ -1,5 +1,7 @@
 import { execFileSync } from "node:child_process";
+import path from "node:path";
 import { getConfig, resetConfigCache } from "../config/index.js";
+import { writeJsonAtomic } from "../storage/atomicJson.js";
 import { logger } from "../logging/logger.js";
 import type { Db } from "../storage/db/client.js";
 import { migrate, openDatabase } from "../storage/db/client.js";
@@ -94,6 +96,37 @@ export async function runAutoCycle(
     headless?: boolean;
   } = {},
   seams: AutoCycleSeams = {},
+): Promise<AutoCycleReport> {
+  const report = await runAutoCycleInner(input, seams);
+  // Persist the cycle-level report — the first hands-off run's summary
+  // existed only in the operator's terminal, so the analysis loop had
+  // per-app artifacts but no session frame (stop reason, refusals, update
+  // state). It lands in artifacts/ and rides the NEXT session's autopush.
+  try {
+    const cfg = getConfig();
+    const stamp = report.started_at.replace(/[:.]/g, "-");
+    const outPath = path.join(
+      cfg.artifactsDir,
+      "console",
+      "auto-cycle",
+      `cycle-${stamp}.json`,
+    );
+    writeJsonAtomic(outPath, report as unknown as Record<string, unknown>);
+  } catch {
+    // reporting is telemetry — never fail the cycle over it
+  }
+  return report;
+}
+
+async function runAutoCycleInner(
+  input: {
+    skipUpdate?: boolean;
+    durationMinutes?: number;
+    maxSubmits?: number;
+    maxApps?: number;
+    headless?: boolean;
+  },
+  seams: AutoCycleSeams,
 ): Promise<AutoCycleReport> {
   const now = seams.now ?? (() => new Date());
   const exec =
