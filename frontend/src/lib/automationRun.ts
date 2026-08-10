@@ -26,6 +26,9 @@ export const AUTOMATION_RUN_BODY = {
     // New-question answer predictions into review items (one-click promote
     // into the bank; predictions never fill without that approval).
     SCREENER_PREDICT_LLM_ENABLED: true,
+    // Stage-1 improvement loop: push session artifacts automatically so
+    // the analysis agent sees them (pre-commit secret gate still runs).
+    ARTIFACT_AUTOPUSH_ENABLED: true,
     // Essay SUGGESTION drafts into review items after the session —
     // approval stays human; nothing is auto-filled.
     ESSAY_DRAFT_ENABLED: true,

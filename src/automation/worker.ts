@@ -13,6 +13,7 @@ import { listContacts } from "../contacts/repository.js";
 import { rankOutreachContacts } from "../contacts/rank.js";
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
+import { autopushArtifacts } from "./artifactAutopush.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { generateEmailForContact } from "../contacts/emailGenerate.js";
 import { OpenAiEmailClient, type EmailLlmClient } from "../contacts/emailLlm.js";
@@ -79,6 +80,8 @@ export type AutomationSessionReport = {
   essay_drafts_generated: number;
   /** New-question predictions opened as review items (UNVERIFIED). */
   screener_predictions_generated: number;
+  /** Stage-1 loop: artifacts committed+pushed after the session. */
+  artifact_autopush?: { pushed: boolean; commit: string | null; files_staged: number };
   /** Session-start employer-URL audit (wrong-company/duplicate repair). */
   nav_audit?: { checked: number; repaired: number; parked: number };
   notes: string[];
@@ -734,6 +737,19 @@ export async function runAutomationSession(
     report.notes.push(
       `screener predictions failed (continuing): ${err instanceof Error ? err.message.slice(0, 120) : String(err)}`,
     );
+  }
+
+  // Stage-1 improvement loop, courier leg: ship this session's artifacts
+  // to the remote so the analysis agent sees fresh run data. Fail-open;
+  // the pre-commit secret gate is never bypassed.
+  if (getConfig().artifactAutopushEnabled) {
+    const push = await autopushArtifacts({ armRunId });
+    report.artifact_autopush = {
+      pushed: push.pushed,
+      commit: push.commit,
+      files_staged: push.files_staged,
+    };
+    for (const n of push.notes) report.notes.push(n);
   }
 
   emit();

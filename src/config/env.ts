@@ -59,6 +59,7 @@ const envSchema = z.object({
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
   SCREENER_PREDICT_LLM_ENABLED: boolFromEnv.default(false),
+  ARTIFACT_AUTOPUSH_ENABLED: boolFromEnv.default(false),
   ESSAY_DRAFT_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
@@ -117,6 +118,7 @@ export type AppConfig = {
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
   screenerPredictLlmEnabled: boolean;
+  artifactAutopushEnabled: boolean;
   essayDraftEnabled: boolean;
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;
@@ -188,6 +190,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,
+    artifactAutopushEnabled: parsed.ARTIFACT_AUTOPUSH_ENABLED,
     essayDraftEnabled: parsed.ESSAY_DRAFT_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     automationEnabled: parsed.AUTOMATION_ENABLED,
