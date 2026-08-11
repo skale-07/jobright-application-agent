@@ -372,6 +372,52 @@ describe("auto-cycle (UNIT_CONFIRMED)", () => {
     expect(r.notes.join(" ")).not.toMatch(/must not push/);
   });
 
+  it("restartCdpChrome is fail-closed: no kill, no spawn without the flag", async () => {
+    const { restartCdpChrome } = await import("../../src/automation/cdpChrome.js");
+    const r = await restartCdpChrome({
+      killer: () => {
+        throw new Error("must not kill without CDP_AUTOLAUNCH_ENABLED");
+      },
+      spawner: () => {
+        throw new Error("must not spawn without CDP_AUTOLAUNCH_ENABLED");
+      },
+      probe: async () => false,
+    });
+    expect(r.reachable).toBe(false);
+    expect(r.launched).toBe(false);
+    expect(r.notes.join(" ")).toMatch(/CDP restart refused: CDP_AUTOLAUNCH_ENABLED is off/);
+  });
+
+  it("restartCdpChrome kills ONLY the debug profile then relaunches (flag on)", async () => {
+    const { restartCdpChrome } = await import("../../src/automation/cdpChrome.js");
+    const fakeChromeDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-chrome-"));
+    const fakeChrome = path.join(fakeChromeDir, "chrome.exe");
+    fs.writeFileSync(fakeChrome, "");
+    process.env.CHROME_PATH = fakeChrome;
+    applyControlledFillEnv({ CDP_AUTOLAUNCH_ENABLED: "true" });
+    try {
+      const killedDirs: string[] = [];
+      let up = false;
+      const r = await restartCdpChrome({
+        killer: (dir) => killedDirs.push(dir),
+        spawner: () => {
+          up = true;
+        },
+        probe: async () => up,
+        sleep: async () => undefined,
+      });
+      expect(killedDirs.length).toBe(1);
+      // The kill target is the DEBUG profile dir — never a bare "chrome.exe".
+      expect(killedDirs[0]).toMatch(/jobright-cdp/);
+      expect(r.launched).toBe(true);
+      expect(r.reachable).toBe(true);
+      expect(r.notes.join(" ")).toMatch(/killed stale debug-profile Chrome/);
+    } finally {
+      delete process.env.CHROME_PATH;
+      fs.rmSync(fakeChromeDir, { recursive: true, force: true });
+    }
+  });
+
   it("never double-arms when a session is already live", async () => {
     armEnv();
     const { armSession, hashArmToken } = await import(

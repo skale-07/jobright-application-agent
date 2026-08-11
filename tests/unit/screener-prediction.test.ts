@@ -94,6 +94,44 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     generateJson: async () => ({ text: JSON.stringify(payload), model: "stub" }),
   });
 
+  const writeProfile = (): void => {
+    fs.writeFileSync(
+      path.join(privDir, "candidate", "public-profile.json"),
+      JSON.stringify({
+        legal_name: { first: "Test", middle: "", last: "Candidate" },
+        preferred_name: "",
+        email: "test@example.com",
+        phone: "",
+        address: {
+          line1: "",
+          line2: "",
+          city: "Baltimore",
+          state: "Maryland",
+          postal_code: "",
+          country: "United States",
+        },
+        school: "Johns Hopkins University",
+        degree: "Bachelor of Science",
+        major: "Applied Mathematics & Statistics",
+        additional_fields_of_study: [],
+        graduation_month: "May",
+        graduation_year: 2029,
+        start_month: "August",
+        start_year: 2025,
+        gpa: null,
+        linkedin_url: "",
+        github_url: "",
+        personal_website: "",
+        work_authorization: "US Citizen",
+        requires_sponsorship: "No",
+        relocation: "",
+        current_company: "",
+        employment_history: [],
+        education_history: [],
+      }),
+    );
+  };
+
   it("capture works with the LLM flag OFF, opens an Answer-needed item, and dedupes", () => {
     // The LLM flag gates only the prediction batch — a blank field must
     // surface to the operator even in a shell with no LLM at all. This is
@@ -361,6 +399,86 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     expect(() => promoteScreenerPrediction(db, { reviewItemId: item.id })).toThrow(
       /screener question\/prediction items only/,
     );
+  });
+
+  // Live batch cc02e067 nulled 12/12 — including the university question
+  // whose label SAID 'Select "Other" if not listed' — because the model
+  // never saw the structured profile. profile_facts closes that gap; the
+  // fallback answer still has to survive the option-membership gate.
+  it("profile facts reach the model; a label-instructed \"Other\" fallback predicts", async () => {
+    enable();
+    writeProfile();
+    const appId = seedApp();
+    recordUnmappedScreenerQuestions({
+      db,
+      applicationId: appId,
+      questions: [
+        {
+          label:
+            'Which university are you currently attending? Select "Other" if not listed',
+          type: "select",
+          options: ["MIT", "Stanford University", "Other"],
+        },
+      ],
+    });
+    let sawUser = "";
+    const recording = {
+      generateJson: async (input: { user: string }) => {
+        sawUser = input.user;
+        return {
+          text: JSON.stringify({
+            predictions: [
+              {
+                label:
+                  'Which university are you currently attending? Select "Other" if not listed',
+                answer: "Other",
+                key: "current_university",
+                basis:
+                  "profile_facts.school is Johns Hopkins University, not among options; label instructs Other",
+              },
+            ],
+          }),
+          model: "stub",
+        };
+      },
+    };
+    const r = await generateScreenerPredictions({ db, client: recording });
+    expect(r.predicted).toBe(1);
+    const ctx = JSON.parse(sawUser) as { profile_facts: Record<string, unknown> };
+    expect(ctx.profile_facts["school"]).toBe("Johns Hopkins University");
+    expect(ctx.profile_facts["city"]).toBe("Baltimore");
+    // Contact details never ride the prediction context.
+    expect(sawUser).not.toMatch(/test@example\.com/);
+    const items = listOpenReviewItems(db);
+    const item = items.find((i) => /university/i.test(i.title));
+    expect(item).toBeTruthy();
+    const payload = JSON.parse(
+      (item as unknown as { payload_json: string }).payload_json,
+    ) as Record<string, unknown>;
+    expect(payload["predicted_answer"]).toBe("Other");
+  });
+
+  it("placeholder labels (field_12) reject immediately without spending the model", async () => {
+    enable();
+    const appId = seedApp();
+    recordUnmappedScreenerQuestions({
+      db,
+      applicationId: appId,
+      questions: [{ label: "field_12", type: "select", options: ["A", "B"] }],
+    });
+    let called = 0;
+    const r = await generateScreenerPredictions({
+      db,
+      client: {
+        generateJson: async () => {
+          called += 1;
+          return { text: "{}", model: "stub" };
+        },
+      },
+    });
+    expect(called).toBe(0);
+    expect(r.rejected).toBe(1);
+    expect(r.notes.join(" ")).toMatch(/unusable label/);
   });
 
   it("validatePrediction + suggestKey guardrails", () => {

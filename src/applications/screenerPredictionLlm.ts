@@ -37,6 +37,7 @@ import {
 import { normalizeScreenerLabel } from "../candidate/screenerMatch.js";
 import { labelFingerprint } from "./screenerLlmMap.js";
 import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { tryLoadAboutMe } from "./essayDraft.js";
 import {
   updateReviewItemPayload,
@@ -145,14 +146,60 @@ export function recordUnmappedScreenerQuestions(input: {
   }
 }
 
-const SYSTEM_PROMPT = `You predict a job-application screener ANSWER for a candidate, using ONLY the facts in their context (an about-me document and their existing saved answers). One entry per input question, in order.
+const SYSTEM_PROMPT = `You predict a job-application screener ANSWER for a candidate, using ONLY the facts in their context (an about-me document, their existing saved answers, and profile_facts from their structured profile). One entry per input question, in order.
 Rules:
 - The answer must be short (a value, not an essay): max 100 characters.
 - For a question with "options", the answer MUST be copied verbatim from that options list. If none fits the candidate's facts, use null.
+- READ THE QUESTION'S OWN INSTRUCTIONS. If the label instructs a fallback — e.g. 'Select "Other" if not listed' — and the candidate's true answer (e.g. their university from profile_facts) is NOT among the options while that fallback option IS, answer the fallback option verbatim (e.g. "Other"). This is following the form, not guessing.
+- Office/location-preference questions with options: pick the option consistent with the candidate's location and relocation facts (e.g. nearest listed office). If the context gives no basis to prefer one, use null. NEVER answer with a city that is not among the options.
 - Never guess facts the context doesn't state. Unknown ⇒ null.
 - Never answer demographic/self-ID questions (gender, race, veteran, disability): always null.
 - Also propose a short snake_case key naming the question (e.g. "expected_graduation"), and a one-sentence basis citing which context fact the answer comes from.
 Output STRICT JSON: {"predictions":[{"label": string, "answer": string|null, "key": string, "basis": string}]}`;
+
+/**
+ * Non-sensitive profile facts for the prediction context. The live batch
+ * (cc02e067) nulled 12/12 questions — including "Which university are you
+ * currently attending? Select \"Other\" if not listed" — because the model
+ * only ever saw about-me.md (absent on the operator's machine) and the
+ * bank. The structured profile already knows school/degree/major/city.
+ * Contact and street-address fields stay out; demographic/self-ID facts
+ * live in sensitive-profile and are never loaded here.
+ */
+export function tryLoadProfileFacts(): Record<string, unknown> | null {
+  try {
+    const p = loadPublicProfile() as unknown as Record<string, unknown>;
+    const addr = (p["address"] ?? {}) as Record<string, unknown>;
+    const facts: Record<string, unknown> = {};
+    const take = (key: string, value: unknown): void => {
+      if (value !== undefined && value !== null && value !== "") facts[key] = value;
+    };
+    take("school", p["school"]);
+    take("degree", p["degree"]);
+    take("major", p["major"]);
+    take("additional_fields_of_study", p["additional_fields_of_study"]);
+    take("graduation_month", p["graduation_month"]);
+    take("graduation_year", p["graduation_year"]);
+    take("start_month", p["start_month"]);
+    take("start_year", p["start_year"]);
+    take("gpa", p["gpa"]);
+    take("work_authorization", p["work_authorization"]);
+    take("requires_sponsorship", p["requires_sponsorship"]);
+    take("relocation", p["relocation"]);
+    take("current_company", p["current_company"]);
+    take("city", addr["city"]);
+    take("state", addr["state"]);
+    take("country", addr["country"]);
+    return Object.keys(facts).length > 0 ? facts : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Inspector-placeholder labels ("field_12" / "field 12") carry no question text. */
+export function isUnusableLabel(label: string): boolean {
+  return /^(?:field|f)[_ ]?\d+$/i.test(label.trim());
+}
 
 export type ScreenerPredictionBatchReport = {
   questions_considered: number;
@@ -214,9 +261,10 @@ export async function generateScreenerPredictions(input: {
   }
   const about = tryLoadAboutMe();
   const bank = tryLoadScreenerBank();
-  if (!about && !bank) {
+  const profileFacts = tryLoadProfileFacts();
+  if (!about && !bank && !profileFacts) {
     report.notes.push(
-      "screener predictions skipped: no context (about-me.md and screeners.json both missing)",
+      "screener predictions skipped: no context (about-me.md, screeners.json, and public-profile.json all missing)",
     );
     return report;
   }
@@ -244,11 +292,38 @@ export async function generateScreenerPredictions(input: {
   if (rows.length === 0) return report;
   report.questions_considered = rows.length;
 
+  // Placeholder labels carry no question text — the model CANNOT answer
+  // "field_12" (cc02e067 burned attempts on twelve of them). Reject them
+  // outright with the real cause named: the inspector failed to read the
+  // label, which is a capture bug, not a prediction failure.
+  const askable: typeof rows = [];
+  const rejectUnusable = db.prepare(
+    `UPDATE screener_predictions
+     SET status = 'REJECTED', prediction_json = ?, updated_at = ?
+     WHERE id = ?`,
+  );
+  for (const r of rows) {
+    if (isUnusableLabel(r.raw_label) || isUnusableLabel(r.label)) {
+      rejectUnusable.run(
+        JSON.stringify({ rejected: "unusable label — inspector could not read the question text" }),
+        new Date().toISOString(),
+        r.id,
+      );
+      report.rejected += 1;
+      report.notes.push(
+        `prediction rejected "${r.raw_label.slice(0, 30)}": unusable label (inspector could not read the question text)`,
+      );
+      continue;
+    }
+    askable.push(r);
+  }
+  if (askable.length === 0) return report;
+
   const bump = db.prepare(
     `UPDATE screener_predictions SET attempts = attempts + 1, updated_at = ? WHERE id = ?`,
   );
   const now = new Date().toISOString();
-  for (const r of rows) bump.run(now, r.id);
+  for (const r of askable) bump.run(now, r.id);
 
   const client = input.client ?? makeLlmClient();
   let parsed: { predictions?: Array<Record<string, unknown>> };
@@ -258,7 +333,8 @@ export async function generateScreenerPredictions(input: {
       user: JSON.stringify({
         candidate_context: about ?? "",
         saved_answers: bank?.answers ?? {},
-        questions: rows.map((r) => ({
+        profile_facts: profileFacts ?? {},
+        questions: askable.map((r) => ({
           label: r.raw_label,
           options: r.options_json ? (JSON.parse(r.options_json) as string[]) : undefined,
         })),
@@ -291,7 +367,7 @@ export async function generateScreenerPredictions(input: {
      WHERE id = ?`,
   );
 
-  for (const row of rows) {
+  for (const row of askable) {
     const p = byLabel.get(row.label);
     const options = row.options_json ? (JSON.parse(row.options_json) as string[]) : null;
     const check = validatePrediction(p?.["answer"] ?? null, options);
