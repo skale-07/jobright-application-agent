@@ -1,14 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><title>Workday</title></head>
+<head><title>Workday — Software Engineer Intern</title></head>
 <body>
-  <div id="workdayApplication">
-    <h1>Apply on Workday</h1>
-    <p>myworkdayjobs.com career site</p>
-    <form>
-      <input name="username" type="text" />
-      <input name="password" type="password" />
-    </form>
+  <div data-automation-id="jobPostingPage">
+    <h1>Software Engineer Intern</h1>
+    <p>Powered by Workday</p>
+    <a role="button" data-automation-id="adventureButton" href="#apply">Apply</a>
+    <div data-automation-id="applyFlowContainer">
+      <input data-automation-id="email" name="email" type="email" />
+      <input data-automation-id="password" name="password" type="password" />
+      <button data-automation-id="signInSubmitButton">Sign In</button>
+      <button data-automation-id="createAccountLink">Create Account</button>
+    </div>
+    <div data-automation-id="myInformationPage" hidden>
+      <input data-automation-id="legalNameSection_firstName" name="firstName" />
+      <input data-automation-id="legalNameSection_lastName" name="lastName" />
+      <input data-automation-id="phone-number" name="phone" />
+      <input data-automation-id="file-upload-input-ref" type="file" />
+      <button data-automation-id="pageFooterNextButton">Next</button>
+    </div>
   </div>
 </body>
 </html>

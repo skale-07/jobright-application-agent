@@ -350,6 +350,26 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
       // would re-match "not" on decline lines.
       return ynPick;
     }
+    // Relocation sentence sets never lead with Yes/No (live: Cloudflare
+    // "I am willing to relocate to this job's location." vs "I do not
+    // live and not willing to relocate…"). Bank relocation=Yes means
+    // willing; No means not willing. Only fires when the option set is
+    // unambiguously relocation-shaped.
+    const relocationOptions = options.filter((o) => /relocat/i.test(o));
+    if (relocationOptions.length >= 2) {
+      const willing = options.filter(
+        (o) => /willing to relocate/i.test(o) && !/\bnot\b/i.test(optionKey(o)),
+      );
+      const notWilling = options.filter((o) =>
+        /not willing to relocate|not able to relocate/i.test(o),
+      );
+      if (expYn === "yes" && willing.length === 1 && willing[0] !== undefined) {
+        return { ok: true, label: willing[0], via: "synonym" };
+      }
+      if (expYn === "no" && notWilling.length === 1 && notWilling[0] !== undefined) {
+        return { ok: true, label: notWilling[0], via: "synonym" };
+      }
+    }
   }
 
   // Gender vocabulary: operator "Man"/"Woman" ↔ board "Male"/"Female".

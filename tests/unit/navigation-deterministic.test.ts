@@ -66,6 +66,75 @@ describe("navigation deterministic phases (N2)", () => {
     30_000,
   );
 
+  // Operator finding (2026-08-11): the "APPLY WITH AUTOFILL ↗" CTA carries
+  // the external application link — it was excluded as JobRight's own flow
+  // while the phases hunted the rest of the page.
+  it(
+    "phase A reads the autofill CTA's link FIRST, zero-mutation (FIXTURE_CONFIRMED)",
+    async () => {
+      const html = `<!DOCTYPE html><html><body>
+        <a href="${LEVER_URL}" target="_blank"><button>Apply with Autofill</button></a>
+        <a href="https://careers.example.com/apply/1" target="_blank">Company careers</a>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const { readAutofillCtaHref } = await import(
+          "../../src/jobright/navigateToEmployer.js"
+        );
+        expect(await readAutofillCtaHref(page)).toBe(LEVER_URL);
+        const hrefs = await readExternalApplyHrefs(page);
+        expect(hrefs[0]).toBe(LEVER_URL);
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "a jobright-internal autofill CTA yields no href (falls back to click tiers)",
+    async () => {
+      const html = `<!DOCTYPE html><html><body>
+        <button>Apply with Autofill</button>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const { readAutofillCtaHref } = await import(
+          "../../src/jobright/navigateToEmployer.js"
+        );
+        expect(await readAutofillCtaHref(page)).toBeNull();
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "phase B clicks the autofill CTA FIRST when it has no readable href (FIXTURE_CONFIRMED)",
+    async () => {
+      const html = `<!DOCTYPE html><html><body>
+        <button onclick="window.open('${LEVER_URL}')">Apply with Autofill</button>
+        <button>Apply</button>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const fakeSession = {
+          getContext: () => page.context(),
+        } as Parameters<typeof clickApplyAndCaptureExternalUrl>[0];
+        applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+        resetConfigCache();
+        try {
+          await page.context().route("**/*", (route) =>
+            route.fulfill({
+              body: "<html><body>lever form</body></html>",
+              contentType: "text/html",
+            }),
+          );
+          const capture = await clickApplyAndCaptureExternalUrl(fakeSession, page);
+          expect(capture.url).toBe(LEVER_URL);
+          expect(capture.notes.join(" ")).toMatch(/autofill CTA \(tier 0\)/);
+        } finally {
+          applySafeFillEnv();
+        }
+      });
+    },
+    45_000,
+  );
+
   it(
     "phase B captures a popup URL, guarded by the flag (FIXTURE_CONFIRMED)",
     async () => {
@@ -106,15 +175,17 @@ describe("navigation deterministic phases (N2)", () => {
   );
 
   it(
-    "phase B broad tier matches 'Apply on company site' and skips autofill/easy-apply decoys (FIXTURE_CONFIRMED)",
+    "phase B broad tier matches 'Apply on company site' and skips easy-apply decoys (FIXTURE_CONFIRMED)",
     async () => {
       // Live-run regression: pages whose only real control was named
       // "Apply now" / "Apply on company site" fell through the exact-name
       // tier and burned the agent phase. Decoys come FIRST in the DOM to
       // prove the exclusion filter is doing the choosing, not luck.
+      // (The autofill CTA is no longer a decoy — operator finding
+      // 2026-08-11 made it tier 0; it is exercised in its own tests.)
       const html = `<!DOCTYPE html><html><body>
-        <button onclick="window.open('https://evil.example.com/autofill')">Apply with Autofill</button>
         <button onclick="window.open('https://evil.example.com/easy')">Easy Apply</button>
+        <button>Applied</button>
         <button onclick="window.open('${LEVER_URL}')">Apply on company site</button>
       </body></html>`;
       await withFixtureHtmlPage(html, async (page) => {
@@ -147,9 +218,11 @@ describe("navigation deterministic phases (N2)", () => {
   it(
     "phase B reports no control when only excluded apply-like names exist (FIXTURE_CONFIRMED)",
     async () => {
+      // "Easy Apply" / "Applied" stay excluded. (An autofill CTA here would
+      // be tier 0 by design now, so it is deliberately absent.)
       const html = `<!DOCTYPE html><html><body>
-        <button>Apply with Autofill</button>
         <button>Easy Apply</button>
+        <button>Applied</button>
       </body></html>`;
       await withFixtureHtmlPage(html, async (page) => {
         const fakeSession = {

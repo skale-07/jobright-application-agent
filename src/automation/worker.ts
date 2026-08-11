@@ -44,6 +44,8 @@ import {
 export { runOutreachTail, type OutreachTailResult } from "../outreach/outreachTail.js";
 
 const DEFAULT_DELAY_MS: [number, number] = [15_000, 45_000];
+/** dfb007f8: the attach failure recurs — one restart was not enough. */
+const MAX_CDP_RESTARTS_PER_SESSION = 3;
 
 export type AutomationStopReason =
   | "disarmed"
@@ -344,7 +346,7 @@ export async function runAutomationSession(
 
   await tryDiscover();
   let appsSinceDiscover = 0;
-  let cdpRestartTried = false;
+  let cdpRestarts = 0;
   // Each app is attempted at most once per session (see pickNextApplication).
   const seen = new Set<string>();
   /** Verified-submit apps whose referral tail runs after the loop (batch). */
@@ -537,20 +539,22 @@ export async function runAutomationSession(
         },
       });
       // Mid-session CDP degradation (cc02e067 killed 7/13 apps at 02:50):
-      // /json/version answers but attach fails. One in-session repair —
-      // restartCdpChrome is fail-closed behind CDP_AUTOLAUNCH_ENABLED, so
-      // without the operator's standing opt-in this only writes a note.
+      // /json/version answers but attach fails. Bounded in-session repair —
+      // dfb007f8 proved one restart works but the failure RECURS, so a
+      // single try left 8 later apps dead. restartCdpChrome is fail-closed
+      // behind CDP_AUTOLAUNCH_ENABLED; without the operator's standing
+      // opt-in this only writes a note.
       if (
-        !cdpRestartTried &&
+        cdpRestarts < MAX_CDP_RESTARTS_PER_SESSION &&
         /CDP session won't attach|Debug Chrome .* unresponsive/i.test(message)
       ) {
-        cdpRestartTried = true;
+        cdpRestarts += 1;
         try {
           const restart = await (input.cdpRestarter ?? restartCdpChrome)();
           report.notes.push(
             restart.reachable
-              ? "CDP restart: debug Chrome relaunched and reachable — continuing session"
-              : `CDP restart did not recover: ${restart.notes.join("; ").slice(0, 200)}`,
+              ? `CDP restart ${cdpRestarts}/${MAX_CDP_RESTARTS_PER_SESSION}: debug Chrome relaunched and reachable — continuing session`
+              : `CDP restart ${cdpRestarts}/${MAX_CDP_RESTARTS_PER_SESSION} did not recover: ${restart.notes.join("; ").slice(0, 200)}`,
           );
         } catch (restartErr) {
           report.notes.push(

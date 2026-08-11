@@ -77,6 +77,14 @@ export const jobrightSelectorsV1 = {
     standardApplyRole: /^apply(?:\s+(?:now|today|here))?$/i,
     broadApplyRole: /apply/i,
     applyNameExclusions: /autofill|applied|easy\s*apply|ask\s*orion/i,
+    /**
+     * Operator finding (2026-08-11 screenshot): the primary "APPLY WITH
+     * AUTOFILL ↗" CTA on the job page carries the EXTERNAL application
+     * link — it was sitting inside the exclusion list while phases A/B
+     * hunted everywhere else. Tier 0 reads its href zero-mutation first,
+     * then click-captures it before the standard tiers.
+     */
+    autofillApplyCta: /apply\s+with\s+autofill/i,
     status: "UNVERIFIED_SELECTOR" as const,
   },
 

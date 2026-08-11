@@ -389,8 +389,12 @@ async def _navigate(task: dict) -> dict:
         "notes": notes[:20],
     }
     if status == "needs_input":
+        # Evidence rides with the need: the mailbox is only scanned when
+        # the page (per the agent's own final report) actually says a
+        # verification email was sent — the Node side enforces this.
         result["need"] = {
             "kind": "verification_email",
+            "evidence": (final_text or "")[:600],
             "sent_to": _extract_email(final_text),
             "requested_at": __import__("datetime").datetime.now(
                 __import__("datetime").timezone.utc

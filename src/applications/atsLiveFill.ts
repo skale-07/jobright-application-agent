@@ -1,5 +1,9 @@
 import type { Db } from "../storage/db/client.js";
 import { dismissPageObstructions } from "../browser/obstructions.js";
+import {
+  authenticateAtsPortal,
+  isRecognizedAtsAuthHost,
+} from "../verification/portalAuth.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -217,6 +221,30 @@ export async function runAtsLiveFill(input: {
           report.notes.push(
             `popups dismissed: ${obstructions.dismissed.join(", ")}`,
           );
+        }
+        // Workday portals gate the application behind a per-tenant account.
+        // On a recognized ATS auth host, sign in / create the account with
+        // the standing candidate email (operator directive) before planning
+        // — the fill would otherwise plan against the login form. Fully
+        // guarded (NAVIGATION_ENABLED, host gate); secrets scrubbed.
+        if (binding.id === "workday" && isRecognizedAtsAuthHost(page.url())) {
+          // portalAuth keeps secrets OUT of its notes by construction, and
+          // the form snapshot scrubs every value= attribute — so the
+          // password/code never reach the artifact. auth.secrets is the
+          // scrub list for any future value-based redaction.
+          const auth = await authenticateAtsPortal(page);
+          void auth.secrets;
+          report.notes.push(...auth.notes);
+          if (
+            auth.status !== "signed_in" &&
+            auth.status !== "account_created" &&
+            auth.status !== "not_an_auth_wall"
+          ) {
+            report.gate.failure_code = "AUTH_REQUIRED";
+            report.gate.reason = `Workday portal auth did not clear the wall (${auth.status})`;
+            report.notes.push("parked: Workday account wall not cleared");
+            return persist(report);
+          }
         }
       }
       const { adapter, plan, approvedPlan } = await planApplicationFill({

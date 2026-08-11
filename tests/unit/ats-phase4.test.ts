@@ -93,10 +93,13 @@ describe("Phase 4 ATS inspection", () => {
     expect(report.route).toBe("needs_login");
   });
 
-  it("skips Workday as unsupported", async () => {
+  it("recognizes Workday and routes its account wall to needs_login", async () => {
+    // Workday is now a supported adapter (W1–W4). Its fixture is a
+    // tenant account wall, so it routes to needs_login — portalAuth
+    // handles sign-in/create-account from there, not a dead end.
     const { report } = await runAtsFixtureInspection("workday");
-    expect(report.route).toBe("skip_unsupported_ats");
     expect(report.inspection.ats).toBe("workday");
+    expect(report.route).toBe("needs_login");
   });
 
   it("refuses form fill and submit while flags are off", () => {
