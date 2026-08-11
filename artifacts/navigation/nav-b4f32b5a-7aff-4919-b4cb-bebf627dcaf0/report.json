@@ -1,0 +1,51 @@
+{
+  "run_id": "nav-b4f32b5a-7aff-4919-b4cb-bebf627dcaf0",
+  "application_id": "6afa9de4-2eb4-43f9-9744-d088596d0d87",
+  "jobright_job_id": "6a78919c67a1ad0bc53cdde4",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 5,
+    "domains_visited": [
+      "cadence.wd1.myworkdayjobs.com",
+      "jobs.bytedance.com",
+      "joinbytedance.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, apnews.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: joinbytedance.com, www.qatar-tribune.com, apnews.com",
+    "agent goal seeded with 3 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 3 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-11T03:04:51.549Z"
+}

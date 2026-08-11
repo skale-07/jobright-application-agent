@@ -1,0 +1,50 @@
+{
+  "run_id": "nav-35762660-750f-46ab-afbd-8719b7b2f41e",
+  "application_id": "b534bc8c-64fd-45fe-93ad-a6e9c860b8c2",
+  "jobright_job_id": "693b5c7ab309e37800871f1d",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)",
+      "evidence": "cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 6,
+    "domains_visited": [
+      "cadence.wd1.myworkdayjobs.com",
+      "www.ycombinator.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: cadence.wd1.myworkdayjobs.com, www.cadence.com, www.tradingview.com, www.benzinga.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 1 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-11T02:56:06.007Z"
+}

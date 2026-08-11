@@ -1,0 +1,57 @@
+{
+  "run_id": "nav-867ba5ee-86d6-4a73-a807-e303c8aa083b",
+  "application_id": "42eb925c-fce6-4514-a2a8-ca055c2469d1",
+  "jobright_job_id": "6a5f96d5193b5113096794f0",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/virtu/jobs/8624410002",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 77s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "virtu",
+    "detail": "token \"virtu\" ~ slug \"virtu\"",
+    "expected_company": "Virtu Financial",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=virtu&token=8624410002"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-11T02:58:04.328Z"
+}

@@ -1,0 +1,57 @@
+{
+  "run_id": "nav-e2949fd4-66fb-4577-9a88-fe3aa11acb6c",
+  "application_id": "dd852fac-0052-4d62-b292-a4891d10df7a",
+  "jobright_job_id": "6a78ff5ba26ccc369f839501",
+  "method": "agent",
+  "resolved_url": "https://www.ycombinator.com/companies/effigov/jobs/7XpLidv-software-engineer-intern-fall-2026?jr_id=6a78ff5ba26ccc369f839501",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (7 external links ignored)",
+      "evidence": "www.ycombinator.com, www.linkedin.com, www.crunchbase.com, effigov.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "www.ycombinator.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "jobright.ai",
+      "www.ycombinator.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 4 non-ATS external host(s) seen: www.ycombinator.com, www.linkedin.com, www.crunchbase.com, effigov.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: www.ycombinator.com, effigov.com",
+    "agent goal seeded with 2 candidate link(s) from the job page",
+    "agent[1]: elapsed 63s, steps 3",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "EffiGov",
+    "url": "https://www.ycombinator.com/companies/effigov/jobs/7XpLidv-software-engineer-intern-fall-2026?jr_id=6a78ff5ba26ccc369f839501"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-11T02:53:09.307Z"
+}

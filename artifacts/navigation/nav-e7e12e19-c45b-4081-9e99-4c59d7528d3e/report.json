@@ -1,0 +1,57 @@
+{
+  "run_id": "nav-e7e12e19-c45b-4081-9e99-4c59d7528d3e",
+  "application_id": "56d6a4d7-9394-4aa0-9fba-243dc6a9ea9b",
+  "jobright_job_id": "6a559cbc78d1443bd1e810b7",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/flyzipline/jobs/7767667003",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 70s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "flyzipline",
+    "detail": "token \"zipline\" ~ slug \"flyzipline\"",
+    "expected_company": "Zipline",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=flyzipline&token=7767667003"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-11T03:09:47.683Z"
+}

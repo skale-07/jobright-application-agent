@@ -1,0 +1,57 @@
+{
+  "run_id": "nav-b35ee0fa-28e8-4090-b4ee-e98408dd2063",
+  "application_id": "4458533f-c23e-40b3-aa47-315586786534",
+  "jobright_job_id": "6a7487e7bb6ca93ae560a772",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/impact/jobs/8645964002",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 65s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "impact",
+    "detail": "token \"impact\" ~ slug \"impact\"",
+    "expected_company": "impact.com",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=impact&token=8645964002"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-11T03:06:26.373Z"
+}
