@@ -1,0 +1,8 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-5a3f1dd5-5f75-4cd8-beed-0eefc3416f77","application_id":"aa162e86-6dd5-4b97-baba-6f7732252c2e","code_version":"ddb2c43351c0","session":"cdp","outcome":{"wall":"budget","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786420382.985,"start_host":"jobright.ai","at":"2026-08-11T03:53:02.985Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786420384.073,"at":"2026-08-11T03:53:04.073Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786420384.729,"provider":"anthropic","at":"2026-08-11T03:53:04.729Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786420384.729,"cdp_host":"127.0.0.1","at":"2026-08-11T03:53:04.729Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786420385.376,"max_steps":25,"at":"2026-08-11T03:53:05.375Z"}
+{"jaa_progress":1,"event":"step","t":1786420409.589,"i":1,"actions":["navigate"],"host":"joinbytedance.com","elapsed_ms":24422,"at":"2026-08-11T03:53:29.588Z"}
+{"jaa_progress":1,"event":"step","t":1786420432.371,"i":2,"actions":["done"],"host":"job-boards.greenhouse.io","elapsed_ms":47203,"at":"2026-08-11T03:53:52.371Z"}

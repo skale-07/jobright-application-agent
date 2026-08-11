@@ -1,0 +1,12 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-5e2cfe60-b6f6-4996-9dd4-7af3c660617b","application_id":"2a48470c-0958-41a5-acf4-7b099f1369cc","code_version":"ddb2c43351c0","session":"cdp","outcome":{"wall":"budget","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786420478.576,"start_host":"jobright.ai","at":"2026-08-11T03:54:38.576Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786420479.541,"at":"2026-08-11T03:54:39.542Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786420480.09,"provider":"anthropic","at":"2026-08-11T03:54:40.090Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786420480.09,"cdp_host":"127.0.0.1","at":"2026-08-11T03:54:40.095Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786420480.621,"max_steps":25,"at":"2026-08-11T03:54:40.621Z"}
+{"jaa_progress":1,"event":"step","t":1786420510.698,"i":1,"actions":["navigate"],"host":"cadence.wd1.myworkdayjobs.com","elapsed_ms":30218,"at":"2026-08-11T03:55:10.698Z"}
+{"jaa_progress":1,"event":"step","t":1786420527.477,"i":2,"actions":["wait"],"host":"interdigital.wd5.myworkdayjobs.com","elapsed_ms":46985,"at":"2026-08-11T03:55:27.477Z"}
+{"jaa_progress":1,"event":"step","t":1786420549.274,"i":3,"actions":["click","click"],"host":"interdigital.wd5.myworkdayjobs.com","elapsed_ms":68781,"at":"2026-08-11T03:55:49.273Z"}
+{"jaa_progress":1,"event":"step","t":1786420562.921,"i":4,"actions":["click"],"host":"interdigital.wd5.myworkdayjobs.com","elapsed_ms":82437,"at":"2026-08-11T03:56:02.921Z"}
+{"jaa_progress":1,"event":"step","t":1786420578.19,"i":5,"actions":["wait"],"host":"interdigital.wd5.myworkdayjobs.com","elapsed_ms":97703,"at":"2026-08-11T03:56:18.189Z"}
+{"jaa_progress":1,"event":"step","t":1786420594.093,"i":6,"actions":["done"],"host":"interdigital.wd5.myworkdayjobs.com","elapsed_ms":113610,"at":"2026-08-11T03:56:34.092Z"}

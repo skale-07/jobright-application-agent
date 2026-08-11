@@ -1,0 +1,57 @@
+{
+  "run_id": "nav-369fec18-474d-4a5a-add0-059ef0b3f61d",
+  "application_id": "f2628238-8986-48fe-af09-b5564a056f0b",
+  "jobright_job_id": "6a3eccb7122f340d29cf4b78",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.helpnetsecurity.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.helpnetsecurity.com, www.livemint.com, www.business-standard.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.helpnetsecurity.com, www.livemint.com, www.business-standard.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 52s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "cloudflare",
+    "detail": "token \"cloudflare\" ~ slug \"cloudflare\"",
+    "expected_company": "Cloudflare",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=cloudflare&token=8013562"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-11T03:47:58.469Z"
+}

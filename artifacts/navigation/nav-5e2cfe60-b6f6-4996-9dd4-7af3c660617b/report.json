@@ -1,0 +1,50 @@
+{
+  "run_id": "nav-5e2cfe60-b6f6-4996-9dd4-7af3c660617b",
+  "application_id": "2a48470c-0958-41a5-acf4-7b099f1369cc",
+  "jobright_job_id": "69d53223891d7b11cfcfffe2",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (13 external links ignored)",
+      "evidence": "interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 6,
+    "domains_visited": [
+      "cadence.wd1.myworkdayjobs.com",
+      "interdigital.wd5.myworkdayjobs.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com",
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent allowed_domains widened with job-page hosts: interdigital.wd5.myworkdayjobs.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 1 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-11T03:56:49.069Z"
+}
