@@ -1,0 +1,130 @@
+{
+  "started_at": "2026-08-11T02:50:59.483Z",
+  "updated": {
+    "pulled": false,
+    "head": "8afc97ce",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "agent_leg": "available"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "cc02e067-384a-4940-9ec2-814126ec6dd1",
+    "armed_until": "2026-08-11T04:51:22.012Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "cc02e067-384a-4940-9ec2-814126ec6dd1",
+    "apps_started": 13,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 4,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 1 parked for review",
+      "nav requeue: 10 navigation-starved app(s) requeued (agent leg available)",
+      "nav requeue: cap 10 reached — remaining apps wait for the next session",
+      "discover: 8 inspected, 3 eligible, 5 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 3 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "app f2628238-8986-48fe-af09-b5564a056f0b error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 3aec95ff-b91f-456b-840f-2494d8c7a155 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app aa1d6976-a907-4d9b-8d90-bca778fcd70a error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app aa162e86-6dd5-4b97-baba-6f7732252c2e error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "discover: 8 inspected, 3 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "app 56b02dc6-d280-4f20-865e-b6d39603c409 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app f8ca3d1d-a746-401b-81ad-522c06faea02 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 8c5f182f-f000-4631-a66d-d87fcaf9081b error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "essay drafts skipped: private/candidate/about-me.md missing or too short",
+      "prediction rejected \"field_12\": no answer",
+      "prediction rejected \"field_14\": no answer",
+      "prediction rejected \"field_16\": no answer",
+      "prediction rejected \"field_19\": no answer",
+      "prediction rejected \"field_21\": no answer",
+      "prediction rejected \"field_23\": no answer",
+      "prediction rejected \"field_25\": no answer",
+      "prediction rejected \"Do you have any outstanding offers or deadlines?\": no answer",
+      "prediction rejected \"field_27\": no answer",
+      "prediction rejected \"field_29\": no answer",
+      "prediction rejected \"field_31\": no answer",
+      "prediction rejected \"Are you interested in our Women's Winternship prog\": no answer",
+      "artifact autopush: 22 file(s) pushed to master as 81d7aab"
+    ],
+    "per_app": [
+      {
+        "application_id": "dd852fac-0052-4d62-b292-a4891d10df7a",
+        "end_state": "UNSUPPORTED_ATS",
+        "stopped": "review",
+        "stop_reason": "unsupported ATS",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "b534bc8c-64fd-45fe-93ad-a6e9c860b8c2",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "42eb925c-fce6-4514-a2a8-ca055c2469d1",
+        "end_state": "AMBIGUOUS_FIELD",
+        "stopped": "review",
+        "stop_reason": "verification failed",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "6afa9de4-2eb4-43f9-9744-d088596d0d87",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "4458533f-c23e-40b3-aa47-315586786534",
+        "end_state": "AMBIGUOUS_FIELD",
+        "stopped": "review",
+        "stop_reason": "verification failed",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "56d6a4d7-9394-4aa0-9fba-243dc6a9ea9b",
+        "end_state": "UNSUPPORTED_ATS",
+        "stopped": "review",
+        "stop_reason": "unsupported ATS",
+        "submitted": false,
+        "outreach": null
+      }
+    ],
+    "nav_audit": {
+      "checked": 3,
+      "repaired": 0,
+      "parked": 1
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "81d7aab",
+      "files_staged": 22
+    }
+  },
+  "outcome": "completed",
+  "notes": []
+}
