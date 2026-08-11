@@ -1,0 +1,32 @@
+{
+  "started_at": "2026-08-11T03:45:19.827Z",
+  "updated": {
+    "pulled": false,
+    "head": "cd1cbb18",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "agent_leg": "available"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "f6bb9539-a92f-4b49-b14a-ab9c1758b0a8",
+    "armed_until": "2026-08-11T05:39:11.330Z",
+    "seconds_remaining": 6824,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 7,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": "pipeline_error"
+  },
+  "session": null,
+  "outcome": "skipped_already_armed",
+  "notes": [
+    "an armed session is already live — not double-arming"
+  ]
+}
