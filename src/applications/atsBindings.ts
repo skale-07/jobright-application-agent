@@ -20,6 +20,12 @@ import {
   workableVerifySubmission,
 } from "../ats/workable/submission.js";
 import { workableSelectorsV1 } from "../ats/workable/selectors.js";
+import { isTrustedWorkdayHost } from "../ats/workday/urlValidation.js";
+import {
+  workdaySubmit,
+  workdayVerifySubmission,
+} from "../ats/workday/submission.js";
+import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { greenhouseSelectorsV1 } from "../ats/greenhouse/selectors.js";
 import { leverSelectorsV1 } from "../ats/lever/selectors.js";
 import { ashbySelectorsV1 } from "../ats/ashby/selectors.js";
@@ -115,6 +121,20 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submit: (page, opts) => workableSubmit(page, opts),
     submitSelector: workableSelectorsV1.submit,
     verifySubmission: (page, opts) => workableVerifySubmission(page, opts),
+    supportsEssayFill: false,
+    supportsHealing: false,
+  },
+  workday: {
+    id: "workday",
+    gate: (page, _employerUrl, normalizedUrl) =>
+      verifyPageBeforeMutationGeneric(page, {
+        isTrustedHost: isTrustedWorkdayHost,
+        formMarkers: workdaySelectorsV1.formMarkers,
+        ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
+      }),
+    submit: (page, opts) => workdaySubmit(page, opts),
+    submitSelector: workdaySelectorsV1.wizard.submitButton,
+    verifySubmission: (page, opts) => workdayVerifySubmission(page, opts),
     supportsEssayFill: false,
     supportsHealing: false,
   },

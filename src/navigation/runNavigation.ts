@@ -60,6 +60,9 @@ const KNOWN_ATS_HOSTS = [
   "jobs.eu.lever.co",
   "jobs.ashbyhq.com",
   "apply.workable.com",
+  // Workday is multi-tenant (<tenant>.wdN.myworkdayjobs.com); the suffix
+  // authorizes every tenant (final_url validation matches host.endsWith).
+  "myworkdayjobs.com",
 ];
 
 /**

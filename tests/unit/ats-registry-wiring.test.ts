@@ -25,13 +25,14 @@ describe("ATS registry wiring (W1, UNIT_CONFIRMED)", () => {
     applySafeFillEnv();
   });
 
-  it("registers all six adapters", () => {
+  it("registers all seven adapters", () => {
     expect(listAdapters().map((a) => a.id)).toEqual([
       "unsupported",
       "greenhouse",
       "lever",
       "ashby",
       "workable",
+      "workday",
       "generic",
     ]);
   });
@@ -48,11 +49,12 @@ describe("ATS registry wiring (W1, UNIT_CONFIRMED)", () => {
     expect(detection.confidence).toBeGreaterThanOrEqual(0.5);
   });
 
-  it("greenhouse and workday routing are unchanged", async () => {
+  it("greenhouse routing unchanged; workday now routes to its adapter", async () => {
     const g = await detectAts(loadAtsFixture("greenhouse"));
     expect(g.adapter.id).toBe("greenhouse");
     const w = await detectAts(loadAtsFixture("workday"));
-    expect(w.adapter.id).toBe("unsupported");
+    expect(w.adapter.id).toBe("workday");
+    expect(w.detection.confidence).toBeGreaterThanOrEqual(0.5);
   });
 
   it("inspector treats lever and ashby as supported (essay route, not unsupported)", async () => {

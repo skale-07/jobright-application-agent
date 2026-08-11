@@ -101,6 +101,12 @@ export function extractOrgSlug(url: string): string | null {
       return sub[1] ?? null;
     }
   }
+  {
+    // Workday: <tenant>.wdN.myworkdayjobs.com — the tenant subdomain is the
+    // employer slug (e.g. interdigital, medtronic).
+    const wd = host.match(/^([a-z0-9][a-z0-9-]*)\.wd\d+\.myworkdayjobs\.com$/);
+    if (wd) return wd[1] ?? null;
+  }
   if (host === "jobs.lever.co" || host === "jobs.eu.lever.co") return first;
   if (
     host === "boards.greenhouse.io" ||
