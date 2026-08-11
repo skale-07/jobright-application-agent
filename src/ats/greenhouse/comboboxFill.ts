@@ -201,10 +201,56 @@ function containsAsWord(haystack: string, needle: string): boolean {
   return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
 }
 
+/** Country vocabulary differences between profiles and location autocompletes. */
+const COUNTRY_SYNONYMS: Record<string, string> = {
+  usa: "united states",
+  us: "united states",
+  "u s a": "united states",
+  "united states of america": "united states",
+  uk: "united kingdom",
+};
+
+function locationParts(s: string): string[] {
+  return s
+    .split(",")
+    .map((p) => optionKey(p))
+    .filter((p) => p.length > 0)
+    .map((p) => COUNTRY_SYNONYMS[p] ?? p);
+}
+
+/**
+ * Comma-shaped location matching. Live failure (impact.com, cc02e067):
+ * profile "Baltimore, Maryland, USA" vs board options "Baltimore, Maryland,
+ * United States" plus near-ties ("Baltimore County, …", "Baltimore
+ * Highlands, …") — token overlap ties and refuses. Compare comma parts
+ * pairwise with country synonyms; among hits prefer the shortest label
+ * (the bare city). Null when the expected value is not location-shaped.
+ */
+export function pickLocationOption(
+  options: string[],
+  expected: string,
+): OptionPick | null {
+  const expParts = locationParts(expected);
+  if (expParts.length < 2) return null;
+  const hits = options.filter((o) => {
+    const parts = locationParts(o);
+    if (parts.length === 0) return false;
+    const n = Math.min(expParts.length, parts.length);
+    for (let i = 0; i < n; i++) {
+      if (expParts[i] !== parts[i]) return false;
+    }
+    return true;
+  });
+  if (hits.length === 0) return null;
+  const sorted = [...hits].sort((a, b) => a.length - b.length);
+  return { ok: true, label: sorted[0]!, via: "synonym" };
+}
+
 /**
  * Pure option matching: exact → case-insensitive exact → dial-stripped →
- * degree synonym → yes/no (word-leading) → unique substring (either direction).
- * Values are never invented: multi-hit substring refuses.
+ * location parts → degree synonym → yes/no (word-leading) → unique
+ * substring (either direction). Values are never invented: multi-hit
+ * substring refuses.
  */
 export function pickOptionLabel(options: string[], expected: string): OptionPick {
   const exp = expected.trim();
@@ -260,6 +306,11 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
   if (dialHits.length === 1 && dialHits[0] !== undefined) {
     return { ok: true, label: dialHits[0], via: "ci_exact" };
   }
+
+  // Location strings before generic token overlap — Baltimore variants tie
+  // under token scoring but resolve cleanly by comma-part comparison.
+  const locPick = pickLocationOption(options, exp);
+  if (locPick) return locPick;
   // country dial substrings: optionKey compare already handled as dialHits.
   // Keep dial-stripped unique substring here too (tight length gate):
   const dialSub = options.filter((o) => {
@@ -632,6 +683,15 @@ export function buildFilterCandidates(expected: string): string[] {
   };
   const lower = cleaned.toLowerCase();
 
+  // Location autocompletes ("Baltimore, Maryland, USA"): search by CITY
+  // first — typing the whole comma string into an async place-search
+  // returns nothing, and the last-resort word filters ("Maryland") pull
+  // pure junk (live: Maryland Heights, Missouri…).
+  const commaParts = full.split(",").map((p) => p.trim()).filter(Boolean);
+  if (commaParts.length >= 2 && commaParts[0]!.length >= 3) {
+    push(commaParts[0]!);
+  }
+
   // Degree: type "Bachelor" / "Master" first — GH job-boards catalogue
   // is usually "Bachelor's Degree", not "Bachelor of Science". Full
   // profile strings still remain as later fallbacks.
@@ -818,13 +878,19 @@ export async function fillComboboxControl(
       }
     }
     if (options.length === 0 || !pickOptionLabel(options, expectedText).ok) {
-      // Re-open and dump unfiltered (first virtualization window).
+      // Re-open and dump unfiltered (first virtualization window). Clear
+      // typed residue FIRST — live (cc02e067) the leftover "Maryland"
+      // filter made the "unfiltered" list pure junk (Maryland Heights,
+      // Missouri…), poisoning both the pick and the artifact.
+      await loc.click({ force: true, timeout: 2_000 }).catch(() => undefined);
+      await page.keyboard.press("ControlOrMeta+a").catch(() => undefined);
+      await page.keyboard.press("Delete").catch(() => undefined);
       await page.keyboard.press("Escape").catch(() => undefined);
       await openCombobox(page, loc);
       await listbox.waitFor({ state: "visible", timeout: 3_000 }).catch(() => undefined);
       await page.waitForTimeout(250);
       options = await collectOptions();
-      notes.push("filter yielded no/unmatched options; re-collected unfiltered");
+      notes.push("filter yielded no/unmatched options; re-collected unfiltered (residue cleared)");
     }
   } catch {
     options = await collectOptions();

@@ -73,6 +73,40 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     });
   });
 
+  // Live failure (impact.com, session cc02e067): profile
+  // "Baltimore, Maryland, USA" vs a places autocomplete — country synonym
+  // plus near-tie city variants defeated token scoring, and the operator's
+  // location field stayed empty behind a verify wall.
+  it("matches comma-shaped locations across country synonyms, preferring the bare city", () => {
+    const places = [
+      "Baltimore County, Maryland, United States",
+      "Baltimore, Maryland, United States",
+      "Baltimore Highlands, Maryland, United States",
+      "Baltimore, Ohio, United States",
+    ];
+    expect(pickOptionLabel(places, "Baltimore, Maryland, USA")).toMatchObject({
+      ok: true,
+      label: "Baltimore, Maryland, United States",
+      via: "synonym",
+    });
+  });
+
+  it("still refuses when no location option shares the city+state prefix", () => {
+    // The exact junk list the live run collected under filter residue.
+    const junk = [
+      "Maryland Heights, Missouri, United States",
+      "Maryland City, Maryland, United States",
+      "New Maryland, New Brunswick, Canada",
+      "Town of Maryland, New York, United States",
+    ];
+    expect(pickOptionLabel(junk, "Baltimore, Maryland, USA").ok).toBe(false);
+  });
+
+  it("location-shaped values filter by CITY first", () => {
+    const candidates = buildFilterCandidates("Baltimore, Maryland, USA");
+    expect(candidates[0]).toBe("Baltimore");
+  });
+
   it("maps job-boards country dial labels and degree taxonomy", () => {
     const countries = [
       "United States +1",

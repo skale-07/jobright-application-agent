@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
 import {
@@ -104,5 +104,61 @@ export async function ensureCdpChrome(
   report.notes.push(
     `CDP autolaunch: endpoint still unreachable after ${READINESS_POLLS} polls — agent phase will be skipped`,
   );
+  return report;
+}
+
+/**
+ * Kill ONLY the debug-profile Chrome: process match is on the debug
+ * user-data-dir in the command line, so the operator's everyday Chrome
+ * windows are never touched. Best-effort — "no process matched" is fine.
+ */
+function killDebugChrome(userDataDir: string): void {
+  try {
+    if (process.platform === "win32") {
+      execFileSync(
+        "wmic",
+        [
+          "process",
+          "where",
+          `Name='chrome.exe' and CommandLine like '%${userDataDir.replace(/'/g, "")}%'`,
+          "call",
+          "terminate",
+        ],
+        { timeout: 30_000 },
+      );
+    } else {
+      execFileSync("pkill", ["-f", userDataDir], { timeout: 30_000 });
+    }
+  } catch {
+    // no matching process (or kill tool unavailable) — the relaunch decides
+  }
+}
+
+/**
+ * Session cc02e067: the debug Chrome degraded MID-SESSION — /json/version
+ * still answered but Playwright's CDP attach failed, and 7 of 13 apps died
+ * with "Close ALL Chrome windows, re-run" at 02:50 with nobody there. With
+ * the operator's CDP_AUTOLAUNCH_ENABLED standing opt-in, the cycle repairs
+ * this itself: kill the stale debug-profile Chrome, relaunch it, re-probe.
+ * Fail-closed without the flag; the caller bounds attempts (once/session).
+ */
+export async function restartCdpChrome(
+  seams: EnsureCdpSeams & { killer?: (userDataDir: string) => void } = {},
+): Promise<EnsureCdpReport> {
+  const cfg = getConfig();
+  if (!cfg.cdpAutolaunchEnabled) {
+    return {
+      reachable: false,
+      launched: false,
+      notes: ["CDP restart refused: CDP_AUTOLAUNCH_ENABLED is off"],
+    };
+  }
+  const sleep =
+    seams.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
+  const userDataDir = cdpUserDataDir("jobright");
+  (seams.killer ?? killDebugChrome)(userDataDir);
+  await sleep(2_000);
+  const report = await ensureCdpChrome(seams);
+  report.notes.unshift("CDP restart: killed stale debug-profile Chrome");
   return report;
 }

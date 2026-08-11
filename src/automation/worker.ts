@@ -13,6 +13,7 @@ import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
 import { autopushArtifacts } from "./artifactAutopush.js";
 import { requeueNavStarvedApplications } from "./navRequeue.js";
+import { restartCdpChrome } from "./cdpChrome.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { probeCdpEndpoint } from "../navigation/runNavigation.js";
 import {
@@ -122,6 +123,8 @@ export type AutomationSessionInput = {
   discoveryRunner?: DiscoveryRunner;
   /** Test seam: is the nav agent leg (flag + CDP Chrome) available? */
   agentLegProbe?: () => Promise<boolean>;
+  /** Test seam: replaces the mid-session debug-Chrome restart. */
+  cdpRestarter?: () => Promise<{ reachable: boolean; notes: string[] }>;
   /** Test seams for the post-submit outreach tail (drafts only, never send). */
   emailClient?: EmailLlmClient;
   /** Test seam for the post-session essay draft batch. */
@@ -341,6 +344,7 @@ export async function runAutomationSession(
 
   await tryDiscover();
   let appsSinceDiscover = 0;
+  let cdpRestartTried = false;
   // Each app is attempted at most once per session (see pickNextApplication).
   const seen = new Set<string>();
   /** Verified-submit apps whose referral tail runs after the loop (batch). */
@@ -532,6 +536,28 @@ export async function runAutomationSession(
               : undefined,
         },
       });
+      // Mid-session CDP degradation (cc02e067 killed 7/13 apps at 02:50):
+      // /json/version answers but attach fails. One in-session repair —
+      // restartCdpChrome is fail-closed behind CDP_AUTOLAUNCH_ENABLED, so
+      // without the operator's standing opt-in this only writes a note.
+      if (
+        !cdpRestartTried &&
+        /CDP session won't attach|Debug Chrome .* unresponsive/i.test(message)
+      ) {
+        cdpRestartTried = true;
+        try {
+          const restart = await (input.cdpRestarter ?? restartCdpChrome)();
+          report.notes.push(
+            restart.reachable
+              ? "CDP restart: debug Chrome relaunched and reachable — continuing session"
+              : `CDP restart did not recover: ${restart.notes.join("; ").slice(0, 200)}`,
+          );
+        } catch (restartErr) {
+          report.notes.push(
+            `CDP restart failed (continuing): ${restartErr instanceof Error ? restartErr.message.slice(0, 160) : String(restartErr)}`,
+          );
+        }
+      }
     }
 
     // Refresh the submit counter straight from the arm row (not via
