@@ -52,7 +52,11 @@ safety gates.
 
 **This review's central finding is that a third surface has since emerged —
 `auto:cycle` scheduled automation — whose *operating posture*, not its safety
-gates, has drifted from that stated vision. See §1.3 and §4.**
+gates, has drifted from that stated vision. See §1.3 and §4. A second,
+unrelated finding surfaced incidentally while committing this review itself:
+`ARTIFACT_AUTOPUSH_ENABLED` has been publishing the operator's own real
+resume PDFs to this public repo for days — see the Critical row in §4, first
+in the table this cycle because it is the most urgent item found.**
 
 ### 1.2 Core technical details
 
@@ -307,7 +311,8 @@ Severity reflects blast radius and reversibility, not effort to fix.
 
 | Severity | Repo | Risk | Why it matters |
 | --- | --- | --- | --- |
-| **Critical** | tSearch | `profiles/`/`backup/` (202 files) real-people LinkedIn PII is **untracked from the current tree** (fixed 2026-08-10, `.gitignore` now covers it) but **still fully present and fetchable in git history** on this public repo — verified directly this review by reading a PII blob out of an old, still-reachable commit. The fix commit's own message says "history purge still required separately," and nothing since has scheduled that purge. | Unchanged in substance from the original finding: this is a live public exposure of real people's data, not a hypothetical, and current-tree cleanliness does not fix it. `git filter-repo`/BFG + force-push + collaborator re-clone is still the concrete unblock, and it is the single highest-priority item across both repos this review. |
+| **Critical** | jobright | **New this review — found while committing this very doc update, not by design.** `ARTIFACT_AUTOPUSH_ENABLED`'s `art: ... (autopush)` commits have been pushing the operator's **real resume PDFs** (`artifacts/applications/<uuid>/materials/resume-*.pdf`, 2 distinct files, 183 copies across 11 commits so far) to this **public** repo since at least 2026-08-08 — before any of the three prior reviews, all of which missed it. `check:secrets` is a secrets/API-key scanner, not a PII/document filter, so it would not have caught this even if it ran — and it doesn't: `.git/hooks/pre-commit` **is not installed** (`npm run hooks:install` was never run), despite CLAUDE.md naming "real resumes/PDFs" as explicitly forbidden to commit. The automation is still live and still adding copies (observed directly, mid-review, as new `artifacts/console/auto-cycle/*.json` and more `materials/resume-*.pdf` paths appeared while this doc was being written). This review deliberately did **not** commit the working tree's other pending `artifacts/` changes, to avoid adding to the exposure. | This is the operator's own identifiable personal document (name, contact info, work history) — not third-party data — permanently exposed on a public repo and still accumulating with every automation cycle. Immediate action: run `npm run hooks:install`, then `git filter-repo`/BFG-purge the resume PDFs from history (same mechanism needed for the tSearch PII item below), then decide whether `artifactAutopush.ts` needs a `materials/` exclusion (not just a secrets scan) before it's ever re-enabled. This and the tSearch PII item are jointly the two most urgent items across both repos. |
+| **Critical** | tSearch | `profiles/`/`backup/` (202 files) real-people LinkedIn PII is **untracked from the current tree** (fixed 2026-08-10, `.gitignore` now covers it) but **still fully present and fetchable in git history** on this public repo — verified directly this review by reading a PII blob out of an old, still-reachable commit. The fix commit's own message says "history purge still required separately," and nothing since has scheduled that purge. | Unchanged in substance from the original finding: this is a live public exposure of real people's data, not a hypothetical, and current-tree cleanliness does not fix it. `git filter-repo`/BFG + force-push + collaborator re-clone is still the concrete unblock. |
 | **High** | jobright | **New this review.** `auto:cycle` + a standing `.env` + an installed Windows Scheduled Task (`/SC HOURLY /MO 4`) is a genuinely unattended fill-and-submit operating mode: no per-run human click, self-arming, running indefinitely on a schedule. All underlying gates are intact (fail-closed defaults, atomic per-click budget, kill switches), but "operator keeps every judgment call" no longer describes this path — the authorization is reduced to "a config file exists." No live submit has occurred yet (verified from real run artifacts), so realized risk is currently bounded, but the capability is armed and intended for regular use. | This is the kind of drift that's easy to miss because no individual gate was weakened — the *posture* changed instead. Worth a deliberate decision: is 4-hourly unattended real-submission automation actually the intended product shape, or does it need an additional standing-authorization gate (e.g. a time-boxed re-arm requirement, matching L3's timed-window design) before it's treated as normal operation? |
 | **High** | jobright | **New this review.** Sender-trust magic-link handling (`ecc0979`) replaced a hard sender-domain-affinity filter with a soft ranking boost; a link now qualifies on a subject/preview keyword match alone (no sender authentication), and the nav-agent sidecar actively navigates to it using the operator's authenticated browser session. Downstream congruence checks stop a bad link from producing stored application data, but the browser still visits an attacker-influenced URL on a phishing-style email. | This is a genuine, code-verified security loosening (not a hypothetical) — a textbook phishing-surface widening that's easy to wave through under "improves magic-link handling" framing. Worth a direct decision on whether to tighten domain affinity back to a hard filter, or add sender-authentication (SPF/DKIM) as a precondition. |
 | **High** | jobright | `docs/current-state-and-phase56.md` is now **actively contradicted by the repo's own committed artifacts** — it says live discovery "has never produced a job" while real, non-fixture automation logs show `inspected: 8` and auto-cycle reports show 13–14 real applications started. `operator-guide.md` was already updated and no longer agrees with it. | This has moved from "ambiguous, needs reconciliation" (2026-08-09 framing) to "flatly wrong and nobody is checking the phase doc against the system's own output." An operator or future agent trusting this doc would materially misjudge the product's actual state — worth a same-day fix (it's a doc update, not new code) given how easy the fix is relative to the cost of leaving it. |
@@ -391,8 +396,15 @@ Severity reflects blast radius and reversibility, not effort to fix.
   this doc's own "private" mislabel for the jobright repo (it's public, but
   cleanly gitignored, so no new live exposure); flagged an unresolved
   documentation/reality question about claimed autonomous PR-merge capability
-  rather than asserting either way. Both repos: zero open issues, zero open
-  PRs at time of review.
+  rather than asserting either way. **Mid-review, discovered a second Critical
+  finding while preparing to commit this very doc update**: jobright's
+  `art:`-autopush automation has been committing the operator's real resume
+  PDFs to this public repo since 2026-08-08 (183 copies, 11 commits, missed
+  by all three prior reviews) — the repo's pre-commit hook was never
+  installed, so nothing was enforcing CLAUDE.md's explicit "never commit real
+  resumes/PDFs" rule. Left the working tree's other pending `artifacts/`
+  changes uncommitted this cycle to avoid adding to the exposure while
+  flagging it. Both repos: zero open issues, zero open PRs at time of review.
 - **2026-08-09** — Second review (drafted on `claude/epic-pasteur-27u1xf` /
   `claude/busy-clarke-27u1xf`, never merged — used as this review's baseline
   per above). tSearch: zero commits since 2026-08-07 beyond the vision-doc
