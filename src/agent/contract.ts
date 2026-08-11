@@ -122,6 +122,13 @@ export const agentNavigateResultSchema = z
         subject_hint: z.string().optional(),
         /** ISO timestamp — Gmail query lower bound. */
         requested_at: z.string(),
+        /**
+         * Page text around the verification prompt. The mailbox is only
+         * consulted when this actually SAYS verification was requested —
+         * an agent claiming "check email" on a page that never asked is
+         * not a reason to scan the operator's inbox.
+         */
+        evidence: z.string().max(600).optional(),
       })
       .optional(),
   })

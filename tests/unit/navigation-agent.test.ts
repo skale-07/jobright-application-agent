@@ -274,6 +274,47 @@ describe("navigation agent phase (N3)", () => {
   );
 
   it(
+    "a need WITHOUT verification evidence never touches the mailbox (FIXTURE_CONFIRMED)",
+    async () => {
+      const appId = seedApp();
+      applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+      resetConfigCache();
+      try {
+        let waiterCalls = 0;
+        const report = await runWithAgentAndGmail(
+          appId,
+          fakeSidecar({
+            status: "needs_input",
+            final_url: "https://jobs.ashbyhq.com/acme/login",
+            wall: "auth",
+            steps_used: 4,
+            domains_visited: ["jobs.ashbyhq.com"],
+            notes: [],
+            need: {
+              kind: "verification_email",
+              sent_to: "candidate@example.com",
+              requested_at: "2026-08-07T00:00:00Z",
+              // Evidence shows a plain login page — NO verification prompt.
+              evidence: "Sign in to continue. Email. Password. Forgot password?",
+            },
+          }),
+          async () => {
+            waiterCalls += 1;
+            return { kind: "code" as const, code: "000000", messageId: "m", pollsUsed: 1 };
+          },
+        );
+        expect(waiterCalls).toBe(0);
+        expect(report.wall).toBe("auth");
+        expect(report.notes.join(" ")).toMatch(/verification need rejected/);
+      } finally {
+        applySafeFillEnv();
+        resetConfigCache();
+      }
+    },
+    30_000,
+  );
+
+  it(
     "gmail micro-turn: needs_input → code retrieved → continuation resolves (FIXTURE_CONFIRMED)",
     async () => {
       const appId = seedApp();
@@ -290,7 +331,7 @@ describe("navigation agent phase (N3)", () => {
           "if(t.resume.injected.code!=='482193'){console.log(JSON.stringify({status:'error',final_url:null,wall:'budget',steps_used:0,domains_visited:[],notes:['wrong code injected'],reason:'bad'}));return;}",
           `console.log(JSON.stringify({status:'ok',final_url:'https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application',wall:'none',steps_used:2,domains_visited:['jobs.ashbyhq.com'],notes:['continuation ok']}));`,
           "}else{",
-          "console.log(JSON.stringify({status:'needs_input',final_url:'https://jobs.ashbyhq.com/acme/login',wall:'auth',steps_used:4,domains_visited:['jobs.ashbyhq.com'],notes:[],need:{kind:'verification_email',sent_to:'candidate@example.com',requested_at:'2026-08-07T00:00:00Z'}}));",
+          "console.log(JSON.stringify({status:'needs_input',final_url:'https://jobs.ashbyhq.com/acme/login',wall:'auth',steps_used:4,domains_visited:['jobs.ashbyhq.com'],notes:[],need:{kind:'verification_email',sent_to:'candidate@example.com',requested_at:'2026-08-07T00:00:00Z',evidence:'EMAIL_VERIFICATION_REQUIRED: We sent a verification code to candidate@example.com — enter the code to continue.'}}));",
           "}});",
         ].join("");
         const report = await runWithAgentAndGmail(

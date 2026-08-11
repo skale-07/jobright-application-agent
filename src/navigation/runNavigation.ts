@@ -93,6 +93,18 @@ export async function resolveAgentAvailability(input: {
   return { possible: true, reason: null };
 }
 
+/**
+ * Does the agent's page evidence actually show a verification prompt?
+ * Matches the vocabulary sites use when they HAVE sent a mail ("verify
+ * your email", "we sent a code", "check your inbox", "confirmation link").
+ */
+export function verificationEvidencePresent(evidence: string | undefined): boolean {
+  if (!evidence || evidence.trim().length === 0) return false;
+  return /verif(y|ied|ication)|we('ve| have)? (sent|emailed)|sent (you )?(a|an|the) (code|link|email)|check your (email|inbox|mail)|confirmation (code|link|email)|enter the code|one[- ]time (code|passcode)|security code/i.test(
+    evidence,
+  );
+}
+
 /** Bounded reachability probe for the operator's CDP Chrome. */
 export async function probeCdpEndpoint(cdpUrl: string): Promise<boolean> {
   try {
@@ -719,6 +731,23 @@ export async function runNavigation(
 
         if (agentResult.status === "needs_input" && agentResult.need) {
           report.need = agentResult.need;
+          // Operator rule: the mailbox is scanned ONLY when the page
+          // actually asked for verification — the need must carry page
+          // evidence saying so. An agent claiming "check email" without a
+          // verification prompt on screen is a hallucinated need, not a
+          // reason to read the operator's inbox.
+          if (!verificationEvidencePresent(agentResult.need.evidence)) {
+            report.wall = "auth";
+            trace({
+              phase: "C_agent",
+              outcome:
+                "needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review",
+            });
+            report.notes.push(
+              "verification need rejected: agent's page evidence shows no verification prompt",
+            );
+            return persist(report);
+          }
           const waiter =
             input.gmailWaiterOverride ?? resolveNavVerificationWaiter();
           if (!waiter) {

@@ -24,12 +24,13 @@ export async function readExternalApplyHrefs(page: Page): Promise<string[]> {
       )
       .catch(() => [] as string[])) as string[];
 
+  const cta = await readAutofillCtaHref(page);
   const ats = await collect(jobrightSelectorsV1.navigation.externalAtsAnchors);
   const any = await collect(jobrightSelectorsV1.navigation.externalAnyAnchor);
 
   const seen = new Set<string>();
   const wellFormed: string[] = [];
-  for (const href of [...ats, ...any]) {
+  for (const href of [...(cta ? [cta] : []), ...ats, ...any]) {
     const trimmed = href.trim();
     if (!trimmed || seen.has(trimmed)) continue;
     seen.add(trimmed);
@@ -47,6 +48,36 @@ export async function readExternalApplyHrefs(page: Page): Promise<string[]> {
     const bKnown = detectAtsFromUrl(b).ats !== null ? 0 : 1;
     return aKnown - bKnown;
   });
+}
+
+/**
+ * Zero-mutation read of the primary "APPLY WITH AUTOFILL ↗" CTA's link.
+ * Operator finding (2026-08-11): this CTA carries the external application
+ * URL — it had been excluded as "JobRight's own flow" while phases A/B
+ * hunted the rest of the page. Checks the control itself and its closest
+ * anchor; returns an https non-jobright URL or null.
+ */
+export async function readAutofillCtaHref(page: Page): Promise<string | null> {
+  const namePattern = jobrightSelectorsV1.navigation.autofillApplyCta;
+  for (const role of ["link", "button"] as const) {
+    const cta = page.getByRole(role, { name: namePattern }).first();
+    if ((await cta.count().catch(() => 0)) === 0) continue;
+    const href = await cta
+      .evaluate((el: { closest: (s: string) => { getAttribute: (n: string) => string | null } | null }) =>
+        el.closest("a")?.getAttribute("href") ?? null,
+      )
+      .catch(() => null);
+    if (!href) continue;
+    try {
+      const u = new URL(href, "https://jobright.ai");
+      if (u.protocol === "https:" && !/(^|\.)jobright\.ai$/i.test(u.hostname)) {
+        return u.href;
+      }
+    } catch {
+      // malformed — fall through
+    }
+  }
+  return null;
 }
 
 export type ApplyClickCapture = {
@@ -68,9 +99,25 @@ export type ApplyClickCapture = {
  */
 async function findApplyControl(
   page: Page,
-): Promise<{ target: ReturnType<Page["locator"]>; tier: 1 | 2 } | null> {
-  const { standardApplyRole, broadApplyRole, applyNameExclusions } =
+  options: { includeAutofillCta: boolean } = { includeAutofillCta: true },
+): Promise<{ target: ReturnType<Page["locator"]>; tier: 0 | 1 | 2 } | null> {
+  const { standardApplyRole, broadApplyRole, applyNameExclusions, autofillApplyCta } =
     jobrightSelectorsV1.navigation;
+
+  // Tier 0 — the page's primary CTA. Its href is read zero-mutation in
+  // phase A; here it is the FIRST click target because it is the one
+  // control JobRight guarantees leads toward the application.
+  if (options.includeAutofillCta) {
+    for (const role of ["button", "link"] as const) {
+      const cta = page.getByRole(role, { name: autofillApplyCta }).first();
+      if (
+        (await cta.count().catch(() => 0)) > 0 &&
+        (await cta.isVisible().catch(() => false))
+      ) {
+        return { target: cta, tier: 0 };
+      }
+    }
+  }
 
   for (const role of ["button", "link"] as const) {
     const exact = page.getByRole(role, { name: standardApplyRole }).first();
@@ -119,7 +166,12 @@ export async function clickApplyAndCaptureExternalUrl(
   }
 
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const found = await findApplyControl(page);
+    // Attempt 1 leads with the autofill CTA; if that click produced no
+    // external URL (it opened JobRight's own modal instead), attempt 2
+    // falls back to the standard Apply tiers.
+    const found = await findApplyControl(page, {
+      includeAutofillCta: attempt === 1,
+    });
     if (found === null) {
       notes.push(
         "no standard Apply control found (exact and broad name tiers both empty)",
@@ -134,7 +186,9 @@ export async function clickApplyAndCaptureExternalUrl(
       };
     }
     const target = found.target;
-    if (found.tier === 2 && attempt === 1) {
+    if (found.tier === 0) {
+      notes.push("Apply control: autofill CTA (tier 0)");
+    } else if (found.tier === 2 && attempt === 1) {
       notes.push("Apply control matched via broad name tier");
     }
 
