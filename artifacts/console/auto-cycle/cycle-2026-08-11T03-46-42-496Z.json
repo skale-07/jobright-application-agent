@@ -1,0 +1,122 @@
+{
+  "started_at": "2026-08-11T03:46:42.496Z",
+  "updated": {
+    "pulled": false,
+    "head": "ddb2c433",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "agent_leg": "available"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "dfb007f8-e899-485d-b2a7-12e38374791e",
+    "armed_until": "2026-08-11T05:46:47.386Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "dfb007f8-e899-485d-b2a7-12e38374791e",
+    "apps_started": 14,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 4,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 5 parked for review",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "app 969c901e-c8b4-4ac3-9573-c87ed137a8bb error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "CDP restart: debug Chrome relaunched and reachable — continuing session",
+      "app 4c5d19d3-d35a-4890-9fba-2392baf2ace1 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 83409002-a225-4b2e-b687-982eba2de2cd error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app b40d62fa-2aa0-40d0-a691-127a93c4cbe4 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 832a6730-5b2b-40ab-9a25-528cd9275ff0 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "app 56b02dc6-d280-4f20-865e-b6d39603c409 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app f8ca3d1d-a746-401b-81ad-522c06faea02 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 8c5f182f-f000-4631-a66d-d87fcaf9081b error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "app 23d64c04-6f39-4124-80ea-ca583779b0f9 error (pipeline_error): Debug Chrome at http://127.0.0.1:9222 is unresponsive (port answers but the CDP session won't attach). Close ALL Chrome windows, re-run chrome:debug:jobright, and retry. [browserType.connectOverCDP: T",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "prediction rejected \"field_12\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_14\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_16\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_19\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_21\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_23\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_25\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_27\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_29\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"field_31\": unusable label (inspector could not read the question text)",
+      "prediction rejected \"Do you have any outstanding offers or deadlines?\": no answer",
+      "prediction rejected \"Are you interested in our Women's Winternship prog\": no answer",
+      "artifact autopush: 11 file(s) pushed to master as 34927f0"
+    ],
+    "per_app": [
+      {
+        "application_id": "f2628238-8986-48fe-af09-b5564a056f0b",
+        "end_state": "AMBIGUOUS_FIELD",
+        "stopped": "review",
+        "stop_reason": "verification failed",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "3aec95ff-b91f-456b-840f-2494d8c7a155",
+        "end_state": "APPLICATION_OPENING",
+        "stopped": "review",
+        "stop_reason": "navigation blocked: auth",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "aa1d6976-a907-4d9b-8d90-bca778fcd70a",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "aa162e86-6dd5-4b97-baba-6f7732252c2e",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "2a48470c-0958-41a5-acf4-7b099f1369cc",
+        "end_state": "FAILED_RETRYABLE",
+        "stopped": "review",
+        "stop_reason": "navigation unresolved: budget",
+        "submitted": false,
+        "outreach": null
+      }
+    ],
+    "nav_audit": {
+      "checked": 13,
+      "repaired": 0,
+      "parked": 5
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "34927f0",
+      "files_staged": 11
+    }
+  },
+  "outcome": "completed",
+  "notes": []
+}
