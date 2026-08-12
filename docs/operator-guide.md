@@ -923,6 +923,12 @@ ARTIFACT_AUTOPUSH_ENABLED=true
 SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false
 MAX_UNATTENDED_SUBMISSIONS_PER_RUN=10
 ANTHROPIC_API_KEY=sk-ant-...
+# Your ONE portal login (see "Employer-portal logins" below)
+PORTAL_LOGIN_EMAIL=you@example.com
+PORTAL_LOGIN_PASSWORD=your-standing-portal-password
+# Point this at your REAL resume — apps with no registered resume park
+# here otherwise. auto:cycle preflight reports whether the file exists.
+DEFAULT_RESUME_PATH=private/candidate/resumes/default.pdf
 ```
 
 Code defaults stay fail-closed — a fresh clone without this file can
@@ -939,32 +945,35 @@ relaunch. You only ever intervene if a session actually expires (the nav
 reports will say so). The cycle report's `preflight.agent_leg` line tells
 you the agent phase's exact status every run.
 
-### Employer-portal logins (sign-in / password)
+### Employer-portal logins — one email + password, set once
 
-Some employers (ByteDance careers, Workday tenants, …) gate the
-application behind their own account. Dispatch keeps those logins in a
-0600 vault under `private/ats-accounts/` — never in SQLite, logs, or
-artifacts. Two ways one gets there:
+Employers (ByteDance careers, Workday tenants, …) gate applications behind
+their own accounts. Put the ONE login you use everywhere in `.env` and
+every portal wall is answered automatically — no per-site setup:
 
-```powershell
-# You already have an account on that portal — hand it over:
-npm run cli -- accounts:set --host jobs.bytedance.com --email you@example.com --password "your-portal-password"
-
-# Or let Dispatch own it (recommended): omit --password and it mints a
-# strong one you never need to know.
-npm run cli -- accounts:set --host jobs.bytedance.com --email you@example.com
-
-npm run cli -- accounts:list      # hosts + usernames only, never passwords
+```ini
+PORTAL_LOGIN_EMAIL=you@example.com
+PORTAL_LOGIN_PASSWORD=your-standing-portal-password
 ```
 
-Use the same email the verification scanner reads (your Gmail/Outlook), so
-emailed codes and links land where Dispatch can find them.
+Use the same mailbox the verification scanner reads (Gmail/Outlook), so
+emailed codes and links land where Dispatch can find them. Setting these
+authorizes portal sign-in on any **https** employer host the apply flow
+reaches; jobright.ai is never credentialed (that's your own session), and
+a real sign-in form must be on the page. Passwords stay out of logs,
+artifacts, and SQLite; `.env` is gitignored and hook-enforced.
 
-**Storing a login for a host is also the authorization to sign in there.**
-Without a vault entry (and outside the recognized Workday hosts), portal
-auth refuses to type credentials at all — that is the guard against
-spraying your password at a lookalike page. Nothing is ever minted for an
-unrecognized host.
+Rare exception — a portal forces its own password rotation:
+
+```powershell
+npm run cli -- accounts:set --host portal.example.com --email you@example.com --password "the-forced-one"
+npm run cli -- accounts:list     # hosts + usernames only, never passwords
+```
+
+A stored per-host password overrides the standing one for that host only.
+With no `PORTAL_LOGIN_PASSWORD` set at all, portal auth falls back to
+vault-seeded hosts plus recognized Workday tenants and refuses everything
+else (fail-closed by absence).
 
 ### Stopping a cycle by hand
 

@@ -68,6 +68,87 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
     expect(JSON.stringify(listed)).not.toContain("operator-chosen-secret");
   });
 
+  // Operator directive 2026-08-12: ONE email + password for every portal,
+  // set in .env — signing in must never be a per-site chore.
+  it("standing PORTAL_LOGIN_* credentials serve every https employer host", async () => {
+    process.env.PORTAL_LOGIN_EMAIL = "standing@example.com";
+    process.env.PORTAL_LOGIN_PASSWORD = "one-password-everywhere";
+    resetConfigCache();
+    try {
+      const { isRecognizedAtsAuthHost } = await import(
+        "../../src/verification/portalAuth.js"
+      );
+      const { prepareCredentialsForHost } = await import(
+        "../../src/verification/accountCredentials.js"
+      );
+      // Any employer host qualifies now — no per-host setup at all.
+      for (const url of [
+        "https://jobs.bytedance.com/apply",
+        "https://careers.brand-new-employer.com/login",
+        "https://acme.wd5.myworkdayjobs.com/x",
+      ]) {
+        expect(isRecognizedAtsAuthHost(url), url).toBe(true);
+      }
+      // ...but never jobright, and never plain http.
+      expect(isRecognizedAtsAuthHost("https://jobright.ai/jobs/recommend")).toBe(false);
+      expect(isRecognizedAtsAuthHost("http://careers.example.com/login")).toBe(false);
+
+      const r = prepareCredentialsForHost({
+        host: "careers.brand-new-employer.com",
+        runId: "t",
+        loginWallDetected: true,
+      });
+      expect(r.credentials).toMatchObject({
+        available: true,
+        username: "standing@example.com",
+        password: "one-password-everywhere",
+      });
+      expect(r.notes.join(" ")).toMatch(/standing portal login used/);
+      // The password is offered for scrubbing and never sits in notes.
+      expect(r.secrets).toContain("one-password-everywhere");
+      expect(r.notes.join(" ")).not.toContain("one-password-everywhere");
+    } finally {
+      delete process.env.PORTAL_LOGIN_EMAIL;
+      delete process.env.PORTAL_LOGIN_PASSWORD;
+      resetConfigCache();
+    }
+  });
+
+  it("a site-forced per-host password still overrides the standing one", async () => {
+    setAccount("portal.forced.com", {
+      email: "standing@example.com",
+      password: "site-forced-rotation",
+    });
+    process.env.PORTAL_LOGIN_EMAIL = "standing@example.com";
+    process.env.PORTAL_LOGIN_PASSWORD = "one-password-everywhere";
+    resetConfigCache();
+    try {
+      const { prepareCredentialsForHost } = await import(
+        "../../src/verification/accountCredentials.js"
+      );
+      const r = prepareCredentialsForHost({
+        host: "portal.forced.com",
+        runId: "t",
+        loginWallDetected: true,
+      });
+      expect(r.credentials).toMatchObject({ password: "site-forced-rotation" });
+      expect(r.notes.join(" ")).toMatch(/per-host password/);
+    } finally {
+      delete process.env.PORTAL_LOGIN_EMAIL;
+      delete process.env.PORTAL_LOGIN_PASSWORD;
+      resetConfigCache();
+    }
+  });
+
+  it("without standing credentials, unknown hosts stay refused (fail-closed)", async () => {
+    const { isRecognizedAtsAuthHost } = await import(
+      "../../src/verification/portalAuth.js"
+    );
+    expect(isRecognizedAtsAuthHost("https://careers.unknown-employer.com/login")).toBe(
+      false,
+    );
+  });
+
   it("setAccount without a password mints a strong one", () => {
     const { account } = setAccount("careers.acme.com", { email: "c@x.com" });
     expect(account.password).toHaveLength(20);
