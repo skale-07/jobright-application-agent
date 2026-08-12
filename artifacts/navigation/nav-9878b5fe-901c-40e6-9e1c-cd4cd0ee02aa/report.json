@@ -1,0 +1,53 @@
+{
+  "run_id": "nav-9878b5fe-901c-40e6-9e1c-cd4cd0ee02aa",
+  "application_id": "4c5d19d3-d35a-4890-9fba-2392baf2ace1",
+  "jobright_job_id": "6a79ff519ee17f276dbf0a03",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 4,
+    "domains_visited": [
+      "jobright.ai",
+      "jobs.bytedance.com",
+      "joinbytedance.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com",
+    "Apply control: autofill CTA (tier 0)",
+    "click attempt 2 failed: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /apply/i }).nth(1)\u001b[2",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: joinbytedance.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 2 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "written_at": "2026-08-12T20:56:38.978Z"
+}
