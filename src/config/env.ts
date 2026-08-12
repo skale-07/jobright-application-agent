@@ -90,6 +90,13 @@ const envSchema = z.object({
   PORTAL_LOGIN_EMAIL: z.string().optional(),
   PORTAL_LOGIN_PASSWORD: z.string().optional(),
   /**
+   * Which mailbox to scan FIRST for verification codes. Normally derived
+   * from PORTAL_LOGIN_EMAIL's domain; set this to force it (e.g. an
+   * Outlook inbox reached at a custom-domain address).
+   */
+  VERIFICATION_MAILBOX: z.enum(["gmail", "outlook"]).optional(),
+
+  /**
    * Hands-off cycle may LAUNCH the debug Chrome itself when the CDP
    * endpoint is unreachable (same executable + persistent profile as
    * chrome:debug:jobright, so logins survive). Fail closed — an
@@ -153,6 +160,7 @@ export type AppConfig = {
   automationEnabled: boolean;
   agentCdpUrl: string;
   cdpAutolaunchEnabled: boolean;
+  verificationMailbox?: "gmail" | "outlook" | undefined;
   portalLoginEmail?: string | undefined;
   portalLoginPassword?: string | undefined;
   dashboardHost: string;
@@ -230,6 +238,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
     cdpAutolaunchEnabled: parsed.CDP_AUTOLAUNCH_ENABLED,
+    verificationMailbox: parsed.VERIFICATION_MAILBOX,
     portalLoginEmail: parsed.PORTAL_LOGIN_EMAIL,
     portalLoginPassword: parsed.PORTAL_LOGIN_PASSWORD,
     dashboardHost: parsed.DASHBOARD_HOST,

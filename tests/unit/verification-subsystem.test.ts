@@ -214,3 +214,46 @@ describe("mailbox provider order (UNIT_CONFIRMED)", () => {
     expect(mailboxProviderOrder("me@outlook.com")).toHaveLength(2);
   });
 });
+
+describe("mailbox order comes from the ENV address (UNIT_CONFIRMED)", () => {
+  const saved = { ...process.env };
+  afterEach(() => {
+    delete process.env.VERIFICATION_MAILBOX;
+    delete process.env.PORTAL_LOGIN_EMAIL;
+    delete process.env.GMAIL_VERIFICATION_ENABLED;
+    delete process.env.OUTLOOK_VERIFICATION_ENABLED;
+    process.env = { ...saved };
+    resetConfigCache();
+  });
+
+  it("an explicit VERIFICATION_MAILBOX override always wins", async () => {
+    const { mailboxProviderOrder } = await import(
+      "../../src/verification/emailVerification.js"
+    );
+    // Even a gmail.com address defers to the explicit setting.
+    expect(mailboxProviderOrder("me@gmail.com", { override: "outlook" })[0]).toBe(
+      "outlook",
+    );
+    expect(mailboxProviderOrder("me@outlook.com", { override: "gmail" })[0]).toBe(
+      "gmail",
+    );
+  });
+
+  it("submit recovery opens the SAME inbox the env names, Outlook first", async () => {
+    process.env.PORTAL_LOGIN_EMAIL = "me@outlook.com";
+    process.env.GMAIL_VERIFICATION_ENABLED = "true";
+    process.env.OUTLOOK_VERIFICATION_ENABLED = "true";
+    resetConfigCache();
+    const { mailboxProviderOrder } = await import(
+      "../../src/verification/emailVerification.js"
+    );
+    const { getConfig } = await import("../../src/config/index.js");
+    const cfg = getConfig();
+    expect(mailboxProviderOrder(cfg.portalLoginEmail ?? null)[0]).toBe("outlook");
+    // The chain builder is driven by that same order (both providers on).
+    const { resolveVerificationCodeProvider } = await import(
+      "../../src/verification/codeProviders.js"
+    );
+    expect(resolveVerificationCodeProvider()).not.toBeNull();
+  });
+});
