@@ -66,6 +66,26 @@ type ScanFetch = (input: {
   emailHint: string | null;
 }) => Promise<(MailboxVerificationHit & { source: string }) | null>;
 
+/**
+ * Which mailbox to scan FIRST for a code sent to `email`. The address the
+ * site mailed is the evidence: an @outlook/@hotmail/@live address means
+ * the code is in Outlook, and opening Gmail first just burns a minute of
+ * polling on the wrong inbox (live 2026-08-12). Unknown domains keep the
+ * historical order.
+ */
+export function mailboxProviderOrder(
+  email: string | null,
+): Array<"gmail" | "outlook"> {
+  const domain = (email ?? "").toLowerCase().split("@")[1] ?? "";
+  if (/(^|\.)(outlook|hotmail|live|msn)\.[a-z.]+$/.test(domain)) {
+    return ["outlook", "gmail"];
+  }
+  if (/(^|\.)(gmail|googlemail)\.com$/.test(domain)) {
+    return ["gmail", "outlook"];
+  }
+  return ["gmail", "outlook"];
+}
+
 export function resolveNavVerificationWaiter(overrides?: {
   gmailWaiter?: NavVerificationWaiter;
   gmailWebFetch?: ScanFetch;
@@ -95,22 +115,23 @@ export function resolveNavVerificationWaiter(overrides?: {
       }))
     : null;
 
-  // Mailbox-scan fallbacks in order: Gmail web first (same account the
-  // portal mailed; codes AND magic links — sender trust gates links, the
-  // nav result gates still judge where they land), Outlook second (codes).
-  const scanFetchers: Array<ScanFetch> = [];
-  if (gmailWebOn) scanFetchers.push(overrides?.gmailWebFetch ?? gmailWebNavFetch());
-  if (outlookOn) {
-    scanFetchers.push(
-      overrides?.outlookFetch ??
-        (async (input) => {
-          const fetched = await outlookCodeProvider()(input);
-          return fetched
-            ? { kind: "code", value: fetched.code, source: fetched.source }
-            : null;
-        }),
-    );
-  }
+  // Mailbox-scan providers. Gmail web reads codes AND magic links; Outlook
+  // reads codes. Which one runs FIRST is decided per-request by the
+  // address the site actually mailed (see mailboxProviderOrder) — a
+  // hardcoded Gmail-first chain opened the wrong mailbox for an operator
+  // whose portal login is an Outlook address (live 2026-08-12).
+  const gmailFetch: ScanFetch | null = gmailWebOn
+    ? (overrides?.gmailWebFetch ?? gmailWebNavFetch())
+    : null;
+  const outlookFetch: ScanFetch | null = outlookOn
+    ? (overrides?.outlookFetch ??
+      (async (input) => {
+        const fetched = await outlookCodeProvider()(input);
+        return fetched
+          ? { kind: "code", value: fetched.code, source: fetched.source }
+          : null;
+      }))
+    : null;
 
   return async (need, allowedDomains) => {
     let pollsUsed = 0;
@@ -119,6 +140,12 @@ export function resolveNavVerificationWaiter(overrides?: {
       if (viaGmail.kind !== "timeout") return viaGmail;
       pollsUsed += viaGmail.pollsUsed;
     }
+    const order = mailboxProviderOrder(
+      need.sent_to || getConfig().portalLoginEmail || null,
+    );
+    const scanFetchers = order
+      .map((name) => (name === "gmail" ? gmailFetch : outlookFetch))
+      .filter((f): f is ScanFetch => f !== null);
     for (const fetch of scanFetchers) {
       const hit = await fetch({
         requestedAt: need.requested_at,
