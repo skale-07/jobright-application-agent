@@ -366,12 +366,12 @@ describe("navigation agent phase (N3)", () => {
       applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
       resetConfigCache();
       try {
-        const { account } = getOrCreateAccount("careers.example.com", {
+        const { account } = getOrCreateAccount("careers.acme.com", {
           email: "candidate@example.com",
           runId: "seed",
         });
 
-        const LOGIN_URL = "https://careers.example.com/login";
+        const LOGIN_URL = "https://careers.acme.com/login";
         const jobPage = `<html><body><h1>Job</h1><button onclick="window.open('${LOGIN_URL}')">Apply</button></body></html>`;
         const loginWallHtml =
           "<html><head><title>Sign in</title></head><body><h1>Sign in to apply</h1><form action='/login'><input type='email' name='email'><input type='password' name='password'><button>Log in</button></form></body></html>";
@@ -381,7 +381,7 @@ describe("navigation agent phase (N3)", () => {
         const script = [
           "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{",
           "const t=JSON.parse(d);",
-          "console.log(JSON.stringify({status:'ok',final_url:'https://careers.example.com/apply/form',wall:'none',steps_used:3,domains_visited:['careers.example.com'],notes:['cred_available:'+t.credentials.available,'leaked:'+(t.credentials.password||'none')]}));",
+          "console.log(JSON.stringify({status:'ok',final_url:'https://careers.acme.com/apply/form',wall:'none',steps_used:3,domains_visited:['careers.acme.com'],notes:['cred_available:'+t.credentials.available,'leaked:'+(t.credentials.password||'none')]}));",
           "});",
         ].join("");
 
@@ -391,7 +391,7 @@ describe("navigation agent phase (N3)", () => {
             await page.context().route("**/*", (route) => {
               const url = route.request().url();
               route.fulfill({
-                body: url.startsWith("https://careers.example.com")
+                body: url.startsWith("https://careers.acme.com")
                   ? loginWallHtml
                   : jobPage,
                 contentType: "text/html",
@@ -420,7 +420,7 @@ describe("navigation agent phase (N3)", () => {
           report.phase_trace.some((p) => /login wall — not stored/.test(p.outcome)),
         ).toBe(true);
         expect(report.method).toBe("agent");
-        expect(report.resolved_url).toBe("https://careers.example.com/apply/form");
+        expect(report.resolved_url).toBe("https://careers.acme.com/apply/form");
         expect(report.notes.join(" ")).toMatch(/cred_available:true/);
 
         // The echoed password is scrubbed from the persisted artifact.

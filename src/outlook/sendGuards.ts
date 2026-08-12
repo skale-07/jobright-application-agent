@@ -21,6 +21,13 @@ export const FORBIDDEN_OUTLOOK_IDENTIFIERS = [
   "export async function sendEmail",
   "export function sendEmail",
   "sendMail(",
+  // Tool-slug shapes — see the note in gmail/readonlyGuards.ts. Drafts-only
+  // must be enforceable against an integration layer that names its
+  // actions, not just against hand-written API calls.
+  ["OUTLOOK", "SEND", "EMAIL"].join("_"),
+  ["OUTLOOK", "SEND", "DRAFT"].join("_"),
+  ["OUTLOOK", "REPLY", "EMAIL"].join("_"),
+  ["OUTLOOK", "FORWARD", "EMAIL"].join("_"),
 ] as const;
 
 export function assertDraftsOnlyMode(outlookDraftsEnabled: boolean): void {
