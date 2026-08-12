@@ -8,6 +8,7 @@ import { extractOtpCode } from "../gmail/verificationParsers.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { outlookSelectorsV1 } from "../outlook/selectors.js";
 import { gmailWebCodeProvider } from "./gmailWebProvider.js";
+import { mailboxProviderOrder } from "./emailVerification.js";
 
 /**
  * Verification-code providers for the submit recovery layer. Both are
@@ -39,17 +40,25 @@ export function chainVerificationCodeProviders(
 }
 
 /**
- * Every enabled provider, chained: Outlook first (per request), then the
- * Gmail WEB mailbox scan (browser-based — the REST API is unavailable for
- * this operator), then Gmail REST as a last resort when a token exists.
+ * Every enabled provider, chained in the operator's mailbox order
+ * (VERIFICATION_MAILBOX, else the PORTAL_LOGIN_EMAIL domain — same rule
+ * the nav waiter uses, so submit recovery never opens a different inbox
+ * than navigation did). Within the Gmail leg: the WEB scan first (the
+ * REST API is unavailable for most operators), REST only with a token.
  */
 export function resolveVerificationCodeProvider(): FetchVerificationCode | null {
   const cfg = getConfig();
+  const order = mailboxProviderOrder(cfg.portalLoginEmail ?? null, {
+    ...(cfg.verificationMailbox ? { override: cfg.verificationMailbox } : {}),
+  });
   const fetchers: FetchVerificationCode[] = [];
-  if (cfg.outlookVerificationEnabled) fetchers.push(outlookCodeProvider());
-  if (cfg.gmailVerificationEnabled) {
-    fetchers.push(gmailWebCodeProvider());
-    if (readGmailToken()) fetchers.push(gmailCodeProvider());
+  for (const name of order) {
+    if (name === "outlook") {
+      if (cfg.outlookVerificationEnabled) fetchers.push(outlookCodeProvider());
+    } else if (cfg.gmailVerificationEnabled) {
+      fetchers.push(gmailWebCodeProvider());
+      if (readGmailToken()) fetchers.push(gmailCodeProvider());
+    }
   }
   return fetchers.length > 0 ? chainVerificationCodeProviders(fetchers) : null;
 }

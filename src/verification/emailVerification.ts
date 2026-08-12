@@ -75,7 +75,11 @@ type ScanFetch = (input: {
  */
 export function mailboxProviderOrder(
   email: string | null,
+  opts: { override?: "gmail" | "outlook" } = {},
 ): Array<"gmail" | "outlook"> {
+  // An explicit VERIFICATION_MAILBOX setting always wins.
+  if (opts.override === "outlook") return ["outlook", "gmail"];
+  if (opts.override === "gmail") return ["gmail", "outlook"];
   const domain = (email ?? "").toLowerCase().split("@")[1] ?? "";
   if (/(^|\.)(outlook|hotmail|live|msn)\.[a-z.]+$/.test(domain)) {
     return ["outlook", "gmail"];
@@ -135,43 +139,68 @@ export function resolveNavVerificationWaiter(overrides?: {
 
   return async (need, allowedDomains) => {
     let pollsUsed = 0;
-    if (gmailWaiter) {
-      const viaGmail = await gmailWaiter(need, allowedDomains);
-      if (viaGmail.kind !== "timeout") return viaGmail;
-      pollsUsed += viaGmail.pollsUsed;
-    }
-    const order = mailboxProviderOrder(
-      need.sent_to || getConfig().portalLoginEmail || null,
-    );
-    const scanFetchers = order
-      .map((name) => (name === "gmail" ? gmailFetch : outlookFetch))
-      .filter((f): f is ScanFetch => f !== null);
-    for (const fetch of scanFetchers) {
+    // Order is decided by the OPERATOR'S configured mailbox first
+    // (VERIFICATION_MAILBOX, else the PORTAL_LOGIN_EMAIL domain). The
+    // page-scraped `sent_to` is only a fallback: it is whatever address
+    // the sidecar found in the page text, not necessarily the inbox the
+    // operator actually reads.
+    const cfg = getConfig();
+    const order = mailboxProviderOrder(cfg.portalLoginEmail ?? need.sent_to ?? null, {
+      ...(cfg.verificationMailbox ? { override: cfg.verificationMailbox } : {}),
+    });
+
+    /** One attempt: a full VerificationWaitResult, or null to continue. */
+    type Step = () => Promise<VerificationWaitResult | null>;
+    const scanStep = (fetch: ScanFetch): Step => async () => {
       const hit = await fetch({
         requestedAt: need.requested_at,
         emailHint: need.sent_to || null,
       });
       pollsUsed += 1;
-      if (hit) {
-        logger.info(`verification ${hit.kind} retrieved`, {
-          service: "verification",
-          action: "nav_code",
-          metadata: { provider: hit.source, kind: hit.kind },
-        });
-        return hit.kind === "code"
-          ? {
-              kind: "code",
-              code: hit.value,
-              messageId: `${hit.source}:mailbox-scan`,
-              pollsUsed,
-            }
-          : {
-              kind: "link",
-              url: hit.value,
-              messageId: `${hit.source}:mailbox-scan`,
-              pollsUsed,
-            };
+      if (!hit) return null;
+      logger.info(`verification ${hit.kind} retrieved`, {
+        service: "verification",
+        action: "nav_code",
+        metadata: { provider: hit.source, kind: hit.kind },
+      });
+      return hit.kind === "code"
+        ? {
+            kind: "code",
+            code: hit.value,
+            messageId: `${hit.source}:mailbox-scan`,
+            pollsUsed,
+          }
+        : {
+            kind: "link",
+            url: hit.value,
+            messageId: `${hit.source}:mailbox-scan`,
+            pollsUsed,
+          };
+    };
+
+    const steps: Step[] = [];
+    for (const name of order) {
+      if (name === "gmail") {
+        // Gmail REST rides WITH the Gmail leg, not ahead of everything —
+        // an Outlook-first order must not open Gmail first via the API.
+        // Its result passes through verbatim (own messageId + polls).
+        if (gmailWaiter) {
+          steps.push(async () => {
+            const viaGmail = await gmailWaiter(need, allowedDomains);
+            if (viaGmail.kind !== "timeout") return viaGmail;
+            pollsUsed += viaGmail.pollsUsed;
+            return null;
+          });
+        }
+        if (gmailFetch) steps.push(scanStep(gmailFetch));
+      } else if (outlookFetch) {
+        steps.push(scanStep(outlookFetch));
       }
+    }
+
+    for (const step of steps) {
+      const result = await step();
+      if (result) return result;
     }
     return { kind: "timeout", pollsUsed };
   };
