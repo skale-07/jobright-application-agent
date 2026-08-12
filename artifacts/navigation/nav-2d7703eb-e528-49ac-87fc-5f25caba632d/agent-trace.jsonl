@@ -1,0 +1,10 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-2d7703eb-e528-49ac-87fc-5f25caba632d","application_id":"f8ca3d1d-a746-401b-81ad-522c06faea02","code_version":"09ccd528cdd3","session":"cdp","outcome":{"wall":"none","method":"agent","resolved":true,"congruence":"unknown"}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786577363.163,"start_host":"jobright.ai","at":"2026-08-12T23:29:23.164Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786577363.924,"at":"2026-08-12T23:29:23.923Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786577364.383,"provider":"anthropic","at":"2026-08-12T23:29:24.383Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786577364.383,"cdp_host":"127.0.0.1","at":"2026-08-12T23:29:24.383Z"}
+{"jaa_progress":1,"event":"own_tab_unavailable","t":1786577364.769,"at":"2026-08-12T23:29:24.769Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786577364.898,"max_steps":25,"at":"2026-08-12T23:29:24.897Z"}
+{"jaa_progress":1,"event":"step","t":1786577378.111,"i":1,"actions":["navigate"],"host":"jobright.ai","elapsed_ms":13342,"at":"2026-08-12T23:29:38.111Z"}
+{"jaa_progress":1,"event":"step","t":1786577388.798,"i":2,"actions":["click"],"host":"jobs.gusto.com","elapsed_ms":24030,"at":"2026-08-12T23:29:48.798Z"}
+{"jaa_progress":1,"event":"step","t":1786577400.5,"i":3,"actions":["done"],"host":"jobs.gusto.com","elapsed_ms":35733,"at":"2026-08-12T23:30:00.499Z"}

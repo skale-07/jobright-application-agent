@@ -1,0 +1,11 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-9d9bf2b6-0cc5-4be1-bee3-0a22dae32cd0","application_id":"56b02dc6-d280-4f20-865e-b6d39603c409","code_version":"09ccd528cdd3","session":"cdp","outcome":{"wall":"none","method":"agent","resolved":true,"congruence":"unknown"}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786577275.304,"start_host":"jobright.ai","at":"2026-08-12T23:27:55.304Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786577276.156,"at":"2026-08-12T23:27:56.156Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786577276.653,"provider":"anthropic","at":"2026-08-12T23:27:56.653Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786577276.653,"cdp_host":"127.0.0.1","at":"2026-08-12T23:27:56.653Z"}
+{"jaa_progress":1,"event":"own_tab_unavailable","t":1786577277.007,"at":"2026-08-12T23:27:57.008Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786577277.152,"max_steps":25,"at":"2026-08-12T23:27:57.152Z"}
+{"jaa_progress":1,"event":"step","t":1786577283.386,"i":1,"actions":["navigate"],"host":"","elapsed_ms":6391,"at":"2026-08-12T23:28:03.386Z"}
+{"jaa_progress":1,"event":"step","t":1786577296.779,"i":2,"actions":["click"],"host":"www.tesla.com","elapsed_ms":19780,"at":"2026-08-12T23:28:16.779Z"}
+{"jaa_progress":1,"event":"step","t":1786577306.01,"i":3,"actions":["wait"],"host":"www.tesla.com","elapsed_ms":29016,"at":"2026-08-12T23:28:26.010Z"}
+{"jaa_progress":1,"event":"step","t":1786577317.968,"i":4,"actions":["done"],"host":"www.tesla.com","elapsed_ms":40968,"at":"2026-08-12T23:28:37.968Z"}

@@ -1,0 +1,60 @@
+{
+  "run_id": "nav-2d7703eb-e528-49ac-87fc-5f25caba632d",
+  "application_id": "f8ca3d1d-a746-401b-81ad-522c06faea02",
+  "jobright_job_id": "6a7a698367a1ad0bc53d347f",
+  "method": "agent",
+  "resolved_url": "https://jobs.gusto.com/postings/gesture-us-inc-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969/applicants/new",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "jobs.gusto.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "jobright.ai",
+      "jobs.gusto.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com, www.digitaljournal.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: jobs.gusto.com, gesture.vip, expertdojo.com, www.digitaljournal.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 49s, steps 3",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "Gesture",
+    "url": "https://jobs.gusto.com/postings/gesture-us-inc-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969/applicants/new"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:30:15.962Z"
+}

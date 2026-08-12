@@ -1,0 +1,59 @@
+{
+  "run_id": "nav-9d9bf2b6-0cc5-4be1-bee3-0a22dae32cd0",
+  "application_id": "56b02dc6-d280-4f20-865e-b6d39603c409",
+  "jobright_job_id": "6a7a815167a1ad0bc53d3a77",
+  "method": "agent",
+  "resolved_url": "https://www.tesla.com/careers/search/job/apply/279763",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "www.tesla.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 4,
+    "domains_visited": [
+      "www.tesla.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com, mashable.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: www.tesla.com, www.wsj.com, mashable.com",
+    "agent goal seeded with 3 candidate link(s) from the job page",
+    "agent[1]: elapsed 53s, steps 4",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "Tesla",
+    "url": "https://www.tesla.com/careers/search/job/apply/279763"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:28:51.439Z"
+}
