@@ -1016,6 +1016,14 @@ export async function runNavigation(
       r.notes.push(
         `employer congruence unverifiable (${cong.detail}) — URL routes to human review via the unsupported-ATS path`,
       );
+    } else if (cong.verdict === "match" && !detectAtsFromUrlSafe(url)) {
+      // Verified employer, no adapter. Saying so separates "we don't know
+      // whose page this is" from "we know exactly whose it is and cannot
+      // fill it yet" — the second is an ATS-coverage request, not a
+      // navigation defect, and the review item should read that way.
+      r.notes.push(
+        `employer verified (${cong.detail}) but no adapter for ${safeHostOf(url)} — routes to human review as unsupported ATS`,
+      );
     }
 
     // One posting, one application: a URL already held by another live

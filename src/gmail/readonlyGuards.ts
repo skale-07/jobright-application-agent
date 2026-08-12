@@ -25,4 +25,12 @@ export const FORBIDDEN_GMAIL_IDENTIFIERS = [
   ["auth/gmail", "modify"].join("."),
   ["auth/gmail", "compose"].join("."),
   ["GMAIL", "SEND", "ENABLED"].join("_"),
+  // Tool-slug shapes. An integration layer (Composio and friends) reaches
+  // mail by NAME, so `execute("GMAIL_SEND_EMAIL")` is a send call that
+  // contains none of the API-shaped strings above — it passed this check
+  // clean until 2026-08-12. The slugs ship in the same toolkit as the
+  // draft ones, one identifier apart.
+  ["GMAIL", "SEND", "EMAIL"].join("_"),
+  ["GMAIL", "SEND", "DRAFT"].join("_"),
+  ["GMAIL", "REPLY", "TO", "THREAD"].join("_"),
 ] as const;

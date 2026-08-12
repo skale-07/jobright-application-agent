@@ -19,6 +19,7 @@ import {
   checkUrlCongruence,
   companyIdentity,
   extractOrgSlug,
+  extractOrgCandidates,
   findApplicationsWithEmployerUrl,
 } from "../../src/navigation/congruence.js";
 import { auditEmployerUrls } from "../../src/navigation/auditEmployerUrls.js";
@@ -87,12 +88,127 @@ describe("URL congruence (UNIT_CONFIRMED)", () => {
     ).toBe("match");
   });
 
-  it("unknown hosts are 'unknown', never a silent pass or block", () => {
+  it("a URL carrying no employer name at all is 'unknown', never a silent pass", () => {
+    // Every label here is a page word, so there is nothing to verify
+    // against — the human decides, and we say so.
     const v = checkUrlCongruence(
       "Anything",
-      "https://careers.example.com/apply/123",
+      "https://careers.jobs/apply/123",
     );
     expect(v.verdict).toBe("unknown");
+    expect(v.detail).toMatch(/no employer name decodable/);
+  });
+
+  /**
+   * Live gap 2026-08-12: four navigations resolved CORRECT employer URLs
+   * and every one came back "no org slug decodable from URL (unsupported
+   * host)" — the company name was in the hostname or the first path
+   * segment the whole time. These are the exact four URLs.
+   */
+  describe("employer names outside the supported ATS shapes", () => {
+    it("reads the employer off a multi-employer board's path", () => {
+      const v = checkUrlCongruence(
+        "Altamira Technologies Corporation",
+        "https://jobs.jobvite.com/altamiracorps/job/oMqCAfw8/apply",
+      );
+      expect(v.verdict).toBe("match");
+      expect(v.detail).toMatch(/from URL path/);
+    });
+
+    it("reads the employer off its own hostname", () => {
+      expect(
+        checkUrlCongruence(
+          "Citadel",
+          "https://www.citadel.com/careers/details/sector-data-scientist-2027-intern-us/",
+        ).verdict,
+      ).toBe("match");
+    });
+
+    it("does not lose a three-letter company to the TLD trim", () => {
+      // careers.ibm.com — a naive "short second-to-last label is a country
+      // SLD" rule eats "ibm", which is the case that matters most.
+      const v = checkUrlCongruence(
+        "IBM",
+        "https://careers.ibm.com/en_US/careers/JobDetail?jobId=128497",
+      );
+      expect(v.verdict).toBe("match");
+      expect(v.detail).toMatch(/from URL host/);
+    });
+
+    it("skips the board's own name and finds the employer deeper in the path", () => {
+      // ycombinator.com is the board, effigov is the employer.
+      const v = checkUrlCongruence(
+        "EffiGov",
+        "https://www.ycombinator.com/companies/effigov/jobs/7XpLidv-swe-intern",
+      );
+      expect(v.verdict).toBe("match");
+      expect(v.slug).toBe("effigov");
+    });
+
+    it("still catches a leftover tab pointing at the WRONG employer", () => {
+      // The failure this module exists for, now caught off-ATS too.
+      const v = checkUrlCongruence(
+        "IBM",
+        "https://www.citadel.com/careers/details/sector-data-scientist/",
+      );
+      expect(v.verdict).toBe("mismatch");
+      expect(v.detail).toMatch(/citadel/);
+    });
+
+    it("a supported-ATS slug still outranks host and path evidence", () => {
+      // The ATS slug is authoritative: a miss there is a mismatch even
+      // though other candidates exist in the URL.
+      const v = checkUrlCongruence(
+        "IBM",
+        "https://jobs.ashbyhq.com/cohere/36d1f52f/application",
+      );
+      expect(v.verdict).toBe("mismatch");
+      expect(v.slug).toBe("cohere");
+    });
+
+    it("page words are never treated as an employer name", () => {
+      const cands = extractOrgCandidates(
+        "https://careers.acme.com/en_US/jobs/apply/details/12345",
+      ).map((c) => c.value);
+      expect(cands).toContain("acme");
+      for (const junk of ["careers", "enus", "jobs", "apply", "details"]) {
+        expect(cands).not.toContain(junk);
+      }
+    });
+
+    /**
+     * The two URLs from the 2026-08-12T23:27 cycle — both resolved
+     * correctly by navigation, both reported "no org slug decodable".
+     */
+    it("verifies the live Tesla and Gesture URLs that reported unverifiable", () => {
+      expect(
+        checkUrlCongruence(
+          "Tesla",
+          "https://www.tesla.com/careers/search/job/apply/279763",
+        ).verdict,
+      ).toBe("match");
+      // Gusto's board hosts other companies: the employer is in the path,
+      // and "gusto" must never be read as the employer here.
+      expect(
+        checkUrlCongruence(
+          "Gesture",
+          "https://jobs.gusto.com/postings/gesture-us-inc-full-stack-engineer-intern-e6b31003/applicants/new",
+        ).verdict,
+      ).toBe("match");
+      // Same board, wrong job — still caught.
+      expect(
+        checkUrlCongruence(
+          "Tesla",
+          "https://jobs.gusto.com/postings/gesture-us-inc-full-stack-engineer-intern-e6b31003/applicants/new",
+        ).verdict,
+      ).toBe("mismatch");
+    });
+
+    it("country second-level domains drop both labels", () => {
+      expect(
+        checkUrlCongruence("Acme", "https://careers.acme.co.uk/jobs/1").verdict,
+      ).toBe("match");
+    });
   });
 
   it("greenhouse embed URLs decode the org from ?for=", () => {
