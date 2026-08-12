@@ -1,0 +1,44 @@
+{
+  "run_id": "nav-b046cb96-976e-40ef-addc-0bb7be649397",
+  "application_id": "1ee6f795-f729-44df-8a8a-d9fc673d550a",
+  "jobright_job_id": "6a7ce33a77d5f033c4b913e9",
+  "method": "apply_click_popup",
+  "resolved_url": "https://careers.ibm.com/en_US/careers/JobDetail?jobId=128497&src=jobright&jr_id=6a7ce33a77d5f033c4b913e9",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "careers.ibm.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com, www.thefastmode.com, www.techinasia.com, yourstory.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup captured on attempt 2",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "IBM",
+    "url": "https://careers.ibm.com/en_US/careers/JobDetail?jobId=128497&src=jobright&jr_id=6a7ce33a77d5f033c4b913e9"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-12T22:25:09.835Z"
+}

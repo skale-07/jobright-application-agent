@@ -1,0 +1,58 @@
+{
+  "run_id": "nav-43a0ccb5-b509-4f70-a06e-bf6db4a1f138",
+  "application_id": "904ef189-3b6e-4391-ab0d-5cdff7f8d7c3",
+  "jobright_job_id": "6a51d4f702522b5b722ec319",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/tifin/jobs/5981740004",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)",
+      "evidence": "boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, tifin.com, www.sec.gov"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, tifin.com, www.sec.gov, www.privatebankerinternational.com, www.investmentnews.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, tifin.com, www.sec.gov, www.privatebankerinternational.com, www.investmentnews.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 49s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "tifin",
+    "detail": "token \"tifin\" ~ slug \"tifin\"",
+    "expected_company": "TIFIN",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=tifin&token=5981740004"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-12T22:31:36.071Z"
+}

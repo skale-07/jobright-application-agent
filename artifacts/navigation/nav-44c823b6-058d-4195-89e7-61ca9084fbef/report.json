@@ -1,0 +1,34 @@
+{
+  "run_id": "nav-44c823b6-058d-4195-89e7-61ca9084fbef",
+  "application_id": "83409002-a225-4b2e-b687-982eba2de2cd",
+  "jobright_job_id": "6a6d7fae020ee9240900a60e",
+  "method": "anchor_href",
+  "resolved_url": "https://medtronic.wd1.myworkdayjobs.com/medtroniccareers/job/Fridley-Minnesota-United-States-of-America/Software-Engineering-Intern---Summer-2027_R73630-1",
+  "resolved_ats": "workday",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (known ATS, 11 candidates, employer match)",
+      "evidence": "medtronic.wd1.myworkdayjobs.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "medtronic",
+    "detail": "token \"medtronic\" ~ slug \"medtronic\"",
+    "expected_company": "Medtronic",
+    "url": "https://medtronic.wd1.myworkdayjobs.com/medtroniccareers/job/Fridley-Minnesota-United-States-of-America/Software-Engineering-Intern---Summer-2027_R73630-1?jr_id=6a6d7fae020ee9240900a60e"
+  },
+  "duplicates": null,
+  "written_at": "2026-08-12T22:32:00.853Z"
+}
