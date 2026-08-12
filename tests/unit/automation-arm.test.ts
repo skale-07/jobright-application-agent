@@ -18,6 +18,8 @@ import {
   getArmStatus,
   hashArmToken,
   sweepStaleArmSessions,
+  sweepAbandonedArmSessions,
+  touchArmHeartbeat,
 } from "../../src/automation/armSession.js";
 import { tryConsumeUnattendedSubmission } from "../../src/queue/automationRuns.js";
 import { resetConfigCache } from "../../src/config/index.js";
@@ -42,6 +44,67 @@ describe("L3 arm session (UNIT_CONFIRMED)", () => {
       if (fs.existsSync(p)) fs.unlinkSync(p);
     }
     resetConfigCache();
+  });
+
+  /**
+   * Live failure 2026-08-12: a killed session left its l3_session row
+   * RUNNING, and the next three scheduled auto:cycle firings each read
+   * "already armed" and exited 0 without touching an application. An arm
+   * is a budget ledger held by a live worker, not a lock.
+   */
+  describe("abandoned-arm sweep", () => {
+    const T0 = new Date("2026-08-08T00:00:00Z");
+
+    it("leaves a heartbeating arm alone", () => {
+      armSession(db, { armedByTokenHash: HASH }, T0);
+      // 40 min in, worker still reporting.
+      const t40 = new Date(T0.getTime() + 40 * 60_000);
+      touchArmHeartbeat(db, getArmStatus(db, t40).arm_run_id!, t40);
+      const t41 = new Date(T0.getTime() + 41 * 60_000);
+      expect(sweepAbandonedArmSessions(db, { now: t41 })).toEqual([]);
+      expect(getArmStatus(db, t41).armed).toBe(true);
+    });
+
+    it("completes an arm whose worker has gone silent", () => {
+      const armed = armSession(db, { armedByTokenHash: HASH }, T0);
+      // No heartbeat since arming; 20 min later the worker is gone.
+      const t20 = new Date(T0.getTime() + 20 * 60_000);
+      const swept = sweepAbandonedArmSessions(db, { now: t20 });
+      expect(swept).toHaveLength(1);
+      expect(swept[0]!.arm_run_id).toBe(armed.arm_run_id);
+      expect(swept[0]!.silent_for_ms).toBeGreaterThanOrEqual(20 * 60_000);
+      expect(getArmStatus(db, t20).armed).toBe(false);
+      // The sweep is fail-CLOSED: a swept row can never fund a submit.
+      expect(
+        tryConsumeUnattendedSubmission(db, armed.arm_run_id!),
+      ).toBe(false);
+    });
+
+    it("re-arming is possible immediately after a sweep (the schedule recovers)", () => {
+      armSession(db, { armedByTokenHash: HASH }, T0);
+      const t20 = new Date(T0.getTime() + 20 * 60_000);
+      sweepAbandonedArmSessions(db, { now: t20 });
+      const second = armSession(db, { armedByTokenHash: HASH }, t20);
+      expect(second.armed).toBe(true);
+      expect(second.apps_started).toBe(0);
+    });
+
+    it("a heartbeat keeps a long session alive across many iterations", () => {
+      armSession(db, { armedByTokenHash: HASH }, T0);
+      let t = T0;
+      for (let i = 1; i <= 6; i++) {
+        t = new Date(T0.getTime() + i * 10 * 60_000);
+        const id = getArmStatus(db, t).arm_run_id;
+        expect(id).not.toBeNull();
+        touchArmHeartbeat(db, id!, t);
+        expect(sweepAbandonedArmSessions(db, { now: t })).toEqual([]);
+      }
+      expect(getArmStatus(db, t).armed).toBe(true);
+    });
+
+    it("no arm at all is a no-op", () => {
+      expect(sweepAbandonedArmSessions(db, { now: T0 })).toEqual([]);
+    });
   });
 
   it("arms with defaults and clamps duration to 15–240", () => {

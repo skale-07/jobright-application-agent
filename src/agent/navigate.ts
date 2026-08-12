@@ -73,11 +73,51 @@ function finalUrlProblem(url: string, allowedDomains: string[]): string | null {
   if (/(^|\.)jobright\.ai$/i.test(host)) {
     return "jobright-hosted — not an employer URL";
   }
-  const allowed = allowedDomains.some(
-    (d) => host === d.toLowerCase() || host.endsWith(`.${d.toLowerCase()}`),
-  );
-  if (!allowed) {
+  if (!hostInAllowedDomains(host, allowedDomains)) {
     return `host ${host} is outside allowed domains`;
   }
   return null;
+}
+
+/**
+ * Vendor domains whose sibling hostnames are the SAME product. Live
+ * regression (2026-08-11): the allowlist carried boards.greenhouse.io, the
+ * agent landed on job-boards.greenhouse.io — Greenhouse's other board host
+ * — and the turn was thrown away as an allowed-domains violation. Sibling
+ * matching is confined to this list so it can never widen acceptance to an
+ * arbitrary employer's registrable domain, and congruence still runs after.
+ */
+const ATS_HOST_FAMILIES = [
+  "greenhouse.io",
+  "lever.co",
+  "ashbyhq.com",
+  "workable.com",
+  "myworkdayjobs.com",
+] as const;
+
+function registrableDomain(host: string): string {
+  const parts = host.split(".");
+  return parts.length >= 2 ? parts.slice(-2).join(".") : host;
+}
+
+/** Exact host, subdomain of an allowed entry, or same known-ATS family. */
+export function hostInAllowedDomains(
+  host: string,
+  allowedDomains: string[],
+): boolean {
+  const h = host.toLowerCase();
+  if (
+    allowedDomains.some(
+      (d) => h === d.toLowerCase() || h.endsWith(`.${d.toLowerCase()}`),
+    )
+  ) {
+    return true;
+  }
+  const base = registrableDomain(h);
+  if (!ATS_HOST_FAMILIES.includes(base as (typeof ATS_HOST_FAMILIES)[number])) {
+    return false;
+  }
+  return allowedDomains.some(
+    (d) => registrableDomain(d.toLowerCase()) === base,
+  );
 }

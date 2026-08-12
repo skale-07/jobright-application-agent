@@ -27,6 +27,7 @@ import type { EmailLlmClient } from "../contacts/emailLlm.js";
 import {
   getActiveArmSession,
   consumeArmApplication,
+  touchArmHeartbeat,
   noteArmError,
 } from "./armSession.js";
 
@@ -356,6 +357,9 @@ export async function runAutomationSession(
   // expired row, so it is the single source of truth for "still armed".
   for (let iter = 0; ; iter++) {
     emit();
+    // Liveness ping: a scheduled auto:cycle uses this to tell a working
+    // session apart from a row left RUNNING by a killed process.
+    touchArmHeartbeat(db, armRunId);
     const active = getActiveArmSession(db);
     if (!active || active.row.id !== armRunId) {
       // Distinguish expiry from an operator disarm by the armed_until in the
