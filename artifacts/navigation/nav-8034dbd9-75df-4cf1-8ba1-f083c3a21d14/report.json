@@ -1,0 +1,60 @@
+{
+  "run_id": "nav-8034dbd9-75df-4cf1-8ba1-f083c3a21d14",
+  "application_id": "b40d62fa-2aa0-40d0-a691-127a93c4cbe4",
+  "jobright_job_id": "6a79f708a26ccc369f83bad6",
+  "method": "agent",
+  "resolved_url": "https://jobs.jobvite.com/altamiracorps/job/oMqCAfw8/apply",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "jobs.jobvite.com, www.linkedin.com, x.com, www.crunchbase.com, www.altamiracorp.com, www.washingtontechnology.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "jobs.jobvite.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "jobright.ai",
+      "jobs.jobvite.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: jobs.jobvite.com, www.linkedin.com, x.com, www.crunchbase.com, www.altamiracorp.com, www.washingtontechnology.com, www.fool.com, therecursive.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: jobs.jobvite.com, www.altamiracorp.com, www.washingtontechnology.com, www.fool.com, therecursive.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 44s, steps 3",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "Altamira Technologies Corporation",
+    "url": "https://jobs.jobvite.com/altamiracorps/job/oMqCAfw8/apply"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:01:12.196Z"
+}

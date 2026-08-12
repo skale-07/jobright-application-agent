@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-3cd5201f-51f5-4524-bbad-49cc413f7587",
+  "application_id": "23d64c04-6f39-4124-80ea-ca583779b0f9",
+  "jobright_job_id": "6a62dda199515267a6f00561",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.ashbyhq.com/quadrillion-labs/a4acc44c-31ce-41a0-ab44-2500487b4d05/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (known ATS, 7 candidates, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "quadrillion-labs",
+    "detail": "token \"quadrillion\" ~ slug \"quadrillion-labs\"",
+    "expected_company": "Quadrillion",
+    "url": "https://jobs.ashbyhq.com/quadrillion-labs/a4acc44c-31ce-41a0-ab44-2500487b4d05/application?utm_source=jobright&jr_id=6a62dda199515267a6f00561"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:10:56.974Z"
+}

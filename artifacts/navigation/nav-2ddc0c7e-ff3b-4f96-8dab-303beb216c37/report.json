@@ -1,0 +1,52 @@
+{
+  "run_id": "nav-2ddc0c7e-ff3b-4f96-8dab-303beb216c37",
+  "application_id": "7b7bcc62-8392-4ae6-b8d6-55bcc4610244",
+  "jobright_job_id": "6a7cf4b6dc3dff2d1c0ca1a9",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "auth",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "textron.taleo.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.marketscreener.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: auth (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 4,
+    "domains_visited": [
+      "textron.taleo.net"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: textron.taleo.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.marketscreener.com, pbn.com, emerging-europe.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: textron.taleo.net, www.marketscreener.com, pbn.com, emerging-europe.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 76s, steps 4",
+    "agent[1] reason: agent stopped: auth"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T22:59:50.262Z"
+}

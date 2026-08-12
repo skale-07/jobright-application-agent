@@ -1,0 +1,9 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-8034dbd9-75df-4cf1-8ba1-f083c3a21d14","application_id":"b40d62fa-2aa0-40d0-a691-127a93c4cbe4","code_version":"1d7daa050ec1","session":"cdp","outcome":{"wall":"none","method":"agent","resolved":true,"congruence":"unknown"}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786575624.096,"start_host":"jobright.ai","at":"2026-08-12T23:00:24.096Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786575625.106,"at":"2026-08-12T23:00:25.106Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786575625.71,"provider":"anthropic","at":"2026-08-12T23:00:25.711Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786575625.71,"cdp_host":"127.0.0.1","at":"2026-08-12T23:00:25.711Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786575626.231,"max_steps":25,"at":"2026-08-12T23:00:26.232Z"}
+{"jaa_progress":1,"event":"step","t":1786575637.59,"i":1,"actions":["navigate"],"host":"jobright.ai","elapsed_ms":11484,"at":"2026-08-12T23:00:37.590Z"}
+{"jaa_progress":1,"event":"step","t":1786575646.523,"i":2,"actions":["click"],"host":"jobs.jobvite.com","elapsed_ms":20407,"at":"2026-08-12T23:00:46.523Z"}
+{"jaa_progress":1,"event":"step","t":1786575657.655,"i":3,"actions":["done"],"host":"jobs.jobvite.com","elapsed_ms":31546,"at":"2026-08-12T23:00:57.655Z"}

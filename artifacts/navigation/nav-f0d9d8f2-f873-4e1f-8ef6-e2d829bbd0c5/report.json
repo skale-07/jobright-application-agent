@@ -1,0 +1,53 @@
+{
+  "run_id": "nav-f0d9d8f2-f873-4e1f-8ef6-e2d829bbd0c5",
+  "application_id": "56b02dc6-d280-4f20-865e-b6d39603c409",
+  "jobright_job_id": "6a7a815167a1ad0bc53d3a77",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 5,
+    "domains_visited": [
+      "jobs.jobvite.com",
+      "www.tesla.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com, mashable.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: www.tesla.com, www.wsj.com, mashable.com",
+    "agent goal seeded with 3 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 1 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:05:43.948Z"
+}

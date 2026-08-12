@@ -1,0 +1,10 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-22639b95-b4df-44ff-8eac-96541972d8af","application_id":"832a6730-5b2b-40ab-9a25-528cd9275ff0","code_version":"1d7daa050ec1","session":"cdp","outcome":{"wall":"none","method":"agent","resolved":true,"congruence":"unknown"}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786575713.448,"start_host":"jobright.ai","at":"2026-08-12T23:01:53.448Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786575714.238,"at":"2026-08-12T23:01:54.236Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786575714.745,"provider":"anthropic","at":"2026-08-12T23:01:54.744Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786575714.745,"cdp_host":"127.0.0.1","at":"2026-08-12T23:01:54.745Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786575715.24,"max_steps":25,"at":"2026-08-12T23:01:55.239Z"}
+{"jaa_progress":1,"event":"step","t":1786575726.948,"i":1,"actions":["navigate"],"host":"jobright.ai","elapsed_ms":11859,"at":"2026-08-12T23:02:06.947Z"}
+{"jaa_progress":1,"event":"step","t":1786575737.144,"i":2,"actions":["scroll"],"host":"www.citadel.com","elapsed_ms":22047,"at":"2026-08-12T23:02:17.143Z"}
+{"jaa_progress":1,"event":"step","t":1786575746.606,"i":3,"actions":["click"],"host":"www.citadel.com","elapsed_ms":31515,"at":"2026-08-12T23:02:26.606Z"}
+{"jaa_progress":1,"event":"step","t":1786575760.004,"i":4,"actions":["done"],"host":"www.citadel.com","elapsed_ms":44906,"at":"2026-08-12T23:02:40.004Z"}

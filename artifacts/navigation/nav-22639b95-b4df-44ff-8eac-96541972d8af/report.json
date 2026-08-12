@@ -1,0 +1,61 @@
+{
+  "run_id": "nav-22639b95-b4df-44ff-8eac-96541972d8af",
+  "application_id": "832a6730-5b2b-40ab-9a25-528cd9275ff0",
+  "jobright_job_id": "6a7a308fbb6ca93ae561a556",
+  "method": "agent",
+  "resolved_url": "https://www.citadel.com/careers/details/sector-data-scientist-2027-intern-us/?jr_id=6a7a308fbb6ca93ae561a556",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (11 external links ignored)",
+      "evidence": "www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.hedgeweek.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "www.citadel.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 4,
+    "domains_visited": [
+      "jobright.ai",
+      "www.citadel.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.hedgeweek.com, eu.36kr.com, www.cnbc.com",
+    "Apply control matched via broad name tier",
+    "popup opened but carried no usable URL",
+    "click attempt 2 failed: locator.click: Timeout 10000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /apply/i }).first()\u001b[",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: www.citadel.com, www.hedgeweek.com, eu.36kr.com, www.cnbc.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 66s, steps 4",
+    "employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no org slug decodable from URL (unsupported host)",
+    "expected_company": "Citadel",
+    "url": "https://www.citadel.com/careers/details/sector-data-scientist-2027-intern-us/?jr_id=6a7a308fbb6ca93ae561a556"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:03:01.962Z"
+}

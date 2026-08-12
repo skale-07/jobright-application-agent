@@ -1,0 +1,10 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-2ddc0c7e-ff3b-4f96-8dab-303beb216c37","application_id":"7b7bcc62-8392-4ae6-b8d6-55bcc4610244","code_version":"1d7daa050ec1","session":"cdp","outcome":{"wall":"auth","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786575504.675,"start_host":"jobright.ai","at":"2026-08-12T22:58:24.676Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786575506.718,"at":"2026-08-12T22:58:26.718Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786575511.593,"provider":"anthropic","at":"2026-08-12T22:58:31.594Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786575511.593,"cdp_host":"127.0.0.1","at":"2026-08-12T22:58:31.594Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786575516.215,"max_steps":25,"at":"2026-08-12T22:58:36.214Z"}
+{"jaa_progress":1,"event":"step","t":1786575525.991,"i":1,"actions":["navigate"],"host":"","elapsed_ms":12655,"at":"2026-08-12T22:58:45.990Z"}
+{"jaa_progress":1,"event":"step","t":1786575535.875,"i":2,"actions":["click"],"host":"textron.taleo.net","elapsed_ms":22546,"at":"2026-08-12T22:58:55.874Z"}
+{"jaa_progress":1,"event":"step","t":1786575548.283,"i":3,"actions":["click"],"host":"textron.taleo.net","elapsed_ms":34952,"at":"2026-08-12T22:59:08.282Z"}
+{"jaa_progress":1,"event":"step","t":1786575568.52,"i":4,"actions":["done"],"host":"textron.taleo.net","elapsed_ms":55187,"at":"2026-08-12T22:59:28.521Z"}

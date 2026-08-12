@@ -1,0 +1,53 @@
+{
+  "run_id": "nav-f00ef50e-03da-4483-97c1-c87f3328079e",
+  "application_id": "f8ca3d1d-a746-401b-81ad-522c06faea02",
+  "jobright_job_id": "6a7a698367a1ad0bc53d347f",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "wall: budget (turn 1)"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "jobs.gusto.com",
+      "www.tesla.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com, www.digitaljournal.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: jobs.gusto.com, gesture.vip, expertdojo.com, www.digitaljournal.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: agent visited off-domain URLs: 1 — result demoted",
+    "agent[1] reason: allowed_domains violated"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:07:20.059Z"
+}

@@ -1,7 +1,7 @@
 {
   "mode": "executed",
   "ats": "greenhouse",
-  "url": "https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
+  "url": "https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
   "plan": {
     "answers": {
       "legal_name.first": "Shubham",
@@ -9,11 +9,18 @@
       "email": "s***@jh.edu",
       "address.country": "United States",
       "phone": "***-***-7636",
-      "address.city": "Baltimore, Maryland, USA",
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor of Science",
+      "major": "Applied Math & Stats",
+      "start_month": "August",
+      "start_year": "2025",
+      "graduation_month": "May",
+      "graduation_year": "2029",
       "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
-      "how_heard": "LinkedIn",
-      "relocation": "Yes",
-      "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
+      "current_company": "Summer Atlantic Capital",
+      "address.state": "Maryland",
+      "work_authorization": "[REDACTED_SPONSORSHIP]",
+      "screener:how_heard": "JobRight",
       "gender": "Male",
       "hispanic_latino": "No",
       "veteran_status": "I am not a veteran",
@@ -39,6 +46,15 @@
         "reason": "Mapped from public profile"
       },
       {
+        "field_id": "preferred_name",
+        "label": "Preferred First Name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "fill",
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
         "field_id": "email",
         "label": "Email",
         "type": "text",
@@ -57,8 +73,8 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "f_4",
-        "label": "field_4",
+        "field_id": "f_5",
+        "label": "field_5",
         "type": "text",
         "canonical_field": null,
         "action": "skip_unmapped",
@@ -73,24 +89,6 @@
         "action": "fill",
         "value": "***-***-7636",
         "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "candidate-location",
-        "label": "Location (City)",
-        "type": "text",
-        "canonical_field": "address.city",
-        "action": "fill",
-        "value": "Baltimore, Maryland, USA",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_7",
-        "label": "field_7",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "resume",
@@ -111,8 +109,17 @@
         "reason": "File uploads handled via uploadResume/uploadCoverLetter"
       },
       {
-        "field_id": "question_67672763",
-        "label": "Legal Name (if different than above)",
+        "field_id": "school--0",
+        "label": "School",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "fill",
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_10",
+        "label": "field_10",
         "type": "text",
         "canonical_field": null,
         "action": "skip_unmapped",
@@ -120,30 +127,30 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672764",
-        "label": "Would you like to include your LinkedIn profile, personal website or blog?",
+        "field_id": "degree--0",
+        "label": "Degree",
         "type": "text",
-        "canonical_field": "linkedin_url",
+        "canonical_field": "degree",
         "action": "fill",
-        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "value": "Bachelor of Science",
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_67672765",
-        "label": "How did you hear about this job?",
+        "field_id": "f_12",
+        "label": "field_12",
         "type": "text",
-        "canonical_field": "how_heard",
-        "action": "fill",
-        "value": "LinkedIn",
-        "reason": "Mapped from public profile"
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672766",
-        "label": "Do you currently live or are you willing to relocate to the job’s location?",
+        "field_id": "discipline--0",
+        "label": "Discipline",
         "type": "text",
-        "canonical_field": "relocation",
+        "canonical_field": "major",
         "action": "fill",
-        "value": "Yes",
+        "value": "Applied Math & Stats",
         "reason": "Mapped from public profile"
       },
       {
@@ -156,12 +163,12 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672767",
-        "label": "Do you now or will you in the future require immigration sponsorship to work at Cloudflare?",
+        "field_id": "start-month--0",
+        "label": "Start date month",
         "type": "text",
-        "canonical_field": "requires_sponsorship",
+        "canonical_field": "start_month",
         "action": "fill",
-        "value": "[REDACTED_SPONSORSHIP]",
+        "value": "August",
         "reason": "Mapped from public profile"
       },
       {
@@ -174,9 +181,999 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672768[]_729281902",
-        "label": "Acknowledge/Confirm",
+        "field_id": "start-year--0",
+        "label": "Start date year",
+        "type": "text",
+        "canonical_field": "start_year",
+        "action": "fill",
+        "value": "2025",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-month--0",
+        "label": "End date month",
+        "type": "text",
+        "canonical_field": "graduation_month",
+        "action": "fill",
+        "value": "May",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_19",
+        "label": "field_19",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "end-year--0",
+        "label": "End date year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "fill",
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969944005",
+        "label": "LinkedIn Profile",
+        "type": "text",
+        "canonical_field": "linkedin_url",
+        "action": "fill",
+        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969945005",
+        "label": "Please re-confirm the university you currently attend",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "fill",
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_23",
+        "label": "field_23",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969946005",
+        "label": "Please re-confirm your expected graduation date",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "fill",
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_25",
+        "label": "field_25",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855208005",
+        "label": "Mathematics",
         "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855209005",
+        "label": "Statistics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855210005",
+        "label": "Applied Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855211005",
+        "label": "Pure Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855212005",
+        "label": "Computational Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855213005",
+        "label": "Computer Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855214005",
+        "label": "Software Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855215005",
+        "label": "Computer Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855216005",
+        "label": "Data Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855217005",
+        "label": "Artificial Intelligence",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855218005",
+        "label": "Machine Learning",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855219005",
+        "label": "Cybersecurity",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855220005",
+        "label": "Information Technology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855221005",
+        "label": "Information Systems",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855222005",
+        "label": "Human-Computer Interaction",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855223005",
+        "label": "Electrical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855224005",
+        "label": "Mechanical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855225005",
+        "label": "Chemical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855226005",
+        "label": "Civil Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855227005",
+        "label": "Aerospace Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855228005",
+        "label": "Biomedical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855229005",
+        "label": "Industrial Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855230005",
+        "label": "Systems Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855231005",
+        "label": "Financial Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855232005",
+        "label": "Quantitative Finance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855233005",
+        "label": "Operations Research",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855234005",
+        "label": "Environmental Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855235005",
+        "label": "Materials Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855236005",
+        "label": "Nuclear Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855237005",
+        "label": "Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855238005",
+        "label": "Applied Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855239005",
+        "label": "Theoretical Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855240005",
+        "label": "Astrophysics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855241005",
+        "label": "Chemistry",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855242005",
+        "label": "Biochemistry",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855243005",
+        "label": "Biology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855244005",
+        "label": "Molecular Biology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855245005",
+        "label": "Neuroscience",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855246005",
+        "label": "Bioinformatics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855247005",
+        "label": "Genetics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855248005",
+        "label": "Economics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855249005",
+        "label": "Econometrics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855250005",
+        "label": "Finance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855251005",
+        "label": "Accounting",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855252005",
+        "label": "Business Administration",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855253005",
+        "label": "Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855254005",
+        "label": "Entrepreneurship",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855255005",
+        "label": "Marketing",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855256005",
+        "label": "Supply Chain Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855257005",
+        "label": "Operations Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855258005",
+        "label": "Human Resources",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855259005",
+        "label": "Organizational Behavior",
+        "type": "checkbox",
+        "canonical_field": "current_company",
+        "action": "fill",
+        "value": "Summer Atlantic Capital",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855260005",
+        "label": "International Business",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855261005",
+        "label": "Real Estate",
+        "type": "checkbox",
+        "canonical_field": "address.state",
+        "action": "fill",
+        "value": "Maryland",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855262005",
+        "label": "Insurance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855263005",
+        "label": "Actuarial Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855264005",
+        "label": "Risk Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855265005",
+        "label": "Banking",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855266005",
+        "label": "Investment Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855267005",
+        "label": "Political Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855268005",
+        "label": "International Relations",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855269005",
+        "label": "Public Policy",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855270005",
+        "label": "Public Administration",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855271005",
+        "label": "Law",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855272005",
+        "label": "Philosophy",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855273005",
+        "label": "Psychology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855274005",
+        "label": "Cognitive Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855275005",
+        "label": "Sociology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855276005",
+        "label": "Anthropology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855277005",
+        "label": "History",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855278005",
+        "label": "Geography",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855279005",
+        "label": "English Literature",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855280005",
+        "label": "Linguistics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855281005",
+        "label": "Communications",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855282005",
+        "label": "Journalism",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855283005",
+        "label": "Media Studies",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855284005",
+        "label": "Education",
+        "type": "checkbox",
+        "canonical_field": "start_year",
+        "action": "fill",
+        "value": "2025",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855285005",
+        "label": "Architecture",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855286005",
+        "label": "Urban Planning",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855287005",
+        "label": "Environmental Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855288005",
+        "label": "Agriculture",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855289005",
+        "label": "Nutrition",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855290005",
+        "label": "Other",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969948005",
+        "label": "Do you have relevant internship experience at a proprietary trading firm?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_110",
+        "label": "field_110",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969949005",
+        "label": "If yes, select your most recent proprietary trading firm experience",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969950005",
+        "label": "If other, please specify",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969951005",
+        "label": "What country do you currently reside in?",
+        "type": "text",
+        "canonical_field": "address.country",
+        "action": "fill",
+        "value": "United States",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_114",
+        "label": "field_114",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969952005",
+        "label": "If applicable, which US state do you reside in?",
+        "type": "text",
+        "canonical_field": "address.state",
+        "action": "fill",
+        "value": "Maryland",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969953005",
+        "label": "Are you legally authorized to work in the country where this role is based?",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "fill",
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_117",
+        "label": "field_117",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969954005",
+        "label": "Will you now or in the future require employer sponsorship for work authorization in this country? If you will be working under a student visa for this role, please select \"Yes.\"",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "fill",
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_119",
+        "label": "field_119",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969955005",
+        "label": "If yes, please provide your visa type and expiration date.",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969956005",
+        "label": "What are your preferred pronouns?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_122",
+        "label": "field_122",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969957005",
+        "label": "How did you hear about DV Trading?",
+        "type": "text",
+        "canonical_field": "screener:how_heard",
+        "action": "fill",
+        "value": "JobRight",
+        "reason": "Screener bank answer (free_text)"
+      },
+      {
+        "field_id": "f_124",
+        "label": "field_124",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969958005",
+        "label": "If other, please explain",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969959005",
+        "label": "Terms &amp; Conditions",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_127",
+        "label": "field_127",
+        "type": "text",
         "canonical_field": null,
         "action": "skip_unmapped",
         "value": null,
@@ -219,27 +1216,27 @@
         "reason": "Mapped from sensitive profile (operator-supplied)"
       }
     ],
-    "fillable_count": 14,
-    "skipped_count": 8,
+    "fillable_count": 28,
+    "skipped_count": 104,
     "review_required_count": 0
   },
   "submit_attempted": false,
   "notes": [
     "session: handoff (caller-owned page, not closed here)",
-    "heal pass: recovered 1/2; final verify passed: false (sidecar consulted)",
+    "heal pass: recovered 0/6; final verify passed: false (sidecar consulted)",
     "frozen after fill→verify→upload — no further field mutation; submit never called"
   ],
   "validation_level": "UNVERIFIED",
-  "final_url": "https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
+  "final_url": "https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
   "identity_verification": {
-    "requestedUrl": "https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
-    "finalUrl": "https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
-    "requestedJobId": "8013562",
-    "observedJobId": "8013562",
-    "company": "cloudflare",
-    "role": "Job Application for Network Strategy Intern (Fall 2026) at Cloudflare",
+    "requestedUrl": "https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
+    "finalUrl": "https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
+    "requestedJobId": "4719119005",
+    "observedJobId": "4719119005",
+    "company": "dvtrading",
+    "role": "Job Application for Software Engineer Intern - Summer 2027 (DV Commodities) at DV Trading",
     "formDetected": true,
-    "fieldCount": 22,
+    "fieldCount": 132,
     "warnings": [],
     "passed": true,
     "failureCode": null,
@@ -249,9 +1246,7 @@
     "detected": false,
     "confidence": "LOW",
     "signals": [],
-    "dormantMarkers": [
-      "generic_captcha_word_only"
-    ]
+    "dormantMarkers": []
   },
   "login_wall_detection": {
     "detected": false,
@@ -283,6 +1278,16 @@
         "reason": "Mapped from public profile"
       },
       {
+        "field_id": "preferred_name",
+        "label": "Preferred First Name",
+        "type": "text",
+        "canonical_field": "legal_name.first",
+        "action": "FILL",
+        "approved": true,
+        "value": "Shubham",
+        "reason": "Mapped from public profile"
+      },
+      {
         "field_id": "email",
         "label": "Email",
         "type": "text",
@@ -303,8 +1308,8 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "f_4",
-        "label": "field_4",
+        "field_id": "f_5",
+        "label": "field_5",
         "type": "text",
         "canonical_field": null,
         "action": "SKIP",
@@ -321,26 +1326,6 @@
         "approved": true,
         "value": "***-***-7636",
         "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "candidate-location",
-        "label": "Location (City)",
-        "type": "text",
-        "canonical_field": "address.city",
-        "action": "FILL",
-        "approved": true,
-        "value": "Baltimore, Maryland, USA",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_7",
-        "label": "field_7",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "resume",
@@ -363,8 +1348,18 @@
         "reason": "File uploads handled via uploadResume/uploadCoverLetter"
       },
       {
-        "field_id": "question_67672763",
-        "label": "Legal Name (if different than above)",
+        "field_id": "school--0",
+        "label": "School",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "FILL",
+        "approved": true,
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_10",
+        "label": "field_10",
         "type": "text",
         "canonical_field": null,
         "action": "SKIP",
@@ -373,33 +1368,33 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672764",
-        "label": "Would you like to include your LinkedIn profile, personal website or blog?",
+        "field_id": "degree--0",
+        "label": "Degree",
         "type": "text",
-        "canonical_field": "linkedin_url",
+        "canonical_field": "degree",
         "action": "FILL",
         "approved": true,
-        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "value": "Bachelor of Science",
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_67672765",
-        "label": "How did you hear about this job?",
+        "field_id": "f_12",
+        "label": "field_12",
         "type": "text",
-        "canonical_field": "how_heard",
-        "action": "FILL",
-        "approved": true,
-        "value": "LinkedIn",
-        "reason": "Mapped from public profile"
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672766",
-        "label": "Do you currently live or are you willing to relocate to the job’s location?",
+        "field_id": "discipline--0",
+        "label": "Discipline",
         "type": "text",
-        "canonical_field": "relocation",
+        "canonical_field": "major",
         "action": "FILL",
         "approved": true,
-        "value": "Yes",
+        "value": "Applied Math & Stats",
         "reason": "Mapped from public profile"
       },
       {
@@ -413,13 +1408,13 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672767",
-        "label": "Do you now or will you in the future require immigration sponsorship to work at Cloudflare?",
+        "field_id": "start-month--0",
+        "label": "Start date month",
         "type": "text",
-        "canonical_field": "requires_sponsorship",
+        "canonical_field": "start_month",
         "action": "FILL",
         "approved": true,
-        "value": "[REDACTED_SPONSORSHIP]",
+        "value": "August",
         "reason": "Mapped from public profile"
       },
       {
@@ -433,9 +1428,1109 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_67672768[]_729281902",
-        "label": "Acknowledge/Confirm",
+        "field_id": "start-year--0",
+        "label": "Start date year",
+        "type": "text",
+        "canonical_field": "start_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2025",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "end-month--0",
+        "label": "End date month",
+        "type": "text",
+        "canonical_field": "graduation_month",
+        "action": "FILL",
+        "approved": true,
+        "value": "May",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_19",
+        "label": "field_19",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "end-year--0",
+        "label": "End date year",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969944005",
+        "label": "LinkedIn Profile",
+        "type": "text",
+        "canonical_field": "linkedin_url",
+        "action": "FILL",
+        "approved": true,
+        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969945005",
+        "label": "Please re-confirm the university you currently attend",
+        "type": "text",
+        "canonical_field": "school",
+        "action": "FILL",
+        "approved": true,
+        "value": "Johns Hopkins University",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_23",
+        "label": "field_23",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969946005",
+        "label": "Please re-confirm your expected graduation date",
+        "type": "text",
+        "canonical_field": "graduation_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2029",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_25",
+        "label": "field_25",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855208005",
+        "label": "Mathematics",
         "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855209005",
+        "label": "Statistics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855210005",
+        "label": "Applied Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855211005",
+        "label": "Pure Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855212005",
+        "label": "Computational Mathematics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855213005",
+        "label": "Computer Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855214005",
+        "label": "Software Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855215005",
+        "label": "Computer Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855216005",
+        "label": "Data Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855217005",
+        "label": "Artificial Intelligence",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855218005",
+        "label": "Machine Learning",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855219005",
+        "label": "Cybersecurity",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855220005",
+        "label": "Information Technology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855221005",
+        "label": "Information Systems",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855222005",
+        "label": "Human-Computer Interaction",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855223005",
+        "label": "Electrical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855224005",
+        "label": "Mechanical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855225005",
+        "label": "Chemical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855226005",
+        "label": "Civil Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855227005",
+        "label": "Aerospace Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855228005",
+        "label": "Biomedical Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855229005",
+        "label": "Industrial Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855230005",
+        "label": "Systems Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855231005",
+        "label": "Financial Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855232005",
+        "label": "Quantitative Finance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855233005",
+        "label": "Operations Research",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855234005",
+        "label": "Environmental Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855235005",
+        "label": "Materials Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855236005",
+        "label": "Nuclear Engineering",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855237005",
+        "label": "Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855238005",
+        "label": "Applied Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855239005",
+        "label": "Theoretical Physics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855240005",
+        "label": "Astrophysics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855241005",
+        "label": "Chemistry",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855242005",
+        "label": "Biochemistry",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855243005",
+        "label": "Biology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855244005",
+        "label": "Molecular Biology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855245005",
+        "label": "Neuroscience",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855246005",
+        "label": "Bioinformatics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855247005",
+        "label": "Genetics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855248005",
+        "label": "Economics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855249005",
+        "label": "Econometrics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855250005",
+        "label": "Finance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855251005",
+        "label": "Accounting",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855252005",
+        "label": "Business Administration",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855253005",
+        "label": "Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855254005",
+        "label": "Entrepreneurship",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855255005",
+        "label": "Marketing",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855256005",
+        "label": "Supply Chain Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855257005",
+        "label": "Operations Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855258005",
+        "label": "Human Resources",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855259005",
+        "label": "Organizational Behavior",
+        "type": "checkbox",
+        "canonical_field": "current_company",
+        "action": "FILL",
+        "approved": true,
+        "value": "Summer Atlantic Capital",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855260005",
+        "label": "International Business",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855261005",
+        "label": "Real Estate",
+        "type": "checkbox",
+        "canonical_field": "address.state",
+        "action": "FILL",
+        "approved": true,
+        "value": "Maryland",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855262005",
+        "label": "Insurance",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855263005",
+        "label": "Actuarial Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855264005",
+        "label": "Risk Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855265005",
+        "label": "Banking",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855266005",
+        "label": "Investment Management",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855267005",
+        "label": "Political Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855268005",
+        "label": "International Relations",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855269005",
+        "label": "Public Policy",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855270005",
+        "label": "Public Administration",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855271005",
+        "label": "Law",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855272005",
+        "label": "Philosophy",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855273005",
+        "label": "Psychology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855274005",
+        "label": "Cognitive Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855275005",
+        "label": "Sociology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855276005",
+        "label": "Anthropology",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855277005",
+        "label": "History",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855278005",
+        "label": "Geography",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855279005",
+        "label": "English Literature",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855280005",
+        "label": "Linguistics",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855281005",
+        "label": "Communications",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855282005",
+        "label": "Journalism",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855283005",
+        "label": "Media Studies",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855284005",
+        "label": "Education",
+        "type": "checkbox",
+        "canonical_field": "start_year",
+        "action": "FILL",
+        "approved": true,
+        "value": "2025",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969947005[]_23855285005",
+        "label": "Architecture",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855286005",
+        "label": "Urban Planning",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855287005",
+        "label": "Environmental Science",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855288005",
+        "label": "Agriculture",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855289005",
+        "label": "Nutrition",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969947005[]_23855290005",
+        "label": "Other",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969948005",
+        "label": "Do you have relevant internship experience at a proprietary trading firm?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_110",
+        "label": "field_110",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969949005",
+        "label": "If yes, select your most recent proprietary trading firm experience",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969950005",
+        "label": "If other, please specify",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969951005",
+        "label": "What country do you currently reside in?",
+        "type": "text",
+        "canonical_field": "address.country",
+        "action": "FILL",
+        "approved": true,
+        "value": "United States",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_114",
+        "label": "field_114",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969952005",
+        "label": "If applicable, which US state do you reside in?",
+        "type": "text",
+        "canonical_field": "address.state",
+        "action": "FILL",
+        "approved": true,
+        "value": "Maryland",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "question_8969953005",
+        "label": "Are you legally authorized to work in the country where this role is based?",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "FILL",
+        "approved": true,
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_117",
+        "label": "field_117",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969954005",
+        "label": "Will you now or in the future require employer sponsorship for work authorization in this country? If you will be working under a student visa for this role, please select \"Yes.\"",
+        "type": "text",
+        "canonical_field": "work_authorization",
+        "action": "FILL",
+        "approved": true,
+        "value": "[REDACTED_SPONSORSHIP]",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_119",
+        "label": "field_119",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969955005",
+        "label": "If yes, please provide your visa type and expiration date.",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969956005",
+        "label": "What are your preferred pronouns?",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_122",
+        "label": "field_122",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969957005",
+        "label": "How did you hear about DV Trading?",
+        "type": "text",
+        "canonical_field": "screener:how_heard",
+        "action": "FILL",
+        "approved": true,
+        "value": "JobRight",
+        "reason": "Screener bank answer (free_text)"
+      },
+      {
+        "field_id": "f_124",
+        "label": "field_124",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969958005",
+        "label": "If other, please explain",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_8969959005",
+        "label": "Terms &amp; Conditions",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "f_127",
+        "label": "field_127",
+        "type": "text",
         "canonical_field": null,
         "action": "SKIP",
         "approved": false,
@@ -489,30 +2584,52 @@
       "email": "s***@jh.edu",
       "address.country": "United States",
       "phone": "***-***-7636",
-      "address.city": "Baltimore, Maryland, USA",
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor of Science",
+      "major": "Applied Math & Stats",
+      "start_month": "August",
+      "start_year": "2025",
+      "graduation_month": "May",
+      "graduation_year": "2029",
       "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
-      "how_heard": "LinkedIn",
-      "relocation": "Yes",
-      "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
+      "current_company": "Summer Atlantic Capital",
+      "address.state": "Maryland",
+      "work_authorization": "[REDACTED_SPONSORSHIP]",
+      "screener:how_heard": "JobRight",
       "gender": "Male",
       "hispanic_latino": "No",
       "veteran_status": "I am not a veteran",
       "disability_status": "No"
     },
-    "fillable_count": 14,
-    "skipped_count": 8,
+    "fillable_count": 28,
+    "skipped_count": 104,
     "review_required_count": 0
   },
   "fill": {
     "filled": [
       "legal_name.first",
       "legal_name.last",
+      "legal_name.first",
       "email",
       "address.country",
       "phone",
-      "address.city",
+      "school",
+      "degree",
+      "major",
+      "start_month",
+      "start_year",
+      "graduation_month",
+      "graduation_year",
       "linkedin_url",
-      "how_heard",
+      "school",
+      "graduation_year",
+      "current_company",
+      "address.state",
+      "start_year",
+      "address.country",
+      "address.state",
+      "work_authorization",
+      "work_authorization",
       "gender",
       "hispanic_latino",
       "veteran_status",
@@ -520,8 +2637,7 @@
     ],
     "skipped": [],
     "errors": [
-      "question_67672766: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"Yes\" (options: I currently live in this job's location. | I am willing to relocate to this job's location. | I do not live and not willing to relocate to this job's location.)",
-      "question_67672767: combobox option not committed: opened via control click; listbox did not open after click"
+      "question_8969957005: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"JobRight\" (options: LinkedIn | DV Recruitment | DV Employee | DV Intern | DV Website | Student Organization | Campus Event | Word of Mouth | …)"
     ],
     "field_meta": [
       {
@@ -532,6 +2648,11 @@
       {
         "field_id": "last_name",
         "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "preferred_name",
+        "canonical_field": "legal_name.first",
         "control_kind": "text"
       },
       {
@@ -561,65 +2682,222 @@
         "control_kind": "text"
       },
       {
-        "field_id": "candidate-location",
-        "canonical_field": "address.city",
+        "field_id": "school--0",
+        "canonical_field": "school",
         "control_kind": "combobox",
-        "selected_option": "Baltimore, Maryland, United States",
-        "match_via": "synonym",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact",
         "notes": [
           "opened via control click",
-          "filter \"Baltimore\" → 10 option(s); match",
-          "picked \"Baltimore, Maryland, United States\" (synonym)"
+          "filter \"Johns Hopkins University\" → 1 option(s); match",
+          "picked \"Johns Hopkins University\" (exact)"
         ],
         "options_sample": [
-          "Baltimore, Maryland, United States",
-          "Baltimore, Maryland, United States",
-          "New Baltimore, Michigan, United States",
-          "New Baltimore, Virginia, United States",
-          "Baltimore Highlands, Maryland, United States",
-          "South Baltimore, Maryland, United States",
-          "North Baltimore, Ohio, United States",
-          "Town of New Baltimore, New York, United States",
-          "Baltimore, Ohio, United States",
-          "New Baltimore, Ohio, United States"
+          "Johns Hopkins University"
         ]
       },
       {
-        "field_id": "question_67672764",
+        "field_id": "degree--0",
+        "canonical_field": "degree",
+        "control_kind": "combobox",
+        "selected_option": "Bachelor's Degree",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"Bachelor\" → 1 option(s); match",
+          "picked \"Bachelor's Degree\" (synonym)"
+        ],
+        "options_sample": [
+          "Bachelor's Degree"
+        ]
+      },
+      {
+        "field_id": "discipline--0",
+        "canonical_field": "major",
+        "control_kind": "combobox",
+        "selected_option": "Mathematics",
+        "match_via": "synonym",
+        "notes": [
+          "opened via control click",
+          "filter \"Mathematics\" → 1 option(s); match",
+          "picked \"Mathematics\" (synonym)"
+        ],
+        "options_sample": [
+          "Mathematics"
+        ]
+      },
+      {
+        "field_id": "start-month--0",
+        "canonical_field": "start_month",
+        "control_kind": "combobox",
+        "selected_option": "August",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"August\" → 1 option(s); match",
+          "picked \"August\" (exact)"
+        ],
+        "options_sample": [
+          "August"
+        ]
+      },
+      {
+        "field_id": "start-year--0",
+        "canonical_field": "start_year",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "end-month--0",
+        "canonical_field": "graduation_month",
+        "control_kind": "combobox",
+        "selected_option": "May",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"May\" → 1 option(s); match",
+          "picked \"May\" (exact)"
+        ],
+        "options_sample": [
+          "May"
+        ]
+      },
+      {
+        "field_id": "end-year--0",
+        "canonical_field": "graduation_year",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_8969944005",
         "canonical_field": "linkedin_url",
         "control_kind": "text"
       },
       {
-        "field_id": "question_67672765",
-        "canonical_field": "how_heard",
+        "field_id": "question_8969945005",
+        "canonical_field": "school",
+        "control_kind": "combobox",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Johns Hopkins University\" → 1 option(s); match",
+          "picked \"Johns Hopkins University\" (exact)"
+        ],
+        "options_sample": [
+          "Johns Hopkins University"
+        ]
+      },
+      {
+        "field_id": "question_8969946005",
+        "canonical_field": "graduation_year",
+        "control_kind": "combobox",
+        "selected_option": "After January 2029",
+        "match_via": "unique_substring",
+        "notes": [
+          "opened via control click",
+          "filter \"2029\" → 1 option(s); match",
+          "picked \"After January 2029\" (unique_substring)"
+        ],
+        "options_sample": [
+          "After January 2029"
+        ]
+      },
+      {
+        "field_id": "question_8969947005[]_23855259005",
+        "canonical_field": "current_company",
         "control_kind": "text"
       },
       {
-        "field_id": "question_67672766",
-        "canonical_field": "relocation",
+        "field_id": "question_8969947005[]_23855261005",
+        "canonical_field": "address.state",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_8969947005[]_23855284005",
+        "canonical_field": "start_year",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_8969951005",
+        "canonical_field": "address.country",
+        "control_kind": "combobox",
+        "selected_option": "United States of America",
+        "match_via": "unique_substring",
+        "notes": [
+          "opened via control click",
+          "filter \"United States\" → 1 option(s); match",
+          "picked \"United States of America\" (unique_substring)"
+        ],
+        "options_sample": [
+          "United States of America"
+        ]
+      },
+      {
+        "field_id": "question_8969952005",
+        "canonical_field": "address.state",
+        "control_kind": "combobox",
+        "selected_option": "Maryland",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Maryland\" → 1 option(s); match",
+          "picked \"Maryland\" (exact)"
+        ],
+        "options_sample": [
+          "Maryland"
+        ]
+      },
+      {
+        "field_id": "question_8969953005",
+        "canonical_field": "work_authorization",
+        "control_kind": "combobox",
+        "selected_option": "Yes, I am authorized to work in this country for any employer",
+        "match_via": "unique_substring",
+        "notes": [
+          "opened via control click",
+          "filter \"Yes\" → 1 option(s); match",
+          "picked \"Yes, I am authorized to work in this country for any employer\" (unique_substring)"
+        ],
+        "options_sample": [
+          "Yes, I am authorized to work in this country for any employer"
+        ]
+      },
+      {
+        "field_id": "question_8969954005",
+        "canonical_field": "work_authorization",
+        "control_kind": "combobox",
+        "selected_option": "Yes, I will require sponsorship now or in the future to work in this country",
+        "match_via": "unique_substring",
+        "notes": [
+          "opened via control click",
+          "filter \"Yes\" → 1 option(s); match",
+          "picked \"Yes, I will require sponsorship now or in the future to work in this country\" (unique_substring)"
+        ],
+        "options_sample": [
+          "Yes, I will require sponsorship now or in the future to work in this country"
+        ]
+      },
+      {
+        "field_id": "question_8969957005",
+        "canonical_field": "screener:how_heard",
         "control_kind": "combobox",
         "selected_option": null,
         "match_via": null,
         "notes": [
           "opened via control click",
           "filter yielded no/unmatched options; re-collected unfiltered (residue cleared)",
-          "no option matches \"Yes\" (options: I currently live in this job's location. | I am willing to relocate to this job's location. | I do not live and not willing to relocate to this job's location.)"
+          "no option matches \"JobRight\" (options: LinkedIn | DV Recruitment | DV Employee | DV Intern | DV Website | Student Organization | Campus Event | Word of Mouth | …)"
         ],
         "options_sample": [
-          "I currently live in this job's location.",
-          "I am willing to relocate to this job's location.",
-          "I do not live and not willing to relocate to this job's location."
-        ]
-      },
-      {
-        "field_id": "question_67672767",
-        "canonical_field": "requires_sponsorship",
-        "control_kind": "combobox",
-        "selected_option": null,
-        "match_via": null,
-        "notes": [
-          "opened via control click",
-          "listbox did not open after click"
+          "LinkedIn",
+          "DV Recruitment",
+          "DV Employee",
+          "DV Intern",
+          "DV Website",
+          "Student Organization",
+          "Campus Event",
+          "Word of Mouth",
+          "SHRM",
+          "Other"
         ]
       },
       {
@@ -702,6 +2980,12 @@
         "match": true
       },
       {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
         "canonical_field": "email",
         "expected": "s***@jh.edu",
         "observed": "s***@jh.edu",
@@ -723,12 +3007,60 @@
         "match": true
       },
       {
-        "canonical_field": "address.city",
-        "expected": "Baltimore, Maryland, USA",
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
         "observed": {
-          "value": "Baltimore, Maryland, United States",
-          "label": "Baltimore, Maryland, United States"
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
         },
+        "match": true
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor of Science",
+        "observed": {
+          "value": "Bachelor's Degree",
+          "label": "Bachelor's Degree"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "major",
+        "expected": "Applied Math & Stats",
+        "observed": {
+          "value": "Mathematics",
+          "label": "Mathematics"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "start_month",
+        "expected": "August",
+        "observed": {
+          "value": "August",
+          "label": "August"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "start_year",
+        "expected": "2025",
+        "observed": "2025",
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_month",
+        "expected": "May",
+        "observed": {
+          "value": "May",
+          "label": "May"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": "2029",
         "match": true
       },
       {
@@ -738,25 +3070,79 @@
         "match": true
       },
       {
-        "canonical_field": "how_heard",
-        "expected": "LinkedIn",
-        "observed": "LinkedIn",
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
+        },
         "match": true
       },
       {
-        "canonical_field": "relocation",
-        "expected": "Yes",
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": {
+          "value": "After January 2029",
+          "label": "After January 2029"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "address.state",
+        "expected": "Maryland",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "start_year",
+        "expected": "2025",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "address.country",
+        "expected": "United States",
+        "observed": {
+          "value": "United States of America",
+          "label": "United States of America"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "address.state",
+        "expected": "Maryland",
+        "observed": {
+          "value": "Maryland",
+          "label": "Maryland"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "work_authorization",
+        "expected": "[REDACTED_SPONSORSHIP]",
+        "observed": "[REDACTED_SPONSORSHIP]",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:how_heard",
+        "expected": "JobRight",
         "observed": {
           "value": "",
           "label": ""
         },
         "match": false
-      },
-      {
-        "canonical_field": "requires_sponsorship",
-        "expected": "[REDACTED_SPONSORSHIP]",
-        "observed": "[REDACTED_SPONSORSHIP]",
-        "match": true
       },
       {
         "canonical_field": "gender",
@@ -799,86 +3185,164 @@
     "warnings": []
   },
   "heal": {
-    "attempted": 2,
+    "attempted": 6,
     "healed": [
-      "question_67672766",
-      "question_67672767"
+      "start-year--0",
+      "question_8969952005"
     ],
-    "still_failing": [],
+    "still_failing": [
+      "question_8969947005[]_23855259005",
+      "question_8969947005[]_23855261005",
+      "question_8969947005[]_23855284005",
+      "question_8969957005"
+    ],
     "attempts": [
       {
-        "field_id": "question_67672766",
-        "layer": "sidecar",
-        "candidate": {
-          "selector": "#question_67672767",
-          "via": "sidecar",
-          "score": 0.567,
-          "inputId": "question_67672767"
-        },
-        "healed": true,
-        "notes": [
-          "heuristic candidate #question_67672766 (1) did not verify",
-          "sidecar candidate #question_67672766 (1) did not verify"
-        ]
-      },
-      {
-        "field_id": "question_67672767",
+        "field_id": "start-year--0",
         "layer": "heuristic",
         "candidate": {
-          "selector": "#question_67672767",
+          "selector": "#start-year--0",
           "via": "label_text",
           "score": 1,
-          "inputId": "question_67672767"
+          "inputId": "start-year--0"
         },
         "healed": true,
         "notes": []
+      },
+      {
+        "field_id": "question_8969947005[]_23855259005",
+        "layer": null,
+        "candidate": null,
+        "healed": false,
+        "notes": [
+          "heuristic candidate [id=\"question_8969947005[]_23855259005\"] (1) did not verify",
+          "sidecar candidate #question_8969947005[]_23855259005 (1) did not verify",
+          "sidecar candidate [name=\"question_8969947005[]\"] (1) did not verify"
+        ]
+      },
+      {
+        "field_id": "question_8969947005[]_23855261005",
+        "layer": null,
+        "candidate": null,
+        "healed": false,
+        "notes": [
+          "heuristic candidate [id=\"question_8969947005[]_23855261005\"] (1) did not verify",
+          "sidecar candidate #question_8969947005[]_23855261005 (1) did not verify",
+          "sidecar candidate [name=\"question_8969947005[]\"] (1) did not verify"
+        ]
+      },
+      {
+        "field_id": "question_8969947005[]_23855284005",
+        "layer": null,
+        "candidate": null,
+        "healed": false,
+        "notes": [
+          "heuristic candidate [id=\"question_8969947005[]_23855284005\"] (1) did not verify",
+          "sidecar candidate #question_8969947005[]_23855284005 (1) did not verify",
+          "sidecar candidate [name=\"question_8969947005[]\"] (1) did not verify"
+        ]
+      },
+      {
+        "field_id": "question_8969952005",
+        "layer": "heuristic",
+        "candidate": {
+          "selector": "#question_8969952005",
+          "via": "label_text",
+          "score": 1,
+          "inputId": "question_8969952005"
+        },
+        "healed": true,
+        "notes": []
+      },
+      {
+        "field_id": "question_8969957005",
+        "layer": null,
+        "candidate": null,
+        "healed": false,
+        "notes": [
+          "heuristic candidate #question_8969957005 (1) did not verify",
+          "sidecar escalation skipped (budget exhausted)"
+        ]
       }
     ],
     "sidecar_used": true
   },
   "operator_brief": {
-    "title": "Live fill — greenhouse https://job-boards.greenhouse.io/cloudflare/jobs/8013562",
-    "summary": "3 item(s) need attention (verify failed — submit click blocked)",
+    "title": "Live fill — greenhouse https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
+    "summary": "5 item(s) need attention (verify failed — submit click blocked)",
     "items": [
       {
-        "id": "verify:relocation",
-        "question": "Do you currently live or are you willing to relocate to the job’s location?",
-        "field_id": "question_67672766",
-        "canonical_field": "relocation",
+        "id": "verify:current_company",
+        "question": "Organizational Behavior",
+        "field_id": "question_8969947005[]_23855259005",
+        "canonical_field": "current_company",
         "kind": "verify_mismatch",
-        "problem": "Expected \"Yes\"; page shows \"(empty)\"",
-        "expected": "Yes",
+        "problem": "Expected \"Summer Atlantic Capital\"; page shows \"true\"",
+        "expected": "Summer Atlantic Capital",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"Summer Atlantic Capital\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json → current_company",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"current_company\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:address.state",
+        "question": "If applicable, which US state do you reside in?",
+        "field_id": "question_8969952005",
+        "canonical_field": "address.state",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Maryland\"; page shows \"true\"",
+        "expected": "Maryland",
+        "observed": true,
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Maryland). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "DOM shows \"true\" but plan expected \"Maryland\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json → address.state",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.state\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:start_year",
+        "question": "Education",
+        "field_id": "question_8969947005[]_23855284005",
+        "canonical_field": "start_year",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"2025\"; page shows \"true\"",
+        "expected": "2025",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"2025\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: start_year)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"start_year\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:how_heard",
+        "question": "How did you hear about DV Trading?",
+        "field_id": "question_8969957005",
+        "canonical_field": "screener:how_heard",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"JobRight\"; page shows \"(empty)\"",
+        "expected": "JobRight",
         "observed": {
           "value": "",
           "label": ""
         },
         "how_to_answer": [
-          "MISMAPPED FIELD: location/city question was filled with a Yes/No (likely `relocation`). Fix aliases: map Location / Current location → address.city (not relocation).",
-          "Put the city in public-profile.json address.city, re-run fill, then pick the Places suggestion if the field is a typeahead.",
-          "Manual override: type your city on the form and select the dropdown suggestion so the control commits."
+          "Type the intended value on the form (planned: JobRight). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"JobRight\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:how_heard)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:how_heard\" should match the on-form question text."
         ]
       },
       {
-        "id": "fill_error:question_67672766: combobox option not committed: opened via control click; filt",
+        "id": "fill_error:question_8969957005: combobox option not committed: opened via control click; fi",
         "question": "(fill error — see problem)",
         "field_id": null,
         "canonical_field": null,
         "kind": "fill_error",
-        "problem": "question_67672766: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"Yes\" (options: I currently live in this job's location. | I am willing to relocate to this job's location. | I do not live and not willing to relocate to this job's location.)",
-        "expected": null,
-        "observed": null,
-        "how_to_answer": [
-          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
-          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
-        ]
-      },
-      {
-        "id": "fill_error:question_67672767: combobox option not committed: opened via control click; list",
-        "question": "(fill error — see problem)",
-        "field_id": null,
-        "canonical_field": null,
-        "kind": "fill_error",
-        "problem": "question_67672767: combobox option not committed: opened via control click; listbox did not open after click",
+        "problem": "question_8969957005: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"JobRight\" (options: LinkedIn | DV Recruitment | DV Employee | DV Intern | DV Website | Student Organization | Campus Event | Word of Mouth | …)",
         "expected": null,
         "observed": null,
         "how_to_answer": [
@@ -887,8 +3351,8 @@
         ]
       }
     ],
-    "ok_count": 13,
-    "fail_count": 3
+    "ok_count": 24,
+    "fail_count": 5
   },
-  "written_at": "2026-08-11T03:48:42.671Z"
+  "written_at": "2026-08-12T23:10:15.353Z"
 }

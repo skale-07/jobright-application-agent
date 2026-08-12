@@ -1,0 +1,60 @@
+{
+  "run_id": "nav-69b123b5-10c2-492f-8cbd-eed50d6e49cd",
+  "application_id": "8c5f182f-f000-4631-a66d-d87fcaf9081b",
+  "jobright_job_id": "6a7a560c67a1ad0bc53d3024",
+  "method": "agent",
+  "resolved_url": "https://job-boards.greenhouse.io/dvtrading/jobs/4719119005",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (10 external links ignored)",
+      "evidence": "boards.greenhouse.io, www.linkedin.com, x.com, www.crunchbase.com, www.dvtrading.co, www.businesswire.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 2,
+    "domains_visited": [
+      "job-boards.greenhouse.io",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, www.linkedin.com, x.com, www.crunchbase.com, www.dvtrading.co, www.businesswire.com, www.newswire.ca, www.hedgeweek.com",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.dvtrading.co, www.businesswire.com, www.newswire.ca, www.hedgeweek.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 55s, steps 2"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "dvtrading",
+    "detail": "token \"trading\" ~ slug \"dvtrading\"",
+    "expected_company": "DV Trading LLC",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=dvtrading&token=4719119005"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-12T23:09:13.829Z"
+}

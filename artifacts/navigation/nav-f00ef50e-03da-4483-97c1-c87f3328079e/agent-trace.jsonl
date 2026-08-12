@@ -1,0 +1,9 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-f00ef50e-03da-4483-97c1-c87f3328079e","application_id":"f8ca3d1d-a746-401b-81ad-522c06faea02","code_version":"1d7daa050ec1","session":"cdp","outcome":{"wall":"budget","method":null,"resolved":false,"congruence":null}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786575977.048,"start_host":"jobright.ai","at":"2026-08-12T23:06:17.048Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786575980.905,"at":"2026-08-12T23:06:20.906Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786575983.171,"provider":"anthropic","at":"2026-08-12T23:06:23.171Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786575983.171,"cdp_host":"127.0.0.1","at":"2026-08-12T23:06:23.173Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786575984.464,"max_steps":25,"at":"2026-08-12T23:06:24.465Z"}
+{"jaa_progress":1,"event":"step","t":1786575998.342,"i":1,"actions":["navigate"],"host":"www.tesla.com","elapsed_ms":14202,"at":"2026-08-12T23:06:38.342Z"}
+{"jaa_progress":1,"event":"step","t":1786576008.572,"i":2,"actions":["click"],"host":"jobs.gusto.com","elapsed_ms":24437,"at":"2026-08-12T23:06:48.572Z"}
+{"jaa_progress":1,"event":"step","t":1786576023.503,"i":3,"actions":["done"],"host":"jobs.gusto.com","elapsed_ms":39358,"at":"2026-08-12T23:07:03.503Z"}
