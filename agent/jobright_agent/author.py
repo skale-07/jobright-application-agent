@@ -30,6 +30,17 @@ def _fail(reason: str, code: int = 1) -> None:
 
 
 def main() -> None:
+    # Windows decodes stdin as cp1252 by default: any non-ASCII byte in the
+    # task (a goal containing an em dash was enough) becomes an undecodable
+    # string and browser-use rejects the task with a pydantic
+    # `string_unicode` error before step 1. The contract is UTF-8 JSON on
+    # both ends — say so explicitly. (2026-08-12 live: one app died at
+    # step 0 this way.)
+    for stream in (sys.stdin, sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):
+            pass
     raw = sys.stdin.read()
     try:
         task = json.loads(raw)

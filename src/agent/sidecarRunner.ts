@@ -40,6 +40,9 @@ export async function runSidecarTask(input: {
       cwd: path.join(process.cwd(), "agent"),
       stdio: ["pipe", "pipe", "pipe"],
       timeout: input.timeoutMs + input.graceMs,
+      // The task JSON is UTF-8; without this Python decodes stdin as
+      // cp1252 on Windows and a single non-ASCII character kills the turn.
+      env: { ...process.env, PYTHONIOENCODING: "utf-8", PYTHONUTF8: "1" },
     });
     let out = "";
     let err = "";

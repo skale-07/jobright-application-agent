@@ -1561,8 +1561,86 @@ async function main(): Promise<void> {
     case "verify:mailbox":
       await cmdVerifyMailbox(flags);
       return;
+    case "accounts:set": {
+      // Hand Dispatch an employer-portal login you already own. Stored in
+      // the same 0600 vault file as a minted account (private/, gitignored);
+      // never logged, never artifacted. Seeding a host is also the explicit
+      // authorization for portal auth to sign in THERE.
+      const host = (flags["host"] as string | undefined)?.trim().toLowerCase();
+      const email = (flags["email"] as string | undefined)?.trim();
+      const password = flags["password"] as string | undefined;
+      if (!host || !email) {
+        console.error(
+          "usage: npm run cli -- accounts:set --host <hostname> --email <you@example.com> [--password <secret>]\n" +
+            "  omit --password to keep/generate a strong one (you never need to know it)",
+        );
+        process.exit(2);
+        return;
+      }
+      if (/(^|\.)jobright\.ai$/i.test(host)) {
+        console.error("refusing: jobright.ai credentials belong to the login flow, not the vault");
+        process.exit(2);
+        return;
+      }
+      const { setAccount } = await import("../accounts/vault.js");
+      const { replaced } = setAccount(host, {
+        email,
+        ...(password ? { password } : {}),
+      });
+      console.log(
+        `${replaced ? "updated" : "stored"} credentials for ${host} (username ${email}, password ${password ? "set from --password" : "kept/generated"})`,
+      );
+      return;
+    }
+    case "accounts:list": {
+      const { listAccountHosts } = await import("../accounts/vault.js");
+      const hosts = listAccountHosts();
+      console.log(
+        hosts.length === 0
+          ? "no portal accounts stored"
+          : hosts.map((h) => `${h.host} (${h.username})`).join("\n"),
+      );
+      return;
+    }
     case "auto:cycle": {
       const { runAutoCycle } = await import("../automation/autoCycle.js");
+      const { autopushArtifacts } = await import(
+        "../automation/artifactAutopush.js"
+      );
+      // Operator request (2026-08-12): a cycle you stop with Ctrl+C must
+      // still ship its evidence. Push artifacts on the way out, then exit.
+      // Idempotent + bounded; a second Ctrl+C exits immediately.
+      let interrupting = false;
+      const onInterrupt = (signal: NodeJS.Signals): void => {
+        if (interrupting) process.exit(130);
+        interrupting = true;
+        console.error(
+          `\n${signal} received — pushing artifacts before exit (Ctrl+C again to skip)...`,
+        );
+        void (async () => {
+          try {
+            if (getConfig().artifactAutopushEnabled) {
+              const push = await autopushArtifacts({
+                armRunId: "interrupted",
+                message: `art: auto-cycle interrupted ${new Date().toISOString().replace(/[:.]/g, "-")} (autopush)`,
+              });
+              for (const n of push.notes) console.error(n);
+            } else {
+              console.error(
+                "artifact autopush is off (ARTIFACT_AUTOPUSH_ENABLED) — nothing pushed",
+              );
+            }
+          } catch (err) {
+            console.error(
+              `interrupt autopush failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          } finally {
+            process.exit(130);
+          }
+        })();
+      };
+      process.on("SIGINT", onInterrupt);
+      process.on("SIGTERM", onInterrupt);
       const num = (k: string): number | undefined =>
         typeof flags[k] === "string" && Number.isFinite(Number(flags[k]))
           ? Number(flags[k])

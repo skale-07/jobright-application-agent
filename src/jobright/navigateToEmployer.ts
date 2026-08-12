@@ -80,6 +80,37 @@ export async function readAutofillCtaHref(page: Page): Promise<string | null> {
   return null;
 }
 
+/**
+ * Zero-mutation check: does the JobRight page say the posting is closed?
+ * Operator finding (2026-08-12) — a closed posting burned the full phase
+ * B + agent budget (minutes) before parking. Reading the banner ends it in
+ * one DOM read. Scoped to the page's own text (not link titles) and
+ * anchored on JobRight's own wording.
+ */
+export async function detectClosedJobBanner(page: Page): Promise<boolean> {
+  const text = await page
+    .innerText("body", { timeout: 5_000 })
+    .then((t) => t.slice(0, 4_000))
+    .catch(() => "");
+  return jobrightSelectorsV1.navigation.closedJobMarkers.test(text);
+}
+
+/**
+ * Close JobRight's own modals ("Did you apply?"). Only the CLOSE control is
+ * ever clicked — the modal's buttons are answers about the operator's
+ * application state, which this system must never assert on their behalf.
+ */
+export async function dismissJobRightModal(page: Page): Promise<boolean> {
+  const closer = page
+    .locator(jobrightSelectorsV1.navigation.modalCloseControl)
+    .first();
+  if ((await closer.count().catch(() => 0)) === 0) return false;
+  if (!(await closer.isVisible().catch(() => false))) return false;
+  await closer.click({ timeout: 3_000 }).catch(() => undefined);
+  await page.waitForTimeout(250);
+  return true;
+}
+
 export type ApplyClickCapture = {
   url: string | null;
   via: "popup" | "same_tab" | null;

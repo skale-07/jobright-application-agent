@@ -16,6 +16,8 @@ import { discoverFieldsFromHtml } from "../applications/fieldDiscovery.js";
 import { getStoredJobInspectionTargetByApplicationId } from "../jobright/storedJobTarget.js";
 import {
   clickApplyAndCaptureExternalUrl,
+  detectClosedJobBanner,
+  dismissJobRightModal,
   readExternalApplyHrefs,
 } from "../jobright/navigateToEmployer.js";
 import { navigateViaSidecar } from "../agent/navigate.js";
@@ -36,6 +38,7 @@ import { recordNavigationAttempt } from "../storage/navSubmitOutcomes.js";
 import { codeVersion } from "../storage/codeVersion.js";
 import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 import {
+  employerSiblingHosts,
   explainAtsAnchorMisses,
   selectCandidateApplyLinks,
   traversalHosts,
@@ -131,6 +134,8 @@ export type NavigationWall =
   | "phone_otp"
   | "budget"
   | "submit_risk"
+  /** JobRight says the posting is closed — no Apply path exists. */
+  | "closed"
   /** Resolved URL belongs to a different employer than the job record. */
   | "mismatch"
   /** Another live application already holds this employer URL. */
@@ -344,6 +349,27 @@ export async function runNavigation(
     }
     trace({ phase: "open", outcome: "job page loaded" });
 
+    // JobRight's own modals ("Did you apply?") sit over the page and block
+    // every subsequent read/click. Close-control only — never an answer
+    // button (this system does not assert what the operator applied to).
+    if (await dismissJobRightModal(page)) {
+      report.notes.push("jobright modal closed before navigation");
+    }
+
+    // Dead posting: end here instead of spending phase B + the agent
+    // budget on a control that cannot work (operator finding 2026-08-12).
+    if (await detectClosedJobBanner(page)) {
+      report.wall = "closed";
+      trace({
+        phase: "open",
+        outcome: "posting is CLOSED on JobRight — navigation abandoned",
+      });
+      report.notes.push(
+        "jobright banner says this job has closed; no Apply path exists",
+      );
+      return persist(report);
+    }
+
     // Phase A — zero mutation. Only a KNOWN-ATS href resolves here: the
     // any-anchor fallback also matches footer/social links, and phase A
     // applies none of the landing-page checks phase B does, so an
@@ -544,12 +570,18 @@ export async function runNavigation(
     // structurally unwinnable. Traversal ≠ acceptance: congruence and the
     // final_url validation in navigateViaSidecar still gate what is stored.
     const jobPageHosts = traversalHosts(hrefs);
+    // Career sites redirect across sibling domains of the same brand
+    // (joinbytedance.com -> jobs.bytedance.com, live 2026-08-12). Allow the
+    // registrable domains so the agent is not demoted for following the
+    // real apply path; acceptance still runs congruence + URL validation.
+    const siblingHosts = employerSiblingHosts(hrefs, jobIdentity?.company ?? null);
     const allowedDomains = Array.from(
       new Set([
         "jobright.ai",
         ...KNOWN_ATS_HOSTS,
         ...(startUrl.startsWith("https://") ? [new URL(startUrl).hostname] : []),
         ...jobPageHosts,
+        ...siblingHosts,
       ]),
     ).slice(0, 25);
     if (jobPageHosts.length > 0) {
@@ -596,10 +628,14 @@ export async function runNavigation(
     // that resolved navigated DIRECTLY; the runs that thrashed scrolled
     // jobright hunting for a control that isn't there. Name the links.
     const candidateLinks = selectCandidateApplyLinks(hrefs);
+    // ASCII ONLY. The task rides stdin into Python; a single non-ASCII
+    // character (this string used to carry an em dash) made browser-use
+    // reject the whole task on Windows. The encoding is fixed on both
+    // ends now — keeping the text ASCII is the second line of defense.
     const linksHint =
       candidateLinks.length > 0
         ? ` The job page links to these external pages which likely lead to the ` +
-          `application — OPEN THE MOST PROMISING ONE DIRECTLY (navigate to its URL) ` +
+          `application: OPEN THE MOST PROMISING ONE DIRECTLY (navigate to its URL) ` +
           `instead of searching the current page: ${candidateLinks.join(" | ")}.`
         : "";
     if (candidateLinks.length > 0) {
