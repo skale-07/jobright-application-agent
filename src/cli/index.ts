@@ -142,7 +142,7 @@ Commands:
   nav:resolve --app <uuid> [--headed]   Resolve employer URL from JobRight (NAVIGATION_ENABLED)
   gmail:auth --email <mailbox> --client-id <id> --client-secret <secret>   One-time readonly OAuth
   gmail:check                           Read-only Gmail token smoke test
-  verify:mailbox [--since <minutes>] [--show]   Smoke-test the mailbox verification scan (gmail-web/outlook)
+  verify:mailbox [--since <minutes>] [--show] [--headed]   Smoke-test mailbox scan (gmail-web/outlook)
   auto:cycle [--no-update] [--headed] [--duration <min>] [--max-submits N] [--max-apps N]   One hands-off session cycle (operator-guide §19)
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
@@ -846,10 +846,13 @@ async function cmdVerifyMailbox(
   const requestedAt = new Date(
     Date.now() - Math.max(1, sinceMinutes) * 60_000,
   ).toISOString();
+  const headed = flags["headed"] === true;
   console.log(
-    `Scanning enabled mailboxes for a verification email newer than ${sinceMinutes}m (bounded ~1 min per provider)...`,
+    `Scanning enabled mailboxes for a verification email newer than ${sinceMinutes}m (bounded ~1 min per provider${headed ? ", headed" : ""})...`,
   );
-  const waiter = resolveNavVerificationWaiter();
+  // Production nav/submit keep headless; --headed is smoke-test only so you
+  // can watch Outlook/Gmail storage-state browsers while debugging.
+  const waiter = resolveNavVerificationWaiter({ headless: !headed });
   if (!waiter) {
     console.error("no provider resolved despite flags — check the shell env");
     process.exit(2);

@@ -6,6 +6,7 @@ import { readGmailToken } from "../gmail/tokenStore.js";
 import { waitForVerificationEmail } from "../gmail/waitForVerification.js";
 import { extractOtpCode } from "../gmail/verificationParsers.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
+import { OUTLOOK_WEB_MAIL_URL } from "../auth/outlookValidateExtra.js";
 import { outlookSelectorsV1 } from "../outlook/selectors.js";
 import { gmailWebCodeProvider } from "./gmailWebProvider.js";
 import { mailboxProviderOrder } from "./emailVerification.js";
@@ -85,18 +86,25 @@ export function gmailCodeProvider(): FetchVerificationCode {
  * live-UNVERIFIED like the drafts selectors; the acceptance test is a code
  * that actually unlocks the submit control). Bounded: 6 polls × 10s.
  */
-export function outlookCodeProvider(): FetchVerificationCode {
+export function outlookCodeProvider(options?: {
+  /** Default true. Smoke tests may pass false to watch the inbox scan. */
+  headless?: boolean;
+}): FetchVerificationCode {
+  const headless = options?.headless ?? true;
   return async ({ requestedAt }) => {
     const cfg = getConfig();
     if (!cfg.outlookVerificationEnabled) return null;
     const session = new PlaywrightServiceSession({
       service: "outlook",
-      headless: true,
+      headless,
     });
     try {
+      // Same contract as gmailWebProvider: open() before newPage(), or
+      // assertOpen throws "ServiceSession not open for outlook".
+      await session.open();
       const page = await session.newPage({ purpose: "verification_code_read" });
       for (let poll = 0; poll < 6; poll++) {
-        await page.goto("https://outlook.live.com/mail/", {
+        await page.goto(OUTLOOK_WEB_MAIL_URL, {
           waitUntil: "domcontentloaded",
           timeout: 60_000,
         });

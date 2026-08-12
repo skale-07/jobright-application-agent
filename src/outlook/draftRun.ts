@@ -5,6 +5,10 @@ import { logger } from "../logging/logger.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { getApplication, transitionApplication } from "../queue/stateMachine.js";
 import { assertDraftsOnlyMode } from "./sendGuards.js";
+import {
+  OUTLOOK_WEB_DRAFTS_URL,
+  OUTLOOK_WEB_MAIL_URL,
+} from "../auth/outlookValidateExtra.js";
 import { outlookSelectorsV1 } from "./selectors.js";
 import { composeDraftContent, hashDraftBody } from "./draftComposer.js";
 
@@ -129,7 +133,7 @@ export async function createOutlookDraft(input: {
     await session.open();
     const page = await session.newPage({ purpose: "draft_create" });
     try {
-      await page.goto("https://outlook.live.com/mail/", {
+      await page.goto(OUTLOOK_WEB_MAIL_URL, {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });
@@ -247,7 +251,7 @@ export async function verifyOutlookDraft(input: {
     await session.open();
     const page = await session.newPage({ purpose: "draft_verify" });
     try {
-      await page.goto("https://outlook.live.com/mail/drafts", {
+      await page.goto(OUTLOOK_WEB_DRAFTS_URL, {
         waitUntil: "domcontentloaded",
         timeout: 60_000,
       });

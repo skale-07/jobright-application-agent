@@ -43,6 +43,25 @@ describe("auth validation", () => {
       classifyAuthUrl("https://login.microsoftonline.com/common/oauth2/v2.0/authorize", cfg)
         .status,
     ).toBe("UNAUTHENTICATED");
+    expect(
+      classifyAuthUrl(
+        "https://www.microsoft.com/en-us/microsoft-365/outlook/email-and-calendar-software-microsoft-outlook?deeplink=%2Fmail%2F",
+        cfg,
+      ).status,
+    ).toBe("UNAUTHENTICATED");
+  });
+
+  it("outlook validateExtra rejects marketing hosts and accepts office.com mail", async () => {
+    const { assessOutlookAuthUrl } = await import(
+      "../../src/auth/outlookValidateExtra.js"
+    );
+    expect(
+      assessOutlookAuthUrl(
+        "https://www.microsoft.com/en-us/microsoft-365/outlook/email-and-calendar-software-microsoft-outlook?deeplink=%2Fmail%2F",
+      )?.status,
+    ).toBe("UNAUTHENTICATED");
+    expect(assessOutlookAuthUrl("https://outlook.office.com/mail/")).toBeNull();
+    expect(getServiceAuthConfig("outlook").loginUrl).toContain("outlook.office.com");
   });
 
   it("parses service and mode", () => {

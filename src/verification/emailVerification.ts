@@ -94,8 +94,11 @@ export function resolveNavVerificationWaiter(overrides?: {
   gmailWaiter?: NavVerificationWaiter;
   gmailWebFetch?: ScanFetch;
   outlookFetch?: ScanFetch;
+  /** Browser mailbox scans only. Default true (production). Smoke tests may set false. */
+  headless?: boolean;
 }): NavVerificationWaiter | null {
   const cfg = getConfig();
+  const headless = overrides?.headless ?? true;
   // Gmail REST rides only when a token exists (the API is unavailable for
   // this operator — the WEB mailbox scan is the primary Gmail transport).
   const gmailRestOn =
@@ -125,12 +128,12 @@ export function resolveNavVerificationWaiter(overrides?: {
   // hardcoded Gmail-first chain opened the wrong mailbox for an operator
   // whose portal login is an Outlook address (live 2026-08-12).
   const gmailFetch: ScanFetch | null = gmailWebOn
-    ? (overrides?.gmailWebFetch ?? gmailWebNavFetch())
+    ? (overrides?.gmailWebFetch ?? gmailWebNavFetch({ headless }))
     : null;
   const outlookFetch: ScanFetch | null = outlookOn
     ? (overrides?.outlookFetch ??
       (async (input) => {
-        const fetched = await outlookCodeProvider()(input);
+        const fetched = await outlookCodeProvider({ headless })(input);
         return fetched
           ? { kind: "code", value: fetched.code, source: fetched.source }
           : null;

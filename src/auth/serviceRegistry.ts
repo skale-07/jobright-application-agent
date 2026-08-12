@@ -1,6 +1,10 @@
 import path from "node:path";
 import { getConfig } from "../config/index.js";
 import { validateJobrightAuthExtra } from "./jobrightValidateExtra.js";
+import {
+  OUTLOOK_WEB_MAIL_URL,
+  validateOutlookAuthExtra,
+} from "./outlookValidateExtra.js";
 import type { ServiceAuthConfig, ServiceName, SessionPersistenceMode } from "./types.js";
 
 export function authPaths(privateDir = getConfig().privateDir): {
@@ -61,13 +65,17 @@ export function getServiceAuthConfig(service: ServiceName): ServiceAuthConfig {
     case "outlook":
       return {
         service,
-        loginUrl: "https://outlook.live.com/mail/",
-        validateUrl: "https://outlook.live.com/mail/",
+        // office.com — work/school M365 (e.g. *.edu). live.com/mail often
+        // bounces to the microsoft.com marketing deeplink instead of inbox.
+        loginUrl: OUTLOOK_WEB_MAIL_URL,
+        validateUrl: OUTLOOK_WEB_MAIL_URL,
         unauthenticatedUrlPatterns: [
           /login\.live\.com/i,
           /login\.microsoftonline\.com/i,
           /\/oauth2\//i,
           /\/login/i,
+          /microsoft\.com\/.*microsoft-365\/outlook/i,
+          /microsoft\.com\/.*\/outlook\//i,
         ],
         checkpointUrlPatterns: [
           /\/proofs\//i,
@@ -75,6 +83,7 @@ export function getServiceAuthConfig(service: ServiceName): ServiceAuthConfig {
           /\/safelinks\//i,
           /account\.live\.com\/identity/i,
         ],
+        validateExtra: validateOutlookAuthExtra,
         ...shared,
       };
     default: {

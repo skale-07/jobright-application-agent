@@ -152,14 +152,17 @@ function isOlderThan(timestamp: number | null, floorMs: number): boolean {
 async function pollGmailWeb(
   requestedAt: string,
   accept: "code" | "code_or_link",
+  headless = true,
 ): Promise<MailboxVerificationHit | null> {
   const cfg = getConfig();
   if (!cfg.gmailVerificationEnabled) return null;
   const useCdp = await cdpReachable(cfg.agentCdpUrl);
+  // CDP attach ignores headless (operator Chrome is already visible).
+  // STORAGE_STATE launches honor headless for smoke-test visibility.
   const session = new PlaywrightServiceSession({
     service: "jobright",
     ...(useCdp ? { mode: "CDP_ATTACH" as const } : {}),
-    headless: true,
+    headless: useCdp ? true : headless,
   });
   try {
     await session.open();
@@ -198,20 +201,26 @@ async function pollGmailWeb(
   }
 }
 
-export function gmailWebCodeProvider(): FetchVerificationCode {
+export function gmailWebCodeProvider(options?: {
+  headless?: boolean;
+}): FetchVerificationCode {
+  const headless = options?.headless ?? true;
   return async ({ requestedAt }) => {
-    const hit = await pollGmailWeb(requestedAt, "code");
+    const hit = await pollGmailWeb(requestedAt, "code", headless);
     return hit?.kind === "code" ? { code: hit.value, source: "gmail-web" } : null;
   };
 }
 
 /** Nav-wall variant: codes AND magic links (verified-sender trust). */
-export function gmailWebNavFetch(): (input: {
+export function gmailWebNavFetch(options?: {
+  headless?: boolean;
+}): (input: {
   requestedAt: string;
   emailHint: string | null;
 }) => Promise<(MailboxVerificationHit & { source: string }) | null> {
+  const headless = options?.headless ?? true;
   return async ({ requestedAt }) => {
-    const hit = await pollGmailWeb(requestedAt, "code_or_link");
+    const hit = await pollGmailWeb(requestedAt, "code_or_link", headless);
     return hit ? { ...hit, source: "gmail-web" } : null;
   };
 }

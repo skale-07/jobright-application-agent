@@ -1,5 +1,5 @@
 /**
- * Outlook web (outlook.live.com) selector registry v1.
+ * Outlook web (outlook.office.com / live.com) selector registry v1.
  *
  * SYNTHETIC basis: aria-label patterns typical of Outlook web, never
  * confirmed against the live mailbox. Every selector is live-UNVERIFIED
