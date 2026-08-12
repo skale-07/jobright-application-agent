@@ -187,3 +187,30 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
     });
   });
 });
+
+describe("mailbox provider order (UNIT_CONFIRMED)", () => {
+  it("an Outlook-family address scans OUTLOOK first", async () => {
+    const { mailboxProviderOrder } = await import(
+      "../../src/verification/emailVerification.js"
+    );
+    for (const email of [
+      "me@outlook.com",
+      "me@hotmail.com",
+      "me@live.co.uk",
+      "me@msn.com",
+    ]) {
+      expect(mailboxProviderOrder(email)[0], email).toBe("outlook");
+    }
+  });
+
+  it("a Gmail address scans GMAIL first; unknown domains keep gmail-first", async () => {
+    const { mailboxProviderOrder } = await import(
+      "../../src/verification/emailVerification.js"
+    );
+    expect(mailboxProviderOrder("me@gmail.com")[0]).toBe("gmail");
+    expect(mailboxProviderOrder("me@jh.edu")[0]).toBe("gmail");
+    expect(mailboxProviderOrder(null)[0]).toBe("gmail");
+    // Both providers always remain in the chain as the fallback.
+    expect(mailboxProviderOrder("me@outlook.com")).toHaveLength(2);
+  });
+});
