@@ -99,6 +99,20 @@ export const jobrightSelectorsV1 = {
      * only safe click, so it gets its own selector rather than relying on
      * the generic dismissive-name whitelist.
      */
+    /**
+     * JobRight interstitials that stand between the operator and the
+     * employer form and offer a PROCEED action (operator finding
+     * 2026-08-12: "Customize Your Resume in 10 seconds" → "Apply Without
+     * Customizing"). These are the only "apply"-named controls this system
+     * clicks inside a modal, matched exactly — they continue the flow the
+     * operator already chose rather than starting a new one.
+     */
+    interstitialProceedNames: [
+      /^apply without customizing$/i,
+      /^continue without customizing$/i,
+      /^skip( and)? (apply|continue)$/i,
+      /^apply anyway$/i,
+    ] as RegExp[],
     modalCloseControl:
       '[role="dialog"] [aria-label="Close" i], [role="dialog"] button.ant-modal-close, .ant-modal-close, [class*="modal"] [aria-label="close" i]',
     status: "UNVERIFIED_SELECTOR" as const,

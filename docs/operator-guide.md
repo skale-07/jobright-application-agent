@@ -975,6 +975,37 @@ With no `PORTAL_LOGIN_PASSWORD` set at all, portal auth falls back to
 vault-seeded hosts plus recognized Workday tenants and refuses everything
 else (fail-closed by absence).
 
+**What happens at a wall.** Navigation reads the wall's shape first
+(`login_wall` in the nav report: which inputs exist, which submit control,
+which federated buttons, whether a create-account route is offered, and
+any error text), then:
+
+1. cookie/consent banners are accepted so they can't swallow the click;
+2. it **signs in** with the standing credentials;
+3. only if the portal **rejects** those credentials *and* offers a
+   create-account route does it follow that route and create the account
+   with the same email + password (the Amazon case);
+4. the mailbox is opened only when the page actually asks for a code or a
+   confirmation link — never on spec.
+
+A wall that survives all of that parks the application as `wall: auth`
+with the diagnosis in the report, so the next fix is driven by the real
+DOM rather than a screenshot.
+
+### Seeing what happened — `viz:timeline`
+
+```powershell
+npm run viz:timeline            # writes artifacts\console\run-timeline.html
+npm run viz:timeline -- --limit 60
+```
+
+One self-contained page (no network, no DB, no browser — it only reads
+`artifacts/`): the latest cycle's frame at the top, then one expandable
+row per navigation run, colour-coded — green resolved, amber auth/CAPTCHA
+wall, red unresolved, grey closed posting — each carrying its phase trace,
+notes, and the hosts the agent visited. `auto:cycle` renders it at the end
+of every run, so a pushed artifact bundle already contains the page.
+
 ### Stopping a cycle by hand
 
 `Ctrl+C` during `npm run auto:cycle` pushes the artifacts collected so far

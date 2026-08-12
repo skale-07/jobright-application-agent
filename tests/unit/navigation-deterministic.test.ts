@@ -389,6 +389,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
             notes: [],
             congruence: null,
             duplicates: null,
+            login_wall: null,
           };
         },
       });
@@ -424,6 +425,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           notes: [],
           congruence: null,
           duplicates: null,
+          login_wall: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("CAPTCHA_REQUIRED");
@@ -465,6 +467,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
             url: "https://jobs.ashbyhq.com/cohere/x/application",
           },
           duplicates: null,
+          login_wall: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");
@@ -509,6 +512,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
               role: "ML Intern",
             },
           ],
+          login_wall: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");
@@ -544,6 +548,7 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
           notes: [],
           congruence: null,
           duplicates: null,
+          login_wall: null,
         }),
       });
       expect(getApplication(db!, appId)?.state).toBe("FAILED_RETRYABLE");

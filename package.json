@@ -32,6 +32,7 @@
     "gmail:check": "tsx src/cli/index.ts gmail:check",
     "verify:mailbox": "tsx src/cli/index.ts verify:mailbox",
     "auto:cycle": "tsx src/cli/index.ts auto:cycle",
+    "viz:timeline": "tsx src/cli/index.ts viz:timeline",
     "review": "tsx src/cli/index.ts review",
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",

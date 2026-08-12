@@ -144,6 +144,7 @@ Commands:
   gmail:check                           Read-only Gmail token smoke test
   verify:mailbox [--since <minutes>] [--show] [--headed]   Smoke-test mailbox scan (gmail-web/outlook)
   auto:cycle [--no-update] [--headed] [--duration <min>] [--max-submits N] [--max-apps N]   One hands-off session cycle (operator-guide §19)
+  viz:timeline [--limit N]              Render artifacts/console/run-timeline.html (read-only)
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
@@ -1657,6 +1658,19 @@ async function main(): Promise<void> {
       });
       console.log(JSON.stringify(report, null, 2));
       process.exit(report.outcome === "completed" || report.outcome === "skipped_already_armed" ? 0 : 1);
+      return;
+    }
+    case "viz:timeline": {
+      // Read-only render of what the last runs actually did. No DB, no
+      // browser, no network, no flags — safe to run at any time.
+      const { writeRunTimeline } = await import("../console/runTimeline.js");
+      const limitFlag = flags["limit"];
+      const limit =
+        typeof limitFlag === "string" && Number.isFinite(Number(limitFlag))
+          ? Number(limitFlag)
+          : 40;
+      const out = writeRunTimeline({ limit });
+      console.log(out);
       return;
     }
     case "review":

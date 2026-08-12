@@ -100,6 +100,32 @@ export async function detectClosedJobBanner(page: Page): Promise<boolean> {
  * ever clicked — the modal's buttons are answers about the operator's
  * application state, which this system must never assert on their behalf.
  */
+export async function clearJobRightInterstitial(
+  page: Page,
+): Promise<{ cleared: "proceeded" | "closed" | null; note: string | null }> {
+  // PROCEED first: an interstitial offering "Apply Without Customizing"
+  // wants a decision, and continuing is the decision the operator already
+  // made by queuing the application. Closing it can drop the flow back to
+  // the job page with nothing accomplished.
+  for (const name of jobrightSelectorsV1.navigation.interstitialProceedNames) {
+    for (const role of ["button", "link"] as const) {
+      const control = page.getByRole(role, { name }).first();
+      if ((await control.count().catch(() => 0)) === 0) continue;
+      if (!(await control.isVisible().catch(() => false))) continue;
+      await control.click({ timeout: 5_000 }).catch(() => undefined);
+      await page.waitForTimeout(400);
+      return {
+        cleared: "proceeded",
+        note: `jobright interstitial: clicked "${name.source.replace(/[\^$]/g, "")}"`,
+      };
+    }
+  }
+  if (await dismissJobRightModal(page)) {
+    return { cleared: "closed", note: "jobright modal closed (X)" };
+  }
+  return { cleared: null, note: null };
+}
+
 export async function dismissJobRightModal(page: Page): Promise<boolean> {
   const closer = page
     .locator(jobrightSelectorsV1.navigation.modalCloseControl)
