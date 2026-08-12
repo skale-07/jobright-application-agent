@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dispatch run timeline</title>
+<style>
+  :root {
+    --bg:#fbfbfd; --fg:#14161a; --muted:#6b7280; --line:#e5e7eb; --card:#fff;
+    --ok:#0f9d58; --warn:#d97706; --bad:#dc2626; --dim:#9ca3af;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3af; --line:#232732; --card:#161922;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0f1115; --fg:#e6e8eb; --muted:#9aa3af; --line:#232732; --card:#161922;
+  }
+  body { margin:0; background:var(--bg); color:var(--fg);
+    font:15px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width:1040px; margin:0 auto; padding:32px 20px 64px; }
+  h1 { font-size:24px; margin:0 0 4px; letter-spacing:-.01em; }
+  .sub { color:var(--muted); margin:0 0 24px; font-size:13px; }
+  section.cycle { background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:18px 20px; margin-bottom:24px; }
+  h2 { font-size:16px; margin:0 0 12px; }
+  h3 { font-size:13px; margin:16px 0 6px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.06em; }
+  dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px 18px; margin:0; }
+  dl div { min-width:0; }
+  dt { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  dd { margin:2px 0 0; font-size:13px; word-break:break-word; }
+  .stats { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:4px 12px; font-size:12px; color:var(--muted); }
+  .stat b { color:var(--fg); }
+  details.app { background:var(--card); border:1px solid var(--line);
+    border-left:3px solid var(--dim); border-radius:10px; margin-bottom:8px; }
+  details.app.ok { border-left-color:var(--ok); }
+  details.app.warn { border-left-color:var(--warn); }
+  details.app.bad { border-left-color:var(--bad); }
+  details.app.muted { border-left-color:var(--dim); }
+  summary { cursor:pointer; padding:11px 16px; display:flex; flex-wrap:wrap;
+    align-items:center; gap:10px; list-style:none; }
+  summary::-webkit-details-marker { display:none; }
+  .id { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--muted); }
+  .co { font-weight:600; }
+  .badge { font-size:12px; color:var(--muted); }
+  .chip { font-size:11px; border:1px solid var(--line); border-radius:999px;
+    padding:1px 8px; color:var(--muted); }
+  .body { padding:0 16px 16px; border-top:1px solid var(--line); }
+  h4 { font-size:12px; margin:14px 0 6px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.05em; }
+  ol.phases, ul.notes { margin:0; padding-left:20px; font-size:13px; }
+  ol.phases li, ul.notes li { margin:3px 0; word-break:break-word; }
+  .ev { display:block; color:var(--muted); font-size:12px; }
+  .hosts { font-family:ui-monospace,monospace; font-size:12px; color:var(--muted);
+    word-break:break-all; margin:0; }
+  footer { color:var(--muted); font-size:12px; margin-top:28px; }
+</style></head>
+<body><div class="wrap">
+<h1>Dispatch run timeline</h1>
+<p class="sub">Generated 2026-08-12T22:57:08.308Z · 40 navigation run(s) · read-only view of artifacts/</p>
+<div class="stats"><span class="stat"><b>23</b> budget</span><span class="stat"><b>13</b> resolved</span><span class="stat"><b>3</b> auth</span><span class="stat"><b>1</b> submit_risk</span></div>
+<section class="cycle">
+  <h2>Latest cycle</h2>
+  <dl>
+    <div><dt>Started</dt><dd>2026-08-12T22:56:55.747Z</dd></div>
+    <div><dt>Outcome</dt><dd>skipped_already_armed</dd></div>
+    <div><dt>Agent leg</dt><dd>available (debug Chrome autolaunched)</dd></div>
+    <div><dt>Default resume</dt><dd>ready (C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)</dd></div>
+    <div><dt>Apps started</dt><dd>—</dd></div>
+    <div><dt>Submits used</dt><dd>—</dd></div>
+    <div><dt>Stopped</dt><dd>—</dd></div>
+  </dl>
+  
+</section>
+<h2>Applications</h2>
+<details class="app ok">
+  <summary>
+    <span class="id">83409002</span>
+    <span class="co">Medtronic</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">workday</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (known ATS, 11 candidates, employer match)<span class="ev">medtronic.wd1.myworkdayjobs.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">904ef189</span>
+    <span class="co">TIFIN</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, tifin.com, www.sec.gov</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, tifin.com, www.sec.gov, www.privatebankerinternational.com, www.investmentnews.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup opened but carried no usable URL</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, tifin.com, www.sec.gov, www.privatebankerinternational.com, www.investmentnews.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 49s, steps 2</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io</p>
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">4eae0f96</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: auth (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup opened but carried no usable URL</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 65s, steps 4</li><li>agent[1] reason: agent stopped: auth</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.bytedance.com → joinbytedance.com</p>
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">7f9d0dc5</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">www.amazon.jobs, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, amazon.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: auth (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: www.amazon.jobs, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, amazon.com, www.techtimes.com, www.fool.com, www.straitstimes.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup opened but carried no usable URL</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: www.amazon.jobs, amazon.com, www.techtimes.com, www.fool.com, www.straitstimes.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 97s, steps 4</li><li>agent[1] reason: agent stopped: auth</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → passport.amazon.jobs → www.amazon.jobs</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">1ee6f795</span>
+    <span class="co">IBM</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">careers.ibm.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com, www.thefastmode.com, www.techinasia.com, yourstory.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 2</li><li>employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">4c5d19d3</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com</li><li>Apply control: autofill CTA (tier 0)</li><li>click attempt 2 failed: locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /apply/i }).nth(1)[2</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, www.yicaiglobal.com, www.silicon.co.uk, neworleanscitybusiness.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 2 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.bytedance.com → joinbytedance.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">969c901e</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/0s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">careers.ibm.com, www.linkedin.com, x.com, www.crunchbase.com, hakkoda.io, www.crn.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: careers.ibm.com, www.linkedin.com, x.com, www.crunchbase.com, hakkoda.io, www.crn.com, www.einpresswire.com, www.sramanamitra.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: careers.ibm.com, hakkoda.io, www.crn.com, www.einpresswire.com, www.sramanamitra.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: navigate failed: 1 validation error for CreateAgentTaskEvent
+task
+  Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode, input_value='Start at https://jobrigh...owed by the page URL.\n', input_type=str]
+    For further information visit https://errors.pydantic.dev/2.12/v/string_unicode</li><li>agent[1] reason: navigate failed: 1 validation error for CreateAgentTaskEvent
+task
+  Input should be a valid string, unable to parse raw data as a unicode string [type=string_unicode, input_value='Start at https://jobrigh...owed by the page URL.\n', input_type=str]
+    For further information visit https://errors.py</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">2a48470c</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (13 external links ignored)<span class="ev">interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: interdigital.wd5.myworkdayjobs.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 1 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">cadence.wd1.myworkdayjobs.com → interdigital.wd5.myworkdayjobs.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">aa162e86</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.figma.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.figma.com, www.fool.com, www.benzinga.com, www.techmeme.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.figma.com, www.fool.com, www.benzinga.com, www.techmeme.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 1 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → joinbytedance.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">aa1d6976</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 7 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, apnews.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, www.qatar-tribune.com, apnews.com</li><li>agent goal seeded with 3 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 1 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.bytedance.com → joinbytedance.com</p>
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">3aec95ff</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: auth (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: cadence.wd1.myworkdayjobs.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 88s, steps 6</li><li>agent[1] reason: agent stopped: auth</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">cadence.wd1.myworkdayjobs.com → jobright.ai</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">f2628238</span>
+    <span class="co">Cloudflare</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.helpnetsecurity.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.helpnetsecurity.com, www.livemint.com, www.business-standard.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.helpnetsecurity.com, www.livemint.com, www.business-standard.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 52s, steps 2</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">56d6a4d7</span>
+    <span class="co">Zipline</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 70s, steps 2</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">4458533f</span>
+    <span class="co">impact.com</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 65s, steps 2</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">6afa9de4</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/5s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 7 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, apnews.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, www.qatar-tribune.com, apnews.com</li><li>agent goal seeded with 3 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 3 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">cadence.wd1.myworkdayjobs.com → jobs.bytedance.com → joinbytedance.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">42eb925c</span>
+    <span class="co">Virtu Financial</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/2s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 77s, steps 2</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">b534bc8c</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: cadence.wd1.myworkdayjobs.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: agent visited off-domain URLs: 1 — result demoted</li><li>agent[1] reason: allowed_domains violated</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">cadence.wd1.myworkdayjobs.com → www.ycombinator.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">dd852fac</span>
+    <span class="co">EffiGov</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (7 external links ignored)<span class="ev">www.ycombinator.com, www.linkedin.com, www.crunchbase.com, effigov.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer unverified)<span class="ev">www.ycombinator.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 4 non-ATS external host(s) seen: www.ycombinator.com, www.linkedin.com, www.crunchbase.com, effigov.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: www.ycombinator.com, effigov.com</li><li>agent goal seeded with 2 candidate link(s) from the job page</li><li>agent[1]: elapsed 63s, steps 3</li><li>employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → www.ycombinator.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">832a6730</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: www.citadel.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com, www.cnbc.com, www.hedgeweek.com</li><li>Apply control matched via broad name tier</li><li>click attempt 2 failed: locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /apply/i }).first()[</li><li>no external URL captured after 2 attempts</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">b40d62fa</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">jobs.jobvite.com, www.linkedin.com, x.com, www.crunchbase.com, www.altamiracorp.com, www.washingtontechnology.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: jobs.jobvite.com, www.linkedin.com, x.com, www.crunchbase.com, www.altamiracorp.com, www.washingtontechnology.com, www.fool.com, therecursive.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">83409002</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">medtronic.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.medtronic.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: medtronic.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.medtronic.com, www.fool.com, www.bioworld.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">4c5d19d3</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 7 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, apnews.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">969c901e</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">careers.ibm.com, www.linkedin.com, x.com, www.crunchbase.com, hakkoda.io, www.crn.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: careers.ibm.com, www.linkedin.com, x.com, www.crunchbase.com, hakkoda.io, www.crn.com, www.einpresswire.com, www.sramanamitra.com</li><li>Apply control matched via broad name tier</li><li>click attempt 2 failed: locator.click: Timeout 10000ms exceeded.
+Call log:
+[2m  - waiting for getByRole('button', { name: /apply/i }).first()[</li><li>no external URL captured after 2 attempts</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">2a48470c</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (13 external links ignored)<span class="ev">interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: interdigital.wd5.myworkdayjobs.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.interdigital.com, www.benzinga.com, www.globenewswire.com, www.einpresswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">aa162e86</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.figma.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — skipped: agent phase unavailable (AGENT_FALLBACK_ENABLED off or CDP Chrome unreachable)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.figma.com, www.fool.com, www.benzinga.com, www.techmeme.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>unresolved by deterministic phases; agent phase unavailable in this session</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">f1cddf7a</span>
+    <span class="co">FieldAI</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">lever</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (known ATS, 10 candidates, employer match)<span class="ev">jobs.lever.co</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">56d6a4d7</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">4458533f</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, with-impact.com, www.prnewswire.com, eu.36kr.com, www.globenewswire.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">6afa9de4</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">42eb925c</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.virtu.com, fxnewsgroup.com, www.morningstar.com, www.newswire.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">aa1d6976</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">42d9e25e</span>
+    <span class="co">Zipline</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">greenhouse</span>
+    <span class="chip">agent 1t/7s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>agent[1]: elapsed 126s, steps 7</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">3aec95ff</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">f2628238</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.analyticsinsight.net</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.analyticsinsight.net, www.macobserver.com, www.techspot.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.analyticsinsight.net, www.macobserver.com, www.techspot.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">353b4699</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">ashby</span>
+    <span class="chip">agent 2t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>D_gmail</b> — verification code retrieved</li><li><b>C_agent</b> — resolved (turn 2, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[2]: continuation ok</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">b483c855</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent phase failed: Unexpected token 'o', &quot;not json at all&quot; is not valid JSON</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">81026c75</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">lever</span>
+    <span class="chip">agent 1t/5s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">jobs.lever.co</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">34d7c521</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — captured URL lands on a login wall — not stored<span class="ev">careers.example.com</span></li><li><b>B_apply_click</b> — login wall</li><li><b>C_agent</b> — resolved (turn 1, employer unverified)<span class="ev">careers.example.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>popup captured on attempt 1</li><li>vault: existing account for careers.example.com</li><li>agent[1]: cred_available:true</li><li>agent[1]: leaked:[REDACTED_SECRET]</li><li>employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">careers.example.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">beef5566</span>
+    <span class="co">—</span>
+    <span class="badge">wall: submit_risk</span>
+    
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: submit_risk (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1] reason: agent stopped: submit_risk</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">e3a08818</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent phase failed: sidecar final_url host evil.example.com is outside allowed domains</li></ul>
+    
+  </div>
+</details>
+<footer>Every row is one navigation run. Green = employer URL resolved; amber = auth/CAPTCHA wall; red = unresolved; grey = posting closed. Expand a row for its phase trace and the notes that explain the stop.</footer>
+</div></body></html>

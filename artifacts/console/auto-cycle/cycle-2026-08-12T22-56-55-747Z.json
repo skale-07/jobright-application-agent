@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-08-12T22:56:55.747Z",
+  "updated": {
+    "pulled": false,
+    "head": "c29b150d",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "available (debug Chrome autolaunched)"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "13975596-aa3a-4be1-9454-b37bb5691fed",
+    "armed_until": "2026-08-13T00:24:42.535Z",
+    "seconds_remaining": 5254,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 6,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": null,
+  "outcome": "skipped_already_armed",
+  "notes": [
+    "CDP autolaunch: started debug Chrome on port 9222",
+    "an armed session is already live — not double-arming"
+  ]
+}
