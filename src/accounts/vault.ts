@@ -56,10 +56,59 @@ export function generatePassword(): string {
   return chars.join("");
 }
 
+/** Stored portal accounts (host + username only — never the password). */
+export function listAccountHosts(): Array<{ host: string; username: string }> {
+  const dir = path.join(getConfig().privateDir, "ats-accounts");
+  if (!fs.existsSync(dir)) return [];
+  const out: Array<{ host: string; username: string }> = [];
+  for (const file of fs.readdirSync(dir)) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const parsed = accountSchema.parse(
+        JSON.parse(fs.readFileSync(path.join(dir, file), "utf8")),
+      );
+      out.push({ host: parsed.host, username: parsed.username });
+    } catch {
+      // unreadable/foreign file — skip
+    }
+  }
+  return out.sort((a, b) => a.host.localeCompare(b.host));
+}
+
 export function getAccount(host: string): AtsAccount | null {
   const p = accountPath(host);
   if (!fs.existsSync(p)) return null;
   return accountSchema.parse(JSON.parse(fs.readFileSync(p, "utf8")));
+}
+
+/**
+ * Store an OPERATOR-SUPPLIED account for a host (accounts:set). This is
+ * the explicit way to hand Dispatch an existing employer-portal login —
+ * e.g. a ByteDance careers account you already created by hand. Same
+ * 0600 file, same never-logged/never-artifacted handling as a minted one;
+ * an omitted password keeps the vault's generated one (or mints a fresh
+ * one for a brand-new host) so the operator never has to invent one.
+ */
+export function setAccount(
+  host: string,
+  input: { email: string; password?: string; runId?: string },
+): { account: AtsAccount; replaced: boolean } {
+  const existing = getAccount(host);
+  const account: AtsAccount = {
+    host: host.toLowerCase(),
+    username: input.email,
+    password: input.password ?? existing?.password ?? generatePassword(),
+    created_at: existing?.created_at ?? new Date().toISOString(),
+    created_by_run_id: input.runId ?? "operator:accounts:set",
+    notes: [
+      ...(existing?.notes ?? []),
+      `operator set credentials at ${new Date().toISOString()}`,
+    ].slice(-10),
+  };
+  const p = accountPath(host);
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(account, null, 2), { mode: 0o600 });
+  return { account, replaced: existing !== null };
 }
 
 export function getOrCreateAccount(

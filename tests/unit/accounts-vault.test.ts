@@ -8,6 +8,8 @@ import {
   getAccount,
   getOrCreateAccount,
   hostHash,
+  listAccountHosts,
+  setAccount,
 } from "../../src/accounts/vault.js";
 import { resetConfigCache } from "../../src/config/index.js";
 import {
@@ -31,6 +33,44 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
     delete process.env.PRIVATE_DIR;
     resetConfigCache();
     fs.rmSync(privateDir, { recursive: true, force: true });
+  });
+
+  // Operator-supplied logins (accounts:set): the answer to "how do I give
+  // Dispatch my ByteDance careers password?" — and, on a non-Workday host,
+  // the ONLY thing that authorizes portal auth to sign in there.
+  it("setAccount stores an operator login and authorizes that host for portal auth", async () => {
+    const { isRecognizedAtsAuthHost } = await import(
+      "../../src/verification/portalAuth.js"
+    );
+    expect(isRecognizedAtsAuthHost("https://jobs.bytedance.com/x")).toBe(false);
+    const { account, replaced } = setAccount("jobs.bytedance.com", {
+      email: "candidate@example.com",
+      password: "operator-chosen-secret",
+    });
+    expect(replaced).toBe(false);
+    expect(account.username).toBe("candidate@example.com");
+    expect(account.password).toBe("operator-chosen-secret");
+    expect(isRecognizedAtsAuthHost("https://jobs.bytedance.com/x")).toBe(true);
+    // jobright is never vault-authorized, whatever is stored.
+    expect(isRecognizedAtsAuthHost("https://jobright.ai/jobs/recommend")).toBe(false);
+
+    // Re-setting only the email keeps the existing password.
+    const again = setAccount("jobs.bytedance.com", { email: "new@example.com" });
+    expect(again.replaced).toBe(true);
+    expect(again.account.password).toBe("operator-chosen-secret");
+    expect(again.account.username).toBe("new@example.com");
+
+    // Listing never exposes passwords.
+    const listed = listAccountHosts();
+    expect(listed).toEqual([
+      { host: "jobs.bytedance.com", username: "new@example.com" },
+    ]);
+    expect(JSON.stringify(listed)).not.toContain("operator-chosen-secret");
+  });
+
+  it("setAccount without a password mints a strong one", () => {
+    const { account } = setAccount("careers.acme.com", { email: "c@x.com" });
+    expect(account.password).toHaveLength(20);
   });
 
   it("hostHash is stable, case-insensitive, and leaks nothing", () => {

@@ -166,6 +166,22 @@ function routeNavigationWall(
       });
       return { to: null, note: `navigation blocked: ${nav.wall}`, stop: "review" };
     }
+    case "closed": {
+      // Dead posting: nothing to retry, nothing for a human to unblock.
+      // FILTERED_OUT keeps it out of every future selection sweep.
+      transitionApplication(db, {
+        applicationId,
+        nextState: "FILTERED_OUT",
+        reason: "navigation: JobRight says the posting is closed",
+        runId,
+        route: "INELIGIBLE",
+      });
+      return {
+        to: "FILTERED_OUT",
+        note: "posting closed on JobRight",
+        stop: "terminal",
+      };
+    }
     case "captcha": {
       transitionApplication(db, {
         applicationId,

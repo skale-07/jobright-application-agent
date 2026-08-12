@@ -85,6 +85,22 @@ export const jobrightSelectorsV1 = {
      * then click-captures it before the standard tiers.
      */
     autofillApplyCta: /apply\s+with\s+autofill/i,
+    /**
+     * JobRight banners that mean the posting is DEAD. Operator finding
+     * (2026-08-12): "This job has closed." sits in the header while the
+     * nav phases spend minutes hunting an Apply control that will never
+     * work. Seeing this ends the run immediately.
+     */
+    closedJobMarkers:
+      /this job (?:has|is) closed|no longer accepting applications|position (?:has been|is) (?:closed|filled)|posting (?:has )?closed/i,
+    /**
+     * JobRight's own modals (e.g. "Did you apply?") interrupt navigation.
+     * Their buttons are answers, not dismissals — the CLOSE control is the
+     * only safe click, so it gets its own selector rather than relying on
+     * the generic dismissive-name whitelist.
+     */
+    modalCloseControl:
+      '[role="dialog"] [aria-label="Close" i], [role="dialog"] button.ant-modal-close, .ant-modal-close, [class*="modal"] [aria-label="close" i]',
     status: "UNVERIFIED_SELECTOR" as const,
   },
 

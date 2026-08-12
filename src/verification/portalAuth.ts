@@ -3,6 +3,7 @@ import { assertNavigationAllowed } from "../navigation/navigationGuards.js";
 import { isTrustedWorkdayHost } from "../ats/workday/urlValidation.js";
 import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { prepareCredentialsForHost } from "./accountCredentials.js";
+import { getAccount } from "../accounts/vault.js";
 import {
   resolveNavVerificationWaiter,
   type NavVerificationWaiter,
@@ -49,9 +50,24 @@ export type PortalAuthSeams = {
   settleMs?: number;
 };
 
-/** Recognized ATS auth hosts — the ONLY places portal auth will type credentials. */
+/**
+ * Where portal auth may type credentials. Two ways in, both explicit:
+ *   1. a recognized ATS host family (Workday tenants today), or
+ *   2. a host the OPERATOR seeded in the vault themselves
+ *      (`accounts:set --host ...`) — storing a login for a host IS the
+ *      authorization to use it there, and reuse-only means nothing is
+ *      ever minted for an unrecognized host.
+ * Everything else is refused: "a page said Sign In" is never enough.
+ */
 export function isRecognizedAtsAuthHost(url: string): boolean {
-  return isTrustedWorkdayHost(url);
+  if (isTrustedWorkdayHost(url)) return true;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (/(^|\.)jobright\.ai$/i.test(host)) return false;
+    return getAccount(host) !== null;
+  } catch {
+    return false;
+  }
 }
 
 async function firstVisible(page: Page, selector: string): Promise<Locator | null> {

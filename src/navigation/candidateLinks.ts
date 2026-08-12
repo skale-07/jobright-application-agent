@@ -96,6 +96,43 @@ export function explainAtsAnchorMisses(hrefs: string[], limit = 3): string[] {
   return notes;
 }
 
+/**
+ * Employer-sibling suffixes the agent may traverse. Live (2026-08-12): the
+ * agent followed joinbytedance.com -> jobs.bytedance.com — the real apply
+ * path — and the whole turn was demoted for "allowed_domains violated"
+ * because only the literal job-page host was allowed. Career sites
+ * routinely redirect across sibling domains of the same brand, so allow
+ * the registrable domain of every job-page host plus a company-name
+ * domain. Traversal is NOT acceptance: congruence and final-URL validation
+ * still decide what may be stored.
+ */
+export function employerSiblingHosts(
+  hrefs: string[],
+  company: string | null,
+): string[] {
+  const out = new Set<string>();
+  const registrable = (host: string): string | null => {
+    const parts = host.split(".");
+    return parts.length >= 2 ? parts.slice(-2).join(".") : null;
+  };
+  for (const href of hrefs) {
+    try {
+      const host = new URL(href).hostname.toLowerCase();
+      if (SOCIAL_HOST_RE.test(host)) continue;
+      const base = registrable(host);
+      if (base) out.add(base);
+    } catch {
+      // malformed — skip
+    }
+  }
+  const token = (company ?? "")
+    .toLowerCase()
+    .replace(/\b(inc|llc|ltd|corp|corporation|company|co|the|an?|ibm)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+  if (token.length >= 4) out.add(`${token}.com`);
+  return [...out];
+}
+
 /** Non-social hostnames for the agent's traversal allowlist. */
 export function traversalHosts(hrefs: string[]): string[] {
   const hosts = new Set<string>();

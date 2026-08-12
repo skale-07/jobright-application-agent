@@ -939,6 +939,39 @@ relaunch. You only ever intervene if a session actually expires (the nav
 reports will say so). The cycle report's `preflight.agent_leg` line tells
 you the agent phase's exact status every run.
 
+### Employer-portal logins (sign-in / password)
+
+Some employers (ByteDance careers, Workday tenants, …) gate the
+application behind their own account. Dispatch keeps those logins in a
+0600 vault under `private/ats-accounts/` — never in SQLite, logs, or
+artifacts. Two ways one gets there:
+
+```powershell
+# You already have an account on that portal — hand it over:
+npm run cli -- accounts:set --host jobs.bytedance.com --email you@example.com --password "your-portal-password"
+
+# Or let Dispatch own it (recommended): omit --password and it mints a
+# strong one you never need to know.
+npm run cli -- accounts:set --host jobs.bytedance.com --email you@example.com
+
+npm run cli -- accounts:list      # hosts + usernames only, never passwords
+```
+
+Use the same email the verification scanner reads (your Gmail/Outlook), so
+emailed codes and links land where Dispatch can find them.
+
+**Storing a login for a host is also the authorization to sign in there.**
+Without a vault entry (and outside the recognized Workday hosts), portal
+auth refuses to type credentials at all — that is the guard against
+spraying your password at a lookalike page. Nothing is ever minted for an
+unrecognized host.
+
+### Stopping a cycle by hand
+
+`Ctrl+C` during `npm run auto:cycle` pushes the artifacts collected so far
+before exiting (needs `ARTIFACT_AUTOPUSH_ENABLED=true`); press it a second
+time to skip the push and exit immediately.
+
 ### Schedule it
 
 ```powershell
