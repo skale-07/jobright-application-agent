@@ -1,6 +1,7 @@
 import { getAccount, getOrCreateAccount } from "../accounts/vault.js";
 import { readGmailToken } from "../gmail/tokenStore.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
+import { getConfig } from "../config/index.js";
 
 /**
  * Account-credential preparation for verification portals (Workday-style
@@ -55,6 +56,50 @@ export function prepareCredentialsForHost(input: {
 
   if (!host || /(^|\.)jobright\.ai$/i.test(host)) {
     return { credentials: { available: false }, notes, secrets };
+  }
+
+  // STANDING credentials (operator directive 2026-08-12): one email +
+  // password used on EVERY employer portal, so signing in is never a
+  // per-site chore. This is deliberately the first thing tried — a
+  // per-host vault entry only exists when a portal forced its own
+  // password, and that case is handled below.
+  const cfg = getConfig();
+  const standingPassword = cfg.portalLoginPassword;
+  if (standingPassword) {
+    const standingEmail =
+      cfg.portalLoginEmail ?? input.emailOverride ?? candidateEmailForAccounts();
+    if (standingEmail) {
+      const perHost = getAccount(host);
+      // A per-host entry wins ONLY when its password differs from the
+      // standing one (i.e. the site forced a change and it was stored).
+      if (perHost && perHost.password !== standingPassword) {
+        secrets.push(perHost.password);
+        notes.push(`vault: per-host password for ${host} (overrides the standing login)`);
+        return {
+          credentials: {
+            available: true,
+            username: perHost.username,
+            password: perHost.password,
+          },
+          notes,
+          secrets,
+        };
+      }
+      secrets.push(standingPassword);
+      notes.push(`standing portal login used for ${host}`);
+      return {
+        credentials: {
+          available: true,
+          username: standingEmail,
+          password: standingPassword,
+        },
+        notes,
+        secrets,
+      };
+    }
+    notes.push(
+      "PORTAL_LOGIN_PASSWORD is set but no login email is available (set PORTAL_LOGIN_EMAIL)",
+    );
   }
 
   const existing = getAccount(host);

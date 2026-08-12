@@ -79,6 +79,17 @@ const envSchema = z.object({
   /** CDP endpoint of the operator-started debug Chrome (see chrome:debug:jobright). */
   AGENT_CDP_URL: z.string().default("http://127.0.0.1:9222"),
   /**
+   * STANDING portal credentials (operator directive 2026-08-12): the one
+   * email + password the operator uses for every employer job portal, so
+   * signing in is never a per-site chore. Set both and any employer login
+   * wall the apply flow reaches is answered automatically; leave the
+   * password unset and portal auth falls back to per-host vault entries
+   * only (fail-closed by absence). SECRETS: never logged, never
+   * artifacted, never persisted outside private/.
+   */
+  PORTAL_LOGIN_EMAIL: z.string().optional(),
+  PORTAL_LOGIN_PASSWORD: z.string().optional(),
+  /**
    * Hands-off cycle may LAUNCH the debug Chrome itself when the CDP
    * endpoint is unreachable (same executable + persistent profile as
    * chrome:debug:jobright, so logins survive). Fail closed — an
@@ -142,6 +153,8 @@ export type AppConfig = {
   automationEnabled: boolean;
   agentCdpUrl: string;
   cdpAutolaunchEnabled: boolean;
+  portalLoginEmail?: string | undefined;
+  portalLoginPassword?: string | undefined;
   dashboardHost: string;
   dashboardPort: number;
   consoleHost: string;
@@ -217,6 +230,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,
     cdpAutolaunchEnabled: parsed.CDP_AUTOLAUNCH_ENABLED,
+    portalLoginEmail: parsed.PORTAL_LOGIN_EMAIL,
+    portalLoginPassword: parsed.PORTAL_LOGIN_PASSWORD,
     dashboardHost: parsed.DASHBOARD_HOST,
     dashboardPort: parsed.DASHBOARD_PORT,
     consoleHost: parsed.CONSOLE_HOST,

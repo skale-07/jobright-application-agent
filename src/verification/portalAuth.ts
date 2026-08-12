@@ -4,6 +4,7 @@ import { isTrustedWorkdayHost } from "../ats/workday/urlValidation.js";
 import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { prepareCredentialsForHost } from "./accountCredentials.js";
 import { getAccount } from "../accounts/vault.js";
+import { getConfig } from "../config/index.js";
 import {
   resolveNavVerificationWaiter,
   type NavVerificationWaiter,
@@ -20,9 +21,11 @@ import { verificationEvidencePresent } from "../navigation/runNavigation.js";
  * actually asks for it.
  *
  * Hard rails:
- *   - Host gate: recognized ATS auth hosts only (Workday tenants today).
- *     "A page said Sign In" is NEVER enough on an arbitrary host — that
- *     is how credentials get sprayed at phishing pages.
+ *   - Host gate: standing credentials (PORTAL_LOGIN_*) authorize any
+ *     https employer host the apply flow reaches — that is the operator's
+ *     explicit "one login everywhere" decision. Without them, only
+ *     recognized ATS families and vault-seeded hosts qualify. jobright is
+ *     never credentialed, and a form must actually be present.
  *   - Vault policy is unchanged (reuse; mint per-host random password;
  *     never jobright). Passwords/codes ride memory only — never notes.
  *   - Bounded: one create attempt + one sign-in attempt + one mailbox
@@ -61,13 +64,25 @@ export type PortalAuthSeams = {
  */
 export function isRecognizedAtsAuthHost(url: string): boolean {
   if (isTrustedWorkdayHost(url)) return true;
+  let host: string;
+  let parsed: URL;
   try {
-    const host = new URL(url).hostname.toLowerCase();
-    if (/(^|\.)jobright\.ai$/i.test(host)) return false;
-    return getAccount(host) !== null;
+    parsed = new URL(url);
+    host = parsed.hostname.toLowerCase();
   } catch {
     return false;
   }
+  // jobright is the operator's own session — never credentialed here.
+  if (/(^|\.)jobright\.ai$/i.test(host)) return false;
+  // Standing credentials are an explicit, standing operator decision to
+  // use one login on every employer portal: configuring them authorizes
+  // any employer host the apply flow actually reaches. https only, and
+  // portal auth still requires a real sign-in form on the page.
+  if (getConfig().portalLoginPassword && parsed.protocol === "https:") {
+    return true;
+  }
+  // Otherwise a per-host vault entry is the authorization.
+  return getAccount(host) !== null;
 }
 
 async function firstVisible(page: Page, selector: string): Promise<Locator | null> {

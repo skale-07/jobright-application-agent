@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { getConfig, resetConfigCache } from "../config/index.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
@@ -60,6 +61,13 @@ export type AutoCycleReport = {
      * without this line telling the operator which lever to pull.
      */
     agent_leg?: string;
+    /**
+     * Default resume readiness. 8 of 14 apps in session 60a3693f died at
+     * MATERIALS_GENERATING because DEFAULT_RESUME_PATH still pointed at
+     * the example placeholder — a per-app warning nobody reads. Say it
+     * once, up front, where the operator will see it.
+     */
+    default_resume?: string;
   };
   arm: ArmStatus | null;
   session: AutomationSessionReport | null;
@@ -230,6 +238,18 @@ async function runAutoCycleInner(
       "refusing: SUBMIT_REQUIRES_LOCAL_CONFIRMATION must be false in the task environment (the arm row budget is the control)",
     );
   }
+  // Advisory only: name a missing default resume before the queue burns.
+  try {
+    const resumePath = path.isAbsolute(cfg.defaultResumePath)
+      ? cfg.defaultResumePath
+      : path.join(process.cwd(), cfg.defaultResumePath);
+    report.preflight.default_resume = fs.existsSync(resumePath)
+      ? `ready (${cfg.defaultResumePath})`
+      : `MISSING at ${cfg.defaultResumePath} — every app with no registered resume will park at materials. Point DEFAULT_RESUME_PATH in .env at your real resume.`;
+  } catch {
+    report.preflight.default_resume = "unknown";
+  }
+
   // Advisory only — a cycle without the agent leg still runs (phases A/B
   // resolve some apps), but the operator must SEE it before the session
   // burns the queue, not archaeologize it from seven identical nav reports.
