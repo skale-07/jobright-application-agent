@@ -145,6 +145,19 @@ export async function runAutoCycle(
       `cycle-${stamp}.json`,
     );
     writeJsonAtomic(outPath, report as unknown as Record<string, unknown>);
+    // Render the human-readable timeline from the artifacts this cycle
+    // just wrote (operator request 2026-08-12: "is there a way to
+    // visualize the system's operations so it's easier to digest?").
+    // Read-only, artifacts-only — it must never fail the cycle, so it
+    // shares the surrounding try/catch and rides the same push.
+    try {
+      const { writeRunTimeline } = await import("../console/runTimeline.js");
+      report.notes.push(`run timeline: ${writeRunTimeline({ limit: 40 })}`);
+    } catch (err) {
+      report.notes.push(
+        `run timeline render failed (cycle unaffected): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+      );
+    }
     // The worker's autopush runs INSIDE the session — before this report
     // exists — so session 4a7c199b's push carried per-app artifacts but no
     // cycle frame, and a refused cycle pushed nothing at all. Ship the

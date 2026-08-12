@@ -118,11 +118,105 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
         ).toBeGreaterThan(0);
         // No verification input on this page ⇒ mailbox never consulted.
         expect(waiterCalls).toBe(0);
-        expect(r.notes.join(" ")).toMatch(/create-account submitted/);
+        expect(r.notes.join(" ")).toMatch(/portal auth create/);
+        expect(r.diagnosis?.classification).toBe("create_account_form");
         // Password is a secret — it must be offered for scrubbing, never in notes.
         const pw = await page.locator("[data-automation-id='password']").inputValue();
         expect(r.secrets).toContain(pw);
         expect(r.notes.join(" ")).not.toContain(pw);
+      });
+    } finally {
+      applySafeFillEnv();
+    }
+  }, 30_000);
+
+  it("escalates to create-account ONLY after the sign-in is rejected", async () => {
+    // Live Amazon wall (operator screenshots 2026-08-12): a sign-in page
+    // with a "Create an ... account" link. The account is minted only
+    // because the portal said the credentials are wrong.
+    const REJECT_HTML = `<!DOCTYPE html><html><body>
+      <div id="wall">
+        <input data-automation-id="email" type="email" />
+        <input data-automation-id="password" type="password" />
+        <button data-automation-id="signInSubmitButton" type="button">Sign in</button>
+        <button id="route" type="button">Create an Example account</button>
+      </div>
+      <p id="err"></p>
+      <script>
+        document.querySelector('[data-automation-id=signInSubmitButton]')
+          .addEventListener('click', () => {
+            document.getElementById('err').textContent =
+              'Your email or password is incorrect. Please try again.';
+          });
+        document.getElementById('route').addEventListener('click', () => {
+          (globalThis).__routeClicked = true;
+          document.getElementById('err').textContent = '';
+          document.getElementById('wall').innerHTML =
+            '<input data-automation-id="email" type="email" />' +
+            '<input data-automation-id="password" type="password" />' +
+            '<input data-automation-id="verifyPassword" type="password" />' +
+            '<button data-automation-id="createAccountSubmitButton" type="button">Create Account</button>';
+          document.querySelector('[data-automation-id=createAccountSubmitButton]')
+            .addEventListener('click', () => {
+              (globalThis).__created = true;
+              document.body.innerHTML = '<p>Welcome, your account is ready.</p>';
+            });
+        });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await onWorkdayPage(REJECT_HTML, async (page) => {
+        const r = await authenticateAtsPortal(page, {
+          emailOverride: "candidate@example.com",
+          settleMs: 0,
+        });
+        expect(r.escalated_to_create).toBe(true);
+        expect(r.status).toBe("account_created");
+        expect(
+          await page.evaluate(() => (globalThis as unknown as { __created?: boolean }).__created),
+        ).toBe(true);
+        expect(r.notes.join(" ")).toMatch(/sign-in rejected — opened/);
+        // The rejection is what authorized the escalation, and it is on record.
+        expect(r.notes.join(" ")).toMatch(/credentials_rejected/);
+      });
+    } finally {
+      applySafeFillEnv();
+    }
+  }, 30_000);
+
+  it("never escalates when the sign-in succeeds (create route left untouched)", async () => {
+    const OK_HTML = `<!DOCTYPE html><html><body>
+      <div id="wall">
+        <input data-automation-id="email" type="email" />
+        <input data-automation-id="password" type="password" />
+        <button data-automation-id="signInSubmitButton" type="button">Sign in</button>
+        <button id="route" type="button">Create an Example account</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=signInSubmitButton]')
+          .addEventListener('click', () => {
+            document.body.innerHTML = '<p>My Applications</p>';
+          });
+        document.getElementById('route').addEventListener('click', () => {
+          (globalThis).__routeClicked = true;
+        });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await onWorkdayPage(OK_HTML, async (page) => {
+        const r = await authenticateAtsPortal(page, {
+          emailOverride: "candidate@example.com",
+          settleMs: 0,
+        });
+        expect(r.status).toBe("signed_in");
+        expect(r.escalated_to_create).toBe(false);
+        expect(
+          await page.evaluate(
+            () => (globalThis as unknown as { __routeClicked?: boolean }).__routeClicked,
+          ),
+        ).toBeUndefined();
       });
     } finally {
       applySafeFillEnv();

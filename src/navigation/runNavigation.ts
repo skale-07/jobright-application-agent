@@ -16,8 +16,8 @@ import { discoverFieldsFromHtml } from "../applications/fieldDiscovery.js";
 import { getStoredJobInspectionTargetByApplicationId } from "../jobright/storedJobTarget.js";
 import {
   clickApplyAndCaptureExternalUrl,
+  clearJobRightInterstitial,
   detectClosedJobBanner,
-  dismissJobRightModal,
   readExternalApplyHrefs,
 } from "../jobright/navigateToEmployer.js";
 import { navigateViaSidecar } from "../agent/navigate.js";
@@ -31,6 +31,12 @@ import {
   resolveNavVerificationWaiter,
 } from "../verification/emailVerification.js";
 import { prepareCredentialsForHost } from "../verification/accountCredentials.js";
+import {
+  diagnoseLoginWall,
+  summarizeLoginWall,
+  type LoginWallDiagnosis,
+} from "../verification/loginWallDiagnosis.js";
+import { dismissPageObstructions } from "../browser/obstructions.js";
 import { assertNavigationAllowed } from "./navigationGuards.js";
 import { storeResolvedEmployerUrl } from "./storeResult.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -145,6 +151,8 @@ export type NavigationMethod =
   | "anchor_href"
   | "apply_click_popup"
   | "apply_click_same_tab"
+  /** Deterministic sign-in / create-account cleared an employer login wall. */
+  | "portal_auth"
   | "agent"
   | null;
 
@@ -173,6 +181,13 @@ export type NavigationReport = {
   congruence: (CongruenceVerdict & { expected_company: string; url: string }) | null;
   /** Populated on wall "duplicate_url": who already holds this URL. */
   duplicates: Array<{ application_id: string; state: string; company: string; role: string }> | null;
+  /**
+   * Zero-mutation read of an employer login wall's shape, whenever one was
+   * hit (operator request 2026-08-12). Present even when nothing was
+   * attempted — the point is to make a parked auth wall explainable from
+   * the artifact alone instead of from a screenshot.
+   */
+  login_wall: LoginWallDiagnosis | null;
   report_path?: string;
 };
 
@@ -238,6 +253,7 @@ export async function runNavigation(
     notes: [],
     congruence: null,
     duplicates: null,
+    login_wall: null,
   };
 
   /** Values that must never reach the artifact, whatever echoes them. */
@@ -352,9 +368,8 @@ export async function runNavigation(
     // JobRight's own modals ("Did you apply?") sit over the page and block
     // every subsequent read/click. Close-control only — never an answer
     // button (this system does not assert what the operator applied to).
-    if (await dismissJobRightModal(page)) {
-      report.notes.push("jobright modal closed before navigation");
-    }
+    const interstitial = await clearJobRightInterstitial(page);
+    if (interstitial.note) report.notes.push(interstitial.note);
 
     // Dead posting: end here instead of spending phase B + the agent
     // budget on a control that cannot work (operator finding 2026-08-12).
@@ -513,6 +528,21 @@ export async function runNavigation(
     const loginWall = detectLoginWall({ finalUrl, html, title });
     if (loginWall.detected) {
       trace({ phase: "B_apply_click", outcome: "login wall" });
+      // Deterministic auth BEFORE the agent: the standing credentials
+      // clear a plain sign-in in seconds, where the agent spends minutes
+      // of turns (operator directive 2026-08-12 — "when it runs into a
+      // new portal, it should navigate and create an account if the login
+      // is invalid, and use the same email and password in env"). Every
+      // wall is diagnosed either way, so a park is explainable.
+      const cleared = await attemptWallAuth(finalUrl);
+      if (cleared) {
+        trace({
+          phase: "B_portal_auth",
+          outcome: "login wall cleared deterministically",
+          evidence: safeHostOf(finalUrl),
+        });
+        return resolveAndPersist(report, db, applicationId, finalUrl, "portal_auth");
+      }
       if (!agentPhasePossible) {
         report.wall = "auth";
         return persist(report);
@@ -870,6 +900,73 @@ export async function runNavigation(
     }
   } finally {
     await session.close().catch(() => undefined);
+  }
+
+  function safeHostOf(url: string): string {
+    try {
+      return new URL(url).hostname.toLowerCase();
+    } catch {
+      return "";
+    }
+  }
+
+  /**
+   * Deterministic pass at an employer login wall, on its own page so the
+   * JobRight tab is never navigated away. ALWAYS diagnoses (that read is
+   * the debuggability the operator asked for); only types credentials when
+   * portalAuth's own host gate agrees. Fail-open: any error here just
+   * means the agent phase / park path continues as before.
+   */
+  async function attemptWallAuth(wallUrl: string): Promise<boolean> {
+    let parsed: URL;
+    try {
+      parsed = new URL(wallUrl);
+    } catch {
+      return false;
+    }
+    if (parsed.protocol !== "https:") return false;
+    if (/(^|\.)jobright\.ai$/i.test(parsed.hostname)) return false;
+
+    let wallPage: Page | null = null;
+    try {
+      wallPage = await session.newPage({ purpose: "portal-auth" });
+      await wallPage.goto(wallUrl, {
+        waitUntil: "domcontentloaded",
+        timeout: 30_000,
+      });
+      // Cookie/consent banners sit over the sign-in form and swallow the
+      // click (operator: "when it runs into cookies on job pages it should
+      // click accept all"). Bounded + never-click screened.
+      const obstructions = await dismissPageObstructions(wallPage);
+      if (obstructions.dismissed.length > 0) {
+        report.notes.push(
+          `portal page popups dismissed: ${obstructions.dismissed.join(", ")}`,
+        );
+      }
+      report.login_wall = await diagnoseLoginWall(wallPage);
+      report.notes.push(summarizeLoginWall(report.login_wall));
+
+      const { authenticateAtsPortal, isRecognizedAtsAuthHost } = await import(
+        "../verification/portalAuth.js"
+      );
+      if (!isRecognizedAtsAuthHost(wallUrl)) {
+        report.notes.push(
+          `portal auth not attempted: ${parsed.hostname} is not an authorized auth host (set PORTAL_LOGIN_EMAIL/PASSWORD to authorize employer portals)`,
+        );
+        return false;
+      }
+      const auth = await authenticateAtsPortal(wallPage);
+      secretValues.push(...auth.secrets);
+      report.notes.push(...auth.notes);
+      return auth.status === "signed_in" || auth.status === "account_created";
+    } catch (err) {
+      report.notes.push(
+        `portal auth attempt failed (wall unchanged): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+      );
+      return false;
+    } finally {
+      await wallPage?.close().catch(() => undefined);
+    }
   }
 
   function resolveAndPersist(

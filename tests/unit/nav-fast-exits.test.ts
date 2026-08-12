@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  clearJobRightInterstitial,
   detectClosedJobBanner,
   dismissJobRightModal,
 } from "../../src/jobright/navigateToEmployer.js";
@@ -66,6 +67,67 @@ describe("nav fast exits (FIXTURE_CONFIRMED)", () => {
   it("no modal present ⇒ no-op, not an error", async () => {
     await withFixtureHtmlPage("<html><body><p>plain</p></body></html>", async (page) => {
       expect(await dismissJobRightModal(page)).toBe(false);
+    });
+  }, 30_000);
+
+  it("interstitial: PROCEEDS through 'Apply Without Customizing' rather than closing it", async () => {
+    // Operator screenshot 2026-08-12: JobRight offers to tailor the resume
+    // first. Closing that dialog drops back to the job page with nothing
+    // done; proceeding is the decision the operator already made by
+    // queuing the application.
+    const html = `<!DOCTYPE html><html><body>
+      <div role="dialog">
+        <button aria-label="Close">x</button>
+        <h2>Customize your resume for this job?</h2>
+        <button id="tailor">Customize with AI</button>
+        <button id="plain">Apply Without Customizing</button>
+      </div>
+      <script>
+        document.getElementById('plain').addEventListener('click', () => {
+          (globalThis).__proceeded = true;
+        });
+        document.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+          (globalThis).__closed = true;
+        });
+        document.getElementById('tailor').addEventListener('click', () => {
+          (globalThis).__tailored = true;
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const r = await clearJobRightInterstitial(page);
+      expect(r.cleared).toBe("proceeded");
+      expect(await page.evaluate(() => (globalThis as unknown as { __proceeded?: boolean }).__proceeded)).toBe(true);
+      expect(await page.evaluate(() => (globalThis as unknown as { __closed?: boolean }).__closed)).toBeUndefined();
+      // Never the paid/AI path — that spends the operator's credits.
+      expect(await page.evaluate(() => (globalThis as unknown as { __tailored?: boolean }).__tailored)).toBeUndefined();
+    });
+  }, 30_000);
+
+  it("interstitial: falls back to the X when no proceed CTA exists", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <div role="dialog">
+        <button aria-label="Close">x</button>
+        <h2>Upgrade to Turbo</h2>
+        <button id="buy">See plans</button>
+      </div>
+      <script>
+        document.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+          document.querySelector('[role=dialog]').remove();
+          (globalThis).__closed = true;
+        });
+        document.getElementById('buy').addEventListener('click', () => { (globalThis).__bought = true; });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const r = await clearJobRightInterstitial(page);
+      expect(r.cleared).toBe("closed");
+      expect(await page.evaluate(() => (globalThis as unknown as { __closed?: boolean }).__closed)).toBe(true);
+      expect(await page.evaluate(() => (globalThis as unknown as { __bought?: boolean }).__bought)).toBeUndefined();
+    });
+  }, 30_000);
+
+  it("interstitial: a clean page is a no-op with no note", async () => {
+    await withFixtureHtmlPage("<html><body><p>job</p></body></html>", async (page) => {
+      expect(await clearJobRightInterstitial(page)).toEqual({ cleared: null, note: null });
     });
   }, 30_000);
 

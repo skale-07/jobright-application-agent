@@ -6,6 +6,11 @@ import { prepareCredentialsForHost } from "./accountCredentials.js";
 import { getAccount } from "../accounts/vault.js";
 import { getConfig } from "../config/index.js";
 import {
+  diagnoseLoginWall,
+  summarizeLoginWall,
+  type LoginWallDiagnosis,
+} from "./loginWallDiagnosis.js";
+import {
   resolveNavVerificationWaiter,
   type NavVerificationWaiter,
 } from "./emailVerification.js";
@@ -41,6 +46,10 @@ export type PortalAuthOutcome = {
     | "not_an_auth_wall"
     | "refused";
   verification_used: boolean;
+  /** Whether an account was created after the sign-in was rejected. */
+  escalated_to_create: boolean;
+  /** Zero-mutation read of the wall's shape (logged + artifacted). */
+  diagnosis: LoginWallDiagnosis | null;
   notes: string[];
   /** Secrets touched during the flow — callers scrub artifacts with these. */
   secrets: string[];
@@ -105,14 +114,33 @@ export async function authenticateAtsPortal(
 
   if (!isRecognizedAtsAuthHost(url)) {
     notes.push(`portal auth refused: ${safeHost(url)} is not a recognized ATS auth host`);
-    return { status: "refused", verification_used: false, notes, secrets };
+    return { status: "refused", verification_used: false, escalated_to_create: false, diagnosis: null, notes, secrets };
   }
 
-  const emailInput = await firstVisible(page, sel.emailInput);
-  const passwordInput = await firstVisible(page, sel.passwordInput);
+  // Read the wall's shape BEFORE touching it — this is what makes a
+  // parked login debuggable after the fact (operator request 2026-08-12).
+  const diagnosis = await diagnoseLoginWall(page);
+  notes.push(summarizeLoginWall(diagnosis));
+
+  const emailInput =
+    (await firstVisible(page, sel.emailInput)) ??
+    (await firstVisible(
+      page,
+      "input[type='email'], input[name*='email' i], input[autocomplete='username']",
+    ));
+  const passwordInput =
+    (await firstVisible(page, sel.passwordInput)) ??
+    (await firstVisible(page, "input[type='password']"));
   if (!emailInput || !passwordInput) {
     notes.push("portal auth: no sign-in form on this page");
-    return { status: "not_an_auth_wall", verification_used: false, notes, secrets };
+    return {
+      status: "not_an_auth_wall",
+      verification_used: false,
+      escalated_to_create: false,
+      diagnosis,
+      notes,
+      secrets,
+    };
   }
 
   const host = safeHost(url);
@@ -124,62 +152,118 @@ export async function authenticateAtsPortal(
   });
   notes.push(...creds.notes);
   secrets.push(...creds.secrets);
+  const done = (
+    status: PortalAuthOutcome["status"],
+    extra: { verification?: boolean; escalated?: boolean; diag?: LoginWallDiagnosis } = {},
+  ): PortalAuthOutcome => ({
+    status,
+    verification_used: extra.verification ?? false,
+    escalated_to_create: extra.escalated ?? false,
+    diagnosis: extra.diag ?? diagnosis,
+    notes,
+    secrets,
+  });
   if (!creds.credentials.available) {
-    notes.push("portal auth: no credentials available (no candidate email)");
-    return { status: "wall_remains", verification_used: false, notes, secrets };
+    notes.push("portal auth: no credentials available (set PORTAL_LOGIN_EMAIL/PASSWORD)");
+    return done("wall_remains");
   }
   const { username, password } = creds.credentials;
-  // The vault emits "created account" the first time it mints one for a
-  // host, "existing"/"loaded" when it reuses. A freshly created account has
-  // no portal login yet, so it needs the create-account form.
-  const isNewAccount = creds.notes.some((n) => /vault: created account/i.test(n));
 
-  // Choose the form: a brand-new account prefers Create Account; an
-  // existing vault account signs in. Flip forms via the tenant's link
-  // when the other one is showing.
-  const verifyPassword = await firstVisible(page, sel.verifyPasswordInput);
-  const onCreateForm = verifyPassword !== null;
-  if (isNewAccount && !onCreateForm) {
-    const link = await firstVisible(page, sel.createAccountLink);
-    if (link) {
-      await link.click({ timeout: 5_000 }).catch(() => undefined);
-      await page.waitForTimeout(settle);
-      notes.push("portal auth: switched to the create-account form");
+  /** Fill + submit whichever form is on screen. Returns the post-state. */
+  const attempt = async (
+    kind: "sign_in" | "create",
+  ): Promise<{ diag: LoginWallDiagnosis; formGone: boolean }> => {
+    const emailField =
+      (await firstVisible(page, sel.emailInput)) ??
+      (await firstVisible(
+        page,
+        "input[type='email'], input[name*='email' i], input[autocomplete='username']",
+      ));
+    const passwordFields = page.locator("input[type='password']");
+    const passwordCount = await passwordFields.count().catch(() => 0);
+    if (emailField) await emailField.fill(username, { timeout: 5_000 }).catch(() => undefined);
+    for (let i = 0; i < Math.min(passwordCount, 2); i++) {
+      // Both the password and the confirm field take the same value; a
+      // create form that asks twice is satisfied without inventing one.
+      await passwordFields.nth(i).fill(password, { timeout: 5_000 }).catch(() => undefined);
     }
-  } else if (!isNewAccount && onCreateForm) {
-    const link = await firstVisible(page, sel.signInLink);
-    if (link) {
-      await link.click({ timeout: 5_000 }).catch(() => undefined);
-      await page.waitForTimeout(settle);
-      notes.push("portal auth: switched to the sign-in form");
-    }
-  }
-
-  // Re-resolve after any form flip.
-  const email2 = (await firstVisible(page, sel.emailInput)) ?? emailInput;
-  const password2 = (await firstVisible(page, sel.passwordInput)) ?? passwordInput;
-  await email2.fill(username, { timeout: 5_000 });
-  await password2.fill(password, { timeout: 5_000 });
-  const verify2 = await firstVisible(page, sel.verifyPasswordInput);
-  if (verify2) {
-    await verify2.fill(password, { timeout: 5_000 });
     const checkbox = await firstVisible(page, sel.createAccountCheckbox);
-    if (checkbox) await checkbox.check({ timeout: 3_000 }).catch(() => undefined);
+    if (kind === "create" && checkbox) {
+      await checkbox.check({ timeout: 3_000 }).catch(() => undefined);
+    }
+    const submit =
+      (await firstVisible(
+        page,
+        kind === "create" ? sel.createAccountSubmit : sel.signInSubmit,
+      )) ??
+      (await (async () => {
+        const namePattern =
+          kind === "create"
+            ? /create account|sign up|register/i
+            : /^(sign in|log ?in|continue|submit)$/i;
+        for (const role of ["button", "link"] as const) {
+          const c = page.getByRole(role, { name: namePattern }).first();
+          if (
+            (await c.count().catch(() => 0)) > 0 &&
+            (await c.isVisible().catch(() => false))
+          ) {
+            return c;
+          }
+        }
+        return null;
+      })());
+    if (!submit) {
+      notes.push(`portal auth: no ${kind} submit control found`);
+      return { diag: await diagnoseLoginWall(page), formGone: false };
+    }
+    await submit.click({ timeout: 10_000 }).catch(() => undefined);
+    await page.waitForTimeout(Math.max(settle, 1_200));
+    const after = await diagnoseLoginWall(page);
+    const formGone = !after.fields.password && !after.errorText;
+    notes.push(
+      `portal auth ${kind}: ${formGone ? "form cleared" : after.classification}` +
+        (after.errorText ? ` — "${after.errorText.slice(0, 100)}"` : ""),
+    );
+    return { diag: after, formGone };
+  };
+
+  // A create form already on screen is filled as a create; otherwise sign
+  // in FIRST and only escalate to account creation when the portal
+  // actually rejects the login (operator directive 2026-08-12).
+  let escalated = false;
+  let state =
+    diagnosis.classification === "create_account_form"
+      ? await attempt("create")
+      : await attempt("sign_in");
+  if (diagnosis.classification === "create_account_form") escalated = true;
+
+  if (!state.formGone && state.diag.classification === "credentials_rejected") {
+    const route = state.diag.createAccountRoute;
+    if (route) {
+      let opened = false;
+      for (const role of ["link", "button"] as const) {
+        const control = page.getByRole(role, { name: route }).first();
+        if (
+          (await control.count().catch(() => 0)) > 0 &&
+          (await control.isVisible().catch(() => false))
+        ) {
+          await control.click({ timeout: 5_000 }).catch(() => undefined);
+          await page.waitForTimeout(Math.max(settle, 1_000));
+          opened = true;
+          break;
+        }
+      }
+      if (opened) {
+        notes.push(`portal auth: sign-in rejected — opened "${route}" to create the account`);
+        escalated = true;
+        state = await attempt("create");
+      }
+    } else {
+      notes.push(
+        "portal auth: sign-in rejected and no create-account route is offered on this page",
+      );
+    }
   }
-  const creating = verify2 !== null;
-  const submit = creating
-    ? ((await firstVisible(page, sel.createAccountSubmit)) ??
-      (await firstVisible(page, sel.signInSubmit)))
-    : ((await firstVisible(page, sel.signInSubmit)) ??
-      (await firstVisible(page, sel.createAccountSubmit)));
-  if (!submit) {
-    notes.push("portal auth: no submit control on the auth form");
-    return { status: "wall_remains", verification_used: false, notes, secrets };
-  }
-  const requestedAt = new Date().toISOString();
-  await submit.click({ timeout: 10_000 }).catch(() => undefined);
-  await page.waitForTimeout(settle);
-  notes.push(creating ? "portal auth: create-account submitted" : "portal auth: sign-in submitted");
 
   // Email verification — ONLY when the page asks (operator rule: the
   // mailbox is never scanned on spec).
@@ -193,32 +277,32 @@ export async function authenticateAtsPortal(
     const waiter =
       seams.waiter !== undefined ? seams.waiter : resolveNavVerificationWaiter();
     if (!waiter) {
-      notes.push(
-        "portal auth: verification requested but no mailbox provider is enabled",
-      );
-      return { status: "wall_remains", verification_used: false, notes, secrets };
+      notes.push("portal auth: verification requested but no mailbox provider is enabled");
+      return done("wall_remains", { escalated, diag: state.diag });
     }
     const wait = await waiter(
-      { sent_to: username, requested_at: requestedAt },
+      { sent_to: username, requested_at: new Date().toISOString() },
       [host],
     );
     if (wait.kind === "code") {
       secrets.push(wait.code);
-      await codeInput.fill(wait.code, { timeout: 5_000 });
+      await codeInput.fill(wait.code, { timeout: 5_000 }).catch(() => undefined);
       const verifySubmit = await firstVisible(page, sel.verificationSubmit);
       if (verifySubmit) await verifySubmit.click({ timeout: 5_000 }).catch(() => undefined);
-      await page.waitForTimeout(settle);
+      await page.waitForTimeout(Math.max(settle, 1_000));
       verificationUsed = true;
       notes.push("portal auth: emailed code entered");
     } else if (wait.kind === "link") {
       secrets.push(wait.url);
-      await page.goto(wait.url, { waitUntil: "domcontentloaded", timeout: 20_000 }).catch(() => undefined);
-      await page.waitForTimeout(settle);
+      await page
+        .goto(wait.url, { waitUntil: "domcontentloaded", timeout: 20_000 })
+        .catch(() => undefined);
+      await page.waitForTimeout(Math.max(settle, 1_000));
       verificationUsed = true;
       notes.push("portal auth: emailed verification link opened");
     } else {
       notes.push("portal auth: verification email not found within the poll budget");
-      return { status: "wall_remains", verification_used: false, notes, secrets };
+      return done("wall_remains", { escalated, diag: state.diag });
     }
   } else if (codeInput) {
     notes.push(
@@ -226,27 +310,16 @@ export async function authenticateAtsPortal(
     );
   }
 
-  // Success = the auth form is gone. Bad-credentials text = named failure.
-  const stillEmail = await firstVisible(page, sel.emailInput);
-  const stillPassword = await firstVisible(page, sel.passwordInput);
-  if (!stillEmail || !stillPassword) {
-    return {
-      status: creating ? "account_created" : "signed_in",
-      verification_used: verificationUsed,
-      notes,
-      secrets,
-    };
+  const finalDiag = await diagnoseLoginWall(page);
+  if (!finalDiag.fields.password || finalDiag.classification === "no_form_found") {
+    return done(escalated ? "account_created" : "signed_in", {
+      verification: verificationUsed,
+      escalated,
+      diag: finalDiag,
+    });
   }
-  const afterText = await page
-    .innerText("body", { timeout: 3_000 })
-    .then((t) => t.slice(0, 2_000))
-    .catch(() => "");
-  if (sel.badCredentialsMarkers.test(afterText)) {
-    notes.push("portal auth: the portal rejected the attempt (bad credentials / unverified)");
-  } else {
-    notes.push("portal auth: auth form still present after submit");
-  }
-  return { status: "wall_remains", verification_used: verificationUsed, notes, secrets };
+  notes.push(`portal auth: wall remains (${finalDiag.classification})`);
+  return done("wall_remains", { verification: verificationUsed, escalated, diag: finalDiag });
 }
 
 function safeHost(url: string): string {

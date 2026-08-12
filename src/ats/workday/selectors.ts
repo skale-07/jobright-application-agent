@@ -41,6 +41,22 @@ export const workdaySelectorsV1 = {
     /** Page-text markers. */
     signInMarkers: /sign in|log in/i,
     createAccountMarkers: /create account|create an account|sign up/i,
+    /**
+     * Live Amazon flow (operator screenshots 2026-08-12): the portal shows
+     * a sign-in page with a "Create an Amazon.jobs account" link. The
+     * create route is taken ONLY after a sign-in attempt is rejected.
+     */
+    createAccountRouteNames: [
+      /create an? .{0,40}account/i,
+      /^create account$/i,
+      /^sign up$/i,
+      /new to .{0,30}\?/i,
+    ] as RegExp[],
+    confirmPasswordNames: [
+      /^confirm( new)? password$/i,
+      /^re-?enter password$/i,
+      /^verify password$/i,
+    ] as RegExp[],
     badCredentialsMarkers:
       /incorrect|invalid|doesn'?t match|does not match|no account|can'?t find|verify your email/i,
   },

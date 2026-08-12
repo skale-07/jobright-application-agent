@@ -62,6 +62,7 @@ describe("navigation + submit attempt telemetry (UNIT_CONFIRMED)", () => {
     notes: ["unresolved by deterministic phases"],
     congruence: null,
     duplicates: null,
+    login_wall: null,
     ...over,
   });
 
