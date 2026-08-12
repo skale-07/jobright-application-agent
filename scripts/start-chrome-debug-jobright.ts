@@ -7,6 +7,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import {
   cdpUserDataDir,
+  chromeCdpLaunchArgs,
   defaultCdpUrl,
   findChromeExecutable,
 } from "../src/auth/loginFlow.js";
@@ -41,13 +42,11 @@ console.log("");
 
 const child = spawn(
   chrome,
-  [
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${userDataDir}`,
-    "--no-first-run",
-    "--no-default-browser-check",
-    cfg.loginUrl,
-  ],
+  chromeCdpLaunchArgs({
+    port,
+    userDataDir,
+    startUrl: cfg.loginUrl,
+  }),
   {
     detached: true,
     stdio: "ignore",

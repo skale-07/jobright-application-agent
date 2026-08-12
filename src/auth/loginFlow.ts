@@ -253,6 +253,28 @@ export function defaultCdpUrl(): string {
   return process.env.CDP_URL?.trim() || DEFAULT_CDP;
 }
 
+/**
+ * Flags for the operator debug Chrome. `--remote-allow-origins=*` is
+ * required on modern Chrome: without it `/json/version` and the websocket
+ * still answer, but Playwright's connectOverCDP hangs after "ws connected"
+ * (live 2026-08-12, Chrome 151).
+ */
+export function chromeCdpLaunchArgs(input: {
+  port: string;
+  userDataDir: string;
+  startUrl?: string;
+}): string[] {
+  return [
+    `--remote-debugging-port=${input.port}`,
+    `--remote-debugging-address=127.0.0.1`,
+    "--remote-allow-origins=*",
+    `--user-data-dir=${input.userDataDir}`,
+    "--no-first-run",
+    "--no-default-browser-check",
+    input.startUrl ?? "about:blank",
+  ];
+}
+
 function jobrightGoogleWarning(): string {
   return [
     "",

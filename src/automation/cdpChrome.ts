@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { getConfig } from "../config/index.js";
 import {
   cdpUserDataDir,
+  chromeCdpLaunchArgs,
   defaultCdpUrl,
   findChromeExecutable,
 } from "../auth/loginFlow.js";
@@ -70,13 +71,7 @@ export async function ensureCdpChrome(
   }
   const userDataDir = cdpUserDataDir("jobright");
   const port = new URL(defaultCdpUrl()).port || "9222";
-  const args = [
-    `--remote-debugging-port=${port}`,
-    `--user-data-dir=${userDataDir}`,
-    "--no-first-run",
-    "--no-default-browser-check",
-    "about:blank",
-  ];
+  const args = chromeCdpLaunchArgs({ port, userDataDir, startUrl: "about:blank" });
   try {
     fs.mkdirSync(userDataDir, { recursive: true });
     if (seams.spawner) {
