@@ -41,6 +41,13 @@ export type ArmMetadata = {
   armed_by_token_hash: string;
   /** Worker-reported last error code (display only; never gates anything). */
   last_error_code: string | null;
+  /**
+   * Last time the worker loop reported itself alive. An arm row is only a
+   * blocker while a worker is actually driving it — see
+   * sweepAbandonedArmSessions. Null on rows written before this field
+   * existed; those fall back to started_at.
+   */
+  last_heartbeat_at?: string | null;
 };
 
 export type ArmStatus = {
@@ -94,6 +101,8 @@ function parseMeta(row: AutomationRunRow): ArmMetadata {
       typeof raw.armed_by_token_hash === "string" ? raw.armed_by_token_hash : "",
     last_error_code:
       typeof raw.last_error_code === "string" ? raw.last_error_code : null,
+    last_heartbeat_at:
+      typeof raw.last_heartbeat_at === "string" ? raw.last_heartbeat_at : null,
   };
 }
 
@@ -152,6 +161,7 @@ export function armSession(
     rediscover_every: rediscoverEvery,
     armed_by_token_hash: input.armedByTokenHash,
     last_error_code: null,
+    last_heartbeat_at: now.toISOString(),
   };
   createAutomationRun(db, {
     stage: L3_SESSION_STAGE,
@@ -227,6 +237,71 @@ export function noteArmError(db: Db, armRunId: string, code: string): void {
     );
   });
   write();
+}
+
+/** How long an arm may go unheard-from before a cycle treats it as dead. */
+export const ARM_HEARTBEAT_STALE_MS = 15 * 60_000;
+
+/**
+ * Worker liveness ping. Best-effort, same shape as noteArmError: a
+ * completed/expired row is left untouched and a failure never affects the
+ * run. Called at the top of every worker iteration.
+ */
+export function touchArmHeartbeat(
+  db: Db,
+  armRunId: string,
+  now: Date = new Date(),
+): void {
+  const write = db.transaction((): void => {
+    const row = db
+      .prepare(
+        `SELECT id, stage, status, started_at, ended_at,
+                max_unattended_submissions, unattended_submissions_count, metadata_json
+         FROM automation_runs WHERE id = ? AND status = 'RUNNING'`,
+      )
+      .get(armRunId) as AutomationRunRow | undefined;
+    if (!row) return;
+    const meta = parseMeta(row);
+    meta.last_heartbeat_at = now.toISOString();
+    db.prepare(`UPDATE automation_runs SET metadata_json = ? WHERE id = ?`).run(
+      JSON.stringify(meta),
+      armRunId,
+    );
+  });
+  write();
+}
+
+/**
+ * Complete RUNNING arm rows whose worker has gone silent.
+ *
+ * Live failure (2026-08-12): a session was killed mid-run and left its
+ * `l3_session` row RUNNING. Every scheduled auto:cycle afterwards read
+ * "already armed" and exited 0 without touching a single application —
+ * three consecutive cycles were silent no-ops while the operator believed
+ * the schedule was working. An arm row is a budget ledger, not a lock: it
+ * only means anything while a worker is driving it.
+ *
+ * This is fail-CLOSED in the only direction that matters — completing a
+ * row makes further unattended submits impossible (`tryConsumeUnattended-
+ * Submission` requires status='RUNNING'). It never arms anything, and a
+ * live worker heartbeats every iteration, so an in-progress session is
+ * never swept out from under itself.
+ */
+export function sweepAbandonedArmSessions(
+  db: Db,
+  opts: { staleAfterMs?: number; now?: Date } = {},
+): Array<{ arm_run_id: string; silent_for_ms: number }> {
+  const now = opts.now ?? new Date();
+  const staleAfterMs = opts.staleAfterMs ?? ARM_HEARTBEAT_STALE_MS;
+  const row = getLatestRunningByStage(db, L3_SESSION_STAGE);
+  if (!row) return [];
+  const meta = parseMeta(row);
+  const lastSeen = Date.parse(meta.last_heartbeat_at ?? row.started_at);
+  if (!Number.isFinite(lastSeen)) return [];
+  const silentFor = now.getTime() - lastSeen;
+  if (silentFor < staleAfterMs) return [];
+  completeAutomationRun(db, row.id);
+  return [{ arm_run_id: row.id, silent_for_ms: silentFor }];
 }
 
 /**

@@ -868,6 +868,29 @@ export async function runNavigation(
           phase: "C_agent",
           outcome: `wall: ${report.wall} (turn ${turns})`,
         });
+        // PR #35's prediction FAILED here: three live auth walls on
+        // 2026-08-12 carried no `login_wall` block, because the agent
+        // reports "stopped: auth" on its own and never passes through the
+        // deterministic phase-B branch where the diagnosis was wired. Give
+        // the agent's auth stop the same treatment — diagnose, and let the
+        // standing credentials try — using the URL the agent parked on.
+        const agentWallUrl = agentResult.final_url ?? turnStartUrl;
+        if (report.wall === "auth" && agentWallUrl) {
+          if (await attemptWallAuth(agentWallUrl)) {
+            trace({
+              phase: "C_portal_auth",
+              outcome: "agent auth wall cleared deterministically",
+              evidence: safeHostOf(agentWallUrl),
+            });
+            return resolveAndPersist(
+              report,
+              db,
+              applicationId,
+              agentWallUrl,
+              "portal_auth",
+            );
+          }
+        }
         return persist(report);
       }
       if (lastMismatch) {

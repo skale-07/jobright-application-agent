@@ -1006,6 +1006,27 @@ wall, red unresolved, grey closed posting — each carrying its phase trace,
 notes, and the hosts the agent visited. `auto:cycle` renders it at the end
 of every run, so a pushed artifact bundle already contains the page.
 
+### "skipped_already_armed" — and when a cycle sweeps it
+
+An arm row is a budget ledger held by a live worker, not a lock. While a
+session is genuinely running, the next scheduled cycle skips (correctly)
+and now says who holds it: `arm 60a3693f, 15/25 apps, 24 min left`.
+
+A killed session used to leave that row `RUNNING` forever, and every
+later cycle skipped silently — on 2026-08-12 three consecutive firings
+did nothing while the schedule looked healthy. The worker now writes a
+heartbeat each iteration, and a cycle completes any arm that has gone
+quiet for 15 minutes, logging it:
+
+```
+swept abandoned arm 60a3693f — no worker heartbeat for 34 min (a killed session left it RUNNING)
+```
+
+Sweeping only ever *removes* unattended-submit budget — a completed row
+can never fund a submit — so it cannot loosen anything. To clear one by
+hand instead: `curl -X POST .../api/automation/disarm` or the console's
+Disarm button.
+
 ### Stopping a cycle by hand
 
 `Ctrl+C` during `npm run auto:cycle` pushes the artifacts collected so far

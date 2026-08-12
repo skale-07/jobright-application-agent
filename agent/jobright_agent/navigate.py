@@ -91,9 +91,103 @@ def _host(url: str) -> str:
         return ""
 
 
+def _registrable(host: str) -> str:
+    parts = host.split(".")
+    return ".".join(parts[-2:]) if len(parts) >= 2 else host
+
+
 def _in_allowed(url: str, allowed: list[str]) -> bool:
+    """
+    Is this URL inside the traversal allowlist?
+
+    Exact host or a subdomain of an allowed entry, PLUS same-family match
+    for the ATS vendors: a live run (2026-08-11) allowed
+    boards.greenhouse.io and landed on job-boards.greenhouse.io — the same
+    Greenhouse product under a sibling hostname — and the whole turn was
+    discarded. Family matching is limited to _ATS_FAMILIES so it can never
+    widen traversal to an arbitrary employer's registrable domain.
+    """
     host = _host(url)
-    return any(host == d or host.endswith("." + d) for d in allowed)
+    if any(host == d or host.endswith("." + d) for d in allowed):
+        return True
+    base = _registrable(host)
+    if base not in _ATS_FAMILIES:
+        return False
+    return any(_registrable(d) == base for d in allowed)
+
+
+def judge_traversal(urls: list[str], allowed: list[str]) -> dict:
+    """
+    Decide what a finished agent run is worth, from its URL history.
+
+    The ONLY thing that gates acceptance is the FINAL url: that is the URL
+    the caller would store as the employer application URL, and it still
+    faces congruence + validation on the TypeScript side afterwards.
+
+    Off-domain URLs elsewhere in the history are reported, never fatal.
+    Live evidence (2026-08-11/12): six runs were discarded as
+    "allowed_domains violated" while the agent sat on the right page — the
+    offending URL was a leftover tab from the PREVIOUS application, which
+    the run inherited by attaching to the operator's Chrome. Judging the
+    whole history punished the agent for a tab it never opened.
+    """
+    web = [u for u in urls if u]
+    final_url = web[-1] if web else None
+    off_domain = [u for u in web if not _in_allowed(u, allowed)]
+    return {
+        "final_url": final_url,
+        "final_url_allowed": bool(final_url) and _in_allowed(final_url, allowed),
+        "off_domain_count": len(off_domain),
+        "off_domain_hosts": sorted({_host(u) for u in off_domain}),
+        "domains_visited": sorted({_host(u) for u in web}),
+    }
+
+
+async def _open_own_tab(browser) -> bool:  # noqa: ANN001 - browser-use type varies
+    """
+    Put the attached browser on a fresh about:blank tab before the agent
+    takes its first step. Returns True when a new tab was opened.
+
+    Best-effort by design: browser-use has moved this API across releases
+    (new_page / new_tab / get_current_page), and a run that cannot open its
+    own tab must still proceed — the worst case is the old behaviour.
+    """
+    for name in ("new_tab", "new_page", "create_new_tab"):
+        opener = getattr(browser, name, None)
+        if opener is None:
+            continue
+        try:
+            result = opener("about:blank")
+            if asyncio.iscoroutine(result):
+                await result
+            _progress("own_tab_opened", via=name)
+            return True
+        except TypeError:
+            try:
+                result = opener()
+                if asyncio.iscoroutine(result):
+                    await result
+                _progress("own_tab_opened", via=name)
+                return True
+            except Exception:  # noqa: BLE001
+                continue
+        except Exception:  # noqa: BLE001
+            continue
+    _progress("own_tab_unavailable")
+    return False
+
+
+# Vendor domains whose sibling hostnames are the same product. Traversal
+# only — congruence and final-URL validation still decide what is stored.
+_ATS_FAMILIES = frozenset(
+    {
+        "greenhouse.io",
+        "lever.co",
+        "ashbyhq.com",
+        "workable.com",
+        "myworkdayjobs.com",
+    }
+)
 
 
 def _goal_prompt(task: dict) -> str:
@@ -196,6 +290,14 @@ async def _navigate(task: dict) -> dict:
         _progress("llm_provider", provider="openai")
     _progress("browser_attaching", cdp_host=_host(task["cdp_url"]) or task["cdp_url"][:40])
     browser = Browser(cdp_url=task["cdp_url"])
+    # Start on a BLANK tab of our own. Attaching to the operator's Chrome
+    # otherwise inherits whatever page the previous application left open,
+    # which then shows up in this run's history as a foreign host (live:
+    # cadence.wd1.myworkdayjobs.com inside an InterDigital run). Its own
+    # tab also means a mid-run failure never leaves someone else's page
+    # driven by this agent. Best-effort — the API differs across
+    # browser-use releases and the run is still correct without it.
+    await _open_own_tab(browser)
 
     resume = task.get("resume")
     start_url = task["start_url"]
@@ -351,9 +453,26 @@ async def _navigate(task: dict) -> dict:
         notes.append(f"history introspection failed: {exc}")
 
     elapsed = time.monotonic() - started
-    off_domain = [u for u in urls if u and not _in_allowed(u, task["allowed_domains"])]
-    if off_domain:
-        notes.append(f"agent visited off-domain URLs: {len(off_domain)} — result demoted")
+    # Off-domain traversal is REPORTED, not fatal. Live evidence
+    # (2026-08-11/12): six runs were discarded for "allowed_domains
+    # violated" while the agent was on the right page — the offending URL
+    # was a leftover tab from the PREVIOUS application, picked up because
+    # the run attaches to the operator's Chrome. Acceptance is decided by
+    # the final URL below (and by congruence + URL validation on the TS
+    # side); the history sweep stays as telemetry so a genuinely wandering
+    # agent is still visible in the report.
+    verdict = judge_traversal(urls, task["allowed_domains"])
+    if verdict["off_domain_hosts"]:
+        notes.append(
+            f"agent visited {verdict['off_domain_count']} off-domain URL(s) — noted, not fatal: "
+            + ", ".join(verdict["off_domain_hosts"][:5])
+        )
+
+    status, wall = _classify(final_text)
+    final_url = verdict["final_url"]
+    if status == "ok" and not verdict["final_url_allowed"]:
+        status, wall = "error", "budget"
+        notes.append("FORM_REACHED without a usable on-domain final URL")
         return {
             "status": "error",
             "final_url": None,
@@ -361,14 +480,8 @@ async def _navigate(task: dict) -> dict:
             "steps_used": steps_used,
             "domains_visited": sorted({_host(u) for u in urls if u}),
             "notes": notes[:20],
-            "reason": "allowed_domains violated",
+            "reason": "final URL outside allowed_domains",
         }
-
-    status, wall = _classify(final_text)
-    final_url = urls[-1] if urls else None
-    if status == "ok" and (not final_url or not _in_allowed(final_url, task["allowed_domains"])):
-        status, wall = "error", "budget"
-        notes.append("FORM_REACHED without a usable on-domain final URL")
 
     if stuck["stopped_early"]:
         notes.append(

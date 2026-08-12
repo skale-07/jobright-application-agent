@@ -11,6 +11,7 @@ import {
   disarmSession,
   getActiveArmSession,
   getArmStatus,
+  sweepAbandonedArmSessions,
   hashArmToken,
   type ArmStatus,
 } from "./armSession.js";
@@ -324,10 +325,33 @@ async function runAutoCycleInner(
     // NOT sweepStaleArmSessions: that is console-BOOT semantics (kill every
     // running arm). A live arm someone else holds must survive this cycle;
     // getActiveArmSession already completes genuinely expired rows itself.
+    //
+    // An ABANDONED arm is different from a live one. Live 2026-08-12: a
+    // session was killed mid-run, its row stayed RUNNING, and the next
+    // three scheduled cycles each read "already armed" and exited 0
+    // without touching an application — a silent no-op schedule. A worker
+    // heartbeats every iteration, so a row that has gone quiet has no
+    // worker; complete it and proceed. Completing a row can only ever
+    // REMOVE unattended-submit budget, never add any.
+    for (const swept of sweepAbandonedArmSessions(db, { now: now() })) {
+      report.notes.push(
+        `swept abandoned arm ${swept.arm_run_id.slice(0, 8)} — no worker heartbeat for ${Math.round(
+          swept.silent_for_ms / 60_000,
+        )} min (a killed session left it RUNNING)`,
+      );
+    }
     if (getActiveArmSession(db, now())) {
       report.arm = getArmStatus(db, now());
       report.outcome = "skipped_already_armed";
-      report.notes.push("an armed session is already live — not double-arming");
+      // Say who is holding it and how far along — "skipped" with no detail
+      // reads as a bug when it is really another session still working.
+      report.notes.push(
+        `an armed session is already live — not double-arming (arm ${
+          report.arm.arm_run_id?.slice(0, 8) ?? "?"
+        }, ${report.arm.apps_started}/${report.arm.max_apps} apps, ${Math.round(
+          report.arm.seconds_remaining / 60,
+        )} min left)`,
+      );
       return report;
     }
     armedByThisCycle = true;
