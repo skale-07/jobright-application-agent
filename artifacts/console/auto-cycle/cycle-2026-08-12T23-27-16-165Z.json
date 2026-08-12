@@ -1,0 +1,91 @@
+{
+  "started_at": "2026-08-12T23:27:16.165Z",
+  "updated": {
+    "pulled": false,
+    "head": "09ccd528",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "available (debug Chrome autolaunched)"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "eba880f3-c6ec-4919-ae78-854baa24128c",
+    "armed_until": "2026-08-13T01:27:27.352Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "eba880f3-c6ec-4919-ae78-854baa24128c",
+    "apps_started": 3,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 2,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 7,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 6 parked for review",
+      "nav requeue: 2 navigation-starved app(s) requeued (agent leg available)",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "prediction rejected \"Quantitative Research/Strategist\": no answer",
+      "prediction rejected \"Quantitative Trading\": no answer",
+      "prediction rejected \"Site Reliability Engineer\": no answer",
+      "prediction rejected \"Trading Operations\": no answer",
+      "prediction rejected \"Legal Name (if different than above)\": no answer",
+      "artifact autopush: 6 file(s) pushed to master as 29b8278"
+    ],
+    "per_app": [
+      {
+        "application_id": "56b02dc6-d280-4f20-865e-b6d39603c409",
+        "end_state": "UNSUPPORTED_ATS",
+        "stopped": "review",
+        "stop_reason": "unsupported ATS",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "f8ca3d1d-a746-401b-81ad-522c06faea02",
+        "end_state": "UNSUPPORTED_ATS",
+        "stopped": "review",
+        "stop_reason": "unsupported ATS",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "23d64c04-6f39-4124-80ea-ca583779b0f9",
+        "end_state": "READY_TO_SUBMIT",
+        "stopped": "review",
+        "stop_reason": "open review item: MANUAL — Answer needed: \"79abc513-4541-4e6b-a078-a09ce0ca65ca\"",
+        "submitted": false,
+        "outreach": null
+      }
+    ],
+    "nav_audit": {
+      "checked": 21,
+      "repaired": 0,
+      "parked": 6
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "29b8278",
+      "files_staged": 6
+    }
+  },
+  "outcome": "completed",
+  "notes": [
+    "CDP autolaunch: started debug Chrome on port 9222"
+  ]
+}

@@ -60,22 +60,52 @@
 </style></head>
 <body><div class="wrap">
 <h1>Dispatch run timeline</h1>
-<p class="sub">Generated 2026-08-12T23:11:54.269Z · 40 navigation run(s) · read-only view of artifacts/</p>
-<div class="stats"><span class="stat"><b>22</b> budget</span><span class="stat"><b>14</b> resolved</span><span class="stat"><b>4</b> auth</span></div>
+<p class="sub">Generated 2026-08-12T23:31:51.942Z · 40 navigation run(s) · read-only view of artifacts/</p>
+<div class="stats"><span class="stat"><b>21</b> budget</span><span class="stat"><b>15</b> resolved</span><span class="stat"><b>4</b> auth</span></div>
 <section class="cycle">
   <h2>Latest cycle</h2>
   <dl>
-    <div><dt>Started</dt><dd>2026-08-12T22:57:35.522Z</dd></div>
+    <div><dt>Started</dt><dd>2026-08-12T23:27:16.165Z</dd></div>
     <div><dt>Outcome</dt><dd>completed</dd></div>
     <div><dt>Agent leg</dt><dd>available (debug Chrome autolaunched)</dd></div>
     <div><dt>Default resume</dt><dd>ready (C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)</dd></div>
-    <div><dt>Apps started</dt><dd>7</dd></div>
+    <div><dt>Apps started</dt><dd>3</dd></div>
     <div><dt>Submits used</dt><dd>0</dd></div>
     <div><dt>Stopped</dt><dd>queue_drained</dd></div>
   </dl>
-  <h3>Session notes</h3><ul class="notes"><li>nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 6 parked for review</li><li>discover: 8 inspected, 1 eligible, 7 already known, 0 filtered out, 0 already submitted</li><li>discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted</li><li>discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted</li><li>prediction rejected &quot;field_33&quot;: unusable label (inspector could not read the question text)</li><li>prediction rejected &quot;field_35&quot;: unusable label (inspector could not read the question text)</li><li>prediction rejected &quot;field_10&quot;: unusable label (inspector could not read the question text)</li><li>prediction rejected &quot;Quantitative Research/Strategist&quot;: no answer</li><li>prediction rejected &quot;Quantitative Trading&quot;: no answer</li><li>prediction rejected &quot;Site Reliability Engineer&quot;: no answer</li><li>prediction rejected &quot;Trading Operations&quot;: no answer</li><li>prediction rejected &quot;Legal Name (if different than above)&quot;: no answer</li><li>artifact autopush: 18 file(s) pushed to master as 14905ff</li></ul>
+  <h3>Session notes</h3><ul class="notes"><li>nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 6 parked for review</li><li>nav requeue: 2 navigation-starved app(s) requeued (agent leg available)</li><li>discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted</li><li>discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted</li><li>prediction rejected &quot;Quantitative Research/Strategist&quot;: no answer</li><li>prediction rejected &quot;Quantitative Trading&quot;: no answer</li><li>prediction rejected &quot;Site Reliability Engineer&quot;: no answer</li><li>prediction rejected &quot;Trading Operations&quot;: no answer</li><li>prediction rejected &quot;Legal Name (if different than above)&quot;: no answer</li><li>artifact autopush: 6 file(s) pushed to master as 29b8278</li></ul>
 </section>
 <h2>Applications</h2>
+<details class="app ok">
+  <summary>
+    <span class="id">f8ca3d1d</span>
+    <span class="co">Gesture</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer unverified)<span class="ev">jobs.gusto.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 7 non-ATS external host(s) seen: jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com, www.digitaljournal.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup opened but carried no usable URL</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: jobs.gusto.com, gesture.vip, expertdojo.com, www.digitaljournal.com</li><li>agent goal seeded with 4 candidate link(s) from the job page</li><li>agent[1]: elapsed 49s, steps 3</li><li>employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.gusto.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">56b02dc6</span>
+    <span class="co">Tesla</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer unverified)<span class="ev">www.tesla.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 7 non-ATS external host(s) seen: www.tesla.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.wsj.com, mashable.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup opened but carried no usable URL</li><li>no external URL captured after 2 attempts</li><li>agent allowed_domains widened with job-page hosts: www.tesla.com, www.wsj.com, mashable.com</li><li>agent goal seeded with 3 candidate link(s) from the job page</li><li>agent[1]: elapsed 53s, steps 4</li><li>employer congruence unverifiable (no org slug decodable from URL (unsupported host)) — URL routes to human review via the unsupported-ATS path</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">www.tesla.com</p>
+  </div>
+</details>
 <details class="app ok">
   <summary>
     <span class="id">23d64c04</span>
@@ -657,36 +687,6 @@ Call log:
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (9 external links ignored)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
     <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.qatar-tribune.com, www.techtimes.com, fotohub.app</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">42d9e25e</span>
-    <span class="co">Zipline</span>
-    <span class="badge">resolved</span>
-    <span class="chip">agent</span>
-    <span class="chip">greenhouse</span>
-    <span class="chip">agent 1t/7s</span>
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (11 external links ignored)<span class="ev">boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 9 non-ATS external host(s) seen: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: boards.greenhouse.io, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.zipline.com, techpoint.africa, techfundingnews.com, www.prnewswire.com</li><li>agent[1]: elapsed 126s, steps 7</li></ul>
-    <h4>Hosts visited</h4><p class="hosts">job-boards.greenhouse.io → jobright.ai</p>
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">3aec95ff</span>
-    <span class="co">—</span>
-    <span class="badge">wall: budget</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no known-ATS anchors (10 external links ignored)<span class="ev">cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com</span></li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 8 non-ATS external host(s) seen: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent allowed_domains widened with job-page hosts: cadence.wd1.myworkdayjobs.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.cadence.com, www.tradingview.com, www.benzinga.com</li><li>agent phase failed: sidecar final_url is jobright-hosted — not an employer URL</li></ul>
     
   </div>
 </details>
