@@ -4,7 +4,7 @@ import { LeverAdapterV1 } from "./lever/v1.js";
 import { AshbyAdapterV1 } from "./ashby/v1.js";
 import { WorkableAdapterV1 } from "./workable/v1.js";
 import { WorkdayAdapterV1 } from "./workday/v1.js";
-import { GenericAdapterV1 } from "./generic.js";
+import { GenericAdapterV1 } from "./generic/v1.js";
 import { UnsupportedAtsAdapter } from "./unsupported.js";
 
 const greenhouse = new GreenhouseAdapterV1();

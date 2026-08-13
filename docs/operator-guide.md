@@ -457,6 +457,46 @@ The banned send-style APIs have no flag — they are impossible, enforced by
 `npm run check:forbidden` (Outlook send identifiers AND Gmail
 send/modify/compose identifiers).
 
+## 14b. Company-hosted forms (`GENERIC_ATS_ENABLED`)
+
+Most employers do not use Greenhouse, Lever, Ashby, Workable or Workday.
+In the live corpus, 10 of 41 resolved URLs had no supported ATS — and every
+one was a **different** host (tesla.com, careers.ibm.com, jobs.gusto.com,
+jobs.jobvite.com, citadel.com, ycombinator.com). Adding vendors one at a
+time never catches up with a tail like that, so those applications used to
+dead-end at `UNSUPPORTED_ATS`.
+
+```ini
+GENERIC_ATS_ENABLED=true
+```
+
+With it on, a company-hosted form is filled, verified, resume-uploaded and
+submitted through **the same path as any vendor** — same approved plan,
+same completeness scan, same submit gates.
+
+**Trust comes from provenance, not from a host allowlist.** The URL was
+resolved from a JobRight posting you queued and passed the employer
+congruence check, so there is no second allowlist to maintain. Two things
+still refuse: non-https, and jobright.ai itself. A URL on a *vendor's* host
+that the vendor's own validator rejected stays rejected — it is never
+downgraded to heuristics.
+
+**What is different from a vendor adapter, honestly:**
+
+- **Confirmation is stricter, not looser.** A vendor proves "submitted" with
+  a product DOM marker. Here, confirmation requires the confirmation text
+  *and* the form's fields to be structurally gone (a fingerprint taken
+  immediately before the click). A page still showing the same inputs is
+  never confirmed, whatever the footer says. Ambiguity routes to the
+  existing uncertain-submission review item, exactly as on Lever.
+- **No essay fill.** Essay execution is Greenhouse-bound, so an application
+  carrying essay answers is refused before the submit gate rather than
+  submitted incomplete.
+- **No form reset.** Reload the page to start over.
+
+Turn it off and every generic host reverts to `UNSUPPORTED_ATS`; nothing
+else changes.
+
 ## 15. Navigation (autonomous employer-URL resolution)
 
 `APPLICATION_OPENING` can resolve the employer application URL itself

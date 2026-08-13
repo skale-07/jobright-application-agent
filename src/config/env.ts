@@ -29,6 +29,7 @@ const envSchema = z.object({
   LINKEDIN_ENRICHMENT_ENABLED: boolFromEnv.default(false),
   JOBRIGHT_AUTOFILL_ENABLED: boolFromEnv.default(false),
   NATIVE_AUTOFILL_ENABLED: boolFromEnv.default(false),
+  GENERIC_ATS_ENABLED: boolFromEnv.default(false),
   /** Phase 5.6H: generating/downloading a resume mutates JobRight. Fail closed. */
   MATERIALS_DOWNLOAD_ENABLED: boolFromEnv.default(false),
   /** Nav clicks Apply on live JobRight (mutates applied-state). Fail closed. */
@@ -139,6 +140,8 @@ export type AppConfig = {
   linkedinEnrichmentEnabled: boolean;
   jobrightAutofillEnabled: boolean;
   nativeAutofillEnabled: boolean;
+  /** Fill/submit on company-hosted forms with no vendor adapter. */
+  genericAtsEnabled: boolean;
   materialsDownloadEnabled: boolean;
   navigationEnabled: boolean;
   gmailVerificationEnabled: boolean;
@@ -219,6 +222,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     linkedinEnrichmentEnabled: parsed.LINKEDIN_ENRICHMENT_ENABLED,
     jobrightAutofillEnabled: parsed.JOBRIGHT_AUTOFILL_ENABLED,
     nativeAutofillEnabled: parsed.NATIVE_AUTOFILL_ENABLED,
+    genericAtsEnabled: parsed.GENERIC_ATS_ENABLED,
     materialsDownloadEnabled: parsed.MATERIALS_DOWNLOAD_ENABLED,
     navigationEnabled: parsed.NAVIGATION_ENABLED,
     gmailVerificationEnabled: parsed.GMAIL_VERIFICATION_ENABLED,
