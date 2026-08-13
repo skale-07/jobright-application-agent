@@ -46,7 +46,13 @@ export type ScreenerResolution =
         | "ci_option"
         | "synonym_option"
         | "free_text"
-        | "profile_derived";
+        | "profile_derived"
+        /**
+         * A held answer placed onto the page's option list by the model,
+         * validated verbatim against that list (screenerOptionSelect.ts).
+         * The model chooses; it never authors the value.
+         */
+        | "llm_option";
     }
   | { status: "skip"; key: string; reason: string }
   | { status: "review"; key: string; reason: string };

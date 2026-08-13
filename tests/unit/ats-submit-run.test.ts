@@ -66,7 +66,19 @@ describe("ATS bindings table (W4, UNIT_CONFIRMED)", () => {
     expect(ATS_BINDINGS.greenhouse.supportsHealing).toBe(true);
     for (const ats of ["lever", "ashby"] as const) {
       expect(ATS_BINDINGS[ats].supportsEssayFill).toBe(false);
-      expect(ATS_BINDINGS[ats].supportsHealing).toBe(false);
+    }
+    // Healing is on everywhere: the healer's locator is vendor-free label
+    // similarity with a deterministic re-verify, and with it off a single
+    // read-back miss was TERMINAL on lever/ashby/workable/workday.
+    for (const ats of [
+      "greenhouse",
+      "lever",
+      "ashby",
+      "workable",
+      "workday",
+      "generic",
+    ] as const) {
+      expect(ATS_BINDINGS[ats].supportsHealing).toBe(true);
     }
     // Company-hosted forms: essays fail closed (essay execution is
     // Greenhouse-bound), healing is ON because the healer's locator is

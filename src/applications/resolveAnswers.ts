@@ -92,6 +92,13 @@ export function buildFillPlan(
      * routing, and every existing behavior are untouched.
      */
     screenerResolutions?: Map<string, ScreenerResolution>;
+    /**
+     * Essay answers generated from the operator's own about-me context and
+     * already validated (essayAutofill.ts), keyed by field id. Present only
+     * when ESSAY_AUTOFILL_ENABLED is on; absent restores the historical
+     * "essays are never auto-filled" behavior exactly.
+     */
+    essayAnswers?: Map<string, string>;
   } = {},
 ): ResolvedFillPlan {
   const essayIds = new Set(
@@ -105,6 +112,23 @@ export function buildFillPlan(
 
   for (const field of mapped) {
     if (essayIds.has(field.id) || field.type === "textarea") {
+      // Operator-generated essay answer (ESSAY_AUTOFILL_ENABLED): written
+      // from their own about-me context and already validated. Absent ⇒
+      // the historical skip, unchanged.
+      const generated = opts.essayAnswers?.get(field.id);
+      if (generated) {
+        entries.push({
+          field_id: field.id,
+          label: field.label,
+          type: field.type,
+          canonical_field: field.canonical_field,
+          action: "fill",
+          value: generated,
+          reason:
+            "Essay generated from the operator's about-me context (ESSAY_AUTOFILL_ENABLED)",
+        });
+        continue;
+      }
       entries.push({
         field_id: field.id,
         label: field.label,

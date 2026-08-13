@@ -11,6 +11,17 @@ import { LeverAdapterV1, leverFullNameMatcher } from "../ats/lever/v1.js";
 import { AshbyAdapterV1, ashbyFullNameMatcher } from "../ats/ashby/v1.js";
 import { WorkableAdapterV1 } from "../ats/workable/v1.js";
 import { GenericAdapterV1 } from "../ats/generic/v1.js";
+import {
+  heldAnswerFromReason,
+  isOptionMismatchReview,
+  selectScreenerOptions,
+  type OptionSelectItem,
+} from "./screenerOptionSelect.js";
+import {
+  essayAutofillAvailable,
+  generateEssayAnswers,
+} from "./essayAutofill.js";
+import { logger } from "../logging/logger.js";
 import { WorkdayAdapterV1 } from "../ats/workday/v1.js";
 import {
   annotateFullNameField,
@@ -258,7 +269,69 @@ export async function planApplicationFill(input: {
     }
   }
 
-  const plan = buildFillPlan(mapped, profile, { screenerResolutions });
+  // Last screener tier: an answer we HOLD that the literal matcher could
+  // not place on the page's option list. One batched call; the model may
+  // only choose from the page's own options and its choice is validated
+  // verbatim, so it cannot invent one. Abstention parks exactly as before.
+  if (screenerResolutions.size > 0) {
+    const mismatched: OptionSelectItem[] = [];
+    for (const [fieldId, resolution] of screenerResolutions) {
+      if (!isOptionMismatchReview(resolution)) continue;
+      const field = mapped.find((f) => f.id === fieldId);
+      const answer = heldAnswerFromReason(resolution.reason);
+      if (!field || !answer || (field.options?.length ?? 0) === 0) continue;
+      mismatched.push({
+        key: fieldId,
+        question: field.label,
+        answer,
+        options: field.options ?? [],
+      });
+    }
+    if (mismatched.length > 0) {
+      const chosen = await selectScreenerOptions({ items: mismatched });
+      for (const c of chosen) {
+        const prior = screenerResolutions.get(c.key);
+        screenerResolutions.set(c.key, {
+          status: "fill",
+          key: prior && "key" in prior ? prior.key : c.key,
+          value: c.option,
+          basis: "llm_option",
+        });
+      }
+    }
+  }
+
+  // Essay autofill (operator opt-in, ESSAY_AUTOFILL_ENABLED). Generated
+  // from about-me.md only, validated by the same checker the human-review
+  // drafting path uses, and recorded on the plan entry so what was written
+  // is readable in the artifact afterwards. Off / no context / rejected
+  // draft ⇒ the essay routes to review exactly as before.
+  const essayAnswers = new Map<string, string>();
+  const essayNotes: string[] = [];
+  if (essayAutofillAvailable().ok) {
+    const essayFields = mapped.filter(
+      (f) => f.type === "textarea" && (f.label ?? "").trim().length > 0,
+    );
+    if (essayFields.length > 0) {
+      const generated = await generateEssayAnswers({
+        items: essayFields.map((f) => ({ fieldId: f.id, question: f.label })),
+      });
+      essayNotes.push(...generated.notes);
+      for (const a of generated.answers) essayAnswers.set(a.fieldId, a.answer);
+    }
+  }
+  for (const note of essayNotes) {
+    logger.info("essay autofill note", {
+      service: "essays",
+      action: "autofill_note",
+      metadata: { note },
+    });
+  }
+
+  const plan = buildFillPlan(mapped, profile, {
+    screenerResolutions,
+    ...(essayAnswers.size > 0 ? { essayAnswers } : {}),
+  });
   const approvedPlan = toApprovedFillPlan(plan.entries);
   adapter.setFillContext(plan.entries, fields);
   adapter.setApprovedFillPlan(approvedPlan, profile);

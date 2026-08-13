@@ -9,7 +9,11 @@ import {
   type ApplicationRow,
 } from "../queue/stateMachine.js";
 import { acquireLease, releaseLease } from "../queue/leases.js";
-import { listOpenReviewItems, upsertOpenReviewItem } from "../queue/reviewItems.js";
+import {
+  isAdvisoryReviewItem,
+  listOpenReviewItems,
+  upsertOpenReviewItem,
+} from "../queue/reviewItems.js";
 import { createAutomationRun, completeAutomationRun } from "../queue/automationRuns.js";
 import { inspectApplicationHtml } from "../applications/applicationInspector.js";
 import { openEssayReviewItem } from "../applications/essayAnswers.js";
@@ -255,6 +259,22 @@ function routeNavigationWall(
         reason: `navigation unresolved (${nav.wall})`,
         runId,
       });
+      // Budget walls used to leave NO trace in the queue: they set
+      // FAILED_RETRYABLE and vanished, visible only to navRequeue's capped
+      // sweep. 21 of them accumulated before anyone noticed. Advisory, so
+      // it does not freeze the app — it just makes the failure countable.
+      upsertOpenReviewItem(db, {
+        applicationId,
+        kind: "MANUAL",
+        title: `Answer needed: navigation unresolved (${nav.wall})`,
+        payload: {
+          wall: nav.wall,
+          run_id: runId,
+          nav_run_id: nav.run_id,
+          report_path: nav.report_path ?? null,
+          notes: nav.notes.slice(-5),
+        },
+      });
       return {
         to: "FAILED_RETRYABLE",
         note: `navigation unresolved: ${nav.wall}`,
@@ -480,8 +500,13 @@ async function runOneApplication(input: {
       appReport.end_state = app.state;
 
       // A human owns anything with an open review item.
+      // Advisory notes (an unmapped dropdown, a learned question) are not
+      // walls: they describe ONE field, and the submit-side completeness
+      // scan already refuses anything genuinely incomplete before the
+      // click. Halting on them froze applications whose remaining fields
+      // were fillable — 20 such notes on one live Lever form.
       const openItems = listOpenReviewItems(db).filter(
-        (it) => it.application_id === applicationId,
+        (it) => it.application_id === applicationId && !isAdvisoryReviewItem(it),
       );
       if (openItems.length > 0) {
         appReport.stopped = "review";
