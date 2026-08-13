@@ -4,6 +4,12 @@ import type {
   SubmissionReceipt,
   SubmitClickOptions,
 } from "../ats/adapter.js";
+import { genericSelectorsV1 } from "../ats/generic/selectors.js";
+import { isSameEmployerOrigin } from "../ats/generic/urlValidation.js";
+import {
+  genericSubmit,
+  genericVerifySubmission,
+} from "../ats/generic/submission.js";
 import type { SupportedAtsId } from "../ats/shared/urlValidationDispatch.js";
 import {
   greenhouseSubmit,
@@ -70,6 +76,31 @@ export type AtsBinding = {
 };
 
 export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
+  /**
+   * Company-hosted forms. Same gates as every vendor; two honest
+   * differences: no essay fill (essay execution is Greenhouse-bound, so an
+   * application carrying essay answers fails closed before submit), and
+   * the page gate proves identity by same-employer-origin rather than by a
+   * vendor host allowlist — the URL's trust already came from the JobRight
+   * posting it was resolved from.
+   */
+  generic: {
+    id: "generic",
+    gate: (page, employerUrl, normalizedUrl) =>
+      verifyPageBeforeMutationGeneric(page, {
+        isTrustedHost: (url: string) =>
+          isSameEmployerOrigin(normalizedUrl ?? employerUrl, url),
+        formMarkers: genericSelectorsV1.formMarkers,
+        ...(normalizedUrl ? { expectedUrl: normalizedUrl } : {}),
+      }),
+    submit: (page, opts) => genericSubmit(page, opts),
+    submitSelector: genericSelectorsV1.submit,
+    verifySubmission: (page, opts) => genericVerifySubmission(page, opts),
+    supportsEssayFill: false,
+    // The healer's locator is already vendor-free label similarity, and it
+    // re-verifies deterministically — exactly what an unmodelled form needs.
+    supportsHealing: true,
+  },
   greenhouse: {
     id: "greenhouse",
     gate: (page, employerUrl, normalizedUrl) =>

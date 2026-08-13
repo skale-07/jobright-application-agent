@@ -56,6 +56,7 @@ describe("ATS bindings table (W4, UNIT_CONFIRMED)", () => {
   it("declares capabilities honestly per ATS", () => {
     expect(Object.keys(ATS_BINDINGS).sort()).toEqual([
       "ashby",
+      "generic",
       "greenhouse",
       "lever",
       "workable",
@@ -67,6 +68,11 @@ describe("ATS bindings table (W4, UNIT_CONFIRMED)", () => {
       expect(ATS_BINDINGS[ats].supportsEssayFill).toBe(false);
       expect(ATS_BINDINGS[ats].supportsHealing).toBe(false);
     }
+    // Company-hosted forms: essays fail closed (essay execution is
+    // Greenhouse-bound), healing is ON because the healer's locator is
+    // vendor-free label similarity with a deterministic re-verify.
+    expect(ATS_BINDINGS.generic.supportsEssayFill).toBe(false);
+    expect(ATS_BINDINGS.generic.supportsHealing).toBe(true);
   });
 });
 

@@ -18,6 +18,11 @@ import {
   validateWorkdayApplicationUrl,
   type WorkdayUrlValidation,
 } from "../workday/urlValidation.js";
+import {
+  validateGenericApplicationUrl,
+  type GenericUrlValidation,
+} from "../generic/urlValidation.js";
+import { getConfig } from "../../config/index.js";
 
 /**
  * Multi-ATS employer-URL gate. Each per-ATS validator carries its own
@@ -32,7 +37,12 @@ export type SupportedAtsId =
   | "lever"
   | "ashby"
   | "workable"
-  | "workday";
+  | "workday"
+  /**
+   * Company-hosted forms — the long tail. Claimed only after every vendor
+   * validator declines, so a supported ATS never lands here.
+   */
+  | "generic";
 
 export type AtsUrlDetection =
   | {
@@ -64,6 +74,12 @@ export type AtsUrlDetection =
       normalizedUrl: string;
       warnings: string[];
       validation: WorkdayUrlValidation;
+    }
+  | {
+      ats: "generic";
+      normalizedUrl: string;
+      warnings: string[];
+      validation: GenericUrlValidation;
     }
   | { ats: null; failureReason: string };
 
@@ -113,8 +129,26 @@ export function detectAtsFromUrl(rawUrl: string): AtsUrlDetection {
       validation: workday,
     };
   }
+  // Last: any https employer form. Not a fallback that weakens the vendor
+  // validators — they have all already declined — but the long tail (10 of
+  // 41 resolved URLs in the live corpus, 10 distinct hosts). Trust comes
+  // from provenance (JobRight posting -> navigation -> congruence), not
+  // from a host allowlist; see generic/urlValidation.ts.
+  const generic = validateGenericApplicationUrl(rawUrl);
+  if (generic.passed && getConfig().genericAtsEnabled) {
+    return {
+      ats: "generic",
+      normalizedUrl: generic.normalizedUrl ?? rawUrl,
+      warnings: generic.warnings,
+      validation: generic,
+    };
+  }
   return {
     ats: null,
-    failureReason: `no supported ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}; workable: ${workable.failureReason}; workday: ${workday.failureReason}`,
+    failureReason: `no ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}; workable: ${workable.failureReason}; workday: ${workday.failureReason}; generic: ${
+      getConfig().genericAtsEnabled
+        ? generic.failureReason
+        : "GENERIC_ATS_ENABLED is off"
+    }`,
   };
 }

@@ -10,6 +10,7 @@ import { GreenhouseAdapterV1 } from "../ats/greenhouse/v1.js";
 import { LeverAdapterV1, leverFullNameMatcher } from "../ats/lever/v1.js";
 import { AshbyAdapterV1, ashbyFullNameMatcher } from "../ats/ashby/v1.js";
 import { WorkableAdapterV1 } from "../ats/workable/v1.js";
+import { GenericAdapterV1 } from "../ats/generic/v1.js";
 import { WorkdayAdapterV1 } from "../ats/workday/v1.js";
 import {
   annotateFullNameField,
@@ -81,6 +82,9 @@ const FILLABLE_ADAPTERS: Record<string, () => FillCapableAdapter> = {
   ashby: () => new AshbyAdapterV1(),
   workable: () => new WorkableAdapterV1(),
   workday: () => new WorkdayAdapterV1(),
+  // The long tail: any company-hosted form. Last resort by construction —
+  // detectAtsFromUrl only reports "generic" after every vendor declines.
+  generic: () => new GenericAdapterV1(),
 };
 
 /** Single full-name fields need annotation before planning (see nameComposition). */
@@ -140,10 +144,22 @@ export async function planApplicationFill(input: {
     url: input.url,
     html: input.html,
   });
-  const makeAdapter = FILLABLE_ADAPTERS[detected.id];
+  // The generic adapter is a capability, not a fallback: with
+  // GENERIC_ATS_ENABLED off it must be as unreachable here as it is in the
+  // URL dispatcher, or `ats:fill` could plan heuristically on a host the
+  // pipeline would have refused.
+  const genericAllowed = getConfig().genericAtsEnabled;
+  const makeAdapter =
+    detected.id === "generic" && !genericAllowed
+      ? undefined
+      : FILLABLE_ADAPTERS[detected.id];
   if (!makeAdapter) {
+    const suffix =
+      detected.id === "generic" && !genericAllowed
+        ? " — GENERIC_ATS_ENABLED is off"
+        : "";
     throw new Error(
-      `Fill supports greenhouse/lever/ashby/workable/workday only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
+      `Fill supports greenhouse/lever/ashby/workable/workday${genericAllowed ? "/generic" : ""} only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})${suffix}`,
     );
   }
   const adapter = makeAdapter();

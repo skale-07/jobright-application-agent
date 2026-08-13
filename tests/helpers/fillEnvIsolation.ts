@@ -23,6 +23,7 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "OUTLOOK_VERIFICATION_ENABLED",
   "ESSAY_REQUIRED_GATE_ENABLED",
   "AUTOMATION_ENABLED",
+  "GENERIC_ATS_ENABLED",
 ] as const;
 
 export type ControlledFillEnvKey = (typeof CONTROLLED_FILL_ENV_KEYS)[number];
