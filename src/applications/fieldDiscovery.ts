@@ -5,6 +5,53 @@ import type { DiscoveredField } from "../ats/adapter.js";
  * Uses regex + lightweight heuristics suitable for fixture tests and Phase 4 dry-run.
  * Prefer label[for], aria-label, placeholder, name — not brittle class chains alone.
  */
+/**
+ * Does this "label" actually name a question? A bracketed machine path, a
+ * bare uuid, a `field_12` fallback, or generic placeholder prose all mean
+ * the real question lives elsewhere in the DOM.
+ */
+export function isUninformativeLabel(label: string): boolean {
+  const t = label.trim();
+  if (t.length === 0) return true;
+  if (/^field_\d+$/.test(t)) return true;
+  if (/\[[^\]]*\]/.test(t)) return true; // cards[uuid][field0], urls[Other]
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) {
+    return true;
+  }
+  if (/^(type your (response|answer)|your (answer|response)|answer|response|select(\.\.\.| an option)?|choose(\.\.\.| one)?|please select)$/i.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+// Legends and headings only. A preceding <label> belongs to a DIFFERENT
+// control — this field's own label was already resolved via labelMap — so
+// including it made a radio option ("Yes") look like a section heading.
+const HEADING_RE =
+  /<(legend|h1|h2|h3|h4|h5|h6)\b[^>]*>([\s\S]{1,300}?)<\/\1>/gi;
+
+/**
+ * Text of the nearest legend/heading/label BEFORE this position — the
+ * question a machine-named control sits under. Bounded scan; returns null
+ * rather than guessing when nothing informative precedes the field.
+ */
+export function nearestSectionHeading(
+  html: string,
+  position: number,
+): string | null {
+  const window = html.slice(Math.max(0, position - 4_000), position);
+  HEADING_RE.lastIndex = 0;
+  let best: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = HEADING_RE.exec(window)) !== null) {
+    const text = cleanLabel(decodeEntities(stripTags(m[2] ?? "")));
+    if (text.length < 3 || text.length > 200) continue;
+    if (isUninformativeLabel(text)) continue;
+    best = text; // last (nearest) informative one wins
+  }
+  return best;
+}
+
 export function discoverFieldsFromHtml(
   html: string,
   opts?: { preferGreenhouse?: boolean },
@@ -40,6 +87,17 @@ export function discoverFieldsFromHtml(
       placeholder ??
       name ??
       `field_${idx}`;
+
+    // A machine name or a placeholder is not a question. Live corpus:
+    // "cards[631785a2-…][field0]" ×13 (Lever's education/experience cards —
+    // school, degree, dates: data the profile HOLDS), "Type your response"
+    // ×10, "field_33". Those 72 fields were skipped as unmapped, and the
+    // prediction tier rejected them as "unusable label". Look upward for
+    // the nearest legend/heading instead of giving up.
+    if (isUninformativeLabel(label)) {
+      const nearby = nearestSectionHeading(html, m.index);
+      if (nearby) label = nearby;
+    }
 
     if (opts?.preferGreenhouse && name) {
       const greenhouseLabel = inferGreenhouseLabel(name, label);
@@ -98,6 +156,17 @@ function stripTags(s: string): string {
 
 function cleanLabel(s: string): string {
   return s.replace(/\s*\*\s*$/, "").replace(/\s+/g, " ").trim();
+}
+
+/** Headings carry entities that a question text must not; decode the common ones. */
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/gi, "&")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;|&apos;|&rsquo;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
 }
 
 function mapType(

@@ -56,10 +56,13 @@ describe("lever card-question labeling (UNIT_CONFIRMED)", () => {
 
   it("overlay replaces placeholder labels in generic discovery output", () => {
     const generic = discoverFieldsFromHtml(CARD_HTML);
-    // The live regression: generic discovery labels the textarea by its
-    // placeholder and the radios by their option spans.
+    // The live regression: generic discovery cannot see the real question,
+    // so it falls back to the nearest section heading ("Type your
+    // response" is now recognised as a placeholder, not a question).
+    // Useful, but not the actual question — the overlay below is.
     const before = generic.find((f) => (f.name ?? "").endsWith("[field5]"));
-    expect(before?.label).toBe("Type your response");
+    expect(before?.label).not.toBe("What excites you about Field AI?");
+    expect(before?.label).toMatch(/Employment Eligibility & Certifications/);
 
     const fixed = applyLeverCardQuestions(generic, CARD_HTML);
     const essay = fixed.find((f) => (f.name ?? "").endsWith("[field5]"));

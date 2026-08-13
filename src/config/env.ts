@@ -70,6 +70,7 @@ const envSchema = z.object({
   SCREENER_PREDICT_LLM_ENABLED: boolFromEnv.default(false),
   ARTIFACT_AUTOPUSH_ENABLED: boolFromEnv.default(false),
   ESSAY_DRAFT_ENABLED: boolFromEnv.default(false),
+  ESSAY_AUTOFILL_ENABLED: boolFromEnv.default(false),
   /** Phase 6a': sidecar escalation when the in-process healer fails. Fail closed. */
   AGENT_FALLBACK_ENABLED: boolFromEnv.default(false),
   /**
@@ -159,6 +160,8 @@ export type AppConfig = {
   screenerPredictLlmEnabled: boolean;
   artifactAutopushEnabled: boolean;
   essayDraftEnabled: boolean;
+  /** Generate essay answers from about-me.md and FILL them (operator opt-in). */
+  essayAutofillEnabled: boolean;
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;
   agentCdpUrl: string;
@@ -238,6 +241,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,
     artifactAutopushEnabled: parsed.ARTIFACT_AUTOPUSH_ENABLED,
     essayDraftEnabled: parsed.ESSAY_DRAFT_ENABLED,
+    essayAutofillEnabled: parsed.ESSAY_AUTOFILL_ENABLED,
     agentFallbackEnabled: parsed.AGENT_FALLBACK_ENABLED,
     automationEnabled: parsed.AUTOMATION_ENABLED,
     agentCdpUrl: parsed.AGENT_CDP_URL,

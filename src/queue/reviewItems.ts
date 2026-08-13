@@ -29,6 +29,36 @@ export type ReviewItem = {
   resolution_json: string | null;
 };
 
+/**
+ * Titles that are ADVISORY: a note about one field, not a reason the whole
+ * application cannot proceed.
+ *
+ * The pipeline halts on ANY open review item. That is right for "sign in",
+ * "solve the captcha", "this URL is the wrong company" — you genuinely
+ * cannot continue. It is wrong for "we could not map one dropdown": the
+ * live corpus showed a single Lever form producing 20 such notes, each
+ * freezing an application whose other 28 fields were fillable, while the
+ * submit-side required-completeness scan already refuses anything
+ * genuinely incomplete at the click boundary.
+ *
+ * Advisory items still appear in the queue and still want an answer — they
+ * just stop being a full stop.
+ */
+const ADVISORY_TITLE_PREFIXES = [
+  "Answer needed:",
+  "New question learned:",
+  "Submit selector proposal",
+];
+
+export function isAdvisoryReviewItem(item: {
+  kind: ReviewKind;
+  title: string;
+}): boolean {
+  // Only MANUAL can be advisory. Every other kind names a wall.
+  if (item.kind !== "MANUAL") return false;
+  return ADVISORY_TITLE_PREFIXES.some((p) => item.title.startsWith(p));
+}
+
 export function createReviewItem(
   db: Db,
   input: {

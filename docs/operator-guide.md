@@ -457,6 +457,72 @@ The banned send-style APIs have no flag — they are impossible, enforced by
 `npm run check:forbidden` (Outlook send identifiers AND Gmail
 send/modify/compose identifiers).
 
+## 14a. Answering everything (the autonomy unblockers)
+
+Measured across the live fill reports, the things stopping applications
+were not the safety gates — they were three plumbing failures that sent
+answers you already had to a human.
+
+**Advisory notes no longer freeze an application.** The pipeline halts on
+any open review item, which is right for "sign in" or "solve the captcha"
+and wrong for "we could not map one dropdown". One Lever form produced 20
+of the latter. Field-level notes (`Answer needed:`, `New question
+learned:`, `Submit selector proposal`) are now advisory: they stay in the
+queue, but the application keeps going and the submit-side completeness
+scan still refuses anything genuinely incomplete.
+
+**A held answer is now placed onto the page's options** when the literal
+matcher can't (`SCREENER_LLM_MATCH_ENABLED` — the same flag as label
+mapping). "JobRight" against 13 options, "Remote" against Yes/No. The
+model may only CHOOSE from the page's own list and its choice is checked
+verbatim before filling; it can never author a value, and abstention parks
+exactly as before.
+
+**Healing is on for every ATS.** It was Greenhouse-only, so on Lever,
+Ashby, Workable and Workday a single read-back miss was terminal. The
+healer's locator is vendor-free label similarity that re-verifies
+deterministically.
+
+**Machine-named fields get a real question.** `cards[<uuid>][field0]`,
+`Type your response`, `field_33` are recognised as non-questions and
+resolved from the nearest legend/heading instead of being skipped as
+unmapped.
+
+**Budget walls are visible.** A navigation budget wall used to set
+`FAILED_RETRYABLE` and leave nothing in the queue; 21 accumulated unnoticed.
+It now writes an advisory note (so it is countable without freezing anything).
+
+### EEO / demographics
+
+These already fill — from your own encrypted sensitive profile, and from
+nothing else. If they are being skipped, one of three things is true:
+
+1. no sensitive profile on disk (`npm run cli -- candidate:encrypt-sensitive`),
+2. the field carries no canonical mapping, or
+3. the value for that canonical key is empty.
+
+The rule that never changes: a demographic answer is never inferred,
+defaulted, or generated. No value on file ⇒ the field is left blank.
+
+### Essays (`ESSAY_AUTOFILL_ENABLED`)
+
+```ini
+ESSAY_AUTOFILL_ENABLED=true
+```
+
+Generates essay answers from `private/candidate/about-me.md` and fills
+them, instead of routing every essay to you. Requires that file to exist
+and an LLM key. Generated text must pass the same validation a review
+draft does (length bounds, no placeholder brackets, no model
+self-reference), and each answer is recorded on its plan entry, so the run
+artifact shows exactly what an employer received.
+
+**Worth knowing once:** essay prose is the part a human reads, and unlike
+a dropdown it cannot be verified by read-back. A model writing from your
+about-me can still phrase a claim more strongly than the source supports.
+Check the first few in the artifacts. Off, or context missing, or the
+draft rejected ⇒ the essay routes to review exactly as before.
+
 ## 14b. Company-hosted forms (`GENERIC_ATS_ENABLED`)
 
 Most employers do not use Greenhouse, Lever, Ashby, Workable or Workday.

@@ -19,10 +19,20 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
   (source list: `src/outlook/sendGuards.ts`); do not extend its allowlist to make code compile.
 - Never weaken `assertExecutableApprovedEntry` or the submit gating (submit requires an
   approved plan entry + `SUBMIT_ENABLED` + explicit operator confirmation).
-- Form values come only from the approved plan. Free-text/essay fields and demographic
-  (EEO/self-ID) fields are never auto-filled — they route to review items for the human.
-  `ESSAY_DRAFT_ENABLED` may generate a SUGGESTION draft into the essay review item; the
-  human edits/approves it there, and only the approved text ever fills.
+- Form values come only from the approved plan. Two paths may put generated/stored text
+  into a field, both operator opt-in and both fail-closed:
+  - Demographic (EEO/self-ID) fields fill ONLY from the operator's own encrypted
+    sensitive profile. Nothing is ever inferred or defaulted; no value on file ⇒ skipped.
+  - Essays: `ESSAY_DRAFT_ENABLED` generates a SUGGESTION into the review item (human
+    approves, only approved text fills). `ESSAY_AUTOFILL_ENABLED` (operator directive
+    2026-08-13) generates from `private/candidate/about-me.md` and fills directly — it
+    additionally requires that file to exist and an LLM key, the output must pass the
+    same `validateDraft` checks as a review draft, and every generated answer is
+    recorded on its plan entry so the artifact shows what an employer received. Off,
+    or context missing, or draft rejected ⇒ the essay routes to review as before.
+  Screener answers may be placed onto a page's option list by the model
+  (`SCREENER_LLM_MATCH_ENABLED`), but only by CHOOSING from that page's own options,
+  validated verbatim — the model never authors a value.
 - `chromium.launch` is allowed only in session infrastructure
   (`src/auth/serviceSession.ts`, `src/auth/loginFlow.ts`, `src/browser/fixtureSession.ts`).
   Everything else enters the browser through those seams.

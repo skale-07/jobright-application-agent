@@ -123,7 +123,10 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submitSelector: leverSelectorsV1.submit,
     verifySubmission: (page, opts) => leverVerifySubmission(page, opts),
     supportsEssayFill: false,
-    supportsHealing: false,
+    // Healing is vendor-free: findFieldCandidates scores label/aria/name
+    // similarity and re-verifies deterministically through the approved-plan
+    // guard. With it off, a single read-back miss was TERMINAL here.
+    supportsHealing: true,
   },
   ashby: {
     id: "ashby",
@@ -139,7 +142,10 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submitSelector: ashbySelectorsV1.submit,
     verifySubmission: (page, opts) => ashbyVerifySubmission(page, opts),
     supportsEssayFill: false,
-    supportsHealing: false,
+    // Healing is vendor-free: findFieldCandidates scores label/aria/name
+    // similarity and re-verifies deterministically through the approved-plan
+    // guard. With it off, a single read-back miss was TERMINAL here.
+    supportsHealing: true,
   },
   workable: {
     id: "workable",
@@ -153,7 +159,10 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submitSelector: workableSelectorsV1.submit,
     verifySubmission: (page, opts) => workableVerifySubmission(page, opts),
     supportsEssayFill: false,
-    supportsHealing: false,
+    // Healing is vendor-free: findFieldCandidates scores label/aria/name
+    // similarity and re-verifies deterministically through the approved-plan
+    // guard. With it off, a single read-back miss was TERMINAL here.
+    supportsHealing: true,
   },
   workday: {
     id: "workday",
@@ -167,6 +176,9 @@ export const ATS_BINDINGS: Record<SupportedAtsId, AtsBinding> = {
     submitSelector: workdaySelectorsV1.wizard.submitButton,
     verifySubmission: (page, opts) => workdayVerifySubmission(page, opts),
     supportsEssayFill: false,
-    supportsHealing: false,
+    // Healing is vendor-free: findFieldCandidates scores label/aria/name
+    // similarity and re-verifies deterministically through the approved-plan
+    // guard. With it off, a single read-back miss was TERMINAL here.
+    supportsHealing: true,
   },
 };
