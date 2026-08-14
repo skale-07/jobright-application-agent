@@ -53,9 +53,19 @@ export function nearestSectionHeading(
 }
 
 export function discoverFieldsFromHtml(
-  html: string,
+  rawHtml: string,
   opts?: { preferGreenhouse?: boolean },
 ): DiscoveredField[] {
+  // Regex discovery reads RAW text, so an <input …> inside a <script>
+  // string literal (SPA templates, JSON payloads) counted as a real field
+  // — the Workday wizard walk handed a review page to the filler because
+  // the page's own script mentioned form markup. DOM-invisible blocks go
+  // first.
+  const html = rawHtml
+    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
+    .replace(/<style\b[\s\S]*?<\/style>/gi, "")
+    .replace(/<template\b[\s\S]*?<\/template>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
   const fields: DiscoveredField[] = [];
   const labelMap = buildLabelMap(html);
 

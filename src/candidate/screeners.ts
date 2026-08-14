@@ -61,6 +61,42 @@ export const SCREENER_REGISTRY: ScreenerDef[] = [
     ],
     synonyms: { Yes: YES, No: NO },
   },
+  // Live 2026-08-14: "Are you legally authorized to work…" was the single
+  // most common pre-click refusal (7 of 52 submit runs) — the label had no
+  // registry key, so it parked unmapped even though the profile carries
+  // work_authorization / requires_sponsorship. These are candidate FACTS
+  // (not demographics): bank answer wins, else the profile predictor
+  // derives Yes/No, and a choice must still match a page option verbatim.
+  {
+    key: "requires_sponsorship",
+    description:
+      "Whether the candidate will now or in the future require visa sponsorship",
+    kind: "yes_no",
+    policy: "auto_fill",
+    patterns: [
+      /require .{0,30}sponsorship/,
+      /need .{0,30}sponsorship/,
+      /sponsorship .{0,30}(now or in the future|to work|for employment)/,
+      /visa sponsorship/,
+      /now or in the future .{0,40}sponsorship/,
+    ],
+    synonyms: { Yes: YES, No: NO },
+  },
+  {
+    key: "work_authorization",
+    description:
+      "Whether the candidate is legally authorized to work in the posting's country",
+    kind: "yes_no",
+    policy: "auto_fill",
+    patterns: [
+      /legally authorized to work/,
+      /authorized to work in the (united states|u ?s|us|country)/,
+      /eligible to work in/,
+      /legally (eligible|permitted) to work/,
+      /work authorization/,
+    ],
+    synonyms: { Yes: YES, No: NO },
+  },
   {
     key: "education_level",
     description:

@@ -55,7 +55,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
         host: "careers.workday-tenant.com",
         runId,
         loginWallDetected: false,
-        emailOverride: "candidate@example.com",
+        emailOverride: "candidate@fixture.test",
       });
       expect(noWall.credentials.available).toBe(false);
       expect(getAccount("careers.workday-tenant.com")).toBeNull();
@@ -65,11 +65,11 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
         host: "careers.workday-tenant.com",
         runId,
         loginWallDetected: true,
-        emailOverride: "candidate@example.com",
+        emailOverride: "candidate@fixture.test",
       });
       expect(minted.credentials.available).toBe(true);
       if (minted.credentials.available) {
-        expect(minted.credentials.username).toBe("candidate@example.com");
+        expect(minted.credentials.username).toBe("candidate@fixture.test");
         expect(minted.credentials.password.length).toBeGreaterThanOrEqual(20);
         expect(minted.secrets).toContain(minted.credentials.password);
       }
@@ -93,7 +93,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
           host,
           runId: "nav-x",
           loginWallDetected: true,
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
         });
         expect(r.credentials.available).toBe(false);
         expect(r.secrets).toEqual([]);
@@ -115,7 +115,7 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
 
   describe("email-verification provider order", () => {
     const NEED = {
-      sent_to: "candidate@example.com",
+      sent_to: "candidate@fixture.test",
       requested_at: new Date().toISOString(),
     };
 

@@ -254,6 +254,7 @@ async function resolveExternalCapture(
   },
   attempt: number,
   notes: string[],
+  options: { closeUnreadPopups?: boolean } = {},
 ): Promise<ApplyClickCapture | null> {
   const popup = await armed.popupPromise;
   if (popup) {
@@ -282,11 +283,18 @@ async function resolveExternalCapture(
         landingTitle,
       };
     }
-    // Left OPEN on purpose: the operator can still see (and use) the tab the
-    // Apply click produced, and a later attempt can read it once it settles.
-    notes.push(
-      "popup opened but stayed on about:blank — tab left open for the operator",
-    );
+    // Headed runs leave the tab OPEN — the operator can still see and use
+    // it. Headless/armed runs close it: nobody is watching, and with the
+    // shared-session loop (2026-08-14) unread tabs would otherwise
+    // accumulate across a 25-app session in one browser.
+    if (options.closeUnreadPopups) {
+      await popup.close().catch(() => undefined);
+      notes.push("popup opened but stayed on about:blank — closed (headless run)");
+    } else {
+      notes.push(
+        "popup opened but stayed on about:blank — tab left open for the operator",
+      );
+    }
     return null;
   }
   if (await armed.sameTabPromise) {
@@ -317,6 +325,7 @@ async function resolveExternalCapture(
 export async function clickApplyAndCaptureExternalUrl(
   session: PlaywrightServiceSession,
   page: Page,
+  options: { closeUnreadPopups?: boolean } = {},
 ): Promise<ApplyClickCapture> {
   assertNavigationAllowed("clickApplyAndCaptureExternalUrl");
   const notes: string[] = [];
@@ -375,6 +384,7 @@ export async function clickApplyAndCaptureExternalUrl(
       { popupPromise, sameTabPromise },
       attempt,
       notes,
+      options,
     );
   };
 

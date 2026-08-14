@@ -5,6 +5,8 @@ import {
   isRecognizedAtsAuthHost,
 } from "../verification/portalAuth.js";
 import { classifyWorkdayPage } from "../ats/workday/pageKind.js";
+import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
+import { walkWorkdayWizard } from "./workdayWizard.js";
 import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
 import path from "node:path";
 import fs from "node:fs";
@@ -16,7 +18,8 @@ import { redactFillReportForArtifact } from "./fillReportRedaction.js";
 import { assertFormFillAllowed } from "./formFillGuards.js";
 import { planApplicationFill } from "./applicationFiller.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
-import type { AtsBinding } from "./atsBindings.js";
+import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
+import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
 import {
   withFixtureHtmlPage,
   withPublicUrlPage,
@@ -103,6 +106,19 @@ export type AtsLiveFillReport = {
     | "LIVE_READ_ONLY_CONFIRMED"
     | "UNVERIFIED";
   submit_attempted: false;
+  /**
+   * Workday only: the wizard pages walked BEYOND the landing page
+   * (Next → re-plan → re-fill, bounded; the submit button is never
+   * clicked here). Absent for single-page ATSes.
+   */
+  wizard_pages?: Array<{
+    page: number;
+    url: string;
+    kind: string;
+    fillable: number;
+    filled: number;
+    verify_passed: boolean;
+  }>;
   notes: string[];
   report_path?: string;
   /** Built when fill/verify/uploads need operator attention. */
@@ -131,7 +147,9 @@ export async function runAtsLiveFill(input: {
    */
   existingPage?: Page;
 }): Promise<AtsLiveFillReport> {
-  const { binding } = input;
+  // Mutable: the iframe hop can re-detect a different vendor's adapter for
+  // the embedded form (e.g. company page → embedded Greenhouse board).
+  let binding = input.binding;
   const report: AtsLiveFillReport = {
     ats: binding.id,
     url: input.url,
@@ -203,7 +221,36 @@ export async function runAtsLiveFill(input: {
   // Read-only page fetch is allowed without flags; mutation asserts below.
   return runInPage(
     async (page) => {
-      const gate = await binding.gate(page, input.url, detected.normalizedUrl);
+      let gate = await binding.gate(page, input.url, detected.normalizedUrl);
+      // Iframe hop: a page whose FORM lives in an iframe discovers zero
+      // fields (page.content() excludes frames) and fails
+      // NO_APPLICATION_FORM. If a child frame's own document carries
+      // fillable fields, navigate to the frame's URL — an embedded ATS
+      // form is a standalone page — re-detect the adapter (the embed often
+      // belongs to a vendor the outer host does not), and re-gate so every
+      // pre-mutation check runs on the hopped page.
+      if (!gate.ok && gate.failureCode === "NO_APPLICATION_FORM") {
+        const frameForm = await findApplicationFrameUrl(page);
+        if (frameForm) {
+          report.notes.push(
+            `application form found in an iframe (${frameForm.fieldCount} fields) — hopping to ${frameForm.url}`,
+          );
+          await page
+            .goto(frameForm.url, { waitUntil: "domcontentloaded" })
+            .catch((e: Error) =>
+              report.notes.push(`iframe hop navigation failed: ${e.message.slice(0, 120)}`),
+            );
+          const hopDetected = detectAtsFromUrl(frameForm.url);
+          if (hopDetected.ats !== null && hopDetected.ats !== binding.id) {
+            report.notes.push(
+              `iframe hop: adapter ${binding.id} → ${hopDetected.ats}`,
+            );
+            binding = ATS_BINDINGS[hopDetected.ats];
+            report.ats = binding.id;
+          }
+          gate = await binding.gate(page, frameForm.url, frameForm.url);
+        }
+      }
       report.gate = {
         ok: gate.ok,
         failure_code: gate.failureCode ?? null,
@@ -388,9 +435,57 @@ export async function runAtsLiveFill(input: {
       if (input.resumePath) {
         report.uploads = [await adapter.uploadResume(page, input.resumePath)];
       }
+
+      // Workday is a MULTI-PAGE wizard (Crowe live: 7 steps). Filling only
+      // the landing page left My Experience / Application Questions /
+      // Voluntary Disclosures untouched — the app then died at submit on
+      // "required questions unanswered" that were never even seen. The
+      // walk (workdayWizard.ts) clicks Next → settles → hands each page to
+      // this filler; bounded, and NEVER the submit button.
+      let wizardVerifyFailed = false;
+      if (binding.id === "workday") {
+        const walk = await walkWorkdayWizard(page, async ({ html, url }) => {
+          const pagePlan = await planApplicationFill({
+            url,
+            html,
+            ...(input.profile ? { profile: input.profile } : {}),
+            ...(input.capture ? { capture: input.capture } : {}),
+          });
+          const wizardAdapter = pagePlan.adapter;
+          const fillResult = await wizardAdapter.fill(page, pagePlan.approvedPlan.answers);
+          const verifyResult = await wizardAdapter.verify(page, pagePlan.approvedPlan.answers);
+          // Resume upload lives on My Experience — retry there if page 1
+          // had no control (or its upload failed to verify).
+          if (
+            input.resumePath &&
+            !(report.uploads?.some((u) => u.verified) ?? false) &&
+            (await page
+              .locator(workdaySelectorsV1.wizard.resumeUpload)
+              .first()
+              .count()
+              .catch(() => 0)) > 0
+          ) {
+            const upload = await wizardAdapter.uploadResume(page, input.resumePath);
+            report.uploads = [...(report.uploads ?? []), upload];
+          }
+          if (pagePlan.approvedPlan.skipped_count > 0) {
+            report.form_snapshot_path = writeFormSnapshot(html);
+          }
+          return {
+            fillable: pagePlan.approvedPlan.fillable_count,
+            filled: fillResult.filled.length,
+            verifyPassed: verifyResult.passed && fillResult.errors.length === 0,
+          };
+        });
+        report.wizard_pages = walk.pages;
+        report.notes.push(...walk.notes);
+        wizardVerifyFailed = walk.verifyFailed;
+      }
+
       report.validation_level =
         report.verify.passed &&
         report.fill.errors.length === 0 &&
+        !wizardVerifyFailed &&
         (report.uploads?.every((u) => u.verified) ?? true)
           ? "LIVE_MUTATION_CONFIRMED"
           : "UNVERIFIED";
