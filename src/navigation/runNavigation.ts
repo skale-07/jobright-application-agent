@@ -46,6 +46,7 @@ import { evaluateAgentHostPolicy } from "./hostPolicy.js";
 import {
   employerSiblingHosts,
   explainAtsAnchorMisses,
+  looksLikeApplicationUrl,
   selectCandidateApplyLinks,
   traversalHosts,
 } from "./candidateLinks.js";
@@ -59,20 +60,6 @@ import {
 function detectAtsFromUrlSafe(url: string): boolean {
   return detectAtsFromUrl(url).ats !== null;
 }
-
-/** Hosts the nav agent may traverse in addition to the job page's own. */
-const KNOWN_ATS_HOSTS = [
-  "boards.greenhouse.io",
-  "job-boards.greenhouse.io",
-  "greenhouse.io",
-  "jobs.lever.co",
-  "jobs.eu.lever.co",
-  "jobs.ashbyhq.com",
-  "apply.workable.com",
-  // Workday is multi-tenant (<tenant>.wdN.myworkdayjobs.com); the suffix
-  // authorizes every tenant (final_url validation matches host.endsWith).
-  "myworkdayjobs.com",
-];
 
 /**
  * Why the agent phase can or cannot run, as one named cause. The 4a7c199b
@@ -392,27 +379,34 @@ export async function runNavigation(
       return persist(report);
     }
 
-    // Phase A — zero mutation. Only a KNOWN-ATS href resolves here: the
-    // any-anchor fallback also matches footer/social links, and phase A
-    // applies none of the landing-page checks phase B does, so an
-    // arbitrary https href must never be stored as the employer URL.
+    // Phase A — zero mutation. JobRight pages mix apply hrefs with
+    // social/press/company-home links; those are not employer application
+    // URLs just because they came from JobRight. Store the first
+    // non-social apply-shaped href whose congruence matches this job.
+    // Mismatch is still a reject (aggregator pages mix employers).
+    // Unknown waits for Phase B — Apply click is stronger provenance.
     const hrefs = await readExternalApplyHrefs(page);
-    const atsHrefs = hrefs.filter((h) => detectAtsFromUrlSafe(h));
-    // Identity before acceptance: an anchor pointing at a known ATS but a
-    // DIFFERENT employer's board (aggregator pages mix them) must not win.
-    const atsHref = atsHrefs.find((h) => congruent(h).verdict === "match");
-    for (const rejected of atsHrefs.filter((h) => congruent(h).verdict === "mismatch")) {
-      report.notes.push(
-        `phase A: known-ATS anchor rejected — ${congruent(rejected).detail}`,
-      );
+    const candidates = selectCandidateApplyLinks(hrefs, hrefs.length);
+    let phaseAHref: string | null = null;
+    for (const href of candidates) {
+      if (!looksLikeApplicationUrl(href)) continue;
+      const verdict = congruent(href);
+      if (verdict.verdict === "mismatch") {
+        report.notes.push(`phase A: anchor rejected — ${verdict.detail}`);
+        continue;
+      }
+      if (verdict.verdict === "match") {
+        phaseAHref = href;
+        break;
+      }
     }
-    if (atsHref) {
+    if (phaseAHref) {
       trace({
         phase: "A_anchor_hrefs",
-        outcome: `resolved (known ATS, ${hrefs.length} candidates, employer match)`,
-        evidence: new URL(atsHref).hostname,
+        outcome: `resolved (${hrefs.length} candidates, employer match)`,
+        evidence: new URL(phaseAHref).hostname,
       });
-      return resolveAndPersist(report, db, applicationId, atsHref, "anchor_href");
+      return resolveAndPersist(report, db, applicationId, phaseAHref, "anchor_href");
     }
     // Name the hosts phase A saw but could not accept: an "N links
     // ignored" count hid that the answer was often sitting in a
@@ -430,12 +424,9 @@ export async function runNavigation(
           .filter((h): h is string => h !== null),
       ),
     );
-    const ignoredHosts = externalHosts.filter(
-      (h) => !atsHrefs.some((a) => new URL(a).hostname.toLowerCase() === h),
-    );
-    if (ignoredHosts.length > 0) {
+    if (externalHosts.length > 0) {
       report.notes.push(
-        `phase A: ${ignoredHosts.length} non-ATS external host(s) seen: ${ignoredHosts
+        `phase A: ${externalHosts.length} external host(s) seen: ${externalHosts
           .slice(0, 10)
           .join(", ")}`,
       );
@@ -445,10 +436,10 @@ export async function runNavigation(
       phase: "A_anchor_hrefs",
       outcome:
         hrefs.length > 0
-          ? `no known-ATS anchors (${hrefs.length} external links ignored)`
+          ? `no congruent apply href (${hrefs.length} external links)`
           : "no external anchors",
-      ...(ignoredHosts.length > 0
-        ? { evidence: ignoredHosts.slice(0, 6).join(", ") }
+      ...(externalHosts.length > 0
+        ? { evidence: externalHosts.slice(0, 6).join(", ") }
         : {}),
     });
 
@@ -605,11 +596,11 @@ export async function runNavigation(
       report.wall = "budget";
       return persist(report);
     }
-    // The agent may traverse every external host the job page itself
-    // linked to (career sites that front the real ATS) — the previous
-    // jobright+known-ATS-only cage made "find Apply on the company site"
-    // structurally unwinnable. Traversal ≠ acceptance: congruence and the
-    // final_url validation in navigateViaSidecar still gate what is stored.
+    // The agent may traverse every non-social host the job page itself
+    // linked to, plus the captured start URL. Traversal ≠ acceptance:
+    // congruence and the final_url validation in navigateViaSidecar
+    // still gate what is stored. There is no hardcoded ATS-host allowlist
+    // — JobRight is the source of the hrefs; leftover CDP tabs are not.
     const jobPageHosts = traversalHosts(hrefs);
     // Career sites redirect across sibling domains of the same brand
     // (joinbytedance.com -> jobs.bytedance.com, live 2026-08-12). Allow the
@@ -619,7 +610,6 @@ export async function runNavigation(
     const allowedDomains = Array.from(
       new Set([
         "jobright.ai",
-        ...KNOWN_ATS_HOSTS,
         ...(startUrl.startsWith("https://") ? [new URL(startUrl).hostname] : []),
         ...jobPageHosts,
         ...siblingHosts,

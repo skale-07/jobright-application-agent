@@ -88,7 +88,7 @@ describe("URL congruence (UNIT_CONFIRMED)", () => {
     ).toBe("match");
   });
 
-  it("a URL carrying no employer name at all is 'unknown', never a silent pass", () => {
+    it("a URL carrying no employer name at all is 'unknown', never a silent pass", () => {
     // Every label here is a page word, so there is nothing to verify
     // against — the human decides, and we say so.
     const v = checkUrlCongruence(
@@ -97,6 +97,17 @@ describe("URL congruence (UNIT_CONFIRMED)", () => {
     );
     expect(v.verdict).toBe("unknown");
     expect(v.detail).toMatch(/no employer name decodable/);
+  });
+
+  it("UKG SaaShr shard hosts are unverifiable, not a wrong-employer mismatch", () => {
+    // Live 2026-08-14: TRG Apply captured secure7.saashr.com and congruence
+    // accused "secure7" of being a different company. Shard labels and the
+    // board hostname are not employer names.
+    const url = "https://secure7.saashr.com/ta/6123484.careers";
+    expect(extractOrgCandidates(url).map((c) => c.value)).not.toContain("secure7");
+    const v = checkUrlCongruence("TRG", url);
+    expect(v.verdict).toBe("unknown");
+    expect(checkUrlCongruence("Cohere", url).verdict).toBe("unknown");
   });
 
   /**

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   explainAtsAnchorMisses,
+  looksLikeApplicationUrl,
   selectCandidateApplyLinks,
   traversalHosts,
 } from "../../src/navigation/candidateLinks.js";
@@ -82,5 +83,17 @@ describe("candidate apply links (UNIT_CONFIRMED)", () => {
     expect(hosts).toContain("cadence.wd1.myworkdayjobs.com");
     expect(hosts).toContain("www.cadence.com");
     expect(hosts.join(" ")).not.toMatch(/x\.com|linkedin/);
+  });
+
+  it("looksLikeApplicationUrl accepts apply-shaped hrefs, not company homepages", () => {
+    expect(
+      looksLikeApplicationUrl("https://cadence.wd1.myworkdayjobs.com/External_Careers"),
+    ).toBe(true);
+    expect(looksLikeApplicationUrl("https://www.cadence.com/en_US/home/company/careers.html")).toBe(
+      true,
+    );
+    expect(looksLikeApplicationUrl("https://secure7.saashr.com/ta/6123484.careers")).toBe(true);
+    expect(looksLikeApplicationUrl("https://trg.agency/")).toBe(false);
+    expect(looksLikeApplicationUrl("https://www.prnewswire.com/news/trg")).toBe(false);
   });
 });

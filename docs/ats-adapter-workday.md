@@ -50,8 +50,10 @@ two ways that shaped this adapter:
 
 ## Wiring
 
-- URL recognition: `detectAtsFromUrl` (dispatch) + `KNOWN_ATS_HOSTS`
-  (`myworkdayjobs.com` suffix) + jobright `externalAtsAnchors`.
+- URL recognition: `detectAtsFromUrl` (dispatch) + jobright `externalAtsAnchors`
+  (priority collect, not an exclusive allowlist). Navigation accepts any
+  JobRight-sourced apply URL that passes congruence; there is no hardcoded
+  ATS-host gate.
 - Adapter registry: `listAdapters()` (detection order after workable).
 - Live fill: `runAtsLiveFill` runs `authenticateAtsPortal` before planning
   when the page is on a recognized host and (Workday, or the pre-mutation

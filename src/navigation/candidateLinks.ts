@@ -15,6 +15,7 @@ import { validateGreenhouseApplicationUrl } from "../ats/greenhouse/urlValidatio
 import { validateLeverApplicationUrl } from "../ats/lever/urlValidation.js";
 import { validateAshbyApplicationUrl } from "../ats/ashby/urlValidation.js";
 import { validateWorkableApplicationUrl } from "../ats/workable/urlValidation.js";
+import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 
 /** Hosts that are never an application route — social/press links. */
 const SOCIAL_HOST_RE =
@@ -22,7 +23,7 @@ const SOCIAL_HOST_RE =
 
 /** ATS-ish hosts get first priority even when the exact URL shape failed validation. */
 const ATS_HINT_RE =
-  /greenhouse|lever\.co|ashbyhq|workable|myworkdayjobs|icims|smartrecruiters|jobvite|bamboohr|rippling|recruitee|taleo|successfactors/i;
+  /greenhouse|lever\.co|ashbyhq|workable|myworkdayjobs|icims|smartrecruiters|jobvite|bamboohr|rippling|recruitee|taleo|successfactors|saashr|ukg/i;
 
 export function selectCandidateApplyLinks(
   hrefs: string[],
@@ -49,6 +50,24 @@ export function selectCandidateApplyLinks(
   }
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, limit).map((s) => s.url);
+}
+
+/**
+ * Zero-click Phase A may store a JobRight-page href only when it looks
+ * like an application route. Company homepages and press links sit on
+ * the same page (live TRG: trg.agency next to saashr) and must not win
+ * over the Apply click. Social hosts are already dropped above.
+ */
+export function looksLikeApplicationUrl(url: string): boolean {
+  if (detectAtsFromUrl(url).ats !== null) return true;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  const haystack = `${parsed.hostname}${parsed.pathname}`;
+  return ATS_HINT_RE.test(haystack) || /careers?|jobs?|apply|talent|recruit/i.test(haystack);
 }
 
 const ATS_FAMILIES: Array<{

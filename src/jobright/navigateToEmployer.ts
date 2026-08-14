@@ -13,7 +13,8 @@ import { dismissPageObstructions } from "../browser/obstructions.js";
 
 /**
  * Phase A — zero mutation: read the hrefs of external apply anchors
- * (previously only counted by controlVisibility). Known-ATS URLs first.
+ * (previously only counted by controlVisibility). ATS-shaped URLs first
+ * for ordering only — acceptance is congruence, not a host allowlist.
  */
 export async function readExternalApplyHrefs(page: Page): Promise<string[]> {
   const collect = async (selector: string): Promise<string[]> =>

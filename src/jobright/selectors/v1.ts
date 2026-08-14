@@ -61,7 +61,7 @@ export const jobrightSelectorsV1 = {
    * captures, not yet promoted by a live nav run.
    */
   navigation: {
-    /** Anchors pointing at known ATS hosts — read hrefs, don't just count. */
+    /** External https anchors — ATS-shaped hrefs are collected first for ordering, then any new-tab link. */
     externalAtsAnchors:
       'a[href*="greenhouse.io"], a[href*="lever.co"], a[href*="myworkdayjobs"], a[href*="ashbyhq.com"], a[href*="workable.com"]',
     /** Fallback: any external https anchor opening a new tab. */

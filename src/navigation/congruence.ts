@@ -166,6 +166,9 @@ const MULTI_EMPLOYER_HOSTS = [
   // is a GESTURE posting on Gusto's board. Without gusto.com here the
   // hostname would be read as the employer and accuse a correct URL.
   "gusto.com",
+  // Live 2026-08-14: TRG Apply captured secure7.saashr.com (UKG). "secure7"
+  // was read as an employer name and the URL was thrown away as a mismatch.
+  "saashr.com",
 ];
 
 /**
@@ -211,7 +214,12 @@ export function extractOrgCandidates(url: string): OrgCandidate[] {
     const clean = (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
     if (clean.length < 2) return;
     if (/^\d+$/.test(clean)) return; // job/req ids are never employer names
+    if (/^\d{3,}/.test(clean)) return; // 6123484careers — tenant/file ids, not names
     if (GENERIC_URL_WORDS.has(clean)) return;
+    // secure7 / jobs2 / www3 — a generic word plus a shard number is still
+    // the board, not an employer (live: TRG vs "secure7" on saashr.com).
+    const withoutShard = clean.replace(/\d+$/, "");
+    if (withoutShard !== clean && GENERIC_URL_WORDS.has(withoutShard)) return;
     if (out.some((c) => c.value === clean)) return;
     out.push({ value: clean, source });
   };
