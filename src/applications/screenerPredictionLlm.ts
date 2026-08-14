@@ -43,6 +43,7 @@ import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { tryLoadAboutMe } from "./essayDraft.js";
 import { isApplicationConsentField } from "./consentFields.js";
 import { isDemographicsField } from "./essayDetector.js";
+import { findOtherOption } from "../ats/shared/optionHarvest.js";
 import {
   resolveReviewItem,
   updateReviewItemPayload,
@@ -304,8 +305,13 @@ export async function predictAnswersForQuestions(
     options?: string[] | undefined;
   }>,
   client?: EmailLlmClient,
-): Promise<Map<string, { value: string; basis: string }>> {
-  const out = new Map<string, { value: string; basis: string }>();
+): Promise<
+  Map<string, { value: string; basis: string; intended?: string | null }>
+> {
+  const out = new Map<
+    string,
+    { value: string; basis: string; intended?: string | null }
+  >();
   const cfg = getConfig();
   if (!cfg.screenerPredictLlmEnabled) return out;
   if (!client && !hasLlmKey(cfg)) return out;
@@ -344,12 +350,30 @@ export async function predictAnswersForQuestions(
       const p = byLabel.get(normalizeScreenerLabel(q.label));
       const options = q.options && q.options.length > 0 ? q.options : null;
       const check = validatePrediction(p?.["answer"] ?? null, options);
-      if (!check.ok) continue;
+      const basis =
+        typeof p?.["basis"] === "string" ? p["basis"].slice(0, 200) : "predicted";
+      if (!check.ok) {
+        // The model answered a CLOSED question with something the list does
+        // not contain. That is usually not a bad answer — it is the true
+        // answer, and the list simply does not carry it. When the form
+        // offers its own not-listed escape hatch, take it and carry the
+        // real answer forward for the specify box (operator directive
+        // 2026-08-14). Everything else still parks.
+        if (check.reason === "answer matches no page option" && options) {
+          const other = findOtherOption(options);
+          if (other) {
+            out.set(q.id, {
+              value: other,
+              basis: `${basis} — not on the form's list, chose "${other}"`,
+              intended: check.value,
+            });
+          }
+        }
+        continue;
+      }
       if (!options && !answerGroundedInContext(check.value, about, profileFacts)) {
         continue;
       }
-      const basis =
-        typeof p?.["basis"] === "string" ? p["basis"].slice(0, 200) : "predicted";
       out.set(q.id, { value: check.value, basis });
     }
   } catch {

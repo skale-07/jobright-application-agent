@@ -37,6 +37,16 @@ export function ApplicationsPage(): JSX.Element {
     }
   };
 
+  const skipApplication = async (id: string): Promise<void> => {
+    setToggleError(null);
+    try {
+      await apiPost(`/api/applications/${id}/skip`, { reason: "operator skip" });
+      refresh();
+    } catch (err) {
+      setToggleError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   const applyFilters = (next: { state?: string; q?: string }): void => {
     const merged = new URLSearchParams(params);
     for (const [k, v] of Object.entries(next)) {
@@ -125,6 +135,18 @@ export function ApplicationsPage(): JSX.Element {
                       onClick={() => void toggleAutomation(row.id, !row.automation_excluded)}
                     >
                       {row.automation_excluded ? "excluded ✕" : "included ✓"}
+                    </button>
+                    {/* Skip acts on a run ALREADY in flight — the pipeline
+                        reads the request between steps and moves on. The
+                        include/exclude toggle above is only consulted when
+                        the worker picks its next job. */}
+                    <button
+                      className="ghost"
+                      title="Agent stuck on this job? Skip it — the run moves to the next job at its next step, and this one keeps its current state so you can come back to it."
+                      onClick={() => void skipApplication(row.id)}
+                      style={{ marginLeft: "0.4rem" }}
+                    >
+                      skip ⏭
                     </button>
                   </td>
                   <td className="mono faint nowrap">

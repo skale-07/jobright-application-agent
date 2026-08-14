@@ -53,7 +53,13 @@ import {
 
 export const MAX_ATTEMPTS = 3;
 
-export type PipelineStop = "review" | "gate" | "terminal" | "submit_boundary";
+export type PipelineStop =
+  | "review"
+  | "gate"
+  | "terminal"
+  | "submit_boundary"
+  /** The operator pressed Skip on this application while it was running. */
+  | "skipped";
 
 export type PipelineStepLog = {
   from: ApplicationState;
@@ -112,6 +118,14 @@ export type PipelineOptions = {
    * lifecycle — runPipeline neither creates nor completes it.
    */
   automationRunId?: string;
+  /**
+   * Cooperative skip seam. Checked at the TOP of each step iteration, so a
+   * skip lands between transitions and never inside one — a form is never
+   * left half-filled and a submit in flight is never abandoned mid-click.
+   * The console's Skip button writes the marker this reads (see
+   * automation/skipRequests.ts); tests inject their own predicate.
+   */
+  shouldSkip?: (applicationId: string) => boolean;
 };
 
 /** States the sequential driver can pick up and advance. */
@@ -506,6 +520,21 @@ async function runOneApplication(input: {
       const app = getApplication(db, applicationId);
       if (!app) break;
       appReport.end_state = app.state;
+
+      // The operator pressed Skip while this app was in flight. Stop here,
+      // at a step boundary — the application keeps whatever state it
+      // reached, so it can be inspected and re-included later.
+      if (options.shouldSkip?.(applicationId)) {
+        appReport.stopped = "skipped";
+        appReport.stop_reason = "operator skipped this application";
+        logger.warn("pipeline stopped: operator skip", {
+          service: "pipeline",
+          action: "stop_skipped",
+          application_id: applicationId,
+          metadata: { state: app.state, iteration: i },
+        });
+        break;
+      }
 
       // A human owns anything with an open review item.
       // Advisory notes (an unmapped dropdown, a learned question) are not

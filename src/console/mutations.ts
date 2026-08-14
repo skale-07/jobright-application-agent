@@ -10,6 +10,11 @@ import { retryFailedApplications } from "../pipeline/runPipeline.js";
 import { recordEssayAnswer } from "../applications/essayAnswers.js";
 import { listOpenReviewItems } from "../queue/reviewItems.js";
 import {
+  getSkipRequest,
+  requestSkip,
+  unskip,
+} from "../automation/skipRequests.js";
+import {
   ReviewResolverError,
   abandonApplication,
   dismissReviewItem,
@@ -238,6 +243,35 @@ export function buildMutationRoutes(deps: { db: Db }): Route[] {
           id,
         );
         json(res, 200, { application_id: id, automation_excluded: body["excluded"] });
+      },
+    },
+    {
+      method: "POST",
+      pattern: "/api/applications/:id/skip",
+      handler: async ({ req, res, params }) => {
+        // Skip a job the agent is stuck on. Unlike the include/exclude
+        // toggle above — which is only read when the worker PICKS an app —
+        // this also interrupts a run already in flight: the pipeline reads
+        // the marker between steps and stops working this application.
+        // Skipping never changes the application's state, so the operator
+        // can inspect it, fix what was wrong, and re-include it later.
+        const body = await readJsonBody(req).catch(() => ({}) as Record<string, unknown>);
+        const id = params["id"]!;
+        const undo = body["undo"] === true;
+        const reason =
+          typeof body["reason"] === "string" ? body["reason"].slice(0, 200) : undefined;
+        const ok = undo
+          ? unskip(db, id)
+          : requestSkip(db, id, reason);
+        if (!ok) {
+          json(res, 404, { error: `No application with id ${id}` });
+          return;
+        }
+        json(res, 200, {
+          application_id: id,
+          skipped: !undo,
+          skip_request: getSkipRequest(db, id),
+        });
       },
     },
     {

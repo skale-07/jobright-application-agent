@@ -35,6 +35,32 @@ const GENERIC_CONFIRMATION_RE =
 const APPLY_CTA_RE =
   /\bapply(?:\s+now)?\b[^<]{0,40}<|data-automation-id=["']adventureButton["']|>\s*apply\s*</i;
 
+/**
+ * Does this field set belong to something asking for an APPLICANT? Name,
+ * email, phone or a resume upload — the questions every application form
+ * asks and no listing page's search chrome ever does.
+ *
+ * Deliberately checks the label AND the machine name: a listing page's
+ * "City, state, or country/region" search box maps to an address alias but
+ * is not identity, so location is not on this list.
+ */
+export function hasApplicationIdentityFields(
+  fields: Array<{ label: string; name?: string | undefined; type: string }>,
+): boolean {
+  return fields.some((f) => {
+    const blob = `${f.label} ${f.name ?? ""}`.toLowerCase();
+    if (/\b(search|keyword|job title, id)\b/.test(blob)) return false;
+    return (
+      /\be-?mail\b/.test(blob) ||
+      /\bfirst[\s_-]*name\b|\blast[\s_-]*name\b|\bfull[\s_-]*name\b|\byour name\b/.test(
+        blob,
+      ) ||
+      /\bphone\b|\bmobile number\b/.test(blob) ||
+      (f.type === "file" && /resume|cv|cover[\s_-]*letter/.test(blob))
+    );
+  });
+}
+
 export function classifyPage(input: {
   html: string;
   url: string;
@@ -82,7 +108,27 @@ export function classifyPage(input: {
     };
   }
 
+  // "Has inputs" is NOT "is an application form". Live 2026-08-14
+  // (microsoft.eightfold.ai): the JOB LISTING page carried the site's own
+  // search widgets — "Search by job title, ID, or keyword" and "City,
+  // state, or country/region" — so fieldCount was 5, the page classified
+  // as a form, and the run typed "United States" into a job-search box
+  // while a plain "Apply now" button sat unclicked. A human saw it
+  // instantly: wrong page, click Apply first.
+  //
+  // The discriminator is what the fields ARE. Every real application form
+  // asks who you are; a listing page's search chrome never does. So an
+  // Apply CTA plus no identity field means posting, however many inputs
+  // the page's furniture contributes.
+  const hasCta = APPLY_CTA_RE.test(html);
   if (fieldCount > 0) {
+    if (hasCta && !hasApplicationIdentityFields(fields)) {
+      return {
+        page_class: "posting",
+        field_count: fieldCount,
+        evidence: `Apply CTA present and none of the ${fieldCount} field(s) ask who you are — page furniture, not an application`,
+      };
+    }
     return {
       page_class: "form",
       field_count: fieldCount,
@@ -90,7 +136,7 @@ export function classifyPage(input: {
     };
   }
 
-  if (APPLY_CTA_RE.test(html)) {
+  if (hasCta) {
     return {
       page_class: "posting",
       field_count: 0,

@@ -58,7 +58,14 @@ export type ScreenerResolution =
          * answers matched the page verbatim, or free-text appeared in
          * about-me / profile facts. Never promoted into screeners.json.
          */
-        | "llm_predict";
+        | "llm_predict"
+        /**
+         * The form's OWN "not listed" escape hatch, taken because the
+         * candidate's real answer is genuinely absent from a scraped closed
+         * option list. The value is that option verbatim; the real answer
+         * follows into whatever text box the form reveals next.
+         */
+        | "other_option";
     }
   | { status: "skip"; key: string; reason: string }
   | { status: "review"; key: string; reason: string };

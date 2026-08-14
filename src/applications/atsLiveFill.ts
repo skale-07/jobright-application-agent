@@ -20,6 +20,18 @@ import { planApplicationFill } from "./applicationFiller.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
+import { advancePastPosting } from "../ats/shared/postingAdvance.js";
+import { fetchGreenhouseQuestions } from "../ats/greenhouse/questionsApi.js";
+import {
+  applyLabelOptions,
+  harvestFieldOptions,
+  type AnswerSpace,
+  type OptionHarvestResult,
+} from "../ats/shared/optionHarvest.js";
+import {
+  fillOtherSpecify,
+  type OtherSpecifyOutcome,
+} from "../ats/shared/otherSpecify.js";
 import {
   withFixtureHtmlPage,
   withPublicUrlPage,
@@ -98,6 +110,22 @@ export type AtsLiveFillReport = {
   }> | null;
   /** Sanitized pre-fill page HTML, written when the plan skipped fields. */
   form_snapshot_path: string | null;
+  /**
+   * The answer space scraped off each live control before planning. This
+   * is the evidence that separates "the system chose badly" from "the
+   * system never saw the choices" — the distinction the Appian run could
+   * not be diagnosed without.
+   */
+  harvested_options?: Array<{
+    field_id: string;
+    label: string;
+    answer_space: AnswerSpace;
+    option_count: number;
+    options: string[];
+    other_option: string | null;
+  }>;
+  /** Text boxes revealed by choosing "Other", and what went into them. */
+  other_specify?: OtherSpecifyOutcome[];
   fill: FillResult | null;
   verify: FormVerificationResult | null;
   uploads: UploadVerification[] | null;
@@ -387,12 +415,87 @@ export async function runAtsLiveFill(input: {
           }
         }
       }
-      const { adapter, plan, approvedPlan } = await planApplicationFill({
-        url: planUrl,
-        html: planHtml,
-        ...(input.profile ? { profile: input.profile } : {}),
-        ...(input.capture ? { capture: input.capture } : {}),
-      });
+      // Are we even on the application page? A listing page carries the
+      // site's own search widgets, which look like fields to a field
+      // counter — so "has inputs" was mistaken for "is a form" and the run
+      // filled the posting (live: microsoft.eightfold.ai typed "United
+      // States" into a job-search box). Classify first; if this is a
+      // posting, click Apply and look again, the way a person would.
+      if (input.execute) {
+        const advance = await advancePastPosting({ page, html: planHtml, url: planUrl });
+        report.notes.push(...advance.notes);
+        if (advance.hops > 0) {
+          planHtml = advance.html;
+          planUrl = advance.url;
+          page = advance.page;
+          report.gate.final_url = planUrl;
+        }
+        if (!advance.advanced && advance.page_class === "posting") {
+          report.gate.ok = false;
+          report.gate.failure_code = "FORM_NOT_REACHED";
+          report.gate.reason =
+            "still on the job posting after trying Apply — no application form to fill";
+          report.notes.push(
+            "parked: refused to fill a listing page's own search widgets",
+          );
+          return persist(report);
+        }
+      }
+
+      // Scrape each control's REAL answer space before planning anything.
+      // HTML cannot see a React-select's option list, so without this every
+      // dropdown reaches the planner empty and the tiers below degrade to
+      // typing blind (live Appian: "Summer Atlantic Capital" typed into a
+      // list that only offered "Other"). Execute-only — plan_only stays
+      // zero-interaction — and read-only w.r.t. values: it opens controls,
+      // reads, and escapes without ever committing a choice.
+      let harvest: OptionHarvestResult | null = null;
+      if (input.execute) {
+        let planFields = discoverFieldsFromHtml(planHtml);
+        // Greenhouse publishes the form's questions and their COMPLETE
+        // option lists as public JSON. One request beats opening eight
+        // comboboxes, and it cannot be truncated by a virtualized menu's
+        // scroll position the way a DOM read can (live: "How did you hear
+        // about Appian?" has 22 options). Fail-open — null means the DOM
+        // harvest below carries the whole load, exactly as before.
+        const declared = await fetchGreenhouseQuestions(planUrl).catch(() => null);
+        const apiOptions = new Map<string, string[]>();
+        if (declared) {
+          const applied = applyLabelOptions(planFields, declared.byLabel);
+          planFields = applied.fields;
+          for (const f of planFields) {
+            if ((f.options?.length ?? 0) > 0) apiOptions.set(f.id, f.options!);
+          }
+          report.notes.push(
+            `board API declared ${declared.questions.length} question(s); matched complete option lists onto ${applied.matched} field(s)`,
+          );
+        }
+        // Fields the API already answered are not re-opened in the browser —
+        // that is the speed win. The harvest handles only what is left.
+        harvest = await harvestFieldOptions(page, planFields);
+        for (const [id, options] of apiOptions) {
+          harvest.options.set(id, options);
+          harvest.answerSpace.set(id, "closed");
+        }
+        report.notes.push(...harvest.notes);
+        report.harvested_options = harvest.harvested.map((h) => ({
+          field_id: h.field_id,
+          label: h.label,
+          answer_space: h.answer_space,
+          option_count: h.options.length,
+          options: h.options.slice(0, 25),
+          other_option: h.other_option,
+        }));
+      }
+      const { adapter, plan, approvedPlan, fields: plannedFields, otherFallbacks } =
+        await planApplicationFill({
+          url: planUrl,
+          html: planHtml,
+          ...(input.profile ? { profile: input.profile } : {}),
+          ...(input.capture ? { capture: input.capture } : {}),
+          ...(harvest ? { liveOptions: harvest.options } : {}),
+          ...(harvest ? { answerSpace: harvest.answerSpace } : {}),
+        });
       if (adapter.id !== binding.id) {
         report.gate.failure_code = "ATS_MISMATCH";
         report.gate.reason = `page detected as ${adapter.id}, binding is ${binding.id}`;
@@ -429,7 +532,24 @@ export async function runAtsLiveFill(input: {
 
       assertFormFillAllowed(`atsLiveFill.${binding.id}.execute`);
       report.mode = "executed";
+      const knownFieldIds = new Set(plannedFields.map((f) => f.id));
       report.fill = await adapter.fill(page, approvedPlan.answers);
+      // Choosing "Other" usually reveals an "Other (please specify)" box —
+      // an OPEN answer space that only exists after the option commits.
+      // The real answer the closed list could not hold goes in there.
+      if (otherFallbacks.length > 0) {
+        const specified = await fillOtherSpecify({
+          page,
+          knownFieldIds,
+          requests: otherFallbacks.map((o) => ({
+            field_id: o.field_id,
+            label: o.label,
+            intended: o.intended,
+          })),
+        });
+        report.other_specify = specified;
+        report.notes.push(...specified.map((s) => `other-specify: ${s.note}`));
+      }
       report.verify = await adapter.verify(page, approvedPlan.answers);
       // Uploads after field mutation is settled, matching the greenhouse order.
       if (input.resumePath) {
