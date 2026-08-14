@@ -15,17 +15,23 @@ export type WorkdayPageKind =
 
 export function classifyWorkdayPage(html: string): WorkdayPageKind {
   const h = html.slice(0, 200_000);
-  if (
-    /data-automation-id=["']legalNameSection_firstName["']/.test(h) ||
-    /data-automation-id=["']progressBar["']/.test(h)
-  ) {
-    return "wizard";
-  }
+  // AUTH FIRST. Create Account / Sign In is step 1 OF the wizard and
+  // renders the same progress bar as My Information — live 2026-08-14
+  // (Crowe): the account form was classified "wizard", so the auth branch
+  // never ran and the page parked as "nothing to fill". A page asking for
+  // a password is an auth page whatever else is drawn around it; the
+  // wizard's own steps never ask for one.
   if (
     /<input[^>]+type=["']password["']/i.test(h) ||
     /data-automation-id=["'](?:password|verifyPassword)["']/.test(h)
   ) {
     return "auth";
+  }
+  if (
+    /data-automation-id=["']legalNameSection_firstName["']/.test(h) ||
+    /data-automation-id=["']progressBar["']/.test(h)
+  ) {
+    return "wizard";
   }
   if (
     /data-automation-id=["']applyManually["']/.test(h) ||

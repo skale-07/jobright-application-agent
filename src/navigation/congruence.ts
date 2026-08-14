@@ -138,6 +138,7 @@ export function extractOrgSlug(url: string): string | null {
 const GENERIC_URL_WORDS = new Set([
   "www", "www2", "careers", "career", "jobs", "job", "apply", "application",
   "applications", "recruiting", "recruitment", "hiring", "hire", "join",
+  "ats", "web", "app", "apps", "api", "public", "client", "candidate",
   "work", "talent", "people", "boards", "board", "portal", "external",
   "secure", "my", "en", "us", "uk", "en-us", "en_us", "global", "search",
   "openings", "opening", "listing", "listings", "position", "positions",
@@ -170,6 +171,35 @@ const MULTI_EMPLOYER_HOSTS = [
   // was read as an employer name and the URL was thrown away as a mismatch.
   "saashr.com",
 ];
+
+/**
+ * The list above is one entry per platform the fleet happened to hit, and
+ * it only ever grows AFTER a correct URL has already been thrown away
+ * (gusto, then saashr, then paycom…). These are all the same kind of thing:
+ * an HR/recruiting VENDOR whose domain names the vendor, never the
+ * employer. Recognise the shape so a platform's first appearance is not a
+ * free false mismatch.
+ *
+ * Deliberately narrow — matched against the registrable domain only, and
+ * only to STOP the hostname being read as identity. It never grants a
+ * match: the employer still has to be named by the ATS slug or the path,
+ * or the verdict is "unknown" and a human decides.
+ *
+ * Vendors whose hostname DOES name the employer are deliberately absent:
+ * `crowe.wd12.myworkdayjobs.com` and `delta.avature.net` are live matches
+ * decided on exactly that evidence, and suppressing it would break them.
+ */
+const VENDOR_DOMAIN_RE =
+  /^(?:paycom(?:online)?|ukg(?:pro|ready)?|kronos|workforcenow|dayforce|ceridian|phenompeople|applicantpro|applytojob|clearcompany|cornerstoneondemand|csod|hrmdirect|isolvedhire|jobappnetwork|newtonsoftware|paycor|prismhr|silkroad|snaphire|trakstar|hiringthing|hirebridge|exacthire|ripplematch)\./;
+
+function isVendorDomain(host: string): boolean {
+  const labels = host.split(".");
+  const lastTwo = labels.slice(-2).join(".");
+  const registrable = COUNTRY_SLDS.has(lastTwo)
+    ? labels.slice(-3).join(".")
+    : lastTwo;
+  return VENDOR_DOMAIN_RE.test(`${registrable}.`);
+}
 
 /**
  * Country second-level domains, so `careers.acme.co.uk` drops two labels
@@ -211,7 +241,13 @@ export type OrgCandidate = {
 export function extractOrgCandidates(url: string): OrgCandidate[] {
   const out: OrgCandidate[] = [];
   const push = (value: string | null | undefined, source: OrgCandidate["source"]): void => {
-    const clean = (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const raw = (value ?? "").toLowerCase();
+    // App-plumbing segments, before punctuation is stripped: /v4/ats/web.php
+    // on paycomonline.net contributed "v4", "ats" and "webphp" as employer
+    // names and accused a correct Union Home Mortgage URL (live 2026-08-14).
+    if (/^v\d+$/.test(raw)) return; // API/app version marker
+    if (/\.(php|aspx?|jsp|html?|do|cgi)$/.test(raw)) return; // a script, not a name
+    const clean = raw.replace(/[^a-z0-9]/g, "");
     if (clean.length < 2) return;
     if (/^\d+$/.test(clean)) return; // job/req ids are never employer names
     if (/^\d{3,}/.test(clean)) return; // 6123484careers — tenant/file ids, not names
@@ -234,9 +270,9 @@ export function extractOrgCandidates(url: string): OrgCandidate[] {
     return out;
   }
   const host = parsed.hostname.toLowerCase();
-  const onMultiEmployerHost = MULTI_EMPLOYER_HOSTS.some(
-    (h) => host === h || host.endsWith(`.${h}`),
-  );
+  const onMultiEmployerHost =
+    MULTI_EMPLOYER_HOSTS.some((h) => host === h || host.endsWith(`.${h}`)) ||
+    isVendorDomain(host);
 
   // The employer's own domain is strong evidence — careers.ibm.com is IBM.
   // A multi-employer board's hostname is not: it names the board.

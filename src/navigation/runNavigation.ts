@@ -136,7 +136,13 @@ export type NavigationWall =
   | "submit_risk"
   /** JobRight says the posting is closed — no Apply path exists. */
   | "closed"
-  /** Resolved URL belongs to a different employer than the job record. */
+  /**
+   * Resolved URL belongs to a different employer than the job record.
+   * NO LONGER PRODUCED by a navigation run (operator directive
+   * 2026-08-14: congruence is evidence, not a gate). Kept because stored
+   * reports carry it and `auditEmployerUrls` — the offline sweep that
+   * repairs a URL a human is about to submit against — still parks on it.
+   */
   | "mismatch"
   /** Another live application already holds this employer URL. */
   | "duplicate_url";
@@ -388,16 +394,22 @@ export async function runNavigation(
     const hrefs = await readExternalApplyHrefs(page);
     const candidates = selectCandidateApplyLinks(hrefs, hrefs.length);
     let phaseAHref: string | null = null;
+    // A JobRight page carries several employers' links (press, LinkedIn,
+    // the company site), so a company-name MATCH still wins here — this is
+    // ORDERING among many hrefs, not a gate on one. A non-match simply
+    // loses the tie-break and phase B's Apply click gets the final say;
+    // nothing downstream refuses on the verdict any more.
     for (const href of candidates) {
       if (!looksLikeApplicationUrl(href)) continue;
       const verdict = congruent(href);
-      if (verdict.verdict === "mismatch") {
-        report.notes.push(`phase A: anchor rejected — ${verdict.detail}`);
-        continue;
-      }
       if (verdict.verdict === "match") {
         phaseAHref = href;
         break;
+      }
+      if (verdict.verdict === "mismatch") {
+        report.notes.push(
+          `phase A: anchor reads as "${verdict.slug ?? "?"}" (${verdict.detail}) — not preferred, deferring to the Apply click`,
+        );
       }
     }
     if (phaseAHref) {
@@ -470,15 +482,13 @@ export async function runNavigation(
         }).detected;
       const captureCong = congruent(capture.url);
       if (captureCong.verdict === "mismatch") {
+        // The Apply CLICK produced this URL — the strongest provenance the
+        // system has. Record what the hostname says and keep going.
         report.notes.push(
-          `phase B: captured URL rejected — ${captureCong.detail}`,
+          `phase B: captured URL reads as "${captureCong.slug ?? "?"}" (${captureCong.detail}) — kept, provenance is the Apply click`,
         );
-        trace({
-          phase: "B_apply_click",
-          outcome: "captured URL belongs to a different employer — not stored",
-          evidence: new URL(capture.url).hostname,
-        });
-      } else if (!landingWall) {
+      }
+      if (!landingWall) {
         trace({
           phase: "B_apply_click",
           outcome: `resolved via ${capture.via}`,
@@ -682,9 +692,6 @@ export async function runNavigation(
       `previously open tabs for other jobs.` +
       linksHint;
     let correction: string | null = null;
-    let lastMismatch:
-      | (CongruenceVerdict & { url: string })
-      | null = null;
     try {
       while (turns < 3 && Date.now() < deadline) {
         logger.info("nav agent turn starting", {
@@ -766,24 +773,13 @@ export async function runNavigation(
           // retry per rejection, inside the existing turn cap.
           const cong = congruent(agentResult.final_url);
           if (cong.verdict === "mismatch") {
-            lastMismatch = { ...cong, url: agentResult.final_url };
-            trace({
-              phase: "C_agent",
-              outcome: `rejected (turn ${turns}): wrong employer — ${cong.detail}`,
-              evidence: new URL(agentResult.final_url).hostname,
-            });
+            // Recorded, not retried. Burning a turn to make the agent
+            // re-find a page it already reached is the "took way too long"
+            // the operator sees; the hostname disagreeing with the company
+            // name is usually the ATS vendor's name, not a wrong employer.
             report.notes.push(
-              `agent[${turns}]: returned wrong-employer URL (${cong.detail}) — corrective retry`,
+              `agent[${turns}]: URL reads as "${cong.slug ?? "?"}" (${cong.detail}) — kept`,
             );
-            correction =
-              `IMPORTANT: on a previous attempt you returned ` +
-              `${agentResult.final_url}, which belongs to a different ` +
-              `company ("${cong.slug}"), not ${jobIdentity?.company ?? "the target employer"}. ` +
-              `That was wrong. Start over from the job posting page and find ` +
-              `the application page for ${jobIdentity?.company ?? "the correct employer"} only.`;
-            turnStartUrl = resolved.target.jobUrl;
-            resume = undefined;
-            continue;
           }
           trace({
             phase: "C_agent",
@@ -894,20 +890,6 @@ export async function runNavigation(
         }
         return persist(report);
       }
-      if (lastMismatch) {
-        // Every accepted-looking answer was for the wrong employer — park
-        // as a mismatch (with the evidence), not an anonymous budget wall.
-        report.wall = "mismatch";
-        report.congruence = {
-          ...lastMismatch,
-          expected_company: jobIdentity?.company ?? "(unknown)",
-        };
-        trace({
-          phase: "C_agent",
-          outcome: `exhausted turns — every candidate URL belonged to a different employer (last: ${lastMismatch.slug ?? "?"})`,
-        });
-        return persist(report);
-      }
       report.wall = "budget";
       trace({
         phase: "C_agent",
@@ -1000,8 +982,15 @@ export async function runNavigation(
     url: string,
     method: NavigationMethod,
   ): NavigationReport {
-    // Backstop identity check — phases pre-filter, but nothing may be
-    // persisted that fails congruence, whatever path proposed it.
+    // Congruence is EVIDENCE, not a gate (operator directive 2026-08-14:
+    // "it literally should not matter whether the system proceeds… other
+    // than for logging"). Every posting reaches this system through
+    // JobRight, a verified board, and the URL came from that posting's own
+    // Apply path — so a hostname that shares no letters with the company
+    // name is a fact worth recording, never a reason to throw the link
+    // away. It was costing real applications: secure7.saashr.com (TRG) and
+    // paycomonline.net (Union Home Mortgage) were both correct and both
+    // discarded. The verdict rides on every report and every stored row.
     const cong = congruent(url);
     r.congruence = {
       ...cong,
@@ -1009,9 +998,9 @@ export async function runNavigation(
       url,
     };
     if (cong.verdict === "mismatch") {
-      r.notes.push(`refusing to store wrong-employer URL: ${cong.detail}`);
-      r.wall = "mismatch";
-      return persist(r);
+      r.notes.push(
+        `congruence: URL names "${cong.slug ?? "?"}", not "${jobIdentity?.company ?? "(unknown)"}" (${cong.detail}) — recorded, not refused`,
+      );
     }
     if (cong.verdict === "unknown") {
       r.notes.push(

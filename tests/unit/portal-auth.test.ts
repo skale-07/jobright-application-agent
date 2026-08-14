@@ -350,6 +350,79 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     }
   }, 30_000);
 
+  /**
+   * The fixture above reveals each stage SYNCHRONOUSLY on click, which is
+   * why it passed while the live run failed. Live 2026-08-14 (Crowe):
+   * Workday rebuilt the page ~seconds after "Apply Manually"; the walk
+   * probed 800ms later, found no third button, returned, and reported
+   * "portal auth: no sign-in form on this page" with PORTAL_LOGIN_*
+   * sitting unused in the env. This is that page, on a delay.
+   */
+  it("waits for a Workday account form that renders SECONDS after Apply Manually", async () => {
+    const DELAYED_HTML = `<!DOCTYPE html><html><body>
+      <div id="stage">
+        <h1>AI Engineering Intern</h1>
+        <button data-automation-id="adventureButton" type="button">Apply</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=adventureButton]')
+          .addEventListener('click', () => {
+            document.getElementById('stage').innerHTML =
+              '<h2>Start Your Application</h2>' +
+              '<button data-automation-id="applyManually" type="button">Apply Manually</button>';
+            document.querySelector('[data-automation-id=applyManually]')
+              .addEventListener('click', () => {
+                // Nothing clickable in the meantime — the old walk gave up here.
+                document.getElementById('stage').innerHTML = '<p>Loading…</p>';
+                setTimeout(() => {
+                  document.getElementById('stage').innerHTML =
+                    '<div data-automation-id="progressBar">Create Account/Sign In</div>' +
+                    '<h2>Create Account</h2>' +
+                    '<input data-automation-id="email" type="email" />' +
+                    '<input data-automation-id="password" type="password" />' +
+                    '<input data-automation-id="verifyPassword" type="password" />' +
+                    '<button data-automation-id="createAccountSubmitButton" type="button">Create Account</button>';
+                  document.querySelector('[data-automation-id=createAccountSubmitButton]')
+                    .addEventListener('click', () => {
+                      (globalThis).__created = true;
+                      document.body.innerHTML = '<p>My Information</p>';
+                    });
+                }, 1500);
+              });
+          });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    const prevEmail = process.env.PORTAL_LOGIN_EMAIL;
+    const prevPassword = process.env.PORTAL_LOGIN_PASSWORD;
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@example.com";
+    process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
+    resetConfigCache();
+    try {
+      await onWorkdayPage(DELAYED_HTML, async (page) => {
+        // settleMs > 0 engages the live poll (0 keeps fixtures synchronous).
+        const r = await authenticateAtsPortal(page, { settleMs: 1 });
+        expect(r.notes.join(" ")).toMatch(/Apply Manually/);
+        // The whole point: the form was found, so the credentials were used.
+        expect(r.notes.join(" ")).not.toMatch(/no sign-in form on this page/);
+        expect(r.status).not.toBe("not_an_auth_wall");
+        expect(
+          await page.evaluate(
+            () => (globalThis as unknown as { __created?: boolean }).__created,
+          ),
+        ).toBe(true);
+        expect(r.secrets).toContain("StandingPass1!");
+        expect(r.notes.join(" ")).not.toContain("StandingPass1!");
+      });
+    } finally {
+      if (prevEmail === undefined) delete process.env.PORTAL_LOGIN_EMAIL;
+      else process.env.PORTAL_LOGIN_EMAIL = prevEmail;
+      if (prevPassword === undefined) delete process.env.PORTAL_LOGIN_PASSWORD;
+      else process.env.PORTAL_LOGIN_PASSWORD = prevPassword;
+      applySafeFillEnv();
+      resetConfigCache();
+    }
+  }, 30_000);
+
   it("after sign-in, scans Gmail only when the page asks for a verification code (FIXTURE_CONFIRMED)", async () => {
     const OTP_HTML = `<!DOCTYPE html><html><body>
       <div id="wall">
