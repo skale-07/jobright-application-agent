@@ -75,4 +75,7 @@ verified by a deterministic read-back. Demote claims on counter-evidence.
   through the state machine (`docs/state-machine.md`), never ad-hoc status writes.
 - Selectors live in versioned registries, not inline in flow code.
 - `docs/operator-guide.md` is the operator contract — update it when CLI behavior changes.
+- `docs/knowledge-graph/` is the agent map of the codebase (graph.json + README).
+  It is VALIDATED by `tests/unit/knowledge-graph.test.ts` — adding a subsystem,
+  renaming a listed export, or adding a flag fails the gate until the graph is updated.
 - Attempt caps on every retry loop; no unbounded polling or healing loops.
