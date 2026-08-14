@@ -107,12 +107,13 @@ export async function verifyPageBeforeMutationGeneric(
     return fail("LOGIN_WALL", `login wall detected: ${loginWall.signals.join(",")}`);
   }
   const formDetected = options.formMarkers.test(html);
+  const discovered = discoverFieldsFromHtml(html);
   const captcha = detectBlockingCaptcha({
     finalUrl,
     html,
     title,
     formDetected,
-    fieldCount: discoverFieldsFromHtml(html).length,
+    fieldCount: discovered.length,
   });
   if (captcha.detected) {
     return fail(
@@ -124,6 +125,20 @@ export async function verifyPageBeforeMutationGeneric(
     return fail(
       "NO_APPLICATION_FORM",
       "application form markers not found on the final page",
+    );
+  }
+  // Markers are not enough. Live 2026-08-14 (Crowe, first Workday fill): a
+  // POSTING page passed this gate because Workday stamps
+  // data-automation-id on every page, so the fill "succeeded" with 0 fields
+  // planned, 0 filled, and a verify failure that read like a selector bug
+  // instead of "this is the job description, not the form". A form you
+  // cannot type into is not a form, and a silent 0-field fill is worse than
+  // a refusal — it burns an attempt and reports a failure nobody can
+  // diagnose. Vendor-blind on purpose: every adapter shares this gate.
+  if (discovered.length === 0) {
+    return fail(
+      "NO_APPLICATION_FORM",
+      "form markers matched but the page has no fillable fields — this is a posting/description page, not the application form",
     );
   }
   return { ok: true, finalUrl, html, title, failureCode: null, reason: null };

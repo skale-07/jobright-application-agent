@@ -492,6 +492,21 @@ unmapped.
 `FAILED_RETRYABLE` and leave nothing in the queue; 21 accumulated unnoticed.
 It now writes an advisory note (so it is countable without freezing anything).
 
+**`agent_unavailable` is not a budget wall.** If the deterministic phases do
+not resolve and the agent phase cannot start, the report says
+`wall: "agent_unavailable"` — nothing was spent, nothing was tried. The trace
+names the cause, usually `CDP Chrome unreachable at http://127.0.0.1:9222`.
+Fix it by starting Chrome with `--remote-debugging-port=9222` before the run,
+or by granting `CDP_AUTOLAUNCH_ENABLED` to the session. Until then every app
+the deterministic phases miss ends here, and none of them are retryable by
+waiting.
+
+**JobRight's Apply tab opens blank.** The autofill CTA opens an empty tab and
+assigns its location afterwards — often only once the customize-resume
+interstitial is answered. Navigation now waits for that tab to leave
+`about:blank` before reading it, and leaves an unread tab OPEN rather than
+closing the only link to the posting.
+
 ### EEO / demographics
 
 These already fill — from your own encrypted sensitive profile, and from

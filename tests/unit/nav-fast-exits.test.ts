@@ -3,6 +3,7 @@ import {
   clearJobRightInterstitial,
   detectClosedJobBanner,
   dismissJobRightModal,
+  settledPopupUrl,
 } from "../../src/jobright/navigateToEmployer.js";
 import { employerSiblingHosts } from "../../src/navigation/candidateLinks.js";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
@@ -160,6 +161,60 @@ describe("nav fast exits (FIXTURE_CONFIRMED)", () => {
   it("interstitial: a clean page is a no-op with no note", async () => {
     await withFixtureHtmlPage("<html><body><p>job</p></body></html>", async (page) => {
       expect(await clearJobRightInterstitial(page)).toEqual({ cleared: null, note: null });
+    });
+  }, 30_000);
+
+  /**
+   * Live 2026-08-14, IBM job 6a7ce43577d5f033c4b914c2: the autofill CTA
+   * opened a BLANK tab, the run read its URL at domcontentloaded, got
+   * about:blank, closed the tab, and reported "popup opened but carried no
+   * usable URL" → wall budget. The operator watched their only link to the
+   * posting vanish. The tab was never blank-by-design — JobRight assigns its
+   * location a beat later.
+   */
+  it("popup that navigates AFTER opening is read at its real URL, not about:blank", async () => {
+    const html = `<!DOCTYPE html><html><body><button id="go">Apply</button>
+      <script>
+        document.getElementById('go').addEventListener('click', () => {
+          const w = window.open('', '_blank');
+          setTimeout(() => { w.location.href = 'https://ats.example.com/apply/42'; }, 600);
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const context = page.context();
+      await context.route("**/apply/42", (route) =>
+        route.fulfill({ contentType: "text/html", body: "<html>form</html>" }),
+      );
+      const popupPromise = context.waitForEvent("page", { timeout: 10_000 });
+      await page.click("#go");
+      const popup = await popupPromise;
+      const notes: string[] = [];
+      // Reading immediately is exactly what the old code did.
+      expect(popup.url()).toBe("about:blank");
+      expect(await settledPopupUrl(popup, notes)).toBe(
+        "https://ats.example.com/apply/42",
+      );
+      expect(notes.join(" ")).toMatch(/settled off about:blank/);
+    });
+  }, 30_000);
+
+  it("a popup that never navigates returns about:blank without throwing", async () => {
+    const html = `<!DOCTYPE html><html><body><button id="go">Apply</button>
+      <script>
+        document.getElementById('go').addEventListener('click', () => {
+          window.open('', '_blank');
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const context = page.context();
+      const popupPromise = context.waitForEvent("page", { timeout: 10_000 });
+      await page.click("#go");
+      const popup = await popupPromise;
+      const notes: string[] = [];
+      expect(await settledPopupUrl(popup, notes, 1_000)).toBe("about:blank");
+      expect(notes).toEqual([]);
+      // Never closed: the caller leaves an unread tab for the operator.
+      expect(popup.isClosed()).toBe(false);
     });
   }, 30_000);
 

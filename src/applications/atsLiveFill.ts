@@ -5,6 +5,7 @@ import {
   isRecognizedAtsAuthHost,
 } from "../verification/portalAuth.js";
 import { classifyWorkdayPage } from "../ats/workday/pageKind.js";
+import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -209,6 +210,16 @@ export async function runAtsLiveFill(input: {
         reason: gate.reason ?? null,
         final_url: gate.finalUrl,
       };
+      // Name the page BEFORE auth as well as after. A bare
+      // NO_APPLICATION_FORM on a Workday URL reads as a selector bug; the
+      // kind says which of posting / chooser / auth we actually landed on,
+      // and pairs with the post-auth note below to show what the Apply →
+      // Apply Manually walk in portalAuth accomplished.
+      if (binding.id === "workday") {
+        report.notes.push(
+          `workday page kind at gate: ${classifyWorkdayPage(gate.html)}`,
+        );
+      }
       const tryPortalAuth =
         input.execute &&
         getConfig().navigationEnabled &&
@@ -276,6 +287,21 @@ export async function runAtsLiveFill(input: {
               report.gate.failure_code = "AUTH_REQUIRED";
               report.gate.reason = "still on Workday sign-in after portal auth";
               report.notes.push("parked: Workday account wall not cleared");
+              return persist(report);
+            }
+            // wizard | unknown: the page claims to BE the form, so it has
+            // to have fields. This branch skips binding.gate entirely
+            // (the apply path legitimately leaves the posting URL), so it
+            // is also the one place the shared gate's zero-field refusal
+            // cannot reach. Crowe live: 0 planned, 0 filled, verify
+            // failed — a refusal names that, a 0-field fill hides it.
+            if (discoverFieldsFromHtml(planHtml).length === 0) {
+              report.gate.ok = false;
+              report.gate.failure_code = "NO_APPLICATION_FORM";
+              report.gate.reason = `Workday page classified ${kind} but has no fillable fields`;
+              report.notes.push(
+                "parked: reached a Workday page with nothing to fill",
+              );
               return persist(report);
             }
           } else {
