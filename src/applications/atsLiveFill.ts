@@ -21,7 +21,9 @@ import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
 import { advancePastPosting } from "../ats/shared/postingAdvance.js";
+import { fetchGreenhouseQuestions } from "../ats/greenhouse/questionsApi.js";
 import {
+  applyLabelOptions,
   harvestFieldOptions,
   type AnswerSpace,
   type OptionHarvestResult,
@@ -449,7 +451,32 @@ export async function runAtsLiveFill(input: {
       // reads, and escapes without ever committing a choice.
       let harvest: OptionHarvestResult | null = null;
       if (input.execute) {
-        harvest = await harvestFieldOptions(page, discoverFieldsFromHtml(planHtml));
+        let planFields = discoverFieldsFromHtml(planHtml);
+        // Greenhouse publishes the form's questions and their COMPLETE
+        // option lists as public JSON. One request beats opening eight
+        // comboboxes, and it cannot be truncated by a virtualized menu's
+        // scroll position the way a DOM read can (live: "How did you hear
+        // about Appian?" has 22 options). Fail-open — null means the DOM
+        // harvest below carries the whole load, exactly as before.
+        const declared = await fetchGreenhouseQuestions(planUrl).catch(() => null);
+        const apiOptions = new Map<string, string[]>();
+        if (declared) {
+          const applied = applyLabelOptions(planFields, declared.byLabel);
+          planFields = applied.fields;
+          for (const f of planFields) {
+            if ((f.options?.length ?? 0) > 0) apiOptions.set(f.id, f.options!);
+          }
+          report.notes.push(
+            `board API declared ${declared.questions.length} question(s); matched complete option lists onto ${applied.matched} field(s)`,
+          );
+        }
+        // Fields the API already answered are not re-opened in the browser —
+        // that is the speed win. The harvest handles only what is left.
+        harvest = await harvestFieldOptions(page, planFields);
+        for (const [id, options] of apiOptions) {
+          harvest.options.set(id, options);
+          harvest.answerSpace.set(id, "closed");
+        }
         report.notes.push(...harvest.notes);
         report.harvested_options = harvest.harvested.map((h) => ({
           field_id: h.field_id,

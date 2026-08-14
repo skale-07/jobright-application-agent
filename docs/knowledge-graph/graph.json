@@ -275,7 +275,8 @@
         "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
         "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
         "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
-        "src/ats/shared/pageClassify.ts": "classifyPage \u2014 vendor-blind landing classifier; a page with inputs but no identity field plus an Apply CTA is a POSTING, not a form"
+        "src/ats/shared/pageClassify.ts": "classifyPage \u2014 vendor-blind landing classifier; a page with inputs but no identity field plus an Apply CTA is a POSTING, not a form",
+        "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest"
       },
       "key_exports": {
         "src/ats/shared/urlValidationDispatch.ts": [
@@ -294,6 +295,7 @@
         "src/ats/shared/optionHarvest.ts": [
           "harvestFieldOptions",
           "applyHarvestedOptions",
+          "applyLabelOptions",
           "findOtherOption"
         ],
         "src/ats/shared/otherSpecify.ts": [
@@ -306,6 +308,12 @@
         "src/ats/shared/pageClassify.ts": [
           "classifyPage",
           "hasApplicationIdentityFields"
+        ],
+        "src/ats/greenhouse/questionsApi.ts": [
+          "fetchGreenhouseQuestions",
+          "parseGreenhouseBoardRef",
+          "parseQuestionsPayload",
+          "normalizeQuestionLabel"
         ]
       }
     },

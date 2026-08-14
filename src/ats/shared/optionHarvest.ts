@@ -345,6 +345,48 @@ export async function harvestFieldOptions(
 }
 
 /**
+ * Merge an option source keyed by QUESTION TEXT rather than field id —
+ * the shape a board's own API publishes (see greenhouse/questionsApi.ts),
+ * which knows the questions but not our DOM ids.
+ *
+ * A truncated DOM read is worse than no read: a virtualized menu renders
+ * only its first window, so a 22-option list can arrive as 8. When the
+ * board itself declares the list, that declaration wins — it is complete
+ * by construction and cannot be cut short by a scroll position.
+ *
+ * Matching is exact on normalized text, then prefix, because boards
+ * truncate long labels in the DOM ("Are you currently pursuing a Major in
+ * one of the following disciplines: Com…") while the API returns them
+ * whole. A prefix match must be substantial (≥ 20 chars) so short generic
+ * labels never collide.
+ */
+export function applyLabelOptions(
+  fields: DiscoveredField[],
+  byLabel: Map<string, string[]>,
+): { fields: DiscoveredField[]; matched: number } {
+  if (byLabel.size === 0) return { fields, matched: 0 };
+  const norm = (s: string): string =>
+    s.toLowerCase().replace(/\s+/g, " ").replace(/[^a-z0-9 ]/g, "").trim();
+  const entries = [...byLabel.entries()];
+  let matched = 0;
+  const out = fields.map((f) => {
+    const key = norm(f.label);
+    if (key.length === 0) return f;
+    let options = byLabel.get(key);
+    if (!options && key.length >= 20) {
+      const prefixHits = entries.filter(
+        ([k]) => k.startsWith(key) || key.startsWith(k),
+      );
+      if (prefixHits.length === 1) options = prefixHits[0]![1];
+    }
+    if (!options || options.length === 0) return f;
+    matched += 1;
+    return { ...f, options };
+  });
+  return { fields: out, matched };
+}
+
+/**
  * Merge harvested options onto the discovered fields. The HTML-derived
  * list wins when it exists (a native `<select>`'s markup is authoritative);
  * the harvest only fills in what the markup could not say.

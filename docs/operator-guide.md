@@ -1309,3 +1309,20 @@ excluded from automation until you do.
 
 `POST /api/applications/:id/skip` is the same action from a script;
 `{"undo": true}` re-includes it.
+
+### Where option lists come from
+
+Two sources, best first:
+
+1. **The board's own API.** Greenhouse publishes each posting's questions
+   and their complete option lists as public JSON. When the application
+   URL is a Greenhouse board, Dispatch asks for that first: one request
+   instead of opening every dropdown, and the list is complete — a browser
+   read of a long menu can be cut short by how far it has scrolled (the
+   Appian form's "How did you hear about Appian?" has 22 options).
+2. **Opening the controls.** Everything else, and anything the API did not
+   cover, is read from the page itself.
+
+Both feed the same place, and a model answer is accepted only if it matches
+an option exactly, so neither source can widen what the system is willing
+to fill.
