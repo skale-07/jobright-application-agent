@@ -1,0 +1,37 @@
+{
+  "run_id": "nav-9a25306d-33e8-428b-baed-43ef35474637",
+  "application_id": "6ce755a1-2d62-4c70-b6c6-e5d2e37456ae",
+  "jobright_job_id": "6a7d450e7c52154b59f5e384",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.gusto.com/postings/gesture-us-inc-ai-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969?jr_id=6a7d450e7c52154b59f5e384",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "jobs.gusto.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "employer verified (token \"gesture\" ~ slug \"gestureusincaifullstackengineerinterne6b31003155a48dda442a664809ff969\" (from URL path)) but no adapter for jobs.gusto.com — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "[REDACTED]",
+    "detail": "token \"gesture\" ~ slug \"gestureusincaifullstackengineerinterne6b31003155a48dda442a664809ff969\" (from URL path)",
+    "expected_company": "Gesture",
+    "url": "https://jobs.gusto.com/postings/gesture-us-inc-ai-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969?jr_id=6a7d450e7c52154b59f5e384"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T02:51:05.656Z"
+}

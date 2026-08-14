@@ -1,0 +1,37 @@
+{
+  "run_id": "nav-87fd6da0-ef7e-4e41-89ab-8f6d3b2dbc73",
+  "application_id": "75234e46-f012-449a-911a-bfa32fe69ae1",
+  "jobright_job_id": "6a7de9bce2030208f276668a",
+  "method": "anchor_href",
+  "resolved_url": "https://techjobsforgood.com/jobs/35234/?ref=homepage&jr_id=6a7de9bce2030208f276668a",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "techjobsforgood.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "employer verified (token \"tech\" ~ slug \"techjobsforgood\" (from URL host)) but no adapter for techjobsforgood.com — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "techjobsforgood",
+    "detail": "token \"tech\" ~ slug \"techjobsforgood\" (from URL host)",
+    "expected_company": "Tech Jobs for Good",
+    "url": "https://techjobsforgood.com/jobs/35234/?ref=homepage&jr_id=6a7de9bce2030208f276668a"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T02:51:33.079Z"
+}

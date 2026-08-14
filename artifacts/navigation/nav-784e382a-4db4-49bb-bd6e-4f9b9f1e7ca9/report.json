@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-784e382a-4db4-49bb-bd6e-4f9b9f1e7ca9",
+  "application_id": "b2c7983a-bb0d-48a0-80a9-52da95697655",
+  "jobright_job_id": "6a7e2f0dad9ff00c26baa265",
+  "method": "apply_click_popup",
+  "resolved_url": "https://secure7.saashr.com/ta/6203759.careers?ShowJob=621249091&lang=en-US&jr_id=6a7e2f0dad9ff00c26baa265",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (14 external links)",
+      "evidence": "secure4.saashr.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, trg.agency"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "secure7.saashr.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 external host(s) seen: secure4.saashr.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, trg.agency, www.prnewswire.com, www.brecorder.com",
+    "Apply control matched via broad name tier",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup captured on attempt 1",
+    "employer congruence unverifiable (URL carries no employer name specific enough to verify against \"TRG\") — URL routes to human review via the unsupported-ATS path"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": "ta",
+    "detail": "URL carries no employer name specific enough to verify against \"TRG\"",
+    "expected_company": "TRG",
+    "url": "https://secure7.saashr.com/ta/6203759.careers?ShowJob=621249091&lang=en-US&jr_id=6a7e2f0dad9ff00c26baa265"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T02:49:05.252Z"
+}

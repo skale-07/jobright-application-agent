@@ -1,0 +1,51 @@
+{
+  "run_id": "nav-74302483-563b-4000-9a02-4a3d3251850f",
+  "application_id": "4a60f1c4-8f6e-4c9c-b3a9-d8cfe887409f",
+  "jobright_job_id": "6a7ce43577d5f033c4b914c2",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "duplicate_url",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "ibmglobal.avature.net"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "employer verified (token \"ibm\" ~ slug \"ibmglobal\" (from URL host)) but no adapter for ibmglobal.avature.net — routes to human review as unsupported ATS",
+    "employer URL already held by 2 other application(s): f126f245 (IBM — Data Engineer Intern 2027, FAILED_FINAL); 12a2225f (IBM — Data Engineer Intern 2027, UNSUPPORTED_ATS)"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "ibmglobal",
+    "detail": "token \"ibm\" ~ slug \"ibmglobal\" (from URL host)",
+    "expected_company": "IBM",
+    "url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=128497&src=jobright&jr_id=6a7ce43577d5f033c4b914c2"
+  },
+  "duplicates": [
+    {
+      "application_id": "f126f245-d5d6-4a1b-a148-02f673ba85d9",
+      "state": "FAILED_FINAL",
+      "company": "IBM",
+      "role": "Data Engineer Intern 2027"
+    },
+    {
+      "application_id": "12a2225f-e701-4b07-840d-1950eab3ea24",
+      "state": "UNSUPPORTED_ATS",
+      "company": "IBM",
+      "role": "Data Engineer Intern 2027"
+    }
+  ],
+  "login_wall": null,
+  "written_at": "2026-08-14T02:50:13.251Z"
+}

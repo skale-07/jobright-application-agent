@@ -1,0 +1,37 @@
+{
+  "run_id": "nav-ec2447a7-e37c-47ca-99aa-a39304f88235",
+  "application_id": "7d6c2811-5b58-4364-bff0-655e26e9d28c",
+  "jobright_job_id": "6a7e7d4319ce4e6e9d93386b",
+  "method": "anchor_href",
+  "resolved_url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=129220&src=jobright&jr_id=6a7e7d4319ce4e6e9d93386b",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "ibmglobal.avature.net"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "employer verified (token \"ibm\" ~ slug \"ibmglobal\" (from URL host)) but no adapter for ibmglobal.avature.net — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "ibmglobal",
+    "detail": "token \"ibm\" ~ slug \"ibmglobal\" (from URL host)",
+    "expected_company": "IBM",
+    "url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=129220&src=jobright&jr_id=6a7e7d4319ce4e6e9d93386b"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T02:52:08.206Z"
+}
