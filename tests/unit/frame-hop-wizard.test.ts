@@ -181,3 +181,87 @@ describe("workday wizard walk (FIXTURE_CONFIRMED)", () => {
     });
   }, 45_000);
 });
+
+/**
+ * Wizard walk diagnostics (transition-strengthening pass, 2026-08-14):
+ * a disabled Next names its blockers instead of a silent no-op, and a
+ * mid-walk auth wall recovers ONCE through the caller's seam.
+ */
+describe("wizard walk diagnostics (FIXTURE_CONFIRMED)", () => {
+  useIsolatedFillEnv("fixture_fill");
+
+  it("a DISABLED Next names the required fields blocking it", async () => {
+    const { walkWorkdayWizard } = await import(
+      "../../src/applications/workdayWizard.js"
+    );
+    const html = `<!DOCTYPE html><html><body>
+      <label>Phone Device Type<select required aria-required="true"><option value="">Select One</option><option>Mobile</option></select></label>
+      <button data-automation-id="bottom-navigation-next-button" type="button" disabled>Next</button>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      let fillerCalls = 0;
+      const walk = await walkWorkdayWizard(
+        page,
+        async () => {
+          fillerCalls += 1;
+          return { fillable: 0, filled: 0, verifyPassed: true };
+        },
+        { settleMs: 0 },
+      );
+      expect(fillerCalls).toBe(0);
+      expect(walk.verifyFailed).toBe(true);
+      expect(walk.notes.join(" ")).toMatch(/Next disabled on page 1/);
+      expect(walk.notes.join(" ")).toMatch(/Phone Device Type/);
+    });
+  }, 45_000);
+
+  it("an auth wall mid-walk recovers ONCE through the seam and resumes", async () => {
+    const { walkWorkdayWizard } = await import(
+      "../../src/applications/workdayWizard.js"
+    );
+    // Page 1 → Next → session-expired sign-in page. The seam "signs in"
+    // by swapping the DOM to the next wizard page; the walk resumes.
+    const html = `<!DOCTYPE html><html><body>
+      <div data-automation-id="progressBar">steps</div>
+      <div id="stage">
+        <input data-automation-id="legalNameSection_firstName" name="firstName" />
+        <button data-automation-id="bottom-navigation-next-button" type="button">Next</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=bottom-navigation-next-button]')
+          .addEventListener('click', () => {
+            document.getElementById('stage').innerHTML =
+              '<h2>Sign In</h2>' +
+              '<input data-automation-id="email" type="email" />' +
+              '<input data-automation-id="password" type="password" />' +
+              '<button data-automation-id="signInSubmitButton" type="button">Sign In</button>';
+          });
+        (globalThis).__signIn = () => {
+          document.getElementById('stage').innerHTML =
+            '<label>Email<input data-automation-id="email" type="email" name="email" /></label>';
+        };
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      let authCalls = 0;
+      const walk = await walkWorkdayWizard(
+        page,
+        async () => ({ fillable: 1, filled: 1, verifyPassed: true }),
+        {
+          settleMs: 0,
+          onAuthWall: async (p) => {
+            authCalls += 1;
+            await p.evaluate(() => (globalThis as unknown as { __signIn: () => void }).__signIn());
+            return true;
+          },
+        },
+      );
+      expect(authCalls).toBe(1);
+      expect(walk.notes.join(" ")).toMatch(/auth wall mid-walk — attempting portal sign-in/);
+      expect(walk.notes.join(" ")).toMatch(/signed back in/);
+      // The walk resumed and filled the page behind the wall.
+      expect(walk.pages.length).toBe(1);
+      expect(walk.pages[0]?.verify_passed).toBe(true);
+      expect(walk.verifyFailed).toBe(false);
+    });
+  }, 45_000);
+});

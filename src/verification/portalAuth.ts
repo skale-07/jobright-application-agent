@@ -15,6 +15,8 @@ import {
   type NavVerificationWaiter,
 } from "./emailVerification.js";
 import { verificationEvidencePresent } from "../navigation/runNavigation.js";
+import { performTransition } from "../browser/transition.js";
+import { recordTransitionOutcome } from "../storage/transitionOutcomes.js";
 
 /**
  * Deterministic ATS portal auth (operator directive 2026-08-11): when a
@@ -430,8 +432,18 @@ async function openWorkdayApplyChooser(
         .replace(/\s+/g, " ")
         .trim()
         .slice(0, 40);
-      await apply.click({ timeout: 8_000 }).catch(() => undefined);
-      await settlePage(page, settle, 800);
+      // The shared transition primitive replaces click+800ms-floor:
+      // change-detected settle, one obstruction-sweep retry on a silent
+      // no-op click, and telemetry for the improve loop.
+      const transition = await performTransition(page, apply, {
+        settleTimeoutMs: settle === 0 ? 0 : 15_000,
+        adoptPopups: false,
+      });
+      recordTransitionOutcome({
+        seam: "portal_auth_apply",
+        host: safeHost(page.url()),
+        result: transition,
+      });
       notes.push(`portal auth: clicked "${label || "Apply"}" (attempt ${attempt})`);
       continue;
     }

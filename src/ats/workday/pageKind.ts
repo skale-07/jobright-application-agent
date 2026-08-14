@@ -14,7 +14,14 @@ export type WorkdayPageKind =
   | "unknown";
 
 export function classifyWorkdayPage(html: string): WorkdayPageKind {
-  const h = html.slice(0, 200_000);
+  // Script/template text is not the page: an SPA's own bundle mentions
+  // form markup as string literals (a sign-in template kept classifying
+  // the POST-sign-in page as auth). Same strip fieldDiscovery does.
+  const h = html
+    .slice(0, 200_000)
+    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
+    .replace(/<template\b[\s\S]*?<\/template>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "");
   // AUTH FIRST. Create Account / Sign In is step 1 OF the wizard and
   // renders the same progress bar as My Information — live 2026-08-14
   // (Crowe): the account form was classified "wizard", so the auth branch

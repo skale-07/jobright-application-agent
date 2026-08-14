@@ -476,6 +476,18 @@ export async function runAtsLiveFill(input: {
             filled: fillResult.filled.length,
             verifyPassed: verifyResult.passed && fillResult.errors.length === 0,
           };
+        }, {
+          applicationId: input.capture?.applicationId ?? null,
+          // Mid-walk session expiry: sign back in (same gates as
+          // tryPortalAuth) and resume, instead of abandoning a wizard
+          // that is already half filled.
+          onAuthWall: async (walkPage) => {
+            if (!getConfig().navigationEnabled) return false;
+            if (!isRecognizedAtsAuthHost(walkPage.url())) return false;
+            const auth = await authenticateAtsPortal(walkPage);
+            report.notes.push(...auth.notes);
+            return auth.status === "signed_in" || auth.status === "account_created";
+          },
         });
         report.wizard_pages = walk.pages;
         report.notes.push(...walk.notes);
