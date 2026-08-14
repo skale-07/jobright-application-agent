@@ -522,7 +522,7 @@ describe("Greenhouse proposed fill plan (UNIT_CONFIRMED)", () => {
     ).toBe("UPLOAD_CANDIDATE");
     expect(
       plan.entries.find((e) => e.field_id === "6")?.proposed_action,
-    ).toBe("REVIEW_REQUIRED");
+    ).toBe("FILL_CANDIDATE");
     expect(
       plan.entries.find((e) => e.field_id === "7")?.proposed_action,
     ).toBe("REVIEW_REQUIRED");

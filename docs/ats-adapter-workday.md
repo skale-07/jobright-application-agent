@@ -8,11 +8,12 @@ two ways that shaped this adapter:
 
 1. **Per-tenant account wall.** Every `<tenant>.wdN.myworkdayjobs.com` site
    requires signing in or creating an account before the application form
-   is reachable. `src/verification/portalAuth.ts` handles this
-   deterministically (operator directive 2026-08-11): on a recognized
-   Workday host it signs in with the standing candidate email + the vault's
-   per-host password, or creates the account, and completes the emailed
-   verification **only when the page actually shows a verification prompt**.
+   is reachable. Posting pages are Apply → Apply Manually → auth form
+   (Create Account with a Sign In flip when `PORTAL_LOGIN_*` is set).
+   `src/verification/portalAuth.ts` then signs in with the standing
+   candidate email + password, or creates the account if sign-in is
+   rejected, and completes emailed verification **only when the page
+   actually shows a verification prompt**.
 2. **Multi-page wizard.** The application is My Information → Experience →
    questions → Voluntary Disclosures → Review, not a single form. This
    adapter fills **My Information** from the approved plan and uploads the
@@ -53,9 +54,12 @@ two ways that shaped this adapter:
   (`myworkdayjobs.com` suffix) + jobright `externalAtsAnchors`.
 - Adapter registry: `listAdapters()` (detection order after workable).
 - Live fill: `runAtsLiveFill` runs `authenticateAtsPortal` before planning
-  when the binding is `workday` and the page is on a recognized host
-  (execute-only, `NAVIGATION_ENABLED`-gated); an uncleared wall parks with
-  `AUTH_REQUIRED`.
+  when the page is on a recognized host and (Workday, or the pre-mutation
+  gate reported `LOGIN_WALL`). Execute-only, `NAVIGATION_ENABLED`-gated.
+  The plan is built from the **post-auth** DOM. An uncleared wall or a
+  Workday page still on Apply/chooser parks with `AUTH_REQUIRED` /
+  `FORM_NOT_REACHED`. Pipeline inspection no longer parks `needs_login` as
+  `AUTH_REQUIRED` when navigation is enabled (any ATS, not Workday only).
 - Congruence: `extractOrgSlug` returns the tenant subdomain as the
   employer slug.
 

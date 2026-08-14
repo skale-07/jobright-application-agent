@@ -25,6 +25,10 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "ESSAY_REQUIRED_GATE_ENABLED",
   "AUTOMATION_ENABLED",
   "GENERIC_ATS_ENABLED",
+  // Standing portal creds: if these leak, isRecognizedAtsAuthHost treats
+  // every https host as authorized (workday/vault tests then fail).
+  "PORTAL_LOGIN_EMAIL",
+  "PORTAL_LOGIN_PASSWORD",
 ] as const;
 
 export type ControlledFillEnvKey = (typeof CONTROLLED_FILL_ENV_KEYS)[number];
@@ -87,6 +91,11 @@ export function applyFixtureFillEnv(): void {
 /**
  * Registers beforeEach/afterEach so ambient shell env cannot leak into assertions.
  * Call once at the top of a describe block.
+ *
+ * Does not redirect PRIVATE_DIR — answer aliases and the public profile live
+ * there, and inspection/fill tests need them. Tests that must not see the
+ * operator's encrypted sensitive profile mock tryLoadSensitiveProfile
+ * (see lever-fill / lever-adapter).
  */
 export function useIsolatedFillEnv(
   mode: "safe" | "fixture_fill" = "safe",

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LeverAdapterV1, leverFullNameMatcher } from "../../src/ats/lever/v1.js";
 import { validateLeverApplicationUrl } from "../../src/ats/lever/urlValidation.js";
 import {
@@ -20,6 +20,14 @@ import {
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
+
+vi.mock("../../src/candidate/sensitiveProfileIO.js", () => ({
+  tryLoadSensitiveProfile: () => null,
+  getSensitiveValue: () => undefined,
+  loadSensitiveProfile: () => {
+    throw new Error("loadSensitiveProfile not available in lever-adapter tests");
+  },
+}));
 
 // Lever is not in ATS_FIXTURE_NAMES (unwired adapter) — load by direct path,
 // same as the greenhouse-combobox fixture tests.

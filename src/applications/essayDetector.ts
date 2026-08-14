@@ -111,7 +111,7 @@ export function isDemographicsField(field: DiscoveredField): boolean {
   const n = normalizeFieldLabel(
     `${field.label} ${field.name ?? ""} ${field.inputId ?? ""}`,
   );
-  return /gender|race|ethnicity|veteran|disability|hispanic|latino|transgender|eeo|equal opportunity|decline to (self-)?identify|sexual orientation/.test(
+  return /gender|race|ethnicity|veteran|disability|hispanic|latino|transgender|eeo|equal opportunity|decline to (self-)?identify|sexual orientation|pronoun/.test(
     n,
   );
 }

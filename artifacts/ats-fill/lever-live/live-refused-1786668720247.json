@@ -1,0 +1,22 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+  "requested_url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "ATS_MISMATCH",
+    "reason": "URL validated as ashby, binding is lever",
+    "final_url": null
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [],
+  "written_at": "2026-08-14T00:52:00.247Z"
+}

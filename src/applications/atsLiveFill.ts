@@ -4,6 +4,7 @@ import {
   authenticateAtsPortal,
   isRecognizedAtsAuthHost,
 } from "../verification/portalAuth.js";
+import { classifyWorkdayPage } from "../ats/workday/pageKind.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -208,10 +209,22 @@ export async function runAtsLiveFill(input: {
         reason: gate.reason ?? null,
         final_url: gate.finalUrl,
       };
-      if (!gate.ok) {
+      const tryPortalAuth =
+        input.execute &&
+        getConfig().navigationEnabled &&
+        isRecognizedAtsAuthHost(page.url()) &&
+        (binding.id === "workday" || gate.failureCode === "LOGIN_WALL");
+
+      // LOGIN_WALL used to return here before portal auth ran. Workday
+      // postings often scored below the wall threshold so auth still
+      // ran; Greenhouse/Lever/Ashby account walls never did.
+      if (!gate.ok && !tryPortalAuth) {
         report.notes.push("refused before any mutation — page gate failed");
         return persist(report);
       }
+
+      let planHtml = gate.html;
+      let planUrl = gate.finalUrl;
 
       // Cookie banners / consent modals block clicks under them — clear
       // before mutating. Execute-only: plan_only stays zero-mutation.
@@ -222,12 +235,7 @@ export async function runAtsLiveFill(input: {
             `popups dismissed: ${obstructions.dismissed.join(", ")}`,
           );
         }
-        // Workday portals gate the application behind a per-tenant account.
-        // On a recognized ATS auth host, sign in / create the account with
-        // the standing candidate email (operator directive) before planning
-        // — the fill would otherwise plan against the login form. Fully
-        // guarded (NAVIGATION_ENABLED, host gate); secrets scrubbed.
-        if (binding.id === "workday" && isRecognizedAtsAuthHost(page.url())) {
+        if (tryPortalAuth) {
           // portalAuth keeps secrets OUT of its notes by construction, and
           // the form snapshot scrubs every value= attribute — so the
           // password/code never reach the artifact. auth.secrets is the
@@ -235,21 +243,80 @@ export async function runAtsLiveFill(input: {
           const auth = await authenticateAtsPortal(page);
           void auth.secrets;
           report.notes.push(...auth.notes);
-          if (
-            auth.status !== "signed_in" &&
-            auth.status !== "account_created" &&
-            auth.status !== "not_an_auth_wall"
-          ) {
+          const cleared =
+            auth.status === "signed_in" ||
+            auth.status === "account_created" ||
+            (binding.id === "workday" && auth.status === "not_an_auth_wall");
+          if (!cleared) {
+            report.gate.ok = false;
             report.gate.failure_code = "AUTH_REQUIRED";
-            report.gate.reason = `Workday portal auth did not clear the wall (${auth.status})`;
-            report.notes.push("parked: Workday account wall not cleared");
+            report.gate.reason = `portal auth did not clear the wall (${auth.status})`;
+            report.notes.push("parked: account wall not cleared");
             return persist(report);
+          }
+          // Gate HTML is the posting/login we arrived on. Plan AFTER
+          // sign-in. Do not treat POSTING_MISMATCH as fatal — apply URL
+          // paths often diverge from the normalized posting.
+          planHtml = await page.content();
+          planUrl = page.url();
+          if (binding.id === "workday") {
+            const kind = classifyWorkdayPage(planHtml);
+            report.notes.push(`workday page kind after auth: ${kind}`);
+            if (kind === "posting" || kind === "chooser") {
+              report.gate.ok = false;
+              report.gate.failure_code = "FORM_NOT_REACHED";
+              report.gate.reason = `still on Workday ${kind} after portal auth`;
+              report.notes.push(
+                "parked: Apply / Apply Manually did not reach the application form",
+              );
+              return persist(report);
+            }
+            if (kind === "auth") {
+              report.gate.ok = false;
+              report.gate.failure_code = "AUTH_REQUIRED";
+              report.gate.reason = "still on Workday sign-in after portal auth";
+              report.notes.push("parked: Workday account wall not cleared");
+              return persist(report);
+            }
+          } else {
+            const again = await binding.gate(
+              page,
+              input.url,
+              detected.normalizedUrl,
+            );
+            if (again.ok) {
+              planHtml = again.html;
+              planUrl = again.finalUrl;
+              report.gate = {
+                ok: true,
+                failure_code: null,
+                reason: null,
+                final_url: again.finalUrl,
+              };
+            } else if (again.failureCode === "POSTING_MISMATCH") {
+              report.notes.push(
+                "post-auth path differs from posting URL — planning the landed page",
+              );
+              report.gate = {
+                ok: true,
+                failure_code: null,
+                reason: null,
+                final_url: planUrl,
+              };
+            } else {
+              report.gate.ok = false;
+              report.gate.failure_code = again.failureCode ?? "AUTH_REQUIRED";
+              report.gate.reason = again.reason ?? "page gate still failed after portal auth";
+              report.gate.final_url = again.finalUrl;
+              report.notes.push("refused after portal auth — page gate still failed");
+              return persist(report);
+            }
           }
         }
       }
       const { adapter, plan, approvedPlan } = await planApplicationFill({
-        url: gate.finalUrl,
-        html: gate.html,
+        url: planUrl,
+        html: planHtml,
         ...(input.profile ? { profile: input.profile } : {}),
         ...(input.capture ? { capture: input.capture } : {}),
       });
@@ -274,8 +341,8 @@ export async function runAtsLiveFill(input: {
       }));
       // Ground truth for skipped-question diagnosis: the pre-fill DOM, with
       // control values scrubbed (a handoff page can arrive pre-filled).
-      if (approvedPlan.skipped_count > 0 && gate.html) {
-        report.form_snapshot_path = writeFormSnapshot(gate.html);
+      if (approvedPlan.skipped_count > 0 && planHtml) {
+        report.form_snapshot_path = writeFormSnapshot(planHtml);
       }
 
       if (!input.execute) {

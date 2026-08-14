@@ -1,0 +1,47 @@
+{
+  "started_at": "2026-08-14T01:22:16.611Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "available (debug Chrome autolaunched)"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "83d9c42f-b443-4333-9a91-dfe9bae6c3ac",
+    "armed_until": "2026-08-14T03:22:18.115Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "83d9c42f-b443-4333-9a91-dfe9bae6c3ac",
+    "stopped_reason": "queue_drained",
+    "apps_started": 0,
+    "submits_used": 0,
+    "discover_runs": 0,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [],
+    "per_app": []
+  },
+  "outcome": "completed",
+  "notes": [
+    "CDP autolaunch: started debug Chrome on port 9222"
+  ]
+}

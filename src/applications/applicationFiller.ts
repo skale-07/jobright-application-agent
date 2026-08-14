@@ -58,7 +58,12 @@ import {
   type ScreenerResolution,
 } from "../candidate/screenerMatch.js";
 import { mapScreenerLabels } from "./screenerLlmMap.js";
-import { recordUnmappedScreenerQuestions } from "./screenerPredictionLlm.js";
+import {
+  isCaptureWorthyQuestion,
+  predictAnswersForQuestions,
+  recordUnmappedScreenerQuestions,
+} from "./screenerPredictionLlm.js";
+import { isApplicationConsentField } from "./consentFields.js";
 import { isDemographicsField as screenerIsDemographic } from "./essayDetector.js";
 import type { ApprovedFillPlan } from "./approvedFillPlan.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
@@ -185,18 +190,21 @@ export async function planApplicationFill(input: {
   // Screener pass for otherwise-unmapped fields: deterministic patterns
   // first; the flag-gated LLM assist maps only the leftovers (labels +
   // options + registry descriptions — never answers). Every mapping still
-  // resolves through the deterministic option-verified bank path, and no
-  // bank on disk means this entire block is a no-op.
+  // resolves through the deterministic option-verified bank path.
+  // Consent / major-option checkboxes / inspector placeholders are not
+  // questions — they must not drown the Answer-needed queue.
   const screenerResolutions = new Map<string, ScreenerResolution>();
   const bank = tryLoadScreenerBank();
+  const candidates = mapped.filter(
+    (f) =>
+      !f.canonical_field &&
+      f.type !== "textarea" &&
+      f.type !== "file" &&
+      !screenerIsDemographic(f) &&
+      !isApplicationConsentField(f) &&
+      isCaptureWorthyQuestion(f),
+  );
   if (bank) {
-    const candidates = mapped.filter(
-      (f) =>
-        !f.canonical_field &&
-        f.type !== "textarea" &&
-        f.type !== "file" &&
-        !screenerIsDemographic(f),
-    );
     const unmatchedForLlm: typeof candidates = [];
     for (const f of candidates) {
       if (matchScreenerKey(f.label)) {
@@ -230,13 +238,9 @@ export async function planApplicationFill(input: {
         })),
       });
       const byLabel = new Map(mappings.map((m) => [m.label, m.key]));
-      const stillUnmapped: typeof unmatchedForLlm = [];
       for (const f of unmatchedForLlm) {
         const key = byLabel.get(f.label);
-        if (!key) {
-          stillUnmapped.push(f);
-          continue;
-        }
+        if (!key) continue;
         const r = resolveScreenerForField(
           { label: f.label, type: f.type, options: f.options },
           bank,
@@ -244,28 +248,50 @@ export async function planApplicationFill(input: {
           profile,
         );
         if (r) screenerResolutions.set(f.id, r);
-        else stillUnmapped.push(f);
       }
-      // Nothing could answer these: capture them (queue row + "Answer
-      // needed" review item — local writes only, no model call). Only when
-      // the caller provided capture context: fixture/plan-only paths must
-      // never write to the operator's DB.
-      if (stillUnmapped.length > 0 && input.capture) {
-        try {
-          recordUnmappedScreenerQuestions({
-            db: input.capture.db,
-            applicationId: input.capture.applicationId,
-            ats: adapter.id,
-            questions: stillUnmapped.map((f) => ({
-              label: f.label,
-              type: f.type,
-              options: f.options,
-            })),
-          });
-        } catch {
-          // capture is best-effort; a queue error must never break a plan
-        }
+    }
+  }
+
+  const unanswered = candidates.filter((f) => !screenerResolutions.has(f.id));
+  if (unanswered.length > 0) {
+    try {
+      const predicted = await predictAnswersForQuestions(
+        unanswered.map((f) => ({
+          id: f.id,
+          label: f.label,
+          options: f.options,
+        })),
+      );
+      for (const [id, p] of predicted) {
+        screenerResolutions.set(id, {
+          status: "fill",
+          key: `custom:predicted:${id}`,
+          value: p.value,
+          basis: "llm_predict",
+        });
       }
+    } catch {
+      // plan-time predict is best-effort; a model error must never break a plan
+    }
+  }
+
+  const stillUnmapped = candidates.filter((f) => !screenerResolutions.has(f.id));
+  // Capture even with no screener bank on disk — otherwise unanswered
+  // questions vanish. Fixture/plan-only paths omit `capture`.
+  if (stillUnmapped.length > 0 && input.capture) {
+    try {
+      recordUnmappedScreenerQuestions({
+        db: input.capture.db,
+        applicationId: input.capture.applicationId,
+        ats: adapter.id,
+        questions: stillUnmapped.map((f) => ({
+          label: f.label,
+          type: f.type,
+          options: f.options,
+        })),
+      });
+    } catch {
+      // capture is best-effort; a queue error must never break a plan
     }
   }
 

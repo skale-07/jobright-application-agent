@@ -54,12 +54,14 @@ describe("UNIT_CONFIRMED fill env isolation", () => {
       process.env.FORM_FILL_ENABLED = "true";
       process.env.DRY_RUN = "false";
       process.env.SUBMIT_ENABLED = "true";
+      process.env.PORTAL_LOGIN_PASSWORD = "should-not-leak";
       resetConfigCache();
       // Without isolation, guards would allow fill — apply safe explicitly
       applySafeFillEnv();
       expect(getConfig().formFillEnabled).toBe(false);
       expect(getConfig().submitEnabled).toBe(false);
-      expect(() => assertFormFillAllowed("hostile")).toThrow(/FORM_FILL_ENABLED/);
+      expect(process.env.PORTAL_LOGIN_PASSWORD).toBeUndefined();
+    expect(() => assertFormFillAllowed("hostile")).toThrow(/FORM_FILL_ENABLED/);
       expect(() => assertSubmitAllowed("hostile")).toThrow(
         /FORM_FILL_ENABLED|SUBMIT_ENABLED/,
       );

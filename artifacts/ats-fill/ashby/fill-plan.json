@@ -6,7 +6,8 @@
     "answers": {
       "legal_name.first": "Ada",
       "email": "a***@example.com",
-      "phone": "***-***-0100"
+      "phone": "***-***-0100",
+      "gender_identity": "Man"
     },
     "entries": [
       {
@@ -49,19 +50,19 @@
         "field_id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
         "label": "How did you hear about us?",
         "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
+        "canonical_field": "how_heard",
+        "action": "skip_empty",
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Profile value empty for how_heard"
       },
       {
         "field_id": "dddd4444-eeee-ffff-0000-111122223333",
         "label": "Country",
         "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
+        "canonical_field": "address.country",
+        "action": "skip_empty",
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Profile value empty for address.country"
       },
       {
         "field_id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
@@ -76,24 +77,24 @@
         "field_id": "c0ffee00-1111-2222-3333-444455556666",
         "label": "Are you legally authorized to work in the United States?",
         "type": "radio",
-        "canonical_field": null,
-        "action": "skip_unmapped",
+        "canonical_field": "work_authorization",
+        "action": "review_required",
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Required work_authorization missing from profile — human review"
       },
       {
         "field_id": "eeee5555-6666-7777-8888-99990000aaaa",
         "label": "Gender identity (voluntary self-identification)",
         "type": "radio",
-        "canonical_field": null,
-        "action": "skip_demographics",
-        "value": null,
-        "reason": "Demographics deferred to sensitive-profile policy path"
+        "canonical_field": "gender_identity",
+        "action": "fill",
+        "value": "Man",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
       }
     ],
-    "fillable_count": 3,
-    "skipped_count": 6,
-    "review_required_count": 0
+    "fillable_count": 4,
+    "skipped_count": 4,
+    "review_required_count": 1
   },
   "approved_plan": {
     "entries": [
@@ -141,21 +142,21 @@
         "field_id": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
         "label": "How did you hear about us?",
         "type": "text",
-        "canonical_field": null,
+        "canonical_field": "how_heard",
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Profile value empty for how_heard"
       },
       {
         "field_id": "dddd4444-eeee-ffff-0000-111122223333",
         "label": "Country",
         "type": "text",
-        "canonical_field": null,
+        "canonical_field": "address.country",
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Profile value empty for address.country"
       },
       {
         "field_id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
@@ -171,35 +172,36 @@
         "field_id": "c0ffee00-1111-2222-3333-444455556666",
         "label": "Are you legally authorized to work in the United States?",
         "type": "radio",
-        "canonical_field": null,
-        "action": "SKIP",
+        "canonical_field": "work_authorization",
+        "action": "REVIEW_REQUIRED",
         "approved": false,
         "value": null,
-        "reason": "No answer-alias mapping"
+        "reason": "Required work_authorization missing from profile — human review"
       },
       {
         "field_id": "eeee5555-6666-7777-8888-99990000aaaa",
         "label": "Gender identity (voluntary self-identification)",
         "type": "radio",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "Demographics deferred to sensitive-profile policy path"
+        "canonical_field": "gender_identity",
+        "action": "FILL",
+        "approved": true,
+        "value": "Man",
+        "reason": "Mapped from sensitive profile (operator-supplied)"
       }
     ],
     "answers": {
       "legal_name.first": "Ada",
       "email": "a***@example.com",
-      "phone": "***-***-0100"
+      "phone": "***-***-0100",
+      "gender_identity": "Man"
     },
-    "fillable_count": 3,
-    "skipped_count": 6,
-    "review_required_count": 0
+    "fillable_count": 4,
+    "skipped_count": 4,
+    "review_required_count": 1
   },
   "submit_attempted": false,
   "notes": [
     "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
   ],
-  "written_at": "2026-08-09T02:30:49.085Z"
+  "written_at": "2026-08-14T01:22:11.607Z"
 }

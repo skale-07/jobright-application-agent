@@ -6,6 +6,7 @@ import {
 import { detectAtsFromUrl } from "../../src/ats/shared/urlValidationDispatch.js";
 import { extractOrgSlug } from "../../src/navigation/congruence.js";
 import { isRecognizedAtsAuthHost } from "../../src/verification/portalAuth.js";
+import { useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
 
 /**
  * Workday W1: recognize the multi-tenant URL shape that phases A/B kept
@@ -13,6 +14,7 @@ import { isRecognizedAtsAuthHost } from "../../src/verification/portalAuth.js";
  * pure — UNIT_CONFIRMED.
  */
 describe("workday URL validation (UNIT_CONFIRMED)", () => {
+  useIsolatedFillEnv("safe");
   it("accepts the canonical tenant job path and normalizes off apply suffixes", () => {
     const v = validateWorkdayApplicationUrl(
       "https://interdigital.wd5.myworkdayjobs.com/en-US/Careers/job/Conshohocken-PA/Generative-AI-Intern_R-2025-1234/apply/applyManually",

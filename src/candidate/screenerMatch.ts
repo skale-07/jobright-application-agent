@@ -52,7 +52,13 @@ export type ScreenerResolution =
          * validated verbatim against that list (screenerOptionSelect.ts).
          * The model chooses; it never authors the value.
          */
-        | "llm_option";
+        | "llm_option"
+        /**
+         * Plan-time predict (`SCREENER_PREDICT_LLM_ENABLED`): option
+         * answers matched the page verbatim, or free-text appeared in
+         * about-me / profile facts. Never promoted into screeners.json.
+         */
+        | "llm_predict";
     }
   | { status: "skip"; key: string; reason: string }
   | { status: "review"; key: string; reason: string };

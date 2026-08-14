@@ -244,6 +244,66 @@ describe("navigation deterministic phases (N2)", () => {
     },
     45_000,
   );
+
+  it(
+    "phase B clicks Apply Without Customizing when Apply opens the customize modal (FIXTURE_CONFIRMED)",
+    async () => {
+      const html = `<!DOCTYPE html><html><body>
+        <button id="apply">Apply with Autofill</button>
+        <script>
+          document.getElementById('apply').addEventListener('click', () => {
+            const d = document.createElement('div');
+            d.setAttribute('role', 'dialog');
+            d.innerHTML = '<button aria-label="Close">x</button>'
+              + '<h2>Customize Your Resume in 10 seconds</h2>'
+              + '<button id="fix">Fix My Resume Now</button>'
+              + '<div id="skip">Apply Without Customizing</div>';
+            document.body.appendChild(d);
+            document.getElementById('fix').addEventListener('click', () => {
+              (globalThis).__tailored = true;
+            });
+            document.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+              (globalThis).__closed = true;
+            });
+            document.getElementById('skip').addEventListener('click', () => {
+              window.open('${LEVER_URL}');
+            });
+          });
+        </script>
+      </body></html>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const fakeSession = {
+          getContext: () => page.context(),
+        } as Parameters<typeof clickApplyAndCaptureExternalUrl>[0];
+        applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+        resetConfigCache();
+        try {
+          await page.context().route("**/*", (route) =>
+            route.fulfill({
+              body: "<html><body>lever form</body></html>",
+              contentType: "text/html",
+            }),
+          );
+          const capture = await clickApplyAndCaptureExternalUrl(fakeSession, page);
+          expect(capture.url).toBe(LEVER_URL);
+          expect(capture.notes.join(" ")).toMatch(/Apply Without Customizing/);
+          expect(
+            await page.evaluate(
+              () => (globalThis as unknown as { __tailored?: boolean }).__tailored,
+            ),
+          ).toBeUndefined();
+          expect(
+            await page.evaluate(
+              () => (globalThis as unknown as { __closed?: boolean }).__closed,
+            ),
+          ).toBeUndefined();
+        } finally {
+          applySafeFillEnv();
+        }
+      });
+    },
+    45_000,
+  );
 });
 
 describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {

@@ -1,0 +1,24 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "requested_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "NO_APPLICATION_FORM",
+    "reason": "application form markers not found on the final page",
+    "final_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "refused before any mutation — page gate failed"
+  ],
+  "written_at": "2026-08-14T01:18:11.526Z"
+}

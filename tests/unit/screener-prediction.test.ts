@@ -14,6 +14,8 @@ import { createApplication } from "../../src/queue/stateMachine.js";
 import { resetConfigCache } from "../../src/config/index.js";
 import {
   generateScreenerPredictions,
+  isCaptureWorthyQuestion,
+  predictAnswersForQuestions,
   recordUnmappedScreenerQuestions,
   suggestKey,
   validatePrediction,
@@ -461,11 +463,29 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
   it("placeholder labels (field_12) reject immediately without spending the model", async () => {
     enable();
     const appId = seedApp();
-    recordUnmappedScreenerQuestions({
-      db,
-      applicationId: appId,
-      questions: [{ label: "field_12", type: "select", options: ["A", "B"] }],
-    });
+    expect(
+      recordUnmappedScreenerQuestions({
+        db,
+        applicationId: appId,
+        questions: [{ label: "field_12", type: "select", options: ["A", "B"] }],
+      }),
+    ).toBe(0);
+    // Legacy rows already in the queue (pre-filter) still reject without a model call.
+    db.prepare(
+      `INSERT INTO screener_predictions
+         (id, label_fingerprint, label, raw_label, control, options_json, ats,
+          first_seen_application_id, status, attempts, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, 'PENDING', 0, ?, ?)`,
+    ).run(
+      "legacy-field-12",
+      "fp-field-12",
+      "field 12",
+      "field_12",
+      "select",
+      appId,
+      new Date().toISOString(),
+      new Date().toISOString(),
+    );
     let called = 0;
     const r = await generateScreenerPredictions({
       db,
@@ -478,7 +498,7 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     });
     expect(called).toBe(0);
     expect(r.rejected).toBe(1);
-    expect(r.notes.join(" ")).toMatch(/unusable label/);
+    expect(r.notes.join(" ")).toMatch(/junk|unusable label/);
   });
 
   it("validatePrediction + suggestKey guardrails", () => {
@@ -525,5 +545,96 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
         custom: { how_heard: { answer: "x", labels: ["y"] } },
       }),
     ).toThrow(/collides with a registry key/);
+  });
+
+  it("does not treat major-option checkboxes, field_N, UUIDs, terms, or pronouns as questions", () => {
+    expect(
+      isCaptureWorthyQuestion({
+        label: "Electrical Engineering",
+        type: "checkbox",
+      }),
+    ).toBe(false);
+    expect(isCaptureWorthyQuestion({ label: "field_114", type: "text" })).toBe(
+      false,
+    );
+    expect(
+      isCaptureWorthyQuestion({
+        label: "59debaa2-5176-4710-939f-293b52c27284",
+        type: "text",
+      }),
+    ).toBe(false);
+    expect(
+      isCaptureWorthyQuestion({
+        label: "I agree to the Terms &amp; Conditions",
+        type: "checkbox",
+      }),
+    ).toBe(false);
+    expect(
+      isCaptureWorthyQuestion({
+        label: "Preferred pronouns",
+        type: "select",
+      }),
+    ).toBe(false);
+    expect(
+      isCaptureWorthyQuestion({
+        label: "Have you previously applied to this firm?",
+        type: "radio",
+      }),
+    ).toBe(true);
+    expect(
+      recordUnmappedScreenerQuestions({
+        db,
+        questions: [
+          { label: "Electrical Engineering", type: "checkbox" },
+          { label: "field_12", type: "text" },
+        ],
+      }),
+    ).toBe(0);
+  });
+
+  it("plan-time predict fills a page option and grounded free-text; skips invention", async () => {
+    enable();
+    const filled = await predictAnswersForQuestions(
+      [
+        {
+          id: "wa",
+          label: "Are you available to intern this summer?",
+          options: ["Yes", "No"],
+        },
+        {
+          id: "proj",
+          label: "Describe a backend service you have built recently.",
+        },
+        {
+          id: "hobby",
+          label: "What is your favorite obscure hobby to mention?",
+        },
+      ],
+      stub({
+        predictions: [
+          {
+            label: "Are you available to intern this summer?",
+            answer: "Yes",
+            key: "available",
+            basis: "profile",
+          },
+          {
+            label: "Describe a backend service you have built recently.",
+            answer: "anomaly-detection FastAPI service",
+            key: "project",
+            basis: "about-me",
+          },
+          {
+            label: "What is your favorite obscure hobby to mention?",
+            answer: "underwater basket weaving championships",
+            key: "hobby",
+            basis: "guess",
+          },
+        ],
+      }),
+    );
+    expect(filled.get("wa")?.value).toBe("Yes");
+    expect(filled.get("proj")?.value).toBe("anomaly-detection FastAPI service");
+    expect(filled.has("hobby")).toBe(false);
   });
 });

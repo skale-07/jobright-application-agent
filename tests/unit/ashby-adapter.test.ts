@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AshbyAdapterV1, ashbyFullNameMatcher } from "../../src/ats/ashby/v1.js";
 import { validateAshbyApplicationUrl } from "../../src/ats/ashby/urlValidation.js";
 import {
@@ -20,6 +20,14 @@ import {
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
+
+vi.mock("../../src/candidate/sensitiveProfileIO.js", () => ({
+  tryLoadSensitiveProfile: () => null,
+  getSensitiveValue: () => undefined,
+  loadSensitiveProfile: () => {
+    throw new Error("loadSensitiveProfile not available in ashby-adapter tests");
+  },
+}));
 
 const FIXTURE_DIR = path.join(process.cwd(), "tests", "fixtures", "ats");
 

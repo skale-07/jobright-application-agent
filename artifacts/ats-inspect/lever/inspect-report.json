@@ -1,6 +1,6 @@
 {
   "fixture": "lever",
-  "inspected_at": "2026-08-09T02:31:00.430Z",
+  "inspected_at": "2026-08-14T01:22:30.274Z",
   "inspection": {
     "ats": "lever",
     "adapter_version": 1,
@@ -203,7 +203,7 @@
       "name": "org",
       "inputId": "org",
       "canonical_field": "current_company",
-      "mapping_confidence": "medium"
+      "mapping_confidence": "high"
     },
     {
       "id": "urls-linkedin",
@@ -212,8 +212,8 @@
       "required": false,
       "name": "urls[LinkedIn]",
       "inputId": "urls-linkedin",
-      "canonical_field": null,
-      "mapping_confidence": "none"
+      "canonical_field": "linkedin_url",
+      "mapping_confidence": "high"
     },
     {
       "id": "urls-github",
@@ -222,8 +222,8 @@
       "required": false,
       "name": "urls[GitHub]",
       "inputId": "urls-github",
-      "canonical_field": null,
-      "mapping_confidence": "none"
+      "canonical_field": "github_url",
+      "mapping_confidence": "high"
     },
     {
       "id": "urls-portfolio",
@@ -232,8 +232,8 @@
       "required": false,
       "name": "urls[Portfolio]",
       "inputId": "urls-portfolio",
-      "canonical_field": null,
-      "mapping_confidence": "none"
+      "canonical_field": "personal_website",
+      "mapping_confidence": "medium"
     },
     {
       "id": "card-hearabout",
@@ -242,8 +242,8 @@
       "required": false,
       "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field0]",
       "inputId": "card-hearabout",
-      "canonical_field": null,
-      "mapping_confidence": "none"
+      "canonical_field": "how_heard",
+      "mapping_confidence": "medium"
     },
     {
       "id": "card-workauth",
@@ -257,8 +257,8 @@
       ],
       "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field1]",
       "inputId": "card-workauth",
-      "canonical_field": null,
-      "mapping_confidence": "none"
+      "canonical_field": "work_authorization",
+      "mapping_confidence": "medium"
     },
     {
       "id": "comments",
@@ -284,7 +284,7 @@
       "name": "eeo[gender]",
       "inputId": "eeo-gender",
       "canonical_field": "gender",
-      "mapping_confidence": "medium"
+      "mapping_confidence": "high"
     },
     {
       "id": "eeo-race",
@@ -300,7 +300,7 @@
       "name": "eeo[race]",
       "inputId": "eeo-race",
       "canonical_field": "race_ethnicity",
-      "mapping_confidence": "medium"
+      "mapping_confidence": "high"
     },
     {
       "id": "eeo-veteran",
@@ -315,7 +315,7 @@
       "name": "eeo[veteran]",
       "inputId": "eeo-veteran",
       "canonical_field": "veteran_status",
-      "mapping_confidence": "medium"
+      "mapping_confidence": "high"
     }
   ],
   "essays": [
@@ -383,21 +383,6 @@
       "inputId": "name",
       "canonical_field": null,
       "mapping_confidence": "none"
-    },
-    {
-      "id": "card-workauth",
-      "label": "Are you legally authorized to work in the United States?",
-      "type": "select",
-      "required": true,
-      "options": [
-        "Select ...",
-        "Yes",
-        "No"
-      ],
-      "name": "cards[4f8e1d2c-aaaa-bbbb-cccc-1234567890ab][field1]",
-      "inputId": "card-workauth",
-      "canonical_field": null,
-      "mapping_confidence": "none"
     }
   ],
   "route": "needs_review_unmapped",
@@ -405,6 +390,6 @@
   "inspection_only": true,
   "notes": [
     "Dormant CAPTCHA markers ignored: data_sitekey_attribute",
-    "2 required field(s) unmapped to answer aliases"
+    "1 required field(s) unmapped to answer aliases"
   ]
 }

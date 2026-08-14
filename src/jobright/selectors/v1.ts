@@ -76,7 +76,8 @@ export const jobrightSelectorsV1 = {
      */
     standardApplyRole: /^apply(?:\s+(?:now|today|here))?$/i,
     broadApplyRole: /apply/i,
-    applyNameExclusions: /autofill|applied|easy\s*apply|ask\s*orion/i,
+    applyNameExclusions:
+      /autofill|applied|easy\s*apply|ask\s*orion|without customizing/i,
     /**
      * Operator finding (2026-08-11 screenshot): the primary "APPLY WITH
      * AUTOFILL ↗" CTA on the job page carries the EXTERNAL application

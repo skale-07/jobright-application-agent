@@ -3,6 +3,7 @@ import { isDemographicsField } from "./essayDetector.js";
 import type { FillPlanEntry } from "./resolveAnswers.js";
 import { isWorkAuthorizationField } from "./resolveAnswers.js";
 import { screenerDef } from "../candidate/screeners.js";
+import { isConsentCanonical } from "./consentFields.js";
 
 /** Canonical keys safe to auto-fill from the public profile (factual only). */
 export const SAFE_FACTUAL_CANONICALS = new Set([
@@ -61,10 +62,9 @@ export function isScreenerFillCanonical(
   if (!canonical?.startsWith("screener:")) return false;
   const segments = canonical.slice("screener:".length).split(":");
   const key = segments[0] ?? "";
-  // screener:custom:<key> — promoted entries from the prediction review
-  // flow. Allowlisted because the ONLY writer of custom bank entries is
-  // the human-approved promote resolver, and the value still comes off
-  // the operator's disk at fill time (never from a model at plan time).
+  // screener:custom:<key> — human-promoted bank entries, profile-fact
+  // checkboxes, and plan-time predictions that already passed
+  // validatePrediction (option verbatim or grounded free-text).
   if (key === "custom") {
     return (segments[1] ?? "").length >= 2;
   }
@@ -75,6 +75,7 @@ export function isScreenerFillCanonical(
 export function isAllowlistedCanonical(canonical: string | null | undefined): boolean {
   if (!canonical) return false;
   if (isScreenerFillCanonical(canonical)) return true;
+  if (isConsentCanonical(canonical)) return true;
   return (
     SAFE_FACTUAL_CANONICALS.has(canonical) ||
     SENSITIVE_FILL_CANONICALS.has(canonical)

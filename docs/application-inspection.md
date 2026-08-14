@@ -38,7 +38,7 @@ Reports write to `artifacts/ats-inspect/<name>/inspect-report.json`.
 | `ready_for_fill_later` | Mapped; fill deferred to later phase |
 | `needs_essay` | Long / essay-like questions present — **only when `ESSAY_REQUIRED_GATE_ENABLED=true`** (default off; heuristics false-positive on demographic wording). Textareas still never auto-fill. |
 | `needs_review_unmapped` | Required fields lack answer aliases |
-| `needs_login` / `needs_human_captcha` / `needs_account_creation` | Human gate |
+| `needs_login` / `needs_human_captcha` / `needs_account_creation` | Human gate — **except `needs_login` / `needs_account_creation` when `NAVIGATION_ENABLED`**: those proceed to fill so portal auth can sign in (Workday Apply → Apply Manually, Greenhouse/Lever/Ashby account walls). CAPTCHA stays a human park. |
 | `skip_unsupported_ats` | Do not attempt fill |
 
 ## Verify

@@ -103,6 +103,38 @@ describe("nav fast exits (FIXTURE_CONFIRMED)", () => {
     });
   }, 30_000);
 
+  it("interstitial: screenshot-shaped modal — text link, never Fix My Resume, never X", async () => {
+    // Operator screenshot 2026-08-13: "Customize Your Resume in 10 seconds",
+    // green "Fix My Resume Now", skip is a centered text link (no button role).
+    const html = `<!DOCTYPE html><html><body>
+      <div class="ant-modal" role="dialog">
+        <button aria-label="Close">x</button>
+        <h2>Customize Your Resume in 10 seconds</h2>
+        <p>Your resume match score is low, and it's likely to be filtered out by ATS</p>
+        <button id="fix">Fix My Resume Now</button>
+        <div id="skip">Apply Without Customizing</div>
+        <label><input type="checkbox"> Do not remind me again</label>
+      </div>
+      <script>
+        document.getElementById('skip').addEventListener('click', () => {
+          (globalThis).__proceeded = true;
+        });
+        document.querySelector('[aria-label="Close"]').addEventListener('click', () => {
+          (globalThis).__closed = true;
+        });
+        document.getElementById('fix').addEventListener('click', () => {
+          (globalThis).__tailored = true;
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const r = await clearJobRightInterstitial(page);
+      expect(r.cleared).toBe("proceeded");
+      expect(await page.evaluate(() => (globalThis as unknown as { __proceeded?: boolean }).__proceeded)).toBe(true);
+      expect(await page.evaluate(() => (globalThis as unknown as { __closed?: boolean }).__closed)).toBeUndefined();
+      expect(await page.evaluate(() => (globalThis as unknown as { __tailored?: boolean }).__tailored)).toBeUndefined();
+    });
+  }, 30_000);
+
   it("interstitial: falls back to the X when no proceed CTA exists", async () => {
     const html = `<!DOCTYPE html><html><body>
       <div role="dialog">

@@ -32,7 +32,11 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
     or context missing, or draft rejected ⇒ the essay routes to review as before.
   Screener answers may be placed onto a page's option list by the model
   (`SCREENER_LLM_MATCH_ENABLED`), but only by CHOOSING from that page's own options,
-  validated verbatim — the model never authors a value.
+  validated verbatim. `SCREENER_PREDICT_LLM_ENABLED` may fill a previously-unmapped
+  screener at plan time when `validatePrediction` passes: option answers must match
+  the page verbatim; free-text must appear in about-me or public profile facts.
+  Ungrounded invention still parks as Answer needed. Demographic / EEO / pronoun
+  fields never take this path.
 - `chromium.launch` is allowed only in session infrastructure
   (`src/auth/serviceSession.ts`, `src/auth/loginFlow.ts`, `src/browser/fixtureSession.ts`).
   Everything else enters the browser through those seams.

@@ -7,6 +7,7 @@ import {
 import { isWorkAuthorizationField } from "../../applications/resolveAnswers.js";
 import { normalizeFieldLabel } from "../../applications/fieldNormalization.js";
 import { SAFE_FACTUAL_CANONICALS } from "../../applications/approvedFillPlan.js";
+import { isApplicationConsentField } from "../../applications/consentFields.js";
 
 export type FieldClassification =
   | "DETERMINISTIC"
@@ -61,12 +62,7 @@ const DETERMINISTIC_CANONICALS = new Set(
 );
 
 function isConsentField(field: DiscoveredField): boolean {
-  const n = normalizeFieldLabel(
-    `${field.label} ${field.name ?? ""} ${field.inputId ?? ""}`,
-  );
-  return /privacy|terms (of|and)|consent|acknowledge|agree to|data processing|gdpr/.test(
-    n,
-  );
+  return isApplicationConsentField(field);
 }
 
 function isUnsupportedWidget(field: DiscoveredField): boolean {
@@ -142,8 +138,8 @@ export function buildProposedFillPlan(
       summary.file_upload += 1;
     } else if (isConsentField(field)) {
       classification = "CONSENT";
-      proposed_action = "REVIEW_REQUIRED";
-      reason = "Consent checkboxes require human review";
+      proposed_action = "FILL_CANDIDATE";
+      reason = "Application terms/confirmation checkbox — auto-checked";
       summary.consent += 1;
     } else if (isUnsupportedWidget(field)) {
       classification = "UNSUPPORTED";

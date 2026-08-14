@@ -86,7 +86,7 @@ Medium/low signals may appear as warnings but must not override an untrusted-hos
 | ESSAY | SKIP_ESSAY |
 | DEMOGRAPHIC | SKIP_DEMOGRAPHIC |
 | FILE_UPLOAD | UPLOAD_CANDIDATE |
-| CONSENT | REVIEW_REQUIRED |
+| CONSENT | FILL_CANDIDATE (terms / privacy / certify only; marketing stays unmapped) |
 | UNSUPPORTED | UNSUPPORTED |
 | UNKNOWN | REVIEW_REQUIRED |
 

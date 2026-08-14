@@ -44,6 +44,22 @@ const GREENHOUSE_FIXTURE = path.join(
   "greenhouse",
   "dom.sanitized.html",
 );
+const WORKDAY_FIXTURE = path.join(
+  process.cwd(),
+  "tests",
+  "fixtures",
+  "ats",
+  "workday",
+  "dom.sanitized.html",
+);
+const LOGIN_REQUIRED_FIXTURE = path.join(
+  process.cwd(),
+  "tests",
+  "fixtures",
+  "ats",
+  "login-required",
+  "dom.sanitized.html",
+);
 const ESSAY_FIXTURE = path.join(
   process.cwd(),
   "tests",
@@ -261,6 +277,52 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(appRep.stopped).toBe("gate");
     expect(getApplication(db, appId)?.state).toBe("NATIVE_AUTOFILL_RUNNING");
   }, 60_000);
+
+  it("Workday account wall proceeds to fill when NAVIGATION_ENABLED (not AUTH_REQUIRED)", async () => {
+    const appId = seed("APPLICATION_INSPECTION");
+    setEmployerApplicationUrl(
+      db,
+      appId,
+      "https://acme.wd12.myworkdayjobs.com/Careers/job/Chicago-IL/Intern_R-1",
+    );
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      fixtureHtmlPath: WORKDAY_FIXTURE,
+    });
+    expect(getApplication(db, appId)?.state).toBe("NATIVE_AUTOFILL_RUNNING");
+    expect(report.applications[0]?.stopped).toBe("gate");
+    expect(
+      listOpenReviewItems(db).some((i) => i.kind === "AUTH_REQUIRED"),
+    ).toBe(false);
+  });
+
+  it("Greenhouse login wall proceeds to fill when NAVIGATION_ENABLED (not AUTH_REQUIRED)", async () => {
+    const appId = seed("APPLICATION_INSPECTION");
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      fixtureHtmlPath: LOGIN_REQUIRED_FIXTURE,
+    });
+    expect(getApplication(db, appId)?.state).toBe("NATIVE_AUTOFILL_RUNNING");
+    expect(report.applications[0]?.stopped).toBe("gate");
+    expect(
+      listOpenReviewItems(db).some((i) => i.kind === "AUTH_REQUIRED"),
+    ).toBe(false);
+  });
+
+  it("Greenhouse login wall parks AUTH_REQUIRED when NAVIGATION_ENABLED is off", async () => {
+    const appId = seed("APPLICATION_INSPECTION");
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      fixtureHtmlPath: LOGIN_REQUIRED_FIXTURE,
+    });
+    expect(getApplication(db, appId)?.state).toBe("AUTH_REQUIRED");
+    expect(report.applications[0]?.stopped).toBe("review");
+  });
 
   it("even with the essay gate ON, optional-only essay fields never block", async () => {
     const appId = seed();

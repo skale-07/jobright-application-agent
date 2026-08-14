@@ -33,9 +33,15 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
   let browser: Browser;
   let privDir: string;
   const savedPriv = process.env.PRIVATE_DIR;
+  let savedPortalEmail: string | undefined;
+  let savedPortalPassword: string | undefined;
 
   beforeEach(async () => {
     applySafeFillEnv();
+    savedPortalEmail = process.env.PORTAL_LOGIN_EMAIL;
+    savedPortalPassword = process.env.PORTAL_LOGIN_PASSWORD;
+    delete process.env.PORTAL_LOGIN_EMAIL;
+    delete process.env.PORTAL_LOGIN_PASSWORD;
     privDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-portal-"));
     fs.mkdirSync(path.join(privDir, "candidate"), { recursive: true });
     process.env.PRIVATE_DIR = privDir;
@@ -47,6 +53,10 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     await browser.close().catch(() => undefined);
     if (savedPriv === undefined) delete process.env.PRIVATE_DIR;
     else process.env.PRIVATE_DIR = savedPriv;
+    if (savedPortalEmail === undefined) delete process.env.PORTAL_LOGIN_EMAIL;
+    else process.env.PORTAL_LOGIN_EMAIL = savedPortalEmail;
+    if (savedPortalPassword === undefined) delete process.env.PORTAL_LOGIN_PASSWORD;
+    else process.env.PORTAL_LOGIN_PASSWORD = savedPortalPassword;
     fs.rmSync(privDir, { recursive: true, force: true });
     resetConfigCache();
   });
@@ -241,6 +251,144 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
           waiter: async () => ({ kind: "code", code: "482193", messageId: "m", pollsUsed: 1 }),
         });
         expect(r.status).toBe("not_an_auth_wall");
+      });
+    } finally {
+      applySafeFillEnv();
+    }
+  }, 30_000);
+
+  it("Crowe posting: Apply → Apply Manually → Sign In with standing credentials (FIXTURE_CONFIRMED)", async () => {
+    // Operator screenshots 2026-08-14: posting Apply, modal Apply Manually,
+    // then Create Account with "Already have an account? Sign In".
+    const CROWE_HTML = `<!DOCTYPE html><html><body>
+      <div id="stage">
+        <h1>AI Engineering Intern</h1>
+        <button data-automation-id="adventureButton" type="button">Apply</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=adventureButton]')
+          .addEventListener('click', () => {
+            document.getElementById('stage').innerHTML =
+              '<h2>Start Your Application</h2>' +
+              '<button data-automation-id="autofillWithResume" type="button">Autofill with Resume</button>' +
+              '<button data-automation-id="applyManually" type="button">Apply Manually</button>' +
+              '<button type="button">Use My Last Application</button>';
+            document.querySelector('[data-automation-id=applyManually]')
+              .addEventListener('click', () => {
+                document.getElementById('stage').innerHTML =
+                  '<h2>Create Account</h2>' +
+                  '<input data-automation-id="email" type="email" />' +
+                  '<input data-automation-id="password" type="password" />' +
+                  '<input data-automation-id="verifyPassword" type="password" />' +
+                  '<button data-automation-id="createAccountSubmitButton" type="button">Create Account</button>' +
+                  '<p>Already have an account? <button data-automation-id="signInLink" type="button">Sign In</button></p>';
+                document.querySelector('[data-automation-id=signInLink]')
+                  .addEventListener('click', () => {
+                    document.getElementById('stage').innerHTML =
+                      '<h2>Sign In</h2>' +
+                      '<input data-automation-id="email" type="email" />' +
+                      '<input data-automation-id="password" type="password" />' +
+                      '<button data-automation-id="signInSubmitButton" type="button">Sign In</button>';
+                    document.querySelector('[data-automation-id=signInSubmitButton]')
+                      .addEventListener('click', () => {
+                        document.body.innerHTML = '<p>My Information</p>';
+                      });
+                  });
+                document.querySelector('[data-automation-id=createAccountSubmitButton]')
+                  .addEventListener('click', () => {
+                    (globalThis).__createdInstead = true;
+                  });
+              });
+            document.querySelector('[data-automation-id=autofillWithResume]')
+              .addEventListener('click', () => {
+                (globalThis).__autofill = true;
+              });
+          });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    const prevEmail = process.env.PORTAL_LOGIN_EMAIL;
+    const prevPassword = process.env.PORTAL_LOGIN_PASSWORD;
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@example.com";
+    process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
+    resetConfigCache();
+    try {
+      await onWorkdayPage(CROWE_HTML, async (page) => {
+        let waiterCalls = 0;
+        const r = await authenticateAtsPortal(page, {
+          settleMs: 0,
+          waiter: async () => {
+            waiterCalls += 1;
+            return { kind: "code", code: "000000", messageId: "m", pollsUsed: 1 };
+          },
+        });
+        expect(r.notes.join(" ")).toMatch(/clicked "Apply"/);
+        expect(r.notes.join(" ")).toMatch(/Apply Manually/);
+        expect(r.notes.join(" ")).toMatch(/flipped Create Account → Sign In/);
+        expect(r.status).toBe("signed_in");
+        expect(r.escalated_to_create).toBe(false);
+        expect(waiterCalls).toBe(0);
+        expect(
+          await page.evaluate(
+            () => (globalThis as unknown as { __autofill?: boolean }).__autofill,
+          ),
+        ).toBeUndefined();
+        expect(
+          await page.evaluate(
+            () => (globalThis as unknown as { __createdInstead?: boolean }).__createdInstead,
+          ),
+        ).toBeUndefined();
+        expect(r.secrets).toContain("StandingPass1!");
+        expect(r.notes.join(" ")).not.toContain("StandingPass1!");
+      });
+    } finally {
+      if (prevEmail === undefined) delete process.env.PORTAL_LOGIN_EMAIL;
+      else process.env.PORTAL_LOGIN_EMAIL = prevEmail;
+      if (prevPassword === undefined) delete process.env.PORTAL_LOGIN_PASSWORD;
+      else process.env.PORTAL_LOGIN_PASSWORD = prevPassword;
+      applySafeFillEnv();
+      resetConfigCache();
+    }
+  }, 30_000);
+
+  it("after sign-in, scans Gmail only when the page asks for a verification code (FIXTURE_CONFIRMED)", async () => {
+    const OTP_HTML = `<!DOCTYPE html><html><body>
+      <div id="wall">
+        <input data-automation-id="email" type="email" />
+        <input data-automation-id="password" type="password" />
+        <button data-automation-id="signInSubmitButton" type="button">Sign In</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=signInSubmitButton]')
+          .addEventListener('click', () => {
+            document.getElementById('wall').innerHTML =
+              '<p>We sent a verification code to your email — enter the code to continue.</p>' +
+              '<input data-automation-id="verificationCode" autocomplete="one-time-code" />' +
+              '<button data-automation-id="verifyButton" type="button">Verify</button>';
+            document.querySelector('[data-automation-id=verifyButton]')
+              .addEventListener('click', () => {
+                document.body.innerHTML = '<p>My Information</p>';
+              });
+          });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await onWorkdayPage(OTP_HTML, async (page) => {
+        let waiterCalls = 0;
+        const r = await authenticateAtsPortal(page, {
+          emailOverride: "candidate@example.com",
+          settleMs: 0,
+          waiter: async () => {
+            waiterCalls += 1;
+            return { kind: "code", code: "482193", messageId: "m", pollsUsed: 1 };
+          },
+        });
+        expect(waiterCalls).toBe(1);
+        expect(r.verification_used).toBe(true);
+        expect(r.status).toBe("signed_in");
+        expect(r.secrets).toContain("482193");
+        expect(r.notes.join(" ")).toMatch(/emailed code entered/);
+        expect(r.notes.join(" ")).not.toContain("482193");
       });
     } finally {
       applySafeFillEnv();

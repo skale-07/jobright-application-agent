@@ -1,0 +1,10 @@
+{
+  "outcome": "UNCERTAIN",
+  "application_id": "00f3cbd4-1576-48f6-b9ee-a6dc40fd1ee2",
+  "submission_id": "75f1d23a-c9d2-482b-8889-5d89b7013086",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": "175ed7d5-8d46-417c-893b-46cfacfac7e5",
+  "reason": "Submission not confirmed within 15000ms (page classified: still_on_form)",
+  "artifact_path": null
+}

@@ -33,6 +33,14 @@ export const workdaySelectorsV1 = {
       "button[data-automation-id='createAccountLink'], a[data-automation-id='createAccountLink']",
     signInLink:
       "button[data-automation-id='signInLink'], a[data-automation-id='signInLink']",
+    /**
+     * Posting/chooser pages that SHOW a Sign In / Apply control but have
+     * not yet revealed the email+password form (Crowe live 2026-08-14:
+     * submit=[Sign In], fields all false). Clicking these is how the form
+     * appears; they are not the form submit.
+     */
+    gatedEntry:
+      "a[data-automation-id='adventureButton'], button[data-automation-id='adventureButton']",
     /** Email-verification code entry (tenants that require it). */
     verificationCodeInput:
       "input[data-automation-id='verificationCode'], input[autocomplete='one-time-code']",

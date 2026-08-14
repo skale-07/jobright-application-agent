@@ -1,0 +1,81 @@
+{
+  "run_id": "nav-dab52dff-e87b-4b94-a097-940dc70accc4",
+  "application_id": "d08fc7a0-ba25-4548-8487-0e1a3afc4f3f",
+  "jobright_job_id": "6ada6cbafd7b324c3eb6ec42",
+  "method": "agent",
+  "resolved_url": "https://careers.acme.com/apply/form",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "captured URL lands on a login wall — not stored",
+      "evidence": "careers.acme.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "login wall"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "careers.acme.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 3,
+    "domains_visited": [
+      "careers.acme.com"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "popup captured on attempt 1",
+    "login wall on careers.acme.com: sign_in_form; fields[email=true password=true confirm=false]; submit=[Log in]",
+    "login wall on careers.acme.com: sign_in_form; fields[email=true password=true confirm=false]; submit=[Log in]",
+    "vault: existing account for careers.acme.com",
+    "portal auth sign_in: sign_in_form",
+    "portal auth: wall remains (sign_in_form)",
+    "vault: existing account for careers.acme.com",
+    "agent[1]: cred_available:true",
+    "agent[1]: leaked:[REDACTED_SECRET]",
+    "employer verified (token \"acme\" ~ slug \"acme\" (from URL host)) but no adapter for careers.acme.com — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "acme",
+    "detail": "token \"acme\" ~ slug \"acme\" (from URL host)",
+    "expected_company": "Acme",
+    "url": "https://careers.acme.com/apply/form"
+  },
+  "duplicates": null,
+  "login_wall": {
+    "url": "https://careers.acme.com/login",
+    "host": "careers.acme.com",
+    "fields": {
+      "email": true,
+      "password": "[REDACTED]",
+      "confirmPassword": "[REDACTED]",
+      "otherVisibleInputs": 2
+    },
+    "submitControls": [
+      "Log in"
+    ],
+    "federatedProviders": [],
+    "createAccountRoute": null,
+    "errorText": null,
+    "classification": "sign_in_form"
+  },
+  "written_at": "2026-08-14T01:21:42.604Z"
+}

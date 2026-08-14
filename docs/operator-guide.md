@@ -571,7 +571,9 @@ instead of dead-ending on a MANUAL review item. Three phases, each gated:
 1. **Deterministic (`NAVIGATION_ENABLED=true`)** — open the JobRight job
    page, read external apply hrefs (zero mutation), else click the
    standard Apply control and capture the popup/same-tab URL (2-click
-   cap). A captured URL that lands on a login wall is never stored — it
+   cap). JobRight's "Customize Your Resume" modal is skipped immediately
+   via **Apply Without Customizing** (never Fix My Resume, never the X).
+   A captured URL that lands on a login wall is never stored — it
    becomes the agent's starting point.
 2. **Agent (`+ AGENT_FALLBACK_ENABLED=true` + debug Chrome running)** —
    browser-use sidecar attached to your CDP Chrome
@@ -941,14 +943,25 @@ future form asking it fills deterministically with zero AI involvement.
 No flag needed; this works even with all LLM features off.
 
 **New-question predictions (one-click promote).** With
-`SCREENER_PREDICT_LLM_ENABLED=true` (plus an LLM key), the post-session
-batch additionally pre-fills those same Answer-needed items with a
-suggested answer drawn from your about-me + existing bank answers (an
-exact page option when the question had options), and shows the fact it's
-based on. **Approve & save** (or edit first) does exactly what a manual
-answer does. Predictions never fill anything before that approval; a
-dismissed question never comes back. Your bank compounds — the model's
-job shrinks every week.
+`SCREENER_PREDICT_LLM_ENABLED=true` (plus an LLM key), two things happen:
+
+- **At fill time**, previously-unmapped screeners may be filled when the
+  proposal survives `validatePrediction`: a choice must match the page's
+  options verbatim; free-text must already appear in your about-me or
+  public profile (12+ characters). Invented answers stay blank and still
+  open **Answer needed**. Nothing is written into `screeners.json`.
+- **After the session**, the same questions get a suggested answer in
+  the review item (drawn from about-me + bank + profile facts). **Approve
+  & save** (or edit first) joins the bank. A dismissed question never
+  comes back.
+
+Major-option checkboxes ("Electrical Engineering"), inspector
+placeholders (`field_12`), UUID labels, and terms/privacy checkboxes are
+not queued as questions — terms auto-check; majors check only when they
+match your profile. Pronouns / EEO stay on the sensitive-profile path.
+
+Long-form essays still need `ESSAY_AUTOFILL_ENABLED` (and
+`private/candidate/about-me.md`) to fill rather than park.
 
 **Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
 `private/candidate/about-me.md` and write your context once. With
@@ -1087,12 +1100,21 @@ which federated buttons, whether a create-account route is offered, and
 any error text), then:
 
 1. cookie/consent banners are accepted so they can't swallow the click;
-2. it **signs in** with the standing credentials;
-3. only if the portal **rejects** those credentials *and* offers a
+2. on Workday job postings it clicks **Apply**, then **Apply Manually**
+   on the chooser (never Autofill with Resume). Create Account pages
+   with standing credentials flip to **Sign In** first. Inspection does
+   **not** park Sign In headers as `AUTH_REQUIRED` when
+   `NAVIGATION_ENABLED` is on — fill owns that wall on every recognized
+   ATS host (Greenhouse/Lever/Ashby included), not Workday only;
+3. it **signs in** with the standing credentials;
+4. only if the portal **rejects** those credentials *and* offers a
    create-account route does it follow that route and create the account
    with the same email + password (the Amazon case);
-4. the mailbox is opened only when the page actually asks for a code or a
+5. the mailbox is opened only when the page actually asks for a code or a
    confirmation link — never on spec.
+6. required **terms / privacy / "I certify this is true"** checkboxes are
+   auto-checked. Marketing opt-ins (`consent[marketing]`) and unlabeled
+   checkboxes are not.
 
 A wall that survives all of that parks the application as `wall: auth`
 with the diagnosis in the report, so the next fix is driven by the real

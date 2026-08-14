@@ -1,0 +1,35 @@
+{
+  "started_at": "2026-08-14T01:03:02.149Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "59f4b114-0a4c-4db7-848f-ef674ea0075d",
+    "armed_until": "2026-08-14T03:03:02.150Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": null,
+  "outcome": "error",
+  "notes": [
+    "cycle error: browser exploded"
+  ]
+}

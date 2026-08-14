@@ -1,0 +1,21 @@
+{
+  "started_at": "2026-08-14T01:22:15.742Z",
+  "updated": {
+    "pulled": false,
+    "head": "abc12345",
+    "installed": false,
+    "notes": []
+  },
+  "preflight": {
+    "ok": false,
+    "notes": [
+      "refusing: typecheck failed after self-update: spawnSync npm ENOENT"
+    ],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": null,
+  "session": null,
+  "outcome": "refused",
+  "notes": []
+}

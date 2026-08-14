@@ -12,6 +12,11 @@ import {
 } from "../candidate/sensitiveProfileIO.js";
 import { locationTypeaheadQuery } from "./locationQuery.js";
 import type { ScreenerResolution } from "../candidate/screenerMatch.js";
+import { normalizeFieldLabel } from "./fieldNormalization.js";
+import {
+  consentCanonicalFor,
+  isApplicationConsentField,
+} from "./consentFields.js";
 
 export type FillPlanAction =
   | "fill"
@@ -73,6 +78,26 @@ export function isWorkAuthorizationField(
   return /sponsor|work[\s_-]?auth|visa|authorized to work|legally authorized|require sponsorship/.test(
     s,
   );
+}
+
+function profileFactMatchingCheckbox(
+  label: string,
+  profile: PublicProfile,
+): string | null {
+  const n = normalizeFieldLabel(label);
+  if (n.length < 4) return null;
+  const facts = [
+    profile.major,
+    profile.degree,
+    ...(profile.additional_fields_of_study ?? []),
+  ]
+    .map((s) => normalizeFieldLabel(String(s ?? "")))
+    .filter((s) => s.length >= 4);
+  for (const fact of facts) {
+    if (n === fact) return fact;
+    if (n.length >= 12 && (n.includes(fact) || fact.includes(n))) return fact;
+  }
+  return null;
 }
 
 /**
@@ -186,6 +211,39 @@ export function buildFillPlan(
       continue;
     }
 
+    if (isApplicationConsentField(field)) {
+      const canonical = consentCanonicalFor(field.id);
+      answers[canonical] = true;
+      entries.push({
+        field_id: field.id,
+        label: field.label,
+        type: field.type,
+        canonical_field: canonical,
+        action: "fill",
+        value: true,
+        reason: "Application terms/confirmation checkbox",
+      });
+      continue;
+    }
+
+    if (field.type === "checkbox") {
+      const fact = profileFactMatchingCheckbox(field.label, profile);
+      if (fact) {
+        const canonical = `screener:custom:profile_fact:${field.id}`;
+        answers[canonical] = true;
+        entries.push({
+          field_id: field.id,
+          label: field.label,
+          type: field.type,
+          canonical_field: canonical,
+          action: "fill",
+          value: true,
+          reason: `Checkbox matches profile fact (${fact})`,
+        });
+        continue;
+      }
+    }
+
     if (!field.canonical_field) {
       const screener = opts.screenerResolutions?.get(field.id);
       if (screener) {
@@ -201,7 +259,10 @@ export function buildFillPlan(
             canonical_field: unique,
             action: "fill",
             value: screener.value,
-            reason: `Screener bank answer (${screener.basis})`,
+            reason:
+            screener.basis === "llm_predict"
+              ? `Predicted from operator context (${screener.basis})`
+              : `Screener bank answer (${screener.basis})`,
           });
           continue;
         }

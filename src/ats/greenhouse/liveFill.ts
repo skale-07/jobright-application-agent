@@ -1,5 +1,9 @@
 import type { Db } from "../../storage/db/client.js";
 import { dismissPageObstructions } from "../../browser/obstructions.js";
+import {
+  authenticateAtsPortal,
+  isRecognizedAtsAuthHost,
+} from "../../verification/portalAuth.js";
 import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "playwright";
@@ -355,10 +359,50 @@ export async function runGreenhouseLiveFill(input: {
       base.login_wall_detection = gate.loginWall;
       base.failure_code = gate.failureCode;
 
-      if (!gate.ok) {
-        base.notes.push(gate.reason ?? "page failed verification");
+      const tryPortalAuth =
+        input.execute &&
+        gate.failureCode === "LOGIN_WALL" &&
+        getConfig().navigationEnabled &&
+        isRecognizedAtsAuthHost(page.url());
+
+      let verified = gate;
+      if (!verified.ok && tryPortalAuth) {
+        const obstructions = await dismissPageObstructions(page);
+        if (obstructions.dismissed.length > 0) {
+          base.notes.push(`popups dismissed: ${obstructions.dismissed.join(", ")}`);
+        }
+        const auth = await authenticateAtsPortal(page);
+        void auth.secrets;
+        base.notes.push(...auth.notes);
+        if (
+          auth.status !== "signed_in" &&
+          auth.status !== "account_created"
+        ) {
+          base.failure_code = "AUTH_REQUIRED";
+          base.notes.push(
+            gate.reason ?? `portal auth did not clear the wall (${auth.status})`,
+          );
+          throw new GreenhouseLiveFillError(
+            `Refusing live fill (AUTH_REQUIRED): portal auth did not clear the wall (${auth.status})`,
+            persist(base),
+          );
+        }
+        verified = await verifyPageBeforeMutation(
+          page,
+          input.url,
+          urlValidation.normalizedUrl,
+        );
+        base.final_url = verified.finalUrl;
+        base.identity_verification = verified.identity;
+        base.captcha_detection = verified.captcha;
+        base.login_wall_detection = verified.loginWall;
+        base.failure_code = verified.failureCode;
+      }
+
+      if (!verified.ok) {
+        base.notes.push(verified.reason ?? "page failed verification");
         throw new GreenhouseLiveFillError(
-          `Refusing live fill (${gate.failureCode}): ${gate.reason}`,
+          `Refusing live fill (${verified.failureCode}): ${verified.reason}`,
           persist(base),
         );
       }
@@ -372,8 +416,8 @@ export async function runGreenhouseLiveFill(input: {
         }
       }
       const { adapter, plan, approvedPlan } = await planApplicationFill({
-        url: gate.finalUrl,
-        html: gate.html,
+        url: verified.finalUrl,
+        html: verified.html,
         ...(input.profile ? { profile: input.profile } : {}),
         ...(input.capture ? { capture: input.capture } : {}),
       });

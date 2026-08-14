@@ -23,6 +23,8 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
     "PRIVATE_DIR",
     "GMAIL_VERIFICATION_ENABLED",
     "OUTLOOK_VERIFICATION_ENABLED",
+    "PORTAL_LOGIN_EMAIL",
+    "PORTAL_LOGIN_PASSWORD",
   ];
 
   beforeEach(() => {
@@ -31,6 +33,8 @@ describe("verification subsystem (UNIT_CONFIRMED)", () => {
     process.env.PRIVATE_DIR = privDir;
     delete process.env.GMAIL_VERIFICATION_ENABLED;
     delete process.env.OUTLOOK_VERIFICATION_ENABLED;
+    delete process.env.PORTAL_LOGIN_EMAIL;
+    delete process.env.PORTAL_LOGIN_PASSWORD;
     resetConfigCache();
   });
 

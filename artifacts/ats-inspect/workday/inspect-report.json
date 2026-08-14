@@ -1,32 +1,145 @@
 {
   "fixture": "workday",
-  "inspected_at": "2026-08-09T02:31:00.665Z",
+  "inspected_at": "2026-08-14T01:22:30.738Z",
   "inspection": {
     "ats": "workday",
     "adapter_version": 1,
-    "url": "https://acme.myworkdayjobs.com/en-US/Careers/job/Intern/123",
+    "url": "https://acme.wd5.myworkdayjobs.com/en-US/Careers/job/Software-Engineer-Intern_R-12345",
     "title": "Workday Intern",
     "requires_login": true,
     "captcha_detected": false,
-    "account_creation_detected": false,
-    "fields": [],
+    "account_creation_detected": true,
+    "fields": [
+      {
+        "id": "email",
+        "label": "email",
+        "type": "text",
+        "required": false,
+        "name": "email",
+        "inputId": "email"
+      },
+      {
+        "id": "password",
+        "label": "password",
+        "type": "unknown",
+        "required": false,
+        "name": "password",
+        "inputId": "password"
+      },
+      {
+        "id": "legalNameSection_firstName",
+        "label": "firstName",
+        "type": "text",
+        "required": false,
+        "name": "firstName",
+        "inputId": "legalNameSection_firstName"
+      },
+      {
+        "id": "legalNameSection_lastName",
+        "label": "lastName",
+        "type": "text",
+        "required": false,
+        "name": "lastName",
+        "inputId": "legalNameSection_lastName"
+      },
+      {
+        "id": "phone-number",
+        "label": "phone",
+        "type": "text",
+        "required": false,
+        "name": "phone",
+        "inputId": "phone-number"
+      },
+      {
+        "id": "file-upload-input-ref",
+        "label": "Software Engineer Intern",
+        "type": "file",
+        "required": false,
+        "inputId": "file-upload-input-ref"
+      }
+    ],
     "warnings": [
-      "ATS \"workday\" is unsupported in V1 — skip and continue batch"
+      "Workday account wall (portalAuth handles sign-in/create)",
+      "Account creation markers detected",
+      "Workday is a multi-page wizard: My Information is auto-filled; other pages route to human review"
     ]
   },
-  "detection_confidence": 0.95,
+  "detection_confidence": 0.9999999999999999,
   "detection_evidence": [
-    "unsupported ATS pattern: workday"
+    "workday tenant host",
+    "workday data-automation-id hooks",
+    "workday branding text"
   ],
-  "mapped_fields": [],
+  "mapped_fields": [
+    {
+      "id": "email",
+      "label": "email",
+      "type": "text",
+      "required": false,
+      "name": "email",
+      "inputId": "email",
+      "canonical_field": "email",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "password",
+      "label": "password",
+      "type": "unknown",
+      "required": false,
+      "name": "password",
+      "inputId": "password",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "legalNameSection_firstName",
+      "label": "firstName",
+      "type": "text",
+      "required": false,
+      "name": "firstName",
+      "inputId": "legalNameSection_firstName",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "legalNameSection_lastName",
+      "label": "lastName",
+      "type": "text",
+      "required": false,
+      "name": "lastName",
+      "inputId": "legalNameSection_lastName",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    },
+    {
+      "id": "phone-number",
+      "label": "phone",
+      "type": "text",
+      "required": false,
+      "name": "phone",
+      "inputId": "phone-number",
+      "canonical_field": "phone",
+      "mapping_confidence": "high"
+    },
+    {
+      "id": "file-upload-input-ref",
+      "label": "Software Engineer Intern",
+      "type": "file",
+      "required": false,
+      "inputId": "file-upload-input-ref",
+      "canonical_field": null,
+      "mapping_confidence": "none"
+    }
+  ],
   "essays": [],
   "demographics_fields": [],
   "unmapped_required": [],
-  "route": "skip_unsupported_ats",
+  "route": "needs_login",
   "form_fill_enabled": false,
   "inspection_only": true,
   "notes": [
-    "ATS \"workday\" is unsupported in V1 — skip and continue batch",
-    "Route: skip unsupported ATS"
+    "Workday account wall (portalAuth handles sign-in/create)",
+    "Account creation markers detected",
+    "Workday is a multi-page wizard: My Information is auto-filled; other pages route to human review"
   ]
 }

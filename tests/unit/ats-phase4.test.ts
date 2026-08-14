@@ -94,9 +94,9 @@ describe("Phase 4 ATS inspection", () => {
   });
 
   it("recognizes Workday and routes its account wall to needs_login", async () => {
-    // Workday is now a supported adapter (W1–W4). Its fixture is a
-    // tenant account wall, so it routes to needs_login — portalAuth
-    // handles sign-in/create-account from there, not a dead end.
+    // Inspector still reports needs_login (the page is an account wall).
+    // The pipeline sends Workday to fill when NAVIGATION_ENABLED so
+    // portalAuth can run — that is not a human AUTH_REQUIRED park.
     const { report } = await runAtsFixtureInspection("workday");
     expect(report.inspection.ats).toBe("workday");
     expect(report.route).toBe("needs_login");

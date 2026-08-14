@@ -1,4 +1,4 @@
-import type { Page } from "playwright";
+import type { Locator, Page } from "playwright";
 import type { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { jobrightSelectorsV1 } from "./selectors/v1.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
@@ -96,9 +96,33 @@ export async function detectClosedJobBanner(page: Page): Promise<boolean> {
 }
 
 /**
+ * JobRight's "Customize Your Resume in 10 seconds" modal. The skip control
+ * is often a styled text link, not a role=button — role search first, then
+ * exact visible text. Never returns "Fix My Resume Now".
+ */
+export async function findJobRightInterstitialProceed(
+  page: Page,
+): Promise<Locator | null> {
+  for (const name of jobrightSelectorsV1.navigation.interstitialProceedNames) {
+    for (const role of ["button", "link"] as const) {
+      const control = page.getByRole(role, { name }).first();
+      if ((await control.count().catch(() => 0)) === 0) continue;
+      if (!(await control.isVisible().catch(() => false))) continue;
+      return control;
+    }
+    const byText = page.getByText(name).first();
+    if ((await byText.count().catch(() => 0)) === 0) continue;
+    if (!(await byText.isVisible().catch(() => false))) continue;
+    return byText;
+  }
+  return null;
+}
+
+/**
  * Close JobRight's own modals ("Did you apply?"). Only the CLOSE control is
  * ever clicked — the modal's buttons are answers about the operator's
  * application state, which this system must never assert on their behalf.
+ * Customize-resume interstitials are PROCEEDED, never X-closed.
  */
 export async function clearJobRightInterstitial(
   page: Page,
@@ -107,18 +131,14 @@ export async function clearJobRightInterstitial(
   // wants a decision, and continuing is the decision the operator already
   // made by queuing the application. Closing it can drop the flow back to
   // the job page with nothing accomplished.
-  for (const name of jobrightSelectorsV1.navigation.interstitialProceedNames) {
-    for (const role of ["button", "link"] as const) {
-      const control = page.getByRole(role, { name }).first();
-      if ((await control.count().catch(() => 0)) === 0) continue;
-      if (!(await control.isVisible().catch(() => false))) continue;
-      await control.click({ timeout: 5_000 }).catch(() => undefined);
-      await page.waitForTimeout(400);
-      return {
-        cleared: "proceeded",
-        note: `jobright interstitial: clicked "${name.source.replace(/[\^$]/g, "")}"`,
-      };
-    }
+  const proceed = await findJobRightInterstitialProceed(page);
+  if (proceed) {
+    await proceed.click({ timeout: 5_000 }).catch(() => undefined);
+    await page.waitForTimeout(400);
+    return {
+      cleared: "proceeded",
+      note: 'jobright interstitial: clicked "Apply Without Customizing"',
+    };
   }
   if (await dismissJobRightModal(page)) {
     return { cleared: "closed", note: "jobright modal closed (X)" };
@@ -199,12 +219,62 @@ async function findApplyControl(
   return null;
 }
 
+async function resolveExternalCapture(
+  page: Page,
+  armed: {
+    popupPromise: Promise<Page | null>;
+    sameTabPromise: Promise<boolean>;
+  },
+  attempt: number,
+  notes: string[],
+): Promise<ApplyClickCapture | null> {
+  const popup = await armed.popupPromise;
+  if (popup) {
+    await popup
+      .waitForLoadState("domcontentloaded", { timeout: 10_000 })
+      .catch(() => notes.push("popup did not reach domcontentloaded"));
+    const url = popup.url();
+    const landingHtml = await popup.content().catch(() => null);
+    const landingTitle = await popup.title().catch(() => null);
+    await popup.close().catch(() => undefined);
+    if (url && url !== "about:blank") {
+      notes.push(`popup captured on attempt ${attempt}`);
+      return {
+        url,
+        via: "popup",
+        clicks: attempt,
+        notes,
+        landingHtml,
+        landingTitle,
+      };
+    }
+    notes.push("popup opened but carried no usable URL");
+    return null;
+  }
+  if (await armed.sameTabPromise) {
+    notes.push(`same-tab navigation on attempt ${attempt}`);
+    return {
+      url: page.url(),
+      via: "same_tab",
+      clicks: attempt,
+      notes,
+      landingHtml: await page.content().catch(() => null),
+      landingTitle: await page.title().catch(() => null),
+    };
+  }
+  return null;
+}
+
 /**
  * Phase B — mutation (guard first): click the standard Apply control and
  * capture where it leads, via popup (listener registered BEFORE the click,
  * recorder precedent) or same-tab navigation off jobright.ai. Cap: 2 click
  * attempts, 10s waits. The captured popup is closed after its URL is read;
  * the JobRight tab is left where it is.
+ *
+ * JobRight's "Customize Your Resume" modal (operator screenshot 2026-08-13)
+ * is the Apply click's usual next page — click "Apply Without Customizing"
+ * immediately, never "Fix My Resume Now", never the X (that aborts apply).
  */
 export async function clickApplyAndCaptureExternalUrl(
   session: PlaywrightServiceSession,
@@ -213,6 +283,66 @@ export async function clickApplyAndCaptureExternalUrl(
   assertNavigationAllowed("clickApplyAndCaptureExternalUrl");
   const notes: string[] = [];
   const context = session.getContext();
+
+  const clickAndCapture = async (
+    target: Locator,
+    attempt: number,
+    pollCustomizeModal: boolean,
+  ): Promise<ApplyClickCapture | null> => {
+    let popupPage: Page | null | undefined;
+    const popupPromise = context
+      .waitForEvent("page", { timeout: 10_000 })
+      .then((p) => {
+        popupPage = p;
+        return p;
+      })
+      .catch(() => {
+        popupPage = null;
+        return null;
+      });
+    const sameTabPromise = page
+      .waitForURL((u) => !/(^|\.)jobright\.ai$/i.test(new URL(u).hostname), {
+        timeout: 10_000,
+      })
+      .then(() => true)
+      .catch(() => false);
+
+    await target.click({ timeout: 10_000 }).catch((e: Error) => {
+      notes.push(`click attempt ${attempt} failed: ${e.message.slice(0, 120)}`);
+    });
+
+    if (pollCustomizeModal) {
+      for (let i = 0; i < 10 && popupPage === undefined; i++) {
+        const proceed = await findJobRightInterstitialProceed(page);
+        if (proceed) {
+          await proceed.click({ timeout: 5_000 }).catch(() => undefined);
+          notes.push(
+            'jobright interstitial: clicked "Apply Without Customizing"',
+          );
+          break;
+        }
+        await page.waitForTimeout(150);
+      }
+    }
+
+    return resolveExternalCapture(
+      page,
+      { popupPromise, sameTabPromise },
+      attempt,
+      notes,
+    );
+  };
+
+  // If the customize modal is already up (prior Apply click), proceed
+  // BEFORE the generic dismisser X-closes it.
+  const already = await findJobRightInterstitialProceed(page);
+  if (already) {
+    notes.push(
+      'jobright interstitial already showing — Apply Without Customizing first',
+    );
+    const captured = await clickAndCapture(already, 1, false);
+    if (captured) return captured;
+  }
 
   // JobRight interleaves upsell/promo modals over the job page — clear
   // them first so the Apply control is reachable. Bounded, never-click
@@ -242,59 +372,14 @@ export async function clickApplyAndCaptureExternalUrl(
         landingTitle: null,
       };
     }
-    const target = found.target;
     if (found.tier === 0) {
       notes.push("Apply control: autofill CTA (tier 0)");
     } else if (found.tier === 2 && attempt === 1) {
       notes.push("Apply control matched via broad name tier");
     }
 
-    const popupPromise = context
-      .waitForEvent("page", { timeout: 10_000 })
-      .catch(() => null);
-    const sameTabPromise = page
-      .waitForURL((u) => !/(^|\.)jobright\.ai$/i.test(new URL(u).hostname), {
-        timeout: 10_000,
-      })
-      .then(() => true)
-      .catch(() => false);
-
-    await target.click({ timeout: 10_000 }).catch((e: Error) => {
-      notes.push(`click attempt ${attempt} failed: ${e.message.slice(0, 120)}`);
-    });
-
-    const popup = await popupPromise;
-    if (popup) {
-      await popup
-        .waitForLoadState("domcontentloaded", { timeout: 10_000 })
-        .catch(() => notes.push("popup did not reach domcontentloaded"));
-      const url = popup.url();
-      const landingHtml = await popup.content().catch(() => null);
-      const landingTitle = await popup.title().catch(() => null);
-      await popup.close().catch(() => undefined);
-      if (url && url !== "about:blank") {
-        notes.push(`popup captured on attempt ${attempt}`);
-        return {
-          url,
-          via: "popup",
-          clicks: attempt,
-          notes,
-          landingHtml,
-          landingTitle,
-        };
-      }
-      notes.push("popup opened but carried no usable URL");
-    } else if (await sameTabPromise) {
-      notes.push(`same-tab navigation on attempt ${attempt}`);
-      return {
-        url: page.url(),
-        via: "same_tab",
-        clicks: attempt,
-        notes,
-        landingHtml: await page.content().catch(() => null),
-        landingTitle: await page.title().catch(() => null),
-      };
-    }
+    const captured = await clickAndCapture(found.target, attempt, true);
+    if (captured) return captured;
   }
   notes.push("no external URL captured after 2 attempts");
   return {

@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-08-14T01:18:36.605Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": false,
+    "notes": [
+      "refusing: AUTOMATION_ENABLED not satisfied in the task environment",
+      "refusing: FORM_FILL_ENABLED not satisfied in the task environment",
+      "refusing: SUBMIT_ENABLED not satisfied in the task environment",
+      "refusing: NAVIGATION_ENABLED not satisfied in the task environment",
+      "refusing: DRY_RUN=false not satisfied in the task environment",
+      "refusing: SUBMIT_REQUIRES_LOCAL_CONFIRMATION must be false in the task environment (the arm row budget is the control)"
+    ],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": null,
+  "session": null,
+  "outcome": "refused",
+  "notes": []
+}

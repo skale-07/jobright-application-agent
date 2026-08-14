@@ -1,0 +1,45 @@
+{
+  "started_at": "2026-08-14T01:18:39.985Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "ready (C:\\dev\\jobright-application-agent\\private\\candidate\\resumes\\Shubham_Kale_Citadel_NeurIPS_Resume.pdf)",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "152b8cd7-8d5a-4e36-be8a-44ebb6dd9f62",
+    "armed_until": "2026-08-14T03:18:39.985Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "152b8cd7-8d5a-4e36-be8a-44ebb6dd9f62",
+    "stopped_reason": "queue_drained",
+    "apps_started": 0,
+    "submits_used": 0,
+    "discover_runs": 0,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [],
+    "per_app": []
+  },
+  "outcome": "completed",
+  "notes": []
+}

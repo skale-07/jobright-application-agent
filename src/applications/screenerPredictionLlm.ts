@@ -10,14 +10,16 @@
  * entry and every future occurrence fills deterministically — the model's
  * role shrinks as the bank compounds.
  *
- * Trust boundaries (unchanged from the rest of the screener system):
- *   - A prediction NEVER fills a form. Ever. It exists only inside the
- *     review item until the human promotes it.
+ * Trust boundaries:
+ *   - Post-session batch: a prediction NEVER fills a form. It exists only
+ *     inside the review item until the human promotes it.
+ *   - Plan-time (`predictAnswersForQuestions`, same flag): a prediction
+ *     MAY fill when `validatePrediction` passes — option answers must
+ *     match the page verbatim; free-text must appear in about-me or
+ *     public profile facts (length ≥ 12). Ungrounded invention parks.
+ *     Predictions are not written into screeners.json.
  *   - The promote resolver (reviewResolvers.ts) is the single write path
  *     into the bank's custom section.
- *   - Choice questions are validated at prediction time: the proposed
- *     answer must literally match one of the captured page options
- *     (exact → case-insensitive) or the prediction is rejected.
  *   - Demographic questions never reach this module (filtered upstream,
  *     same as the bank path).
  *
@@ -39,7 +41,10 @@ import { labelFingerprint } from "./screenerLlmMap.js";
 import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { tryLoadAboutMe } from "./essayDraft.js";
+import { isApplicationConsentField } from "./consentFields.js";
+import { isDemographicsField } from "./essayDetector.js";
 import {
+  resolveReviewItem,
   updateReviewItemPayload,
   upsertOpenReviewItem,
 } from "../queue/reviewItems.js";
@@ -96,7 +101,7 @@ export function recordUnmappedScreenerQuestions(input: {
     let recorded = 0;
     for (const q of input.questions) {
       const norm = normalizeScreenerLabel(q.label);
-      if (norm.length < 8) continue; // too short to be a real question
+      if (!isCaptureWorthyQuestion(q)) continue;
       const rowId = randomUUID();
       const options =
         q.options && q.options.length > 0 ? q.options.slice(0, 20) : null;
@@ -201,6 +206,49 @@ export function isUnusableLabel(label: string): boolean {
   return /^(?:field|f)[_ ]?\d+$/i.test(label.trim());
 }
 
+function decodeBasicHtmlEntities(s: string): string {
+  return s
+    .replace(/&amp;/gi, "&")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'");
+}
+
+/**
+ * Whether this discovered control is a real question the operator (or
+ * predictor) should see. Live queue was drowned in major-option checkboxes
+ * ("Electrical Engineering"), UUID labels, and `field_12` inspector misses.
+ */
+export function isCaptureWorthyQuestion(q: {
+  label: string;
+  type: string;
+}): boolean {
+  const label = decodeBasicHtmlEntities(q.label).replace(/\s+/g, " ").trim();
+  if (label.length < 8) return false;
+  if (isUnusableLabel(label)) return false;
+  if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(label)) return false;
+  if (
+    isDemographicsField({
+      id: "_",
+      label,
+      type: "text",
+      required: false,
+    })
+  ) {
+    return false;
+  }
+  if (q.type === "checkbox") {
+    if (isApplicationConsentField({ type: "checkbox", label })) return false;
+    return /\?|(do you|have you|are you|i (agree|certify|acknowledge|confirm)|please (select|indicate|check|confirm))/i.test(
+      label,
+    );
+  }
+  return true;
+}
+
 export type ScreenerPredictionBatchReport = {
   questions_considered: number;
   predicted: number;
@@ -230,6 +278,84 @@ export function validatePrediction(
     return { ok: false, value, reason: "answer matches no page option" };
   }
   return { ok: true, value, reason: "free_text" };
+}
+
+function answerGroundedInContext(
+  answer: string,
+  about: string | null,
+  facts: Record<string, unknown> | null,
+): boolean {
+  const a = answer.toLowerCase().trim();
+  if (a.length < 12) return false;
+  const blob = `${about ?? ""} ${JSON.stringify(facts ?? {})}`.toLowerCase();
+  return blob.includes(a);
+}
+
+/**
+ * Plan-time fill from operator context. Option answers must match the
+ * page verbatim. Free-text must appear in about-me or profile facts —
+ * ungrounded invention still parks as Answer needed. Does not write
+ * screeners.json.
+ */
+export async function predictAnswersForQuestions(
+  questions: Array<{
+    id: string;
+    label: string;
+    options?: string[] | undefined;
+  }>,
+  client?: EmailLlmClient,
+): Promise<Map<string, { value: string; basis: string }>> {
+  const out = new Map<string, { value: string; basis: string }>();
+  const cfg = getConfig();
+  if (!cfg.screenerPredictLlmEnabled) return out;
+  if (!client && !hasLlmKey(cfg)) return out;
+  const askable = questions
+    .filter((q) => isCaptureWorthyQuestion({ label: q.label, type: "text" }))
+    .slice(0, 12);
+  if (askable.length === 0) return out;
+  const about = tryLoadAboutMe();
+  const bank = tryLoadScreenerBank();
+  const profileFacts = tryLoadProfileFacts();
+  if (!about && !bank && !profileFacts) return out;
+  try {
+    const llm = client ?? makeLlmClient();
+    const { text } = await llm.generateJson({
+      system: SYSTEM_PROMPT,
+      user: JSON.stringify({
+        candidate_context: about ?? "",
+        saved_answers: bank?.answers ?? {},
+        profile_facts: profileFacts ?? {},
+        questions: askable.map((q) => ({
+          label: q.label,
+          options: q.options,
+        })),
+      }),
+    });
+    const parsed = JSON.parse(text) as {
+      predictions?: Array<Record<string, unknown>>;
+    };
+    const byLabel = new Map<string, Record<string, unknown>>();
+    for (const p of parsed.predictions ?? []) {
+      if (typeof p["label"] === "string") {
+        byLabel.set(normalizeScreenerLabel(p["label"]), p);
+      }
+    }
+    for (const q of askable) {
+      const p = byLabel.get(normalizeScreenerLabel(q.label));
+      const options = q.options && q.options.length > 0 ? q.options : null;
+      const check = validatePrediction(p?.["answer"] ?? null, options);
+      if (!check.ok) continue;
+      if (!options && !answerGroundedInContext(check.value, about, profileFacts)) {
+        continue;
+      }
+      const basis =
+        typeof p?.["basis"] === "string" ? p["basis"].slice(0, 200) : "predicted";
+      out.set(q.id, { value: check.value, basis });
+    }
+  } catch {
+    return out;
+  }
+  return out;
 }
 
 /**
@@ -271,6 +397,64 @@ export async function generateScreenerPredictions(input: {
 
   const { db } = input;
   ensureMigrated(db);
+
+  const rejectUnusable = db.prepare(
+    `UPDATE screener_predictions
+     SET status = 'REJECTED', prediction_json = ?, updated_at = ?
+     WHERE id = ?`,
+  );
+  const junk = db
+    .prepare(
+      `SELECT id, label, raw_label, control, review_item_id
+       FROM screener_predictions
+       WHERE status = 'PENDING'
+       LIMIT 200`,
+    )
+    .all() as Array<{
+    id: string;
+    label: string;
+    raw_label: string;
+    control: string;
+    review_item_id: string | null;
+  }>;
+  let drained = 0;
+  for (const r of junk) {
+    const unusable =
+      isUnusableLabel(r.raw_label) || isUnusableLabel(r.label);
+    const unworthy = !isCaptureWorthyQuestion({
+      label: r.raw_label,
+      type: r.control,
+    });
+    if (!unusable && !unworthy) continue;
+    const reason = unusable
+      ? "unusable label — inspector could not read the question text"
+      : "not a capture-worthy question";
+    rejectUnusable.run(
+      JSON.stringify({ rejected: reason }),
+      new Date().toISOString(),
+      r.id,
+    );
+    if (r.review_item_id) {
+      try {
+        resolveReviewItem(
+          db,
+          r.review_item_id,
+          { rejected: reason },
+          "DISMISSED",
+        );
+      } catch {
+        // queue row is already REJECTED
+      }
+    }
+    drained += 1;
+  }
+  if (drained > 0) {
+    report.rejected += drained;
+    report.notes.push(
+      `drained ${drained} junk Answer-needed rows (majors / field_N / terms / pronouns)`,
+    );
+  }
+
   const rows = db
     .prepare(
       `SELECT id, label, raw_label, control, options_json, first_seen_application_id,
@@ -297,11 +481,6 @@ export async function generateScreenerPredictions(input: {
   // outright with the real cause named: the inspector failed to read the
   // label, which is a capture bug, not a prediction failure.
   const askable: typeof rows = [];
-  const rejectUnusable = db.prepare(
-    `UPDATE screener_predictions
-     SET status = 'REJECTED', prediction_json = ?, updated_at = ?
-     WHERE id = ?`,
-  );
   for (const r of rows) {
     if (isUnusableLabel(r.raw_label) || isUnusableLabel(r.label)) {
       rejectUnusable.run(
@@ -312,6 +491,18 @@ export async function generateScreenerPredictions(input: {
       report.rejected += 1;
       report.notes.push(
         `prediction rejected "${r.raw_label.slice(0, 30)}": unusable label (inspector could not read the question text)`,
+      );
+      continue;
+    }
+    if (!isCaptureWorthyQuestion({ label: r.raw_label, type: r.control })) {
+      rejectUnusable.run(
+        JSON.stringify({ rejected: "not a capture-worthy question" }),
+        new Date().toISOString(),
+        r.id,
+      );
+      report.rejected += 1;
+      report.notes.push(
+        `prediction rejected "${r.raw_label.slice(0, 40)}": not a real question`,
       );
       continue;
     }

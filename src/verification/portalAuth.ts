@@ -20,22 +20,25 @@ import { verificationEvidencePresent } from "../navigation/runNavigation.js";
  * Deterministic ATS portal auth (operator directive 2026-08-11): when a
  * recognized ATS host shows a sign-in / create-account wall, ALWAYS
  * authenticate with the standing candidate email (the same mailbox the
- * verification scanner reads) and the vault's per-host password —
- * sign in when the vault already holds the account, create it otherwise,
- * and complete the emailed verification when — and ONLY when — the page
- * actually asks for it.
+ * verification scanner reads) and PORTAL_LOGIN_PASSWORD —
+ * sign in when an account already exists, create it otherwise,
+ * and complete emailed verification ONLY when the page asks for it.
+ *
+ * Workday posting pages (Crowe live 2026-08-14, operator screenshots):
+ *   Apply → "Start Your Application" modal → Apply Manually →
+ *   Create Account form with "Already have an account? Sign In".
+ * Portal auth must click that sequence BEFORE it looks for inputs.
+ * Autofill-with-resume is never the unattended path.
  *
  * Hard rails:
  *   - Host gate: standing credentials (PORTAL_LOGIN_*) authorize any
- *     https employer host the apply flow reaches — that is the operator's
- *     explicit "one login everywhere" decision. Without them, only
+ *     https employer host the apply flow reaches. Without them, only
  *     recognized ATS families and vault-seeded hosts qualify. jobright is
  *     never credentialed, and a form must actually be present.
- *   - Vault policy is unchanged (reuse; mint per-host random password;
- *     never jobright). Passwords/codes ride memory only — never notes.
- *   - Bounded: one create attempt + one sign-in attempt + one mailbox
- *     poll cycle per call.
- *   - Guarded by NAVIGATION_ENABLED (this mutates a third-party site).
+ *   - Passwords/codes ride memory only — never notes.
+ *   - Bounded: Apply + Apply Manually + one Sign In flip + one
+ *     create/sign-in attempt + one mailbox poll cycle.
+ *   - Guarded by NAVIGATION_ENABLED.
  */
 
 export type PortalAuthOutcome = {
@@ -81,16 +84,10 @@ export function isRecognizedAtsAuthHost(url: string): boolean {
   } catch {
     return false;
   }
-  // jobright is the operator's own session — never credentialed here.
   if (/(^|\.)jobright\.ai$/i.test(host)) return false;
-  // Standing credentials are an explicit, standing operator decision to
-  // use one login on every employer portal: configuring them authorizes
-  // any employer host the apply flow actually reaches. https only, and
-  // portal auth still requires a real sign-in form on the page.
   if (getConfig().portalLoginPassword && parsed.protocol === "https:") {
     return true;
   }
-  // Otherwise a per-host vault entry is the authorization.
   return getAccount(host) !== null;
 }
 
@@ -99,6 +96,40 @@ async function firstVisible(page: Page, selector: string): Promise<Locator | nul
   if ((await loc.count().catch(() => 0)) === 0) return null;
   if (!(await loc.isVisible().catch(() => false))) return null;
   return loc;
+}
+
+async function visibleNamed(
+  page: Page,
+  name: RegExp,
+  roles: Array<"button" | "link"> = ["button", "link"],
+): Promise<Locator | null> {
+  for (const role of roles) {
+    const c = page.getByRole(role, { name }).first();
+    if (
+      (await c.count().catch(() => 0)) > 0 &&
+      (await c.isVisible().catch(() => false))
+    ) {
+      return c;
+    }
+  }
+  return null;
+}
+
+async function locateAuthFields(page: Page): Promise<{
+  email: Locator | null;
+  password: Locator | null;
+}> {
+  const sel = workdaySelectorsV1.auth;
+  const email =
+    (await firstVisible(page, sel.emailInput)) ??
+    (await firstVisible(
+      page,
+      "input[type='email'], input[name*='email' i], input[autocomplete='username']",
+    ));
+  const password =
+    (await firstVisible(page, sel.passwordInput)) ??
+    (await firstVisible(page, "input[type='password']"));
+  return { email, password };
 }
 
 export async function authenticateAtsPortal(
@@ -111,39 +142,40 @@ export async function authenticateAtsPortal(
   const settle = seams.settleMs ?? 800;
   const sel = workdaySelectorsV1.auth;
   const url = page.url();
+  const host = safeHost(url);
 
   if (!isRecognizedAtsAuthHost(url)) {
-    notes.push(`portal auth refused: ${safeHost(url)} is not a recognized ATS auth host`);
-    return { status: "refused", verification_used: false, escalated_to_create: false, diagnosis: null, notes, secrets };
-  }
-
-  // Read the wall's shape BEFORE touching it — this is what makes a
-  // parked login debuggable after the fact (operator request 2026-08-12).
-  const diagnosis = await diagnoseLoginWall(page);
-  notes.push(summarizeLoginWall(diagnosis));
-
-  const emailInput =
-    (await firstVisible(page, sel.emailInput)) ??
-    (await firstVisible(
-      page,
-      "input[type='email'], input[name*='email' i], input[autocomplete='username']",
-    ));
-  const passwordInput =
-    (await firstVisible(page, sel.passwordInput)) ??
-    (await firstVisible(page, "input[type='password']"));
-  if (!emailInput || !passwordInput) {
-    notes.push("portal auth: no sign-in form on this page");
+    notes.push(`portal auth refused: ${host} is not a recognized ATS auth host`);
     return {
-      status: "not_an_auth_wall",
+      status: "refused",
       verification_used: false,
       escalated_to_create: false,
-      diagnosis,
+      diagnosis: null,
       notes,
       secrets,
     };
   }
 
-  const host = safeHost(url);
+  const diagnosis = await diagnoseLoginWall(page);
+  notes.push(summarizeLoginWall(diagnosis));
+
+  let fields = await locateAuthFields(page);
+  if (!fields.email || !fields.password) {
+    await openWorkdayApplyChooser(page, notes, settle);
+    fields = await locateAuthFields(page);
+  }
+  if (!fields.email || !fields.password) {
+    notes.push("portal auth: no sign-in form on this page");
+    return {
+      status: "not_an_auth_wall",
+      verification_used: false,
+      escalated_to_create: false,
+      diagnosis: await diagnoseLoginWall(page),
+      notes,
+      secrets,
+    };
+  }
+
   const creds = prepareCredentialsForHost({
     host,
     runId: `portal-auth-${Date.now()}`,
@@ -169,7 +201,25 @@ export async function authenticateAtsPortal(
   }
   const { username, password } = creds.credentials;
 
-  /** Fill + submit whichever form is on screen. Returns the post-state. */
+  // Workday lands on Create Account after Apply Manually. Prefer Sign In
+  // when standing credentials exist (operator already has the account).
+  let preferSignIn = false;
+  const wallNow = await diagnoseLoginWall(page);
+  if (
+    wallNow.classification === "create_account_form" &&
+    creds.notes.some((n) => /standing portal login|vault: (existing|per-host)/i.test(n))
+  ) {
+    const signIn =
+      (await firstVisible(page, sel.signInLink)) ??
+      (await visibleNamed(page, /^(already have an account\??\s*)?sign in$/i));
+    if (signIn) {
+      await signIn.click({ timeout: 5_000 }).catch(() => undefined);
+      await settlePage(page, settle, 800);
+      preferSignIn = true;
+      notes.push("portal auth: flipped Create Account → Sign In (standing credentials)");
+    }
+  }
+
   const attempt = async (
     kind: "sign_in" | "create",
   ): Promise<{ diag: LoginWallDiagnosis; formGone: boolean }> => {
@@ -183,8 +233,6 @@ export async function authenticateAtsPortal(
     const passwordCount = await passwordFields.count().catch(() => 0);
     if (emailField) await emailField.fill(username, { timeout: 5_000 }).catch(() => undefined);
     for (let i = 0; i < Math.min(passwordCount, 2); i++) {
-      // Both the password and the confirm field take the same value; a
-      // create form that asks twice is satisfied without inventing one.
       await passwordFields.nth(i).fill(password, { timeout: 5_000 }).catch(() => undefined);
     }
     const checkbox = await firstVisible(page, sel.createAccountCheckbox);
@@ -196,28 +244,18 @@ export async function authenticateAtsPortal(
         page,
         kind === "create" ? sel.createAccountSubmit : sel.signInSubmit,
       )) ??
-      (await (async () => {
-        const namePattern =
-          kind === "create"
-            ? /create account|sign up|register/i
-            : /^(sign in|log ?in|continue|submit)$/i;
-        for (const role of ["button", "link"] as const) {
-          const c = page.getByRole(role, { name: namePattern }).first();
-          if (
-            (await c.count().catch(() => 0)) > 0 &&
-            (await c.isVisible().catch(() => false))
-          ) {
-            return c;
-          }
-        }
-        return null;
-      })());
+      (await visibleNamed(
+        page,
+        kind === "create"
+          ? /create account|sign up|register/i
+          : /^(sign in|log ?in|continue|submit)$/i,
+      ));
     if (!submit) {
       notes.push(`portal auth: no ${kind} submit control found`);
       return { diag: await diagnoseLoginWall(page), formGone: false };
     }
     await submit.click({ timeout: 10_000 }).catch(() => undefined);
-    await page.waitForTimeout(Math.max(settle, 1_200));
+    await settlePage(page, settle, 1_200);
     const after = await diagnoseLoginWall(page);
     const formGone = !after.fields.password && !after.errorText;
     notes.push(
@@ -227,33 +265,20 @@ export async function authenticateAtsPortal(
     return { diag: after, formGone };
   };
 
-  // A create form already on screen is filled as a create; otherwise sign
-  // in FIRST and only escalate to account creation when the portal
-  // actually rejects the login (operator directive 2026-08-12).
+  const wallAfterChooser = await diagnoseLoginWall(page);
   let escalated = false;
-  let state =
-    diagnosis.classification === "create_account_form"
-      ? await attempt("create")
-      : await attempt("sign_in");
-  if (diagnosis.classification === "create_account_form") escalated = true;
+  const startAsCreate =
+    !preferSignIn && wallAfterChooser.classification === "create_account_form";
+  let state = startAsCreate ? await attempt("create") : await attempt("sign_in");
+  if (startAsCreate) escalated = true;
 
   if (!state.formGone && state.diag.classification === "credentials_rejected") {
     const route = state.diag.createAccountRoute;
     if (route) {
-      let opened = false;
-      for (const role of ["link", "button"] as const) {
-        const control = page.getByRole(role, { name: route }).first();
-        if (
-          (await control.count().catch(() => 0)) > 0 &&
-          (await control.isVisible().catch(() => false))
-        ) {
-          await control.click({ timeout: 5_000 }).catch(() => undefined);
-          await page.waitForTimeout(Math.max(settle, 1_000));
-          opened = true;
-          break;
-        }
-      }
-      if (opened) {
+      const control = await visibleNamed(page, new RegExp(`^${escapeRe(route)}$`, "i"));
+      if (control) {
+        await control.click({ timeout: 5_000 }).catch(() => undefined);
+        await settlePage(page, settle, 1_000);
         notes.push(`portal auth: sign-in rejected — opened "${route}" to create the account`);
         escalated = true;
         state = await attempt("create");
@@ -265,10 +290,10 @@ export async function authenticateAtsPortal(
     }
   }
 
-  // Email verification — ONLY when the page asks (operator rule: the
-  // mailbox is never scanned on spec).
   let verificationUsed = false;
-  const codeInput = await firstVisible(page, sel.verificationCodeInput);
+  const codeInput =
+    (await firstVisible(page, sel.verificationCodeInput)) ??
+    (await firstVisible(page, "input[autocomplete='one-time-code']"));
   const pageText = await page
     .innerText("body", { timeout: 3_000 })
     .then((t) => t.slice(0, 2_000))
@@ -289,7 +314,7 @@ export async function authenticateAtsPortal(
       await codeInput.fill(wait.code, { timeout: 5_000 }).catch(() => undefined);
       const verifySubmit = await firstVisible(page, sel.verificationSubmit);
       if (verifySubmit) await verifySubmit.click({ timeout: 5_000 }).catch(() => undefined);
-      await page.waitForTimeout(Math.max(settle, 1_000));
+      await settlePage(page, settle, 1_000);
       verificationUsed = true;
       notes.push("portal auth: emailed code entered");
     } else if (wait.kind === "link") {
@@ -297,7 +322,7 @@ export async function authenticateAtsPortal(
       await page
         .goto(wait.url, { waitUntil: "domcontentloaded", timeout: 20_000 })
         .catch(() => undefined);
-      await page.waitForTimeout(Math.max(settle, 1_000));
+      await settlePage(page, settle, 1_000);
       verificationUsed = true;
       notes.push("portal auth: emailed verification link opened");
     } else {
@@ -327,5 +352,64 @@ function safeHost(url: string): string {
     return new URL(url).hostname.toLowerCase();
   } catch {
     return "";
+  }
+}
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Tests pass settleMs: 0 so fixture clicks stay synchronous. */
+async function settlePage(
+  page: Page,
+  settle: number,
+  liveFloorMs: number,
+): Promise<void> {
+  const ms = settle === 0 ? 0 : Math.max(settle, liveFloorMs);
+  if (ms > 0) await page.waitForTimeout(ms);
+}
+
+/**
+ * Workday posting → Start Your Application modal → Apply Manually.
+ * Cap 3 clicks. Never Autofill with Resume. Never wizard submit.
+ */
+async function openWorkdayApplyChooser(
+  page: Page,
+  notes: string[],
+  settle: number,
+): Promise<void> {
+  const sel = workdaySelectorsV1;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (await firstVisible(page, "input[type='password']")) return;
+
+    const manual =
+      (await firstVisible(page, sel.applyMethods.applyManually)) ??
+      (await visibleNamed(page, /^apply manually$/i));
+    if (manual) {
+      await manual.click({ timeout: 8_000 }).catch(() => undefined);
+      await settlePage(page, settle, 800);
+      notes.push(`portal auth: clicked Apply Manually (attempt ${attempt})`);
+      continue;
+    }
+
+    const apply =
+      (await firstVisible(page, sel.applyButton)) ??
+      (await firstVisible(page, sel.auth.gatedEntry)) ??
+      (await visibleNamed(page, /^apply( now)?$/i));
+    if (apply) {
+      const label = ((await apply.textContent().catch(() => null)) ?? "Apply")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 40);
+      await apply.click({ timeout: 8_000 }).catch(() => undefined);
+      await settlePage(page, settle, 800);
+      notes.push(`portal auth: clicked "${label || "Apply"}" (attempt ${attempt})`);
+      continue;
+    }
+
+    notes.push(
+      `portal auth: Apply / Apply Manually not found on attempt ${attempt}`,
+    );
+    return;
   }
 }

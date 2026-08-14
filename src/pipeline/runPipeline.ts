@@ -789,7 +789,24 @@ async function step(
           });
           return { to: "CAPTCHA_REQUIRED", note: "blocking captcha", stop: "review" };
         case "needs_login":
-        case "needs_account_creation":
+        case "needs_account_creation": {
+          // Standing PORTAL_LOGIN_* is for every recognized ATS host, not
+          // Workday only. Parking Greenhouse/Lever/Ashby walls as
+          // AUTH_REQUIRED skipped portal auth entirely (gate LOGIN_WALL
+          // returned before authenticateAtsPortal). Fill still parks if
+          // sign-in does not clear the wall (SSO, phone OTP, …).
+          if (cfg.navigationEnabled) {
+            transitionApplication(db, {
+              applicationId: app.id,
+              nextState: "NATIVE_AUTOFILL_RUNNING",
+              reason: `pipeline: ${inspect.route} — fill owns portal sign-in`,
+              runId,
+            });
+            return {
+              to: "NATIVE_AUTOFILL_RUNNING",
+              note: `${inspect.route} — proceeding to fill (portal auth)`,
+            };
+          }
           transitionApplication(db, {
             applicationId: app.id,
             nextState: "AUTH_REQUIRED",
@@ -804,6 +821,7 @@ async function step(
             payload: { url: page.finalUrl, route: inspect.route },
           });
           return { to: "AUTH_REQUIRED", note: inspect.route, stop: "review" };
+        }
         case "skip_unsupported_ats":
           transitionApplication(db, {
             applicationId: app.id,
