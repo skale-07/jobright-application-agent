@@ -205,6 +205,68 @@ describe("navigation agent phase (N3)", () => {
     45_000,
   );
 
+  /**
+   * Operator directive 2026-08-14: "don't worry about safety in the urls."
+   * The Apply click's URL IS the application URL even when the landing
+   * shows a sign-in wall — the pipeline routes it to fill, and fill owns
+   * portal auth (086820f). Withholding the URL here was blocking the very
+   * path the operator built; typing into a login form remains impossible
+   * because the fill gate + portal auth run before any planning.
+   */
+  it(
+    "phase B STORES a captured URL whose landing is a sign-in wall (FIXTURE_CONFIRMED)",
+    async () => {
+      const appId = seedApp(); // company: "Acme"
+      const LOGIN_URL = "https://careers.acme.com/login";
+      const jobPage = `<html><body><h1>Job</h1><button onclick="window.open('${LOGIN_URL}')">Apply</button></body></html>`;
+      const loginWallHtml =
+        "<html><head><title>Sign in</title></head><body><h1>Sign in to apply</h1><form action='/login'><input type='email' name='email'><input type='password' name='password'><button>Log in</button></form></body></html>";
+      applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+      resetConfigCache();
+      try {
+        const report = await withFixtureHtmlPage(
+          "<html><body></body></html>",
+          async (page: Page) => {
+            await page.context().route("**/*", (route) => {
+              const url = route.request().url();
+              route.fulfill({
+                body: url.startsWith("https://careers.acme.com")
+                  ? loginWallHtml
+                  : jobPage,
+                contentType: "text/html",
+              });
+            });
+            const session: NavSession = {
+              open: async () => {},
+              newPage: async () => page,
+              getContext: () => page.context(),
+              close: async () => {},
+            };
+            return runNavigation({
+              db: db!,
+              applicationId: appId,
+              sessionOverride: session,
+              skipAuthLossCheck: true,
+              // Agent off on purpose: if phase B wrongly withheld the URL,
+              // this run would park instead of resolving — loud failure.
+              agentPhaseOverride: false,
+            });
+          },
+        );
+        expect(report.method).toBe("apply_click_popup");
+        expect(report.resolved_url).toBe(LOGIN_URL);
+        expect(report.wall).toBe("none");
+        expect(report.notes.join(" ")).toMatch(
+          /sign-in wall — stored anyway; fill owns portal auth/,
+        );
+        expect(getEmployerApplicationUrl(db!, appId)).toBe(LOGIN_URL);
+      } finally {
+        applySafeFillEnv();
+      }
+    },
+    45_000,
+  );
+
   it(
     "needs_input surfaces the need payload as an auth wall, storing nothing (FIXTURE_CONFIRMED)",
     async () => {
@@ -392,8 +454,17 @@ describe("navigation agent phase (N3)", () => {
     45_000,
   );
 
+  /**
+   * Contract updated 2026-08-14: initial vault credentials flowed to the
+   * sidecar only via the phase-B wall capture, which now STORES the URL
+   * (fill owns portal auth). The agent's first turn starts from the
+   * JobRight job page, and prepareCredentialsForHost never credentials
+   * jobright — so the sidecar must see available:false, and a malicious
+   * echo has nothing to leak. Secret handling at the point creds are now
+   * actually typed is covered by portal-auth.test.ts.
+   */
   it(
-    "vault credentials flow to the sidecar for a login-wall capture, and never reach the artifact (FIXTURE_CONFIRMED)",
+    "the agent's initial turn carries NO credentials from the jobright start page (FIXTURE_CONFIRMED)",
     async () => {
       const privateDir = fs.mkdtempSync(path.join(os.tmpdir(), "jaa-navvault-"));
       process.env.PRIVATE_DIR = privateDir;
@@ -407,8 +478,12 @@ describe("navigation agent phase (N3)", () => {
           runId: "seed",
         });
 
-        const LOGIN_URL = "https://careers.acme.com/login";
-        const jobPage = `<html><body><h1>Job</h1><button onclick="window.open('${LOGIN_URL}')">Apply</button></body></html>`;
+        // No Apply control on the job page: phase B must stay unresolved so
+        // the run reaches the agent phase. (Phase B now STORES a captured
+        // URL even when it lands on a sign-in wall — operator directive
+        // 2026-08-14, fill owns portal auth — so a clickable Apply would
+        // resolve deterministically and the agent would never run.)
+        const jobPage = `<html><body><h1>Job</h1><p>See our careers site.</p></body></html>`;
         const loginWallHtml =
           "<html><head><title>Sign in</title></head><body><h1>Sign in to apply</h1><form action='/login'><input type='email' name='email'><input type='password' name='password'><button>Log in</button></form></body></html>";
 
@@ -450,19 +525,15 @@ describe("navigation agent phase (N3)", () => {
           },
         );
 
-        // Capture landed on a login wall → not stored as resolution; agent
-        // received the vault credential and resolved the real form URL.
-        expect(
-          report.phase_trace.some((p) => /login wall — not stored/.test(p.outcome)),
-        ).toBe(true);
+        // The agent resolved the form URL — with NO credential in hand.
         expect(report.method).toBe("agent");
         expect(report.resolved_url).toBe("https://careers.acme.com/apply/form");
-        expect(report.notes.join(" ")).toMatch(/cred_available:true/);
+        expect(report.notes.join(" ")).toMatch(/cred_available:false/);
+        expect(report.notes.join(" ")).toMatch(/leaked:none/);
 
-        // The echoed password is scrubbed from the persisted artifact.
+        // The vault password never reaches the artifact by any route.
         const artifact = fs.readFileSync(report.report_path!, "utf8");
         expect(artifact).not.toContain(account.password);
-        expect(artifact).toContain("[REDACTED_SECRET]");
       } finally {
         applySafeFillEnv();
         delete process.env.PRIVATE_DIR;
