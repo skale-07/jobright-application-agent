@@ -1,0 +1,48 @@
+{
+  "ats": "workday",
+  "url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+  "requested_url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782"
+  },
+  "plan_summary": {
+    "fillable_count": 0,
+    "skipped_count": 0,
+    "review_required_count": 0
+  },
+  "plan_fields": [],
+  "form_snapshot_path": null,
+  "fill": {
+    "filled": [],
+    "skipped": [],
+    "errors": [],
+    "field_meta": []
+  },
+  "verify": {
+    "passed": false,
+    "fields": [],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "login wall on crowe.wd12.myworkdayjobs.com: no_form_found; fields[email=false password=false confirm=false]; submit=[Sign In]",
+    "portal auth: no sign-in form on this page",
+    "submit not attempted — live fill never submits"
+  ],
+  "operator_brief": {
+    "title": "Live fill — workday https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+    "summary": "No open field issues in this report.",
+    "items": [],
+    "ok_count": 0,
+    "fail_count": 0
+  },
+  "written_at": "2026-08-14T00:28:47.975Z"
+}

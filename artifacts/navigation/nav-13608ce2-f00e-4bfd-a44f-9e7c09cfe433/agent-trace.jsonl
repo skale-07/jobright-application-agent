@@ -1,0 +1,12 @@
+{"kind":"nav_agent_trace","version":1,"run_id":"nav-13608ce2-f00e-4bfd-a44f-9e7c09cfe433","application_id":"c24ab36f-3908-43f5-b841-2877f67db59c","code_version":"e1b2c50be98c","session":"cdp","outcome":{"wall":"none","method":"agent","resolved":true,"congruence":"match"}}
+{"jaa_progress":1,"event":"sidecar_spawned","t":1786667366.561,"start_host":"jobright.ai","at":"2026-08-14T00:29:26.561Z"}
+{"jaa_progress":1,"event":"imports_ready","t":1786667367.876,"at":"2026-08-14T00:29:27.876Z"}
+{"jaa_progress":1,"event":"llm_provider","t":1786667368.665,"provider":"anthropic","at":"2026-08-14T00:29:28.665Z"}
+{"jaa_progress":1,"event":"browser_attaching","t":1786667368.665,"cdp_host":"127.0.0.1","at":"2026-08-14T00:29:28.667Z"}
+{"jaa_progress":1,"event":"own_tab_unavailable","t":1786667369.187,"at":"2026-08-14T00:29:29.186Z"}
+{"jaa_progress":1,"event":"agent_running","t":1786667369.483,"max_steps":25,"at":"2026-08-14T00:29:29.484Z"}
+{"jaa_progress":1,"event":"step","t":1786667382.019,"i":1,"actions":["switch"],"host":"jobright.ai","elapsed_ms":12828,"at":"2026-08-14T00:29:42.019Z"}
+{"jaa_progress":1,"event":"step","t":1786667393.957,"i":2,"actions":["navigate"],"host":"jobright.ai","elapsed_ms":24766,"at":"2026-08-14T00:29:53.958Z"}
+{"jaa_progress":1,"event":"step","t":1786667408.35,"i":3,"actions":["click"],"host":"delta.avature.net","elapsed_ms":39156,"at":"2026-08-14T00:30:08.351Z"}
+{"jaa_progress":1,"event":"step","t":1786667439.937,"i":4,"actions":["click"],"host":"delta.avature.net","elapsed_ms":70750,"at":"2026-08-14T00:30:39.937Z"}
+{"jaa_progress":1,"event":"step","t":1786667453.559,"i":5,"actions":["done"],"host":"delta.avature.net","elapsed_ms":84375,"at":"2026-08-14T00:30:53.558Z"}

@@ -1,0 +1,60 @@
+{
+  "run_id": "nav-13608ce2-f00e-4bfd-a44f-9e7c09cfe433",
+  "application_id": "c24ab36f-3908-43f5-b841-2877f67db59c",
+  "jobright_job_id": "6a7d1219d77e8156a8e35be0",
+  "method": "agent",
+  "resolved_url": "https://delta.avature.net/en_US/careers/Register?jobId=33537&source=Delta+Career+Site",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (12 external links ignored)",
+      "evidence": "delta.avature.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.delta.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer match)",
+      "evidence": "delta.avature.net"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 5,
+    "domains_visited": [
+      "delta.avature.net",
+      "jobright.ai"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: delta.avature.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.delta.com, gulfnews.com, news.crunchbase.com, www.fool.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "agent allowed_domains widened with job-page hosts: delta.avature.net, www.delta.com, gulfnews.com, www.fool.com",
+    "agent goal seeded with 4 candidate link(s) from the job page",
+    "agent[1]: elapsed 111s, steps 5",
+    "employer verified (token \"delta\" ~ slug \"delta\" (from URL host)) but no adapter for delta.avature.net — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "delta",
+    "detail": "token \"delta\" ~ slug \"delta\" (from URL host)",
+    "expected_company": "Delta Air Lines",
+    "url": "https://delta.avature.net/en_US/careers/Register?jobId=33537&source=Delta+Career+Site"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T00:31:21.479Z"
+}
