@@ -1,0 +1,48 @@
+{
+  "run_id": "nav-a90f443f-5a9f-4d69-bcf1-3702c8d128d6",
+  "application_id": "52578119-a291-4d59-ab7d-1f2932ddb9b9",
+  "jobright_job_id": "6a626309846162391c935914",
+  "method": "apply_click_popup",
+  "resolved_url": "https://job-boards.greenhouse.io/appian/jobs/8041237",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (10 external links)",
+      "evidence": "www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, financialit.net, www.cheddar.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: anchor reads as \"greenhouse\" (URL names \"greenhouse\" (host), which shares nothing with company \"Appian\") — not preferred, deferring to the Apply click",
+    "phase A: 8 external host(s) seen: www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, financialit.net, www.cheddar.com, www.prnewswire.com, boards.greenhouse.io",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup settled off about:blank after the interstitial",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "appian",
+    "detail": "token \"appian\" ~ slug \"appian\"",
+    "expected_company": "Appian",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=appian&jr_id=6a626309846162391c935914&token=8041237&utm_source=jobright"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T18:13:31.471Z"
+}

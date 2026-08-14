@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-01b8f7d2-f913-4080-be2e-fa0fbbb55950",
+  "application_id": "130ad49f-b231-49b4-bc5f-c9c3952c0681",
+  "jobright_job_id": "6a55ca1314f1040fa611bdb5",
+  "method": "apply_click_popup",
+  "resolved_url": "https://microsoft.eightfold.ai/careers?pid=1970393556867858",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (11 external links)",
+      "evidence": "microsoft.eightfold.ai, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.microsoft.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "microsoft.eightfold.ai"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 8 external host(s) seen: microsoft.eightfold.ai, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.microsoft.com, www.benzinga.com, entarabi.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup captured on attempt 1",
+    "employer congruence unverifiable (no employer name decodable from URL (host and path are generic)) — recorded"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "no employer name decodable from URL (host and path are generic)",
+    "expected_company": "Microsoft",
+    "url": "https://microsoft.eightfold.ai/careers?pid=1970393556867858&jr_id=6a55ca1314f1040fa611bdb5"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T18:11:51.493Z"
+}

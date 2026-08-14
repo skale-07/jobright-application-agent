@@ -1,0 +1,129 @@
+{
+  "ats": "generic",
+  "url": "https://microsoft.eightfold.ai/careers?pid=1970393556867858",
+  "requested_url": "https://microsoft.eightfold.ai/careers?pid=1970393556867858",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://microsoft.eightfold.ai/careers?pid=1970393556867858"
+  },
+  "plan_summary": {
+    "fillable_count": 1,
+    "skipped_count": 4,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "position-query-search-search",
+      "label": "Search by job title, ID, or keyword",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "position-location-search-search",
+      "label": "City, state, or country/region",
+      "type": "text",
+      "canonical_field": "address.country",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "f_2",
+      "label": "field_2",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "9vqepcp",
+      "label": "Turn on job alerts for this search",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "f_4",
+      "label": "field_4",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786731124844.html",
+  "fill": {
+    "filled": [],
+    "skipped": [],
+    "errors": [
+      "position-location-search-search: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"position-location-search-search\"]').first()\u001b[22m\n"
+    ],
+    "field_meta": []
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "address.country",
+        "expected": "United States",
+        "observed": null,
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": [
+      "verify address.country: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"position-location-search-search\"]').first()\u001b[22m\n"
+    ]
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "submit not attempted — live fill never submits"
+  ],
+  "operator_brief": {
+    "title": "Live fill — generic https://microsoft.eightfold.ai/careers?pid=1970393556867858",
+    "summary": "2 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:address.country",
+        "question": "City, state, or country/region",
+        "field_id": "position-location-search-search",
+        "canonical_field": "address.country",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"United States\"; page shows \"(empty)\"",
+        "expected": "United States",
+        "observed": null,
+        "how_to_answer": [
+          "Type the intended value on the form (planned: United States). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"United States\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.country",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.country\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:position-location-search-search: locator.evaluate: Timeout 30000ms exceeded.\nCal",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "position-location-search-search: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"position-location-search-search\"]').first()\u001b[22m\n",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 0,
+    "fail_count": 2
+  },
+  "written_at": "2026-08-14T18:13:05.149Z"
+}
