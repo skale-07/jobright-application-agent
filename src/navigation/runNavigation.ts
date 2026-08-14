@@ -463,26 +463,14 @@ export async function runNavigation(
       page,
     );
     report.notes.push(...capture.notes);
-    let capturedWallUrl: string | null = null;
     if (capture.url) {
-      // A captured URL is only "resolved" when the landing page is not a
-      // wall — an employer sign-in page must never be stored as the
-      // application URL; it becomes the agent phase's starting point.
-      // VENDOR URLs skip the wall check (their URL identifies the posting
-      // regardless of what renders; portal auth clears the wall at fill
-      // time). "generic" claims any https URL now, so it must NOT take
-      // that shortcut — a company-site login page would be stored as the
-      // application URL.
-      const detectedAts = detectAtsFromUrl(capture.url).ats;
-      const knownAts = detectedAts !== null && detectedAts !== "generic";
-      const landingWall =
-        !knownAts &&
-        capture.landingHtml !== null &&
-        detectLoginWall({
-          finalUrl: capture.url,
-          html: capture.landingHtml,
-          title: capture.landingTitle ?? "",
-        }).detected;
+      // The Apply click's URL IS the application URL (operator directive
+      // 2026-08-14: "don't worry about safety in the urls" — every job
+      // came off JobRight, a verified board). A landing that shows a
+      // sign-in wall is EVIDENCE on the report, not a reason to withhold
+      // the URL: the pipeline routes needs_login to fill, and fill owns
+      // portal sign-in (086820f) — its pre-mutation gate + portal auth
+      // mean application values can never be typed into a login form.
       const captureCong = congruent(capture.url);
       if (captureCong.verdict === "mismatch") {
         // The Apply CLICK produced this URL — the strongest provenance the
@@ -491,39 +479,36 @@ export async function runNavigation(
           `phase B: captured URL reads as "${captureCong.slug ?? "?"}" (${captureCong.detail}) — kept, provenance is the Apply click`,
         );
       }
-      if (!landingWall) {
-        trace({
-          phase: "B_apply_click",
-          outcome: `resolved via ${capture.via}`,
-          evidence: new URL(capture.url).hostname,
-        });
-        return resolveAndPersist(
-          report,
-          db,
-          applicationId,
-          capture.url,
-          capture.via === "popup" ? "apply_click_popup" : "apply_click_same_tab",
+      if (
+        capture.landingHtml !== null &&
+        detectLoginWall({
+          finalUrl: capture.url,
+          html: capture.landingHtml,
+          title: capture.landingTitle ?? "",
+        }).detected
+      ) {
+        report.notes.push(
+          "phase B: landing shows a sign-in wall — stored anyway; fill owns portal auth",
         );
-      } else {
-        // A wrong-employer capture must NOT become the agent's start page —
-        // only a genuine same-employer login wall is worth continuing from.
-        capturedWallUrl = capture.url;
-        trace({
-          phase: "B_apply_click",
-          outcome: "captured URL lands on a login wall — not stored",
-          evidence: new URL(capture.url).hostname,
-        });
       }
+      trace({
+        phase: "B_apply_click",
+        outcome: `resolved via ${capture.via}`,
+        evidence: new URL(capture.url).hostname,
+      });
+      return resolveAndPersist(
+        report,
+        db,
+        applicationId,
+        capture.url,
+        capture.via === "popup" ? "apply_click_popup" : "apply_click_same_tab",
+      );
     }
 
     // Classify what we're stuck on (the landing page after the click flow).
-    const html = capturedWallUrl
-      ? (capture.landingHtml ?? (await page.content()))
-      : await page.content();
-    const finalUrl = capturedWallUrl ?? page.url();
-    const title = capturedWallUrl
-      ? (capture.landingTitle ?? "")
-      : await page.title().catch(() => "");
+    const html = await page.content();
+    const finalUrl = page.url();
+    const title = await page.title().catch(() => "");
     const captcha = detectBlockingCaptcha({
       finalUrl,
       html,
