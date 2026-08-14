@@ -129,10 +129,12 @@ describe("review resolvers (UNIT_CONFIRMED)", () => {
 
   it("requeueUnsupportedAts stores a corrected URL then re-opens; refuses bad URLs", () => {
     const s = seed("UNSUPPORTED_ATS", "UNSUPPORTED_ATS");
+    // Any https host is generic-fillable now; only a URL every validator
+    // rejects (non-https) still refuses.
     expect(() =>
       requeueUnsupportedAts(db, {
         reviewItemId: s.itemId,
-        employerUrl: "https://evil.example.com/jobs/1",
+        employerUrl: "http://evil.example.com/jobs/1",
       }),
     ).toThrow(/Refusing to store/);
     // Item stays open after the refused URL.

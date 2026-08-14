@@ -57,9 +57,6 @@ import {
   type CongruenceVerdict,
 } from "./congruence.js";
 
-function detectAtsFromUrlSafe(url: string): boolean {
-  return detectAtsFromUrl(url).ats !== null;
-}
 
 /**
  * Why the agent phase can or cannot run, as one named cause. The 4a7c199b
@@ -471,7 +468,13 @@ export async function runNavigation(
       // A captured URL is only "resolved" when the landing page is not a
       // wall — an employer sign-in page must never be stored as the
       // application URL; it becomes the agent phase's starting point.
-      const knownAts = detectAtsFromUrlSafe(capture.url);
+      // VENDOR URLs skip the wall check (their URL identifies the posting
+      // regardless of what renders; portal auth clears the wall at fill
+      // time). "generic" claims any https URL now, so it must NOT take
+      // that shortcut — a company-site login page would be stored as the
+      // application URL.
+      const detectedAts = detectAtsFromUrl(capture.url).ats;
+      const knownAts = detectedAts !== null && detectedAts !== "generic";
       const landingWall =
         !knownAts &&
         capture.landingHtml !== null &&
@@ -1003,17 +1006,9 @@ export async function runNavigation(
       );
     }
     if (cong.verdict === "unknown") {
-      r.notes.push(
-        `employer congruence unverifiable (${cong.detail}) — URL routes to human review via the unsupported-ATS path`,
-      );
-    } else if (cong.verdict === "match" && !detectAtsFromUrlSafe(url)) {
-      // Verified employer, no adapter. Saying so separates "we don't know
-      // whose page this is" from "we know exactly whose it is and cannot
-      // fill it yet" — the second is an ATS-coverage request, not a
-      // navigation defect, and the review item should read that way.
-      r.notes.push(
-        `employer verified (${cong.detail}) but no adapter for ${safeHostOf(url)} — routes to human review as unsupported ATS`,
-      );
+      // Evidence only — the generic adapter fills the long tail, so an
+      // unverifiable hostname no longer routes anywhere by itself.
+      r.notes.push(`employer congruence unverifiable (${cong.detail}) — recorded`);
     }
 
     // One posting, one application: a URL already held by another live

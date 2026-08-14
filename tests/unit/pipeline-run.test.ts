@@ -128,8 +128,10 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(getEmployerApplicationUrl(db, appId)).toMatch(
       /boards\.greenhouse\.io/,
     );
+    // An arbitrary https host is generic-fillable now, so it STORES; what
+    // still refuses is a URL no validator accepts at all (non-https).
     expect(() =>
-      setEmployerApplicationUrl(db, appId, "https://evil.example.com/jobs/1"),
+      setEmployerApplicationUrl(db, appId, "http://evil.example.com/jobs/1"),
     ).toThrow(/Refusing to store/);
   });
 

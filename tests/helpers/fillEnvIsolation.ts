@@ -24,7 +24,6 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "OUTLOOK_VERIFICATION_ENABLED",
   "ESSAY_REQUIRED_GATE_ENABLED",
   "AUTOMATION_ENABLED",
-  "GENERIC_ATS_ENABLED",
   // Standing portal creds: if these leak, isRecognizedAtsAuthHost treats
   // every https host as authorized (workday/vault tests then fail).
   "PORTAL_LOGIN_EMAIL",

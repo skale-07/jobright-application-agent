@@ -408,6 +408,21 @@ export function getJobIdentity(
  * means either the agent returned a stale/wrong tab, or JobRight listed
  * the same posting under multiple job cards. Either way: park, don't fill.
  */
+/**
+ * States that no longer compete for a posting. A dead sibling holding the
+ * same URL is history, not a conflict — live 2026-08-14: an IBM app was
+ * parked duplicate_url because its only "holders" were one FAILED_FINAL
+ * and one UNSUPPORTED_ATS twin from earlier JobRight re-listings, so the
+ * one application that could still proceed was the one that got blocked.
+ * SUBMITTED/COMPLETED are deliberately NOT here: a posting that was
+ * actually applied to must keep blocking re-submission.
+ */
+const NON_COMPETING_STATES = new Set([
+  "FAILED_FINAL",
+  "FILTERED_OUT",
+  "UNSUPPORTED_ATS",
+]);
+
 export function findApplicationsWithEmployerUrl(
   db: Db,
   url: string,
@@ -432,6 +447,7 @@ export function findApplicationsWithEmployerUrl(
   }>;
   return rows
     .filter((r) => {
+      if (NON_COMPETING_STATES.has(r.state)) return false;
       const other = r.employer_url.replace(/[?#].*$/, "").replace(/\/+$/, "");
       return other === stripped;
     })

@@ -160,22 +160,13 @@ export async function planApplicationFill(input: {
     url: input.url,
     html: input.html,
   });
-  // The generic adapter is a capability, not a fallback: with
-  // GENERIC_ATS_ENABLED off it must be as unreachable here as it is in the
-  // URL dispatcher, or `ats:fill` could plan heuristically on a host the
-  // pipeline would have refused.
-  const genericAllowed = getConfig().genericAtsEnabled;
-  const makeAdapter =
-    detected.id === "generic" && !genericAllowed
-      ? undefined
-      : FILLABLE_ADAPTERS[detected.id];
+  // The generic adapter is a first-class adapter (operator directive
+  // 2026-08-14; the former GENERIC_ATS_ENABLED gate parked every long-tail
+  // employer). Planning is read-only; mutation stays behind the fill flags.
+  const makeAdapter = FILLABLE_ADAPTERS[detected.id];
   if (!makeAdapter) {
-    const suffix =
-      detected.id === "generic" && !genericAllowed
-        ? " — GENERIC_ATS_ENABLED is off"
-        : "";
     throw new Error(
-      `Fill supports greenhouse/lever/ashby/workable/workday${genericAllowed ? "/generic" : ""} only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})${suffix}`,
+      `Fill supports greenhouse/lever/ashby/workable/workday/generic only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
     );
   }
   const adapter = makeAdapter();

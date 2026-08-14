@@ -16,7 +16,12 @@ import {
 } from "../../src/queue/stateMachine.js";
 import { upsertJobByFingerprint } from "../../src/jobs/repository.js";
 import { upsertOpenReviewItem } from "../../src/queue/reviewItems.js";
-import { requeueNavStarvedApplications } from "../../src/automation/navRequeue.js";
+import {
+  requeueNavStarvedApplications,
+  reviveUnsupportedAtsApplications,
+} from "../../src/automation/navRequeue.js";
+import { listOpenReviewItems } from "../../src/queue/reviewItems.js";
+import { setEmployerApplicationUrl } from "../../src/applications/employerUrl.js";
 import { applySafeFillEnv, useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
 import { resetConfigCache } from "../../src/config/index.js";
 
@@ -92,6 +97,66 @@ describe("nav-starved requeue (UNIT_CONFIRMED)", () => {
     const r = requeueNavStarvedApplications(db);
     expect(r.requeued).toBe(1);
     expect(getApplication(db, starved)?.state).toBe("QUEUED");
+  });
+
+  function seedUnsupportedApp(url?: string): string {
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobright.ai/jobs/info/${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      company: `Acme${Math.floor(Math.random() * 1_000_000)}`,
+      role: "SWE",
+    });
+    const app = createApplication(db, { jobId: job.id });
+    if (url) setEmployerApplicationUrl(db, app.id, url);
+    db.prepare(`UPDATE applications SET state = 'UNSUPPORTED_ATS' WHERE id = ?`).run(app.id);
+    upsertOpenReviewItem(db, {
+      applicationId: app.id,
+      kind: "UNSUPPORTED_ATS",
+      title: "Employer ATS unsupported in V1",
+      payload: { url: url ?? null },
+    });
+    return app.id;
+  }
+
+  /**
+   * Adapter coverage grows over time — most recently the generic adapter
+   * losing its flag (operator directive 2026-08-14), which turned the
+   * whole avature/gusto/saashr backlog fillable overnight. Parked apps
+   * must come back on their own.
+   */
+  describe("unsupported-ATS revival", () => {
+    it("revives an app whose URL an adapter now claims, resolving its review item", () => {
+      const appId = seedUnsupportedApp(
+        "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=128526",
+      );
+      const r = reviveUnsupportedAtsApplications(db);
+      expect(r.revived).toBe(1);
+      expect(getApplication(db, appId)?.state).toBe("APPLICATION_OPENING");
+      // The parked review item is closed with the evidence — the queue
+      // must not immediately re-halt on it.
+      expect(
+        listOpenReviewItems(db).filter((i) => i.application_id === appId),
+      ).toEqual([]);
+    });
+
+    it("runs once per app, and leaves genuinely unsupported URLs parked", () => {
+      const revivable = seedUnsupportedApp("https://careers.acme-example.com/apply/1");
+      // A non-https URL cannot be seeded through setEmployerApplicationUrl
+      // (it validates) — write it raw, the way legacy rows can carry it.
+      const stillBad = seedUnsupportedApp();
+      db.prepare(
+        `UPDATE jobs SET raw_json = json_set(raw_json, '$.employer_application_url', 'http://insecure.example.com/apply')
+         WHERE id = (SELECT job_id FROM applications WHERE id = ?)`,
+      ).run(stillBad);
+      const noUrl = seedUnsupportedApp();
+      expect(reviveUnsupportedAtsApplications(db).revived).toBe(1);
+      expect(getApplication(db, revivable)?.state).toBe("APPLICATION_OPENING");
+      expect(getApplication(db, stillBad)?.state).toBe("UNSUPPORTED_ATS");
+      expect(getApplication(db, noUrl)?.state).toBe("UNSUPPORTED_ATS");
+      // Marker blocks a second revival even if it parks the same way again.
+      db.prepare(`UPDATE applications SET state = 'UNSUPPORTED_ATS' WHERE id = ?`).run(revivable);
+      expect(reviveUnsupportedAtsApplications(db).revived).toBe(0);
+    });
   });
 
   it("skips apps with open review items and excluded apps; honors the cap", () => {

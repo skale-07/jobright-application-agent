@@ -86,39 +86,34 @@ describe("generic ATS URL validation (UNIT_CONFIRMED)", () => {
   });
 });
 
-describe("generic ATS dispatch is fail-closed on its flag (UNIT_CONFIRMED)", () => {
+/**
+ * Operator directive 2026-08-14: the generic adapter has no flag of its own.
+ * The former GENERIC_ATS_ENABLED gate parked every long-tail employer as
+ * UNSUPPORTED_ATS (a live armed run resolved avature/gusto/saashr/
+ * techjobsforgood URLs and every one dead-ended), and the console never
+ * granted the flag, so armed sessions could not use the adapter at all.
+ * Detection/planning are read-only; mutation stays behind the fill flags.
+ */
+describe("generic ATS dispatch needs no flag (UNIT_CONFIRMED)", () => {
   useIsolatedFillEnv("safe");
 
-  it("reports no ATS while GENERIC_ATS_ENABLED is off", () => {
+  it("claims a company-hosted URL even in the safe env — and never ahead of a vendor", () => {
     applySafeFillEnv();
     resetConfigCache();
-    const d = detectAtsFromUrl("https://www.tesla.com/careers/apply/1");
-    expect(d.ats).toBeNull();
-    if (d.ats === null) expect(d.failureReason).toMatch(/GENERIC_ATS_ENABLED is off/);
-  });
-
-  it("claims the URL once enabled — and never ahead of a vendor", () => {
-    applyControlledFillEnv({ GENERIC_ATS_ENABLED: "true" });
-    resetConfigCache();
-    try {
-      expect(detectAtsFromUrl("https://www.tesla.com/careers/apply/1").ats).toBe(
-        "generic",
-      );
-      // A supported ATS still wins: generic is asked last.
-      expect(
-        detectAtsFromUrl("https://boards.greenhouse.io/acme/jobs/123").ats,
-      ).toBe("greenhouse");
-      // And a MALFORMED vendor URL stays a vendor rejection. Downgrading it
-      // to generic would fill a Lever form with structural heuristics while
-      // the real adapter sits unused — caught by this test on first run.
-      const badLever = detectAtsFromUrl("https://jobs.lever.co/acme/not-a-uuid/apply");
-      expect(badLever.ats).toBeNull();
-      if (badLever.ats === null) {
-        expect(badLever.failureReason).toMatch(/lever\.co is a supported ATS host/);
-      }
-    } finally {
-      applySafeFillEnv();
-      resetConfigCache();
+    expect(detectAtsFromUrl("https://www.tesla.com/careers/apply/1").ats).toBe(
+      "generic",
+    );
+    // A supported ATS still wins: generic is asked last.
+    expect(
+      detectAtsFromUrl("https://boards.greenhouse.io/acme/jobs/123").ats,
+    ).toBe("greenhouse");
+    // And a MALFORMED vendor URL stays a vendor rejection. Downgrading it
+    // to generic would fill a Lever form with structural heuristics while
+    // the real adapter sits unused — caught by this test on first run.
+    const badLever = detectAtsFromUrl("https://jobs.lever.co/acme/not-a-uuid/apply");
+    expect(badLever.ats).toBeNull();
+    if (badLever.ats === null) {
+      expect(badLever.failureReason).toMatch(/lever\.co is a supported ATS host/);
     }
   });
 });
@@ -183,21 +178,17 @@ describe("generic adapter + binding (UNIT_CONFIRMED)", () => {
     expect(miss.matched).toBe(false);
   });
 
-  it("planApplicationFill will not use the generic adapter while the flag is off", async () => {
-    // The flag gates BOTH seams. Gating only the URL dispatcher would let
-    // `ats:fill` plan heuristically on a host the pipeline had refused —
-    // caught by an existing dispatch test on first run.
+  it("planApplicationFill plans a company-hosted form in the safe env (read-only)", async () => {
     applySafeFillEnv();
     resetConfigCache();
     const { planApplicationFill } = await import(
       "../../src/applications/applicationFiller.js"
     );
-    await expect(
-      planApplicationFill({
-        url: "https://careers.acme.com/apply",
-        html: FORM_HTML,
-      }),
-    ).rejects.toThrow(/GENERIC_ATS_ENABLED is off/);
+    const { adapter } = await planApplicationFill({
+      url: "https://careers.acme.com/apply",
+      html: FORM_HTML,
+    });
+    expect(adapter.id).toBe("generic");
   });
 
   it("refuses to fill without an approved plan", async () => {
