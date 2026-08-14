@@ -219,6 +219,32 @@ async function findApplyControl(
   return null;
 }
 
+/** How long a freshly-opened tab may sit on about:blank before we give up. */
+export const POPUP_SETTLE_TIMEOUT_MS = 15_000;
+
+/**
+ * Read a popup's URL once it has left about:blank. A tab opened by
+ * `window.open()` reports about:blank until the opener assigns its location,
+ * which JobRight does asynchronously — often only after the interstitial is
+ * answered. Returns the settled URL, or "about:blank" if it never navigated.
+ */
+export async function settledPopupUrl(
+  popup: Page,
+  notes: string[],
+  timeoutMs: number = POPUP_SETTLE_TIMEOUT_MS,
+): Promise<string> {
+  const immediate = popup.url();
+  if (immediate && immediate !== "about:blank") return immediate;
+  await popup
+    .waitForURL((u) => u.toString() !== "about:blank", { timeout: timeoutMs })
+    .catch(() => undefined);
+  const settled = popup.url();
+  if (settled && settled !== "about:blank") {
+    notes.push("popup settled off about:blank after the interstitial");
+  }
+  return settled;
+}
+
 async function resolveExternalCapture(
   page: Page,
   armed: {
@@ -233,11 +259,18 @@ async function resolveExternalCapture(
     await popup
       .waitForLoadState("domcontentloaded", { timeout: 10_000 })
       .catch(() => notes.push("popup did not reach domcontentloaded"));
-    const url = popup.url();
+    // JobRight's autofill CTA opens a BLANK tab first and sets its location
+    // afterwards — sometimes only after the customize-resume interstitial is
+    // answered. Live 2026-08-14 (IBM 6a7ce435…): the tab was read at
+    // about:blank, closed, and the run reported "popup opened but carried no
+    // usable URL" → wall budget, with the operator watching their only link
+    // to the posting disappear. Wait for the real location before reading,
+    // and never close a tab whose URL was never captured.
+    const url = await settledPopupUrl(popup, notes);
     const landingHtml = await popup.content().catch(() => null);
     const landingTitle = await popup.title().catch(() => null);
-    await popup.close().catch(() => undefined);
     if (url && url !== "about:blank") {
+      await popup.close().catch(() => undefined);
       notes.push(`popup captured on attempt ${attempt}`);
       return {
         url,
@@ -248,7 +281,11 @@ async function resolveExternalCapture(
         landingTitle,
       };
     }
-    notes.push("popup opened but carried no usable URL");
+    // Left OPEN on purpose: the operator can still see (and use) the tab the
+    // Apply click produced, and a later attempt can read it once it settles.
+    notes.push(
+      "popup opened but stayed on about:blank — tab left open for the operator",
+    );
     return null;
   }
   if (await armed.sameTabPromise) {
@@ -312,7 +349,14 @@ export async function clickApplyAndCaptureExternalUrl(
     });
 
     if (pollCustomizeModal) {
-      for (let i = 0; i < 10 && popupPage === undefined; i++) {
+      // Keep polling while the only popup so far is a BLANK tab: JobRight
+      // opens that tab immediately and only navigates it once the
+      // customize-resume interstitial is answered. Bailing on the popup
+      // event alone left the interstitial unanswered and the tab blank.
+      const stillWaiting = (): boolean =>
+        popupPage === undefined ||
+        (popupPage !== null && popupPage.url() === "about:blank");
+      for (let i = 0; i < 10 && stillWaiting(); i++) {
         const proceed = await findJobRightInterstitialProceed(page);
         if (proceed) {
           await proceed.click({ timeout: 5_000 }).catch(() => undefined);

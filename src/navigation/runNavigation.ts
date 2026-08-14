@@ -139,6 +139,13 @@ export type NavigationWall =
   | "captcha"
   | "phone_otp"
   | "budget"
+  /**
+   * The deterministic phases did not resolve and the agent phase could not
+   * run at all (no reachable CDP Chrome / fallback disabled). Distinct from
+   * "budget": nothing was spent and nothing was tried — it is an operator
+   * configuration gap, not an exhausted attempt.
+   */
+  | "agent_unavailable"
   | "submit_risk"
   /** JobRight says the posting is closed — no Apply path exists. */
   | "closed"
@@ -567,7 +574,11 @@ export async function runNavigation(
       report.notes.push(
         `unresolved by deterministic phases; agent phase unavailable: ${agentAvailability.reason ?? "unknown"}`,
       );
-      report.wall = "budget";
+      // NOT "budget". Live 2026-08-14: every unresolved app in an armed
+      // session reported wall=budget while the trace said "CDP Chrome
+      // unreachable at http://127.0.0.1:9222" — a fixable operator setting
+      // read as an exhausted attempt. Name it for what it is.
+      report.wall = "agent_unavailable";
       return persist(report);
     }
     if (Date.now() > deadline) {
