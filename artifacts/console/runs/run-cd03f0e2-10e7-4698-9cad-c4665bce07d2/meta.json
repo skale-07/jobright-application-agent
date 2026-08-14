@@ -27,11 +27,11 @@
     "SUBMIT_ENABLED"
   ],
   "denied_flags": [],
-  "status": "running",
+  "status": "succeeded",
   "created_at": "2026-08-14T01:54:46.075Z",
   "started_at": "2026-08-14T01:54:46.092Z",
-  "ended_at": null,
-  "exit_code": null,
+  "ended_at": "2026-08-14T01:55:14.760Z",
+  "exit_code": 0,
   "error": null,
   "gates": {
     "FORM_FILL_ENABLED": true,
@@ -59,6 +59,33 @@
     "DRY_RUN": false
   },
   "pending_confirmation": null,
-  "report": null,
-  "log_seq": 0
+  "report": {
+    "arm_run_id": "34601f34-1bad-4935-a6e1-da742ec18744",
+    "apps_started": 0,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 2,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 6 parked for review",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "artifact autopush: 6 file(s) pushed to master as 415dc17"
+    ],
+    "per_app": [],
+    "nav_audit": {
+      "checked": 23,
+      "repaired": 0,
+      "parked": 6
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "415dc17",
+      "files_staged": 6
+    }
+  },
+  "log_seq": 12
 }
