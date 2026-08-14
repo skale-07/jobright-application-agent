@@ -370,6 +370,29 @@ async function settlePage(
 }
 
 /**
+ * Poll for the auth form to render. Workday's SPA rebuilds the page after
+ * "Apply Manually" and takes SECONDS — live 2026-08-14 (Crowe): the walk
+ * clicked Apply, clicked Apply Manually, waited 800ms, found no third
+ * button, and returned; the Create Account form the operator was looking
+ * at rendered right after. The run then reported "no sign-in form on this
+ * page" with credentials sitting unused in the env. Bounded poll, and
+ * tests keep settle 0 so fixtures stay synchronous.
+ */
+async function waitForAuthForm(
+  page: Page,
+  settle: number,
+  timeoutMs = 15_000,
+): Promise<boolean> {
+  if (settle === 0) return (await firstVisible(page, "input[type='password']")) !== null;
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    if (await firstVisible(page, "input[type='password']")) return true;
+    if (Date.now() >= deadline) return false;
+    await page.waitForTimeout(300);
+  }
+}
+
+/**
  * Workday posting → Start Your Application modal → Apply Manually.
  * Cap 3 clicks. Never Autofill with Resume. Never wizard submit.
  */
@@ -387,8 +410,14 @@ async function openWorkdayApplyChooser(
       (await visibleNamed(page, /^apply manually$/i));
     if (manual) {
       await manual.click({ timeout: 8_000 }).catch(() => undefined);
-      await settlePage(page, settle, 800);
       notes.push(`portal auth: clicked Apply Manually (attempt ${attempt})`);
+      // Apply Manually is the LAST click before the account form — wait for
+      // it rather than probing for another button 800ms later.
+      if (await waitForAuthForm(page, settle)) {
+        notes.push("portal auth: account form rendered after Apply Manually");
+        return;
+      }
+      notes.push("portal auth: no account form within 15s of Apply Manually");
       continue;
     }
 
@@ -407,6 +436,13 @@ async function openWorkdayApplyChooser(
       continue;
     }
 
+    // No button left to click. That is usually because the form is ON ITS
+    // WAY — Workday swaps the page out from under the probe. Give it the
+    // same wait before declaring there is no sign-in form here.
+    if (attempt > 1 && (await waitForAuthForm(page, settle))) {
+      notes.push("portal auth: account form rendered while waiting");
+      return;
+    }
     notes.push(
       `portal auth: Apply / Apply Manually not found on attempt ${attempt}`,
     );

@@ -1209,3 +1209,28 @@ opens AND (by standing operator grant) merges the gated loop PR → the next
 scheduled cycle pulls that merge before running. The human watches from
 anywhere via GitHub and the pushed run reports; disabling the task or the
 `AUTOMATION_ENABLED` line stops the world.
+
+### Congruence is evidence, not a gate (2026-08-14)
+
+Every posting reaches this system through JobRight, and the URL comes from
+that posting's own Apply path. So the employer name decoded from a hostname
+no longer decides whether a run proceeds — it is recorded on the report and
+on the stored row, and nothing refuses on it.
+
+What changed:
+
+- A captured Apply URL is kept even when the host names something else.
+  `secure7.saashr.com` (TRG) and `paycomonline.net` (Union Home Mortgage)
+  were both correct and both discarded under the old rule.
+- The agent no longer burns a corrective turn re-finding a page it already
+  reached because the hostname disagreed with the company name.
+- A supported ATS host is an acceptable landing place even when the JobRight
+  page linked no vendor at all.
+- Phase A still PREFERS a company-name match when choosing among the many
+  links on a JobRight page — that is ordering among candidates, not a gate.
+
+What still refuses: the adapter's own URL validation (shape and host family),
+the duplicate-employer-URL guard, and `nav:audit`, the offline sweep that
+repairs a stored URL before a human submits against it. Every report carries
+`congruence.verdict` — `mismatch` there now means "worth a look", not
+"discarded".

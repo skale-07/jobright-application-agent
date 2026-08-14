@@ -45,7 +45,22 @@ describe("agent allowed-domains matching (UNIT_CONFIRMED)", () => {
     expect(hostInAllowedDomains("www.ycombinator.com", ["jobs.lever.co"])).toBe(
       false,
     );
-    expect(hostInAllowedDomains("jobs.lever.co", [])).toBe(false);
+  });
+
+  /**
+   * Deliberate reversal (operator directive 2026-08-14: "the system weighs
+   * the host name far too much"). A supported ATS host is an acceptable
+   * landing place even when the JobRight page linked no vendor at all —
+   * the old rule threw away agent turns that had reached a real
+   * application form. Acceptance is still decided downstream by the
+   * adapter's URL validation and the congruence check, which is what
+   * catches another employer's board.
+   */
+  it("a supported ATS host is allowed even with an empty allowlist", () => {
+    expect(hostInAllowedDomains("jobs.lever.co", [])).toBe(true);
+    expect(hostInAllowedDomains("boards.greenhouse.io", [])).toBe(true);
+    // Still not a free pass for anything that is not a known ATS.
+    expect(hostInAllowedDomains("careers.randomcorp.com", [])).toBe(false);
   });
 
   it("is case-insensitive on both sides", () => {

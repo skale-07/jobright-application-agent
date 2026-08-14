@@ -111,6 +111,44 @@ describe("URL congruence (UNIT_CONFIRMED)", () => {
   });
 
   /**
+   * The multi-employer host list only ever grows AFTER a correct URL has
+   * been thrown away — gusto, then saashr, then paycom. Recognising the
+   * vendor SHAPE means a platform's first appearance costs a review item
+   * ("unknown"), not a false mismatch that discards the link.
+   */
+  describe("HR-vendor domains never name the employer", () => {
+    it("Union Home Mortgage on Paycom is unverifiable, not a mismatch", () => {
+      // Live 2026-08-14: paycomonline.net carries the employer nowhere in
+      // the URL — the portal id is a GUID and the job is a number.
+      const url =
+        "https://www.paycomonline.net/v4/ats/web.php/portal/8D53302EA22D1C46265D36DBFB59E08C/jobs/327881";
+      expect(extractOrgCandidates(url).map((c) => c.value)).not.toContain(
+        "paycomonline",
+      );
+      expect(checkUrlCongruence("Union Home Mortgage", url).verdict).toBe(
+        "unknown",
+      );
+    });
+
+    it("but a tenant host that DOES name the employer still matches", () => {
+      // These two are live matches decided on hostname evidence alone.
+      // Blanket-suppressing vendor hostnames would have broken both.
+      expect(
+        checkUrlCongruence(
+          "Crowe",
+          "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+        ).verdict,
+      ).toBe("match");
+      expect(
+        checkUrlCongruence(
+          "Delta Air Lines",
+          "https://delta.avature.net/careers/JobDetail?jobId=33537",
+        ).verdict,
+      ).toBe("match");
+    });
+  });
+
+  /**
    * Live gap 2026-08-12: four navigations resolved CORRECT employer URLs
    * and every one came back "no org slug decodable from URL (unsupported
    * host)" — the company name was in the hostname or the first path

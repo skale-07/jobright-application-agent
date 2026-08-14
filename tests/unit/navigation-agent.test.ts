@@ -169,6 +169,42 @@ describe("navigation agent phase (N3)", () => {
     45_000,
   );
 
+  /**
+   * Operator directive 2026-08-14: "it literally should not matter whether
+   * the system proceeds… other than for logging. ALL the jobs I am
+   * applying to are verified since they're on JobRight." A hostname that
+   * shares nothing with the company name is almost always the ATS vendor —
+   * secure7.saashr.com (TRG) and paycomonline.net (Union Home Mortgage)
+   * were both correct URLs and both thrown away. The verdict is recorded;
+   * the link is kept; no corrective retry is spent re-finding a page the
+   * agent already reached.
+   */
+  it(
+    "a URL whose host names another org is STORED, with the verdict recorded",
+    async () => {
+      const appId = seedApp(); // company: "Acme"
+      const VENDOR_URL =
+        "https://jobs.lever.co/othercorp/9b1e0c2a-1234-4abc-8def-1234567890ab/apply";
+      applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+      resetConfigCache();
+      try {
+        const report = await runWithAgent(appId, fakeSidecar(okResult(VENDOR_URL)));
+        expect(report.method).toBe("agent");
+        expect(report.wall).toBe("none");
+        expect(getEmployerApplicationUrl(db!, appId)).toBe(VENDOR_URL);
+        // Evidence is still on the report — this is logging, not silence.
+        expect(report.congruence?.verdict).toBe("mismatch");
+        expect(report.congruence?.expected_company).toBe("Acme");
+        expect(report.notes.join(" ")).toMatch(/recorded, not refused/);
+        // And no turn was burned telling the agent to start over.
+        expect(report.notes.join(" ")).not.toMatch(/corrective retry/);
+      } finally {
+        applySafeFillEnv();
+      }
+    },
+    45_000,
+  );
+
   it(
     "needs_input surfaces the need payload as an auth wall, storing nothing (FIXTURE_CONFIRMED)",
     async () => {

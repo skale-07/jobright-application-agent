@@ -114,10 +114,17 @@ export function hostInAllowedDomains(
     return true;
   }
   const base = registrableDomain(h);
-  if (!ATS_HOST_FAMILIES.includes(base as (typeof ATS_HOST_FAMILIES)[number])) {
-    return false;
-  }
-  return allowedDomains.some(
-    (d) => registrableDomain(d.toLowerCase()) === base,
+  // A supported ATS host is ALWAYS an acceptable landing place, whether or
+  // not the JobRight page happened to link that vendor. Requiring the
+  // family to already be in allowedDomains threw away agent turns that had
+  // reached a real application form — "the page didn't link lever.co" is
+  // not evidence that a lever.co form is the wrong form.
+  //
+  // This widens where the agent may LAND, never what gets stored: the
+  // resolved URL still has to pass its adapter's URL validation and the
+  // congruence check against the job's company, so another employer's
+  // Greenhouse board is still refused as a mismatch.
+  return ATS_HOST_FAMILIES.includes(
+    base as (typeof ATS_HOST_FAMILIES)[number],
   );
 }
