@@ -27,11 +27,11 @@
     "SUBMIT_ENABLED"
   ],
   "denied_flags": [],
-  "status": "running",
+  "status": "succeeded",
   "created_at": "2026-08-14T01:49:56.646Z",
   "started_at": "2026-08-14T01:49:56.673Z",
-  "ended_at": null,
-  "exit_code": null,
+  "ended_at": "2026-08-14T01:50:29.700Z",
+  "exit_code": 0,
   "error": null,
   "gates": {
     "FORM_FILL_ENABLED": true,
@@ -59,6 +59,37 @@
     "DRY_RUN": false
   },
   "pending_confirmation": null,
-  "report": null,
-  "log_seq": 0
+  "report": {
+    "arm_run_id": "06ff68ca-632d-4775-920b-2d70acad7ad3",
+    "apps_started": 0,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 2,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 6 parked for review",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "prediction rejected \"If yes, select your most recent proprietary tradin\": no answer",
+      "prediction rejected \"If other, please specify\": no answer",
+      "prediction rejected \"If yes, please provide your visa type and expirati\": no answer",
+      "prediction rejected \"If other, please explain\": no answer",
+      "artifact autopush: 6 file(s) pushed to master as 4a84025"
+    ],
+    "per_app": [],
+    "nav_audit": {
+      "checked": 23,
+      "repaired": 0,
+      "parked": 6
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "4a84025",
+      "files_staged": 6
+    }
+  },
+  "log_seq": 13
 }
