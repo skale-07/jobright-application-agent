@@ -11,6 +11,7 @@ import {
 import { acquireLease, releaseLease } from "../queue/leases.js";
 import {
   isAdvisoryReviewItem,
+  isRetryablePortalAuthWall,
   listOpenReviewItems,
   upsertOpenReviewItem,
 } from "../queue/reviewItems.js";
@@ -505,8 +506,12 @@ async function runOneApplication(input: {
       // scan already refuses anything genuinely incomplete before the
       // click. Halting on them froze applications whose remaining fields
       // were fillable — 20 such notes on one live Lever form.
+      const standingPortalPassword = getConfig().portalLoginPassword;
       const openItems = listOpenReviewItems(db).filter(
-        (it) => it.application_id === applicationId && !isAdvisoryReviewItem(it),
+        (it) =>
+          it.application_id === applicationId &&
+          !isAdvisoryReviewItem(it) &&
+          !isRetryablePortalAuthWall(it, standingPortalPassword),
       );
       if (openItems.length > 0) {
         appReport.stopped = "review";

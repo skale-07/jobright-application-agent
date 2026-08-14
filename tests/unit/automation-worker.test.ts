@@ -16,7 +16,7 @@ import { registerResumeMaterial } from "../../src/jobright/materialsRegister.js"
 import { upsertOpenReviewItem } from "../../src/queue/reviewItems.js";
 import { armSession, getArmStatus, hashArmToken } from "../../src/automation/armSession.js";
 import { runAutomationSession } from "../../src/automation/worker.js";
-import { applySafeFillEnv, useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
+import { applySafeFillEnv, applyControlledFillEnv, useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
 import { resetConfigCache } from "../../src/config/index.js";
 
 const GREENHOUSE_FIXTURE = path.join(
@@ -296,6 +296,45 @@ describe("L3 automation worker (FIXTURE_CONFIRMED)", () => {
       // The pre-seeded app still processed; the feed failure is just noted.
       expect(report.apps_started).toBe(1);
       expect(report.notes.some((n) => /empty_feed/.test(n))).toBe(true);
+    },
+    60_000,
+  );
+
+  it(
+    "retries APPLICATION_OPENING apps frozen on an employer sign-in wall when portal creds are set",
+    async () => {
+      const held = seedQueuedApp();
+      upsertOpenReviewItem(db, {
+        applicationId: held,
+        kind: "MANUAL",
+        title: "operator hold",
+      });
+      const authWall = seedQueuedApp();
+      db.prepare(`UPDATE applications SET state = 'APPLICATION_OPENING' WHERE id = ?`).run(
+        authWall,
+      );
+      upsertOpenReviewItem(db, {
+        applicationId: authWall,
+        kind: "MANUAL",
+        title: "Navigation blocked by employer identity wall",
+      });
+
+      applyControlledFillEnv({
+        PORTAL_LOGIN_EMAIL: "candidate@example.com",
+        PORTAL_LOGIN_PASSWORD: "standing-secret",
+      });
+      try {
+        const report = await runAutomationSession({
+          db,
+          armRunId: arm(5, 25),
+          fixtureHtmlPath: GREENHOUSE_FIXTURE,
+          sleep: noSleep,
+        });
+        expect(report.per_app.map((r) => r.application_id)).toEqual([authWall]);
+        expect(getApplication(db, held)?.state).toBe("QUEUED");
+      } finally {
+        applySafeFillEnv();
+      }
     },
     60_000,
   );

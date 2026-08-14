@@ -1,0 +1,32 @@
+{
+  "ats": "workday",
+  "url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+  "requested_url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "NO_APPLICATION_FORM",
+    "reason": "Workday page classified wizard but has no fillable fields",
+    "final_url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "workday page kind at gate: unknown",
+    "login wall on crowe.wd12.myworkdayjobs.com: no_form_found; fields[email=false password=false confirm=false]; submit=[Sign In]",
+    "portal auth: clicked \"Apply\" (attempt 1)",
+    "portal auth: clicked Apply Manually (attempt 2)",
+    "portal auth: Apply / Apply Manually not found on attempt 3",
+    "portal auth: no sign-in form on this page",
+    "workday page kind after auth: wizard",
+    "parked: reached a Workday page with nothing to fill"
+  ],
+  "written_at": "2026-08-14T02:09:54.847Z"
+}

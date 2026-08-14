@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-a9125fd0-236c-479e-aa69-7665966fb0de",
+  "application_id": "b3d005ae-bf72-45c4-86ab-8d2acfeae671",
+  "jobright_job_id": "6a7e1a55e2030208f2767b68",
+  "method": "anchor_href",
+  "resolved_url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782",
+  "resolved_ats": "workday",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (11 candidates, employer match)",
+      "evidence": "crowe.wd12.myworkdayjobs.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "crowe",
+    "detail": "token \"crowe\" ~ slug \"crowe\"",
+    "expected_company": "Crowe",
+    "url": "https://crowe.wd12.myworkdayjobs.com/external_careers/job/Chicago-IL-USA/AI-Engineering-Intern_R-51782?jr_id=6a7e1a55e2030208f2767b68"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T02:09:47.861Z"
+}

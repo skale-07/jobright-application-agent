@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdvisoryReviewItem } from "../../src/queue/reviewItems.js";
+import { isAdvisoryReviewItem, isRetryablePortalAuthWall, PORTAL_AUTH_WALL_TITLE } from "../../src/queue/reviewItems.js";
 import { ATS_BINDINGS } from "../../src/applications/atsBindings.js";
 import {
   heldAnswerFromReason,
@@ -46,7 +46,6 @@ describe("advisory review items no longer freeze an application (UNIT_CONFIRMED)
     ]) {
       expect(isAdvisoryReviewItem({ kind: "MANUAL", title })).toBe(false);
     }
-    // And no non-MANUAL kind is ever advisory.
     for (const kind of [
       "AUTH_REQUIRED",
       "CAPTCHA_REQUIRED",
@@ -58,6 +57,19 @@ describe("advisory review items no longer freeze an application (UNIT_CONFIRMED)
     ] as const) {
       expect(isAdvisoryReviewItem({ kind, title: "Answer needed: x" })).toBe(false);
     }
+  });
+
+  it("employer sign-in walls are retryable only when standing portal creds exist", () => {
+    const item = { kind: "MANUAL" as const, title: PORTAL_AUTH_WALL_TITLE };
+    expect(isRetryablePortalAuthWall(item, undefined)).toBe(false);
+    expect(isRetryablePortalAuthWall(item, "")).toBe(false);
+    expect(isRetryablePortalAuthWall(item, "standing-secret")).toBe(true);
+    expect(
+      isRetryablePortalAuthWall(
+        { kind: "MANUAL", title: "Resume material not registered" },
+        "standing-secret",
+      ),
+    ).toBe(false);
   });
 });
 

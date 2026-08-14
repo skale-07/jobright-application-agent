@@ -237,6 +237,39 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     expect(getApplication(db, appId)?.state).toBe("QUEUED");
   });
 
+  it("still halts on an employer sign-in wall without standing portal creds", async () => {
+    const appId = seed();
+    upsertOpenReviewItem(db, {
+      applicationId: appId,
+      kind: "MANUAL",
+      title: "Navigation blocked by employer identity wall",
+    });
+    const report = await runPipeline({ db, applicationId: appId });
+    expect(report.applications[0]?.stopped).toBe("review");
+    expect(report.applications[0]?.stop_reason).toMatch(/identity wall/);
+    expect(getApplication(db, appId)?.state).toBe("QUEUED");
+  });
+
+  it("retries an employer sign-in wall when standing portal creds are set", async () => {
+    const appId = seed();
+    upsertOpenReviewItem(db, {
+      applicationId: appId,
+      kind: "MANUAL",
+      title: "Navigation blocked by employer identity wall",
+    });
+    applyControlledFillEnv({
+      PORTAL_LOGIN_EMAIL: "candidate@example.com",
+      PORTAL_LOGIN_PASSWORD: "standing-secret",
+    });
+    try {
+      const report = await runPipeline({ db, applicationId: appId });
+      expect(report.applications[0]?.stop_reason).not.toMatch(/identity wall/);
+      expect(getApplication(db, appId)?.state).not.toBe("QUEUED");
+    } finally {
+      applySafeFillEnv();
+    }
+  });
+
   it("walks QUEUED → READY_TO_SUBMIT on the greenhouse fixture with fill enabled", async () => {
     const appId = seed();
     registerResumeMaterial({ db, applicationId: appId, filePath: SYNTHETIC_PDF });

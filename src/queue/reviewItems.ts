@@ -50,6 +50,10 @@ const ADVISORY_TITLE_PREFIXES = [
   "Submit selector proposal",
 ];
 
+/** Nav parked on an employer sign-in page. Not congruence; not a human captcha. */
+export const PORTAL_AUTH_WALL_TITLE =
+  "Navigation blocked by employer identity wall";
+
 export function isAdvisoryReviewItem(item: {
   kind: ReviewKind;
   title: string;
@@ -57,6 +61,22 @@ export function isAdvisoryReviewItem(item: {
   // Only MANUAL can be advisory. Every other kind names a wall.
   if (item.kind !== "MANUAL") return false;
   return ADVISORY_TITLE_PREFIXES.some((p) => item.title.startsWith(p));
+}
+
+/**
+ * Standing PORTAL_LOGIN_* credentials are the operator saying "keep trying
+ * this sign-in". Without them the wall stays a human gate. With them, an
+ * armed session may retry navigation (once per session via the seen-set).
+ */
+export function isRetryablePortalAuthWall(
+  item: { kind: ReviewKind; title: string },
+  standingPortalPassword: string | undefined,
+): boolean {
+  return (
+    Boolean(standingPortalPassword) &&
+    item.kind === "MANUAL" &&
+    item.title === PORTAL_AUTH_WALL_TITLE
+  );
 }
 
 export function createReviewItem(

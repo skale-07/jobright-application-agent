@@ -8,7 +8,10 @@ import {
 } from "../pipeline/runPipeline.js";
 import { runJobRightDiscovery } from "../jobright/discoveryRun.js";
 import { getApplication } from "../queue/stateMachine.js";
-import { upsertOpenReviewItem } from "../queue/reviewItems.js";
+import {
+  isRetryablePortalAuthWall,
+  listOpenReviewItems,
+} from "../queue/reviewItems.js";
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
 import { autopushArtifacts } from "./artifactAutopush.js";
@@ -148,15 +151,22 @@ export type AutomationSessionInput = {
  * review item, re-picking it would loop forever on the same result.
  */
 function pickNextApplication(db: Db, seen: Set<string>): string | null {
+  const standingPortalPassword = getConfig().portalLoginPassword;
+  const blockedByReview = new Set(
+    listOpenReviewItems(db)
+      .filter(
+        (it) =>
+          it.application_id !== null &&
+          !isRetryablePortalAuthWall(it, standingPortalPassword),
+      )
+      .map((it) => it.application_id as string),
+  );
+
   const query = (states: string) =>
     db
       .prepare(
         `SELECT a.id, a.versions_json FROM applications a
          WHERE a.state IN (${states})
-           AND NOT EXISTS (
-             SELECT 1 FROM review_items r
-             WHERE r.application_id = a.id
-               AND r.status IN ('OPEN', 'IN_PROGRESS'))
          ORDER BY a.created_at ASC`,
       )
       .all() as Array<{ id: string; versions_json: string }>;
@@ -166,6 +176,7 @@ function pickNextApplication(db: Db, seen: Set<string>): string | null {
   ): string | null => {
     for (const row of rows) {
       if (seen.has(row.id)) continue;
+      if (blockedByReview.has(row.id)) continue;
       let excluded = false;
       try {
         const v = JSON.parse(row.versions_json) as { automation_excluded?: unknown };
