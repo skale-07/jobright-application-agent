@@ -28,6 +28,11 @@ import {
   type FullNameFieldMatcher,
 } from "../ats/shared/nameComposition.js";
 import { detectAts } from "../ats/registry.js";
+import {
+  applyHarvestedOptions,
+  findOtherOption,
+  type AnswerSpace,
+} from "../ats/shared/optionHarvest.js";
 import { mapDiscoveredFields } from "./fieldNormalization.js";
 import { buildFillPlan } from "./resolveAnswers.js";
 import { toApprovedFillPlan } from "./approvedFillPlan.js";
@@ -139,6 +144,19 @@ export type ApplicationFillReport = {
   operator_brief?: import("./operatorFieldBrief.js").OperatorFieldBrief;
 };
 
+/**
+ * A closed field answered with the form's own "Other" option because the
+ * candidate's real answer was not among the choices. `intended` is that
+ * real answer — it belongs in the free-text box such forms reveal once
+ * "Other" is chosen (see fillOtherSpecify).
+ */
+export type OtherFallback = {
+  field_id: string;
+  label: string;
+  chose: string;
+  intended: string | null;
+};
+
 export async function planApplicationFill(input: {
   url: string;
   html: string;
@@ -150,11 +168,29 @@ export async function planApplicationFill(input: {
    * question). Absent (fixture/plan-only paths), nothing is written.
    */
   capture?: { db: Db; applicationId: string | null };
+  /**
+   * Options scraped from the LIVE controls (see optionHarvest.ts). The
+   * HTML alone cannot see a React-select's list, so without this every
+   * dropdown reaches the planner with an empty answer space and every
+   * downstream tier degrades to blind free-text. Absent on fixture and
+   * plan-only paths, which have no live page to open.
+   */
+  liveOptions?: Map<string, string[]>;
+  /**
+   * field id → CLOSED (choose from the list only) vs OPEN (type anything).
+   * Recorded by the same live probe. A closed field whose answer is not on
+   * the list takes the form's own "Other" escape hatch instead of typing a
+   * string the control will reject.
+   */
+  answerSpace?: Map<string, AnswerSpace>;
 }): Promise<{
   adapter: FillCapableAdapter;
   plan: ReturnType<typeof buildFillPlan>;
   approvedPlan: ReturnType<typeof toApprovedFillPlan>;
   fields: DiscoveredField[];
+  /** Closed fields answered "Other" — and the answer that belongs in the
+   * text box the form reveals next. Consumed by the other-specify sweep. */
+  otherFallbacks: OtherFallback[];
 }> {
   const { adapter: detected, detection } = await detectAts({
     url: input.url,
@@ -170,7 +206,11 @@ export async function planApplicationFill(input: {
     );
   }
   const adapter = makeAdapter();
-  const fields = await adapter.discoverFields({ html: input.html });
+  const discovered = await adapter.discoverFields({ html: input.html });
+  // Give every tier below the real answer space before it decides anything.
+  const fields = input.liveOptions
+    ? applyHarvestedOptions(discovered, input.liveOptions)
+    : discovered;
   const aliases = loadAnswerAliases();
   const nameMatcher = FULL_NAME_MATCHERS[adapter.id];
   const mapped = nameMatcher
@@ -243,6 +283,7 @@ export async function planApplicationFill(input: {
     }
   }
 
+  const otherFallbacks: OtherFallback[] = [];
   const unanswered = candidates.filter((f) => !screenerResolutions.has(f.id));
   if (unanswered.length > 0) {
     try {
@@ -258,8 +299,20 @@ export async function planApplicationFill(input: {
           status: "fill",
           key: `custom:predicted:${id}`,
           value: p.value,
-          basis: "llm_predict",
+          basis: p.intended ? "other_option" : "llm_predict",
         });
+        // The model's real answer was not on the list, so it chose the
+        // form's "Other". Remember what it actually meant — that goes in
+        // the specify box the form reveals next.
+        if (p.intended) {
+          const field = unanswered.find((f) => f.id === id);
+          otherFallbacks.push({
+            field_id: id,
+            label: field?.label ?? id,
+            chose: p.value,
+            intended: p.intended,
+          });
+        }
       }
     } catch {
       // plan-time predict is best-effort; a model error must never break a plan
@@ -318,6 +371,50 @@ export async function planApplicationFill(input: {
     }
   }
 
+  // "Other" escape hatch (operator directive 2026-08-14). A CLOSED field
+  // whose answer space we scraped, whose true answer is genuinely not on
+  // the list, and which offers "Other" — that is the form telling us what
+  // to do when our answer is not listed. Choosing it is following the
+  // form's own instruction, not guessing, so it fills; the true answer is
+  // carried forward for the free-text box the form reveals next (Appian:
+  // the university-organizations dropdown listed no real organization,
+  // only "Other", and the run instead typed a name the list rejected).
+  //
+  // Deliberately last: every tier that could produce a REAL option answer
+  // has already run. This only rescues fields that would otherwise park.
+  for (const [fieldId, resolution] of screenerResolutions) {
+    if (!isOptionMismatchReview(resolution)) continue;
+    if (input.answerSpace && input.answerSpace.get(fieldId) !== "closed") continue;
+    const field = mapped.find((f) => f.id === fieldId);
+    const options = field?.options ?? [];
+    if (!field || options.length === 0) continue;
+    const other = findOtherOption(options);
+    if (!other) continue;
+    const intended = heldAnswerFromReason(resolution.reason);
+    screenerResolutions.set(fieldId, {
+      status: "fill",
+      key: resolution.key,
+      value: other,
+      basis: "other_option",
+    });
+    otherFallbacks.push({
+      field_id: fieldId,
+      label: field.label,
+      chose: other,
+      intended: intended ?? null,
+    });
+  }
+  if (otherFallbacks.length > 0) {
+    logger.info("closed fields answered via the form's own Other option", {
+      service: "screeners",
+      action: "other_fallback",
+      metadata: {
+        count: otherFallbacks.length,
+        labels: otherFallbacks.map((o) => o.label.slice(0, 60)),
+      },
+    });
+  }
+
   // Essay autofill (operator opt-in, ESSAY_AUTOFILL_ENABLED). Generated
   // from about-me.md only, validated by the same checker the human-review
   // drafting path uses, and recorded on the plan entry so what was written
@@ -358,7 +455,7 @@ export async function planApplicationFill(input: {
     (
       adapter as { getApprovedFillPlan?: () => ApprovedFillPlan | null }
     ).getApprovedFillPlan?.() ?? approvedPlan;
-  return { adapter, plan, approvedPlan: composed, fields };
+  return { adapter, plan, approvedPlan: composed, fields, otherFallbacks };
 }
 
 export async function runApplicationFill(input: {

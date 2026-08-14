@@ -21,6 +21,15 @@ import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
 import {
+  harvestFieldOptions,
+  type AnswerSpace,
+  type OptionHarvestResult,
+} from "../ats/shared/optionHarvest.js";
+import {
+  fillOtherSpecify,
+  type OtherSpecifyOutcome,
+} from "../ats/shared/otherSpecify.js";
+import {
   withFixtureHtmlPage,
   withPublicUrlPage,
 } from "../browser/fixtureSession.js";
@@ -98,6 +107,22 @@ export type AtsLiveFillReport = {
   }> | null;
   /** Sanitized pre-fill page HTML, written when the plan skipped fields. */
   form_snapshot_path: string | null;
+  /**
+   * The answer space scraped off each live control before planning. This
+   * is the evidence that separates "the system chose badly" from "the
+   * system never saw the choices" — the distinction the Appian run could
+   * not be diagnosed without.
+   */
+  harvested_options?: Array<{
+    field_id: string;
+    label: string;
+    answer_space: AnswerSpace;
+    option_count: number;
+    options: string[];
+    other_option: string | null;
+  }>;
+  /** Text boxes revealed by choosing "Other", and what went into them. */
+  other_specify?: OtherSpecifyOutcome[];
   fill: FillResult | null;
   verify: FormVerificationResult | null;
   uploads: UploadVerification[] | null;
@@ -387,12 +412,35 @@ export async function runAtsLiveFill(input: {
           }
         }
       }
-      const { adapter, plan, approvedPlan } = await planApplicationFill({
-        url: planUrl,
-        html: planHtml,
-        ...(input.profile ? { profile: input.profile } : {}),
-        ...(input.capture ? { capture: input.capture } : {}),
-      });
+      // Scrape each control's REAL answer space before planning anything.
+      // HTML cannot see a React-select's option list, so without this every
+      // dropdown reaches the planner empty and the tiers below degrade to
+      // typing blind (live Appian: "Summer Atlantic Capital" typed into a
+      // list that only offered "Other"). Execute-only — plan_only stays
+      // zero-interaction — and read-only w.r.t. values: it opens controls,
+      // reads, and escapes without ever committing a choice.
+      let harvest: OptionHarvestResult | null = null;
+      if (input.execute) {
+        harvest = await harvestFieldOptions(page, discoverFieldsFromHtml(planHtml));
+        report.notes.push(...harvest.notes);
+        report.harvested_options = harvest.harvested.map((h) => ({
+          field_id: h.field_id,
+          label: h.label,
+          answer_space: h.answer_space,
+          option_count: h.options.length,
+          options: h.options.slice(0, 25),
+          other_option: h.other_option,
+        }));
+      }
+      const { adapter, plan, approvedPlan, fields: plannedFields, otherFallbacks } =
+        await planApplicationFill({
+          url: planUrl,
+          html: planHtml,
+          ...(input.profile ? { profile: input.profile } : {}),
+          ...(input.capture ? { capture: input.capture } : {}),
+          ...(harvest ? { liveOptions: harvest.options } : {}),
+          ...(harvest ? { answerSpace: harvest.answerSpace } : {}),
+        });
       if (adapter.id !== binding.id) {
         report.gate.failure_code = "ATS_MISMATCH";
         report.gate.reason = `page detected as ${adapter.id}, binding is ${binding.id}`;
@@ -429,7 +477,24 @@ export async function runAtsLiveFill(input: {
 
       assertFormFillAllowed(`atsLiveFill.${binding.id}.execute`);
       report.mode = "executed";
+      const knownFieldIds = new Set(plannedFields.map((f) => f.id));
       report.fill = await adapter.fill(page, approvedPlan.answers);
+      // Choosing "Other" usually reveals an "Other (please specify)" box —
+      // an OPEN answer space that only exists after the option commits.
+      // The real answer the closed list could not hold goes in there.
+      if (otherFallbacks.length > 0) {
+        const specified = await fillOtherSpecify({
+          page,
+          knownFieldIds,
+          requests: otherFallbacks.map((o) => ({
+            field_id: o.field_id,
+            label: o.label,
+            intended: o.intended,
+          })),
+        });
+        report.other_specify = specified;
+        report.notes.push(...specified.map((s) => `other-specify: ${s.note}`));
+      }
       report.verify = await adapter.verify(page, approvedPlan.answers);
       // Uploads after field mutation is settled, matching the greenhouse order.
       if (input.resumePath) {

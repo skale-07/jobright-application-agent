@@ -7,13 +7,18 @@
       "label": "Config & capability gates",
       "layer": "foundation",
       "purpose": "Single env-parsed config. Every mutation capability is a fail-closed boolean flag read through getConfig(); tests isolate flags via tests/helpers/fillEnvIsolation.ts.",
-      "paths": ["src/config"],
+      "paths": [
+        "src/config"
+      ],
       "key_files": {
         "src/config/env.ts": "zod-style env schema; flag defaults (all false)",
         "src/config/index.ts": "getConfig() cache + resetConfigCache()"
       },
       "key_exports": {
-        "src/config/index.ts": ["getConfig", "resetConfigCache"]
+        "src/config/index.ts": [
+          "getConfig",
+          "resetConfigCache"
+        ]
       }
     },
     {
@@ -21,7 +26,9 @@
       "label": "Storage (SQLite + artifacts)",
       "layer": "foundation",
       "purpose": "SQLite (data/) is the source of truth for application state. Atomic JSON writers for artifacts/. Outcome recorders feed the improvement loop.",
-      "paths": ["src/storage"],
+      "paths": [
+        "src/storage"
+      ],
       "key_files": {
         "src/storage/db/client.ts": "openDatabase/migrate/closeDatabase",
         "src/storage/atomicJson.ts": "writeJsonAtomic for artifacts",
@@ -29,8 +36,14 @@
         "src/storage/navSubmitOutcomes.ts": "nav + submit attempt telemetry"
       },
       "key_exports": {
-        "src/storage/db/client.ts": ["openDatabase", "migrate", "closeDatabase"],
-        "src/storage/atomicJson.ts": ["writeJsonAtomic"]
+        "src/storage/db/client.ts": [
+          "openDatabase",
+          "migrate",
+          "closeDatabase"
+        ],
+        "src/storage/atomicJson.ts": [
+          "writeJsonAtomic"
+        ]
       }
     },
     {
@@ -38,23 +51,32 @@
       "label": "Logging & redaction",
       "layer": "foundation",
       "purpose": "Structured JSON logger; redaction scrubs secrets/PII before anything is persisted or printed.",
-      "paths": ["src/logging", "src/security"],
+      "paths": [
+        "src/logging",
+        "src/security"
+      ],
       "key_files": {
         "src/logging/logger.ts": "logger with service/action metadata",
-        "src/logging/redaction.ts": "redactObject — artifact scrubbing",
+        "src/logging/redaction.ts": "redactObject \u2014 artifact scrubbing",
         "src/security/artifactScan.ts": "scans artifacts for leaked secrets"
       },
       "key_exports": {
-        "src/logging/logger.ts": ["logger"],
-        "src/logging/redaction.ts": ["redactObject"]
+        "src/logging/logger.ts": [
+          "logger"
+        ],
+        "src/logging/redaction.ts": [
+          "redactObject"
+        ]
       }
     },
     {
       "id": "queue",
       "label": "Queue & state machine",
       "layer": "core",
-      "purpose": "Application lifecycle (docs/state-machine.md). ALL status changes go through transitionApplication — never ad-hoc writes. Review items are the human-work queue; advisory items do not freeze an app. Automation runs hold the atomic unattended-submission budget.",
-      "paths": ["src/queue"],
+      "purpose": "Application lifecycle (docs/state-machine.md). ALL status changes go through transitionApplication \u2014 never ad-hoc writes. Review items are the human-work queue; advisory items do not freeze an app. Automation runs hold the atomic unattended-submission budget.",
+      "paths": [
+        "src/queue"
+      ],
       "key_files": {
         "src/queue/states.ts": "state enum + legal edges",
         "src/queue/stateMachine.ts": "transitionApplication, createApplication",
@@ -66,9 +88,22 @@
         "src/queue/submissionsRepo.ts": "submission records"
       },
       "key_exports": {
-        "src/queue/stateMachine.ts": ["transitionApplication", "createApplication", "getApplication"],
-        "src/queue/reviewItems.ts": ["upsertOpenReviewItem", "listOpenReviewItems", "resolveReviewItem", "isAdvisoryReviewItem"],
-        "src/queue/automationRuns.ts": ["createAutomationRun", "tryConsumeUnattendedSubmission", "completeAutomationRun"]
+        "src/queue/stateMachine.ts": [
+          "transitionApplication",
+          "createApplication",
+          "getApplication"
+        ],
+        "src/queue/reviewItems.ts": [
+          "upsertOpenReviewItem",
+          "listOpenReviewItems",
+          "resolveReviewItem",
+          "isAdvisoryReviewItem"
+        ],
+        "src/queue/automationRuns.ts": [
+          "createAutomationRun",
+          "tryConsumeUnattendedSubmission",
+          "completeAutomationRun"
+        ]
       }
     },
     {
@@ -76,51 +111,76 @@
       "label": "Jobs repository",
       "layer": "core",
       "purpose": "Job rows (JobRight postings) + fingerprint dedupe. jobs.raw_json carries employer_application_url once navigation resolves it.",
-      "paths": ["src/jobs"],
+      "paths": [
+        "src/jobs"
+      ],
       "key_files": {
         "src/jobs/repository.ts": "upsertJobByFingerprint",
         "src/jobs/fingerprint.ts": "company+role+location fingerprint",
         "src/jobs/applicationDedupe.ts": "one application per job"
       },
       "key_exports": {
-        "src/jobs/repository.ts": ["upsertJobByFingerprint"]
+        "src/jobs/repository.ts": [
+          "upsertJobByFingerprint"
+        ]
       }
     },
     {
       "id": "auth-browser",
       "label": "Browser sessions & auth",
       "layer": "core",
-      "purpose": "The ONLY allowed chromium.launch sites (house rule): serviceSession, loginFlow, fixtureSession. CDP_ATTACH connects to the operator's own Chrome and close() only disconnects — never closes their tabs.",
-      "paths": ["src/auth", "src/browser", "src/accounts"],
+      "purpose": "The ONLY allowed chromium.launch sites (house rule): serviceSession, loginFlow, fixtureSession. CDP_ATTACH connects to the operator's own Chrome and close() only disconnects \u2014 never closes their tabs.",
+      "paths": [
+        "src/auth",
+        "src/browser",
+        "src/accounts"
+      ],
       "key_files": {
-        "src/auth/serviceSession.ts": "PlaywrightServiceSession — storage-state / CDP / persistent modes",
+        "src/auth/serviceSession.ts": "PlaywrightServiceSession \u2014 storage-state / CDP / persistent modes",
         "src/auth/loginFlow.ts": "interactive login capture",
         "src/browser/fixtureSession.ts": "withFixtureHtmlPage / withPublicUrlPage (tests + read-only)",
         "src/browser/obstructions.ts": "cookie/promo popup dismisser (never-click screened)",
         "src/accounts/vault.ts": "per-host ATS account vault (operator-seeded)"
       },
       "key_exports": {
-        "src/auth/serviceSession.ts": ["PlaywrightServiceSession"],
-        "src/browser/fixtureSession.ts": ["withFixtureHtmlPage", "withPublicUrlPage"],
-        "src/browser/obstructions.ts": ["dismissPageObstructions"]
+        "src/auth/serviceSession.ts": [
+          "PlaywrightServiceSession"
+        ],
+        "src/browser/fixtureSession.ts": [
+          "withFixtureHtmlPage",
+          "withPublicUrlPage"
+        ],
+        "src/browser/obstructions.ts": [
+          "dismissPageObstructions"
+        ]
       }
     },
     {
       "id": "jobright",
       "label": "JobRight ingress",
       "layer": "ingress",
-      "purpose": "Discovery (feed -> SQLite), job-detail inspection, resume download, materials registration, and the on-page primitives navigation uses (Apply click, interstitial handling, closed-posting detection). All jobs enter here — provenance is the trust model.",
-      "paths": ["src/jobright"],
+      "purpose": "Discovery (feed -> SQLite), job-detail inspection, resume download, materials registration, and the on-page primitives navigation uses (Apply click, interstitial handling, closed-posting detection). All jobs enter here \u2014 provenance is the trust model.",
+      "paths": [
+        "src/jobright"
+      ],
       "key_files": {
-        "src/jobright/discoveryRun.ts": "runJobRightDiscovery — feed to QUEUED apps; fails loud on empty feed",
+        "src/jobright/discoveryRun.ts": "runJobRightDiscovery \u2014 feed to QUEUED apps; fails loud on empty feed",
         "src/jobright/enqueueJobs.ts": "enqueue by id; validates employer URL at ingestion",
         "src/jobright/navigateToEmployer.ts": "Apply click + popup capture (settledPopupUrl waits out about:blank), customize-resume interstitial: PROCEED never X",
         "src/jobright/materialsRegister.ts": "resume registration incl. default-resume auto-attach",
         "src/jobright/selectors/v1.ts": "versioned JobRight selectors (house rule: selectors live in registries)"
       },
       "key_exports": {
-        "src/jobright/navigateToEmployer.ts": ["clickApplyAndCaptureExternalUrl", "clearJobRightInterstitial", "detectClosedJobBanner", "settledPopupUrl", "readExternalApplyHrefs"],
-        "src/jobright/enqueueJobs.ts": ["enqueueJobRightJobs"]
+        "src/jobright/navigateToEmployer.ts": [
+          "clickApplyAndCaptureExternalUrl",
+          "clearJobRightInterstitial",
+          "detectClosedJobBanner",
+          "settledPopupUrl",
+          "readExternalApplyHrefs"
+        ],
+        "src/jobright/enqueueJobs.ts": [
+          "enqueueJobRightJobs"
+        ]
       }
     },
     {
@@ -128,7 +188,9 @@
       "label": "Navigation (employer-URL resolution)",
       "layer": "resolve",
       "purpose": "Phases: A read anchor hrefs (zero mutation) -> B click Apply, capture popup/same-tab -> C browser-use agent via CDP. Congruence (company vs URL) is EVIDENCE recorded on the report, not a gate (operator directive 2026-08-14); duplicates among LIVE apps park. Walls: auth/captcha/phone_otp/budget/agent_unavailable/closed/duplicate_url.",
-      "paths": ["src/navigation"],
+      "paths": [
+        "src/navigation"
+      ],
       "key_files": {
         "src/navigation/runNavigation.ts": "orchestrator; NavigationReport artifact per run",
         "src/navigation/congruence.ts": "extractOrgCandidates/checkUrlCongruence + duplicate detection (dead states never block)",
@@ -139,20 +201,41 @@
         "src/navigation/navigationGuards.ts": "NAVIGATION_ENABLED assertion"
       },
       "key_exports": {
-        "src/navigation/runNavigation.ts": ["runNavigation", "probeCdpEndpoint", "resolveAgentAvailability"],
-        "src/navigation/congruence.ts": ["checkUrlCongruence", "extractOrgCandidates", "findApplicationsWithEmployerUrl"],
-        "src/navigation/candidateLinks.ts": ["looksLikeApplicationUrl", "selectCandidateApplyLinks", "employerSiblingHosts"],
-        "src/navigation/auditEmployerUrls.ts": ["auditEmployerUrls"],
-        "src/navigation/storeResult.ts": ["storeResolvedEmployerUrl"]
+        "src/navigation/runNavigation.ts": [
+          "runNavigation",
+          "probeCdpEndpoint",
+          "resolveAgentAvailability"
+        ],
+        "src/navigation/congruence.ts": [
+          "checkUrlCongruence",
+          "extractOrgCandidates",
+          "findApplicationsWithEmployerUrl"
+        ],
+        "src/navigation/candidateLinks.ts": [
+          "looksLikeApplicationUrl",
+          "selectCandidateApplyLinks",
+          "employerSiblingHosts"
+        ],
+        "src/navigation/auditEmployerUrls.ts": [
+          "auditEmployerUrls"
+        ],
+        "src/navigation/storeResult.ts": [
+          "storeResolvedEmployerUrl"
+        ]
       },
-      "gates": ["NAVIGATION_ENABLED", "AGENT_FALLBACK_ENABLED"]
+      "gates": [
+        "NAVIGATION_ENABLED",
+        "AGENT_FALLBACK_ENABLED"
+      ]
     },
     {
       "id": "agent-sidecar",
       "label": "browser-use agent sidecar",
       "layer": "resolve",
       "purpose": "Python sidecar (agent/jobright_agent/navigate.py) over stdin/stdout JSON, attached to the operator's CDP Chrome. Node side validates every result: a supported-ATS host is always an acceptable landing place; acceptance is adapter validation + recorded congruence.",
-      "paths": ["src/agent"],
+      "paths": [
+        "src/agent"
+      ],
       "key_files": {
         "src/agent/navigate.ts": "navigateViaSidecar + hostInAllowedDomains",
         "src/agent/contract.ts": "AgentNavigateTask/Result types",
@@ -161,31 +244,60 @@
         "src/agent/authorRun.ts": "AGENT_AUTHORING_ENABLED adapter-authoring runs"
       },
       "key_exports": {
-        "src/agent/navigate.ts": ["navigateViaSidecar", "hostInAllowedDomains"]
+        "src/agent/navigate.ts": [
+          "navigateViaSidecar",
+          "hostInAllowedDomains"
+        ]
       },
-      "gates": ["AGENT_FALLBACK_ENABLED", "AGENT_AUTHORING_ENABLED", "CDP_AUTOLAUNCH_ENABLED"]
+      "gates": [
+        "AGENT_FALLBACK_ENABLED",
+        "AGENT_AUTHORING_ENABLED",
+        "CDP_AUTOLAUNCH_ENABLED"
+      ]
     },
     {
       "id": "ats",
       "label": "ATS adapters",
       "layer": "fill",
-      "purpose": "One adapter per vendor (greenhouse/lever/ashby/workable/workday) + GENERIC for any https employer form (no flag — operator directive 2026-08-14; trust is provenance). detectAtsFromUrl dispatches vendor-first, generic last. Shared pre-mutation gate requires trusted host + no login wall + no captcha + form markers + at least one fillable FIELD. greenhouseFillFromPlan/greenhouseVerifyAnswers are vendor-blind despite the filename.",
-      "paths": ["src/ats"],
+      "purpose": "One adapter per vendor (greenhouse/lever/ashby/workable/workday) + GENERIC for any https employer form (no flag \u2014 operator directive 2026-08-14; trust is provenance). detectAtsFromUrl dispatches vendor-first, generic last. Shared pre-mutation gate requires trusted host + no login wall + no captcha + form markers + at least one fillable FIELD. greenhouseFillFromPlan/greenhouseVerifyAnswers are vendor-blind despite the filename. Option harvest (2026-08-14) scrapes each control's real answer space from the LIVE page before planning: HTML alone cannot see a React-select's list, so dropdowns used to reach the planner empty and fall through to blind free-text typing.",
+      "paths": [
+        "src/ats"
+      ],
       "key_files": {
-        "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl — the single URL-to-adapter decision",
+        "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl \u2014 the single URL-to-adapter decision",
         "src/ats/shared/preMutationGate.ts": "verifyPageBeforeMutationGeneric (zero-field pages refuse NO_APPLICATION_FORM)",
         "src/ats/shared/requiredCompleteness.ts": "refuse submit with unanswered required questions",
         "src/ats/shared/submitControl.ts": "submit control resolve cascade",
         "src/ats/registry.ts": "adapter registry + HTML-based detection",
         "src/ats/greenhouse/liveFill.ts": "shared guarded live fill core (all vendors call it)",
         "src/ats/workday/pageKind.ts": "classifyWorkdayPage: auth checked BEFORE wizard (Create Account is step 1 of the wizard)",
-        "src/ats/generic/urlValidation.ts": "https-only, never jobright, vendor-owned hosts rejected"
+        "src/ats/generic/urlValidation.ts": "https-only, never jobright, vendor-owned hosts rejected",
+        "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
+        "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen"
       },
       "key_exports": {
-        "src/ats/shared/urlValidationDispatch.ts": ["detectAtsFromUrl"],
-        "src/ats/shared/preMutationGate.ts": ["verifyPageBeforeMutationGeneric", "waitForRenderedContent"],
-        "src/ats/workday/pageKind.ts": ["classifyWorkdayPage"],
-        "src/ats/generic/urlValidation.ts": ["validateGenericApplicationUrl"]
+        "src/ats/shared/urlValidationDispatch.ts": [
+          "detectAtsFromUrl"
+        ],
+        "src/ats/shared/preMutationGate.ts": [
+          "verifyPageBeforeMutationGeneric",
+          "waitForRenderedContent"
+        ],
+        "src/ats/workday/pageKind.ts": [
+          "classifyWorkdayPage"
+        ],
+        "src/ats/generic/urlValidation.ts": [
+          "validateGenericApplicationUrl"
+        ],
+        "src/ats/shared/optionHarvest.ts": [
+          "harvestFieldOptions",
+          "applyHarvestedOptions",
+          "findOtherOption"
+        ],
+        "src/ats/shared/otherSpecify.ts": [
+          "fillOtherSpecify",
+          "pickSpecifyField"
+        ]
       }
     },
     {
@@ -193,34 +305,58 @@
       "label": "Fill & submit engine",
       "layer": "fill",
       "purpose": "planApplicationFill builds a fill plan from discovered fields + profile + screener bank; toApprovedFillPlan freezes it; values come ONLY from the approved plan. runAtsLiveFill drives the live page (gate -> portal auth -> plan -> fill -> verify -> upload). runAtsSubmission is the layered submit path: flags + approved entry + idempotency + completeness + confirmation seam.",
-      "paths": ["src/applications"],
+      "paths": [
+        "src/applications"
+      ],
       "key_files": {
         "src/applications/atsLiveFill.ts": "live fill orchestrator; workday pageKind wiring; portal-auth seam",
-        "src/applications/applicationFiller.ts": "planApplicationFill — adapter dispatch + plan build",
+        "src/applications/applicationFiller.ts": "planApplicationFill \u2014 adapter dispatch + plan build",
         "src/applications/resolveAnswers.ts": "buildFillPlan: profile, screeners, consent checkboxes, demographics-from-sensitive-profile",
-        "src/applications/approvedFillPlan.ts": "assertExecutableApprovedEntry — the never-weaken gate",
-        "src/applications/submitRun.ts": "runAtsSubmission — click gate + unattended budget consumption",
+        "src/applications/approvedFillPlan.ts": "assertExecutableApprovedEntry \u2014 the never-weaken gate",
+        "src/applications/submitRun.ts": "runAtsSubmission \u2014 click gate + unattended budget consumption",
         "src/applications/fieldDiscovery.ts": "discoverFieldsFromHtml (also the pre-mutation gate's field count)",
         "src/applications/atsBindings.ts": "ATS_BINDINGS: per-vendor gate/fill/submit fns",
         "src/applications/essayAutofill.ts": "ESSAY_AUTOFILL_ENABLED path (about-me grounded, validateDraft-checked)",
         "src/applications/screenerOptionSelect.ts": "LLM chooses from the page's own options, validated verbatim"
       },
       "key_exports": {
-        "src/applications/applicationFiller.ts": ["planApplicationFill"],
-        "src/applications/atsLiveFill.ts": ["runAtsLiveFill"],
-        "src/applications/submitRun.ts": ["runAtsSubmission"],
-        "src/applications/resolveAnswers.ts": ["buildFillPlan"],
-        "src/applications/fieldDiscovery.ts": ["discoverFieldsFromHtml"],
-        "src/applications/atsBindings.ts": ["ATS_BINDINGS"]
+        "src/applications/applicationFiller.ts": [
+          "planApplicationFill"
+        ],
+        "src/applications/atsLiveFill.ts": [
+          "runAtsLiveFill"
+        ],
+        "src/applications/submitRun.ts": [
+          "runAtsSubmission"
+        ],
+        "src/applications/resolveAnswers.ts": [
+          "buildFillPlan"
+        ],
+        "src/applications/fieldDiscovery.ts": [
+          "discoverFieldsFromHtml"
+        ],
+        "src/applications/atsBindings.ts": [
+          "ATS_BINDINGS"
+        ]
       },
-      "gates": ["FORM_FILL_ENABLED", "DRY_RUN", "SUBMIT_ENABLED", "ESSAY_DRAFT_ENABLED", "ESSAY_AUTOFILL_ENABLED", "SCREENER_LLM_MATCH_ENABLED", "SCREENER_PREDICT_LLM_ENABLED"]
+      "gates": [
+        "FORM_FILL_ENABLED",
+        "DRY_RUN",
+        "SUBMIT_ENABLED",
+        "ESSAY_DRAFT_ENABLED",
+        "ESSAY_AUTOFILL_ENABLED",
+        "SCREENER_LLM_MATCH_ENABLED",
+        "SCREENER_PREDICT_LLM_ENABLED"
+      ]
     },
     {
       "id": "candidate",
       "label": "Candidate data & screeners",
       "layer": "fill",
       "purpose": "Public profile (plain JSON), encrypted sensitive profile (EEO/demographics fill ONLY from here), screener answer bank with deterministic label->key->answer->verbatim-option resolution. LLM assists map labels or predict answers but never invent ungrounded values.",
-      "paths": ["src/candidate"],
+      "paths": [
+        "src/candidate"
+      ],
       "key_files": {
         "src/candidate/screenerMatch.ts": "deterministic screener resolution; polarity-safe option matching",
         "src/candidate/screeners.ts": "SCREENER_REGISTRY patterns + policies",
@@ -229,8 +365,14 @@
         "src/candidate/publicProfile.ts": "name/contact/links/education"
       },
       "key_exports": {
-        "src/candidate/screenerMatch.ts": ["resolveScreenerForField", "matchScreenerKey", "resolveOptionValue"],
-        "src/candidate/screeners.ts": ["SCREENER_REGISTRY"]
+        "src/candidate/screenerMatch.ts": [
+          "resolveScreenerForField",
+          "matchScreenerKey",
+          "resolveOptionValue"
+        ],
+        "src/candidate/screeners.ts": [
+          "SCREENER_REGISTRY"
+        ]
       }
     },
     {
@@ -238,27 +380,44 @@
       "label": "Portal auth & email verification",
       "layer": "verify",
       "purpose": "Deterministic ATS portal sign-in/create-account with standing PORTAL_LOGIN_* credentials (any https employer host once set). Workday walk: Apply -> Apply Manually -> WAIT for the SPA to render the account form (bounded 15s). Email verification codes come from Gmail (web scan) or Outlook providers; secrets ride memory only.",
-      "paths": ["src/verification"],
+      "paths": [
+        "src/verification"
+      ],
       "key_files": {
-        "src/verification/portalAuth.ts": "authenticateAtsPortal — sign-in first, create on rejection",
+        "src/verification/portalAuth.ts": "authenticateAtsPortal \u2014 sign-in first, create on rejection",
         "src/verification/loginWallDiagnosis.ts": "zero-mutation wall shape classifier",
         "src/verification/emailVerification.ts": "provider resolution (Gmail/Outlook)",
         "src/verification/accountCredentials.ts": "standing creds + vault + minting rules",
         "src/verification/recoverSubmitVerification.ts": "email-verification-code recovery at submit time"
       },
       "key_exports": {
-        "src/verification/portalAuth.ts": ["authenticateAtsPortal", "isRecognizedAtsAuthHost"],
-        "src/verification/loginWallDiagnosis.ts": ["diagnoseLoginWall", "summarizeLoginWall"],
-        "src/verification/accountCredentials.ts": ["prepareCredentialsForHost"]
+        "src/verification/portalAuth.ts": [
+          "authenticateAtsPortal",
+          "isRecognizedAtsAuthHost"
+        ],
+        "src/verification/loginWallDiagnosis.ts": [
+          "diagnoseLoginWall",
+          "summarizeLoginWall"
+        ],
+        "src/verification/accountCredentials.ts": [
+          "prepareCredentialsForHost"
+        ]
       },
-      "gates": ["GMAIL_VERIFICATION_ENABLED", "OUTLOOK_VERIFICATION_ENABLED", "NAVIGATION_ENABLED"]
+      "gates": [
+        "GMAIL_VERIFICATION_ENABLED",
+        "OUTLOOK_VERIFICATION_ENABLED",
+        "NAVIGATION_ENABLED"
+      ]
     },
     {
       "id": "mail",
       "label": "Gmail (read-only) & Outlook (drafts-only)",
       "layer": "verify",
-      "purpose": "Gmail is READ-ONLY (readonlyGuards bans mutating identifiers); used for verification codes. Outlook creates DRAFTS only — sendGuards.ts is the banned-identifier source enforced by scripts/check-forbidden.ts. Mail is never sent by this system.",
-      "paths": ["src/gmail", "src/outlook"],
+      "purpose": "Gmail is READ-ONLY (readonlyGuards bans mutating identifiers); used for verification codes. Outlook creates DRAFTS only \u2014 sendGuards.ts is the banned-identifier source enforced by scripts/check-forbidden.ts. Mail is never sent by this system.",
+      "paths": [
+        "src/gmail",
+        "src/outlook"
+      ],
       "key_files": {
         "src/gmail/waitForVerification.ts": "bounded mailbox poll for codes/links",
         "src/gmail/readonlyGuards.ts": "banned Gmail mutation identifiers",
@@ -266,7 +425,9 @@
         "src/outlook/sendGuards.ts": "banned Outlook send identifiers (check:forbidden source)"
       },
       "key_exports": {
-        "src/outlook/sendGuards.ts": ["FORBIDDEN_OUTLOOK_IDENTIFIERS"]
+        "src/outlook/sendGuards.ts": [
+          "FORBIDDEN_OUTLOOK_IDENTIFIERS"
+        ]
       }
     },
     {
@@ -274,28 +435,41 @@
       "label": "Contacts & outreach tail",
       "layer": "outreach",
       "purpose": "Post-submit: extract insider contacts, rank, generate a referral email (LLM, deterministically re-validated), create an Outlook draft. Never sends.",
-      "paths": ["src/contacts", "src/outreach"],
+      "paths": [
+        "src/contacts",
+        "src/outreach"
+      ],
       "key_files": {
         "src/contacts/extractContacts.ts": "JobRight insider-connection extraction",
         "src/contacts/emailGenerate.ts": "LLM email generation + validation",
         "src/outreach/outreachTail.ts": "contacts -> email -> draft pipeline tail"
       },
       "key_exports": {
-        "src/outreach/outreachTail.ts": ["runOutreachTail"]
+        "src/outreach/outreachTail.ts": [
+          "runOutreachTail"
+        ]
       },
-      "gates": ["EMAIL_GENERATION_ENABLED", "OUTLOOK_DRAFTS_ENABLED", "LINKEDIN_ENRICHMENT_ENABLED"]
+      "gates": [
+        "EMAIL_GENERATION_ENABLED",
+        "OUTLOOK_DRAFTS_ENABLED",
+        "LINKEDIN_ENRICHMENT_ENABLED"
+      ]
     },
     {
       "id": "pipeline",
       "label": "Pipeline driver",
       "layer": "orchestration",
       "purpose": "runPipeline steps ONE application through the state machine: materials -> navigation -> ATS detection -> inspection -> fill -> submit, stopping on review/terminal/gate. Every stop writes a review item or a state reason. Halt check ignores advisory review items.",
-      "paths": ["src/pipeline"],
+      "paths": [
+        "src/pipeline"
+      ],
       "key_files": {
         "src/pipeline/runPipeline.ts": "the step() switch over states; wall routing; portal-auth handoff for needs_login routes"
       },
       "key_exports": {
-        "src/pipeline/runPipeline.ts": ["runPipeline"]
+        "src/pipeline/runPipeline.ts": [
+          "runPipeline"
+        ]
       }
     },
     {
@@ -303,7 +477,9 @@
       "label": "L3 automation (armed sessions)",
       "layer": "orchestration",
       "purpose": "Arm session = automation_runs row (stage l3_session) with TTL + atomic submit budget; disarm/restart is fail-closed by construction. Worker loop: sweeps (URL audit, nav requeue, unsupported-ATS revival) -> discover -> per-app runPipeline with submit while budget lasts -> outreach tail. auto:cycle is the operator-desktop scheduled entry.",
-      "paths": ["src/automation"],
+      "paths": [
+        "src/automation"
+      ],
       "key_files": {
         "src/automation/worker.ts": "runAutomationSession loop + sweeps + heartbeat",
         "src/automation/armSession.ts": "arm/disarm/status; stale-arm sweep",
@@ -313,17 +489,28 @@
         "src/automation/cdpChrome.ts": "CDP_AUTOLAUNCH_ENABLED debug-Chrome self-repair"
       },
       "key_exports": {
-        "src/automation/worker.ts": ["runAutomationSession"],
-        "src/automation/navRequeue.ts": ["requeueNavStarvedApplications", "reviveUnsupportedAtsApplications"]
+        "src/automation/worker.ts": [
+          "runAutomationSession"
+        ],
+        "src/automation/navRequeue.ts": [
+          "requeueNavStarvedApplications",
+          "reviveUnsupportedAtsApplications"
+        ]
       },
-      "gates": ["AUTOMATION_ENABLED", "ARTIFACT_AUTOPUSH_ENABLED", "CDP_AUTOLAUNCH_ENABLED"]
+      "gates": [
+        "AUTOMATION_ENABLED",
+        "ARTIFACT_AUTOPUSH_ENABLED",
+        "CDP_AUTOLAUNCH_ENABLED"
+      ]
     },
     {
       "id": "console",
       "label": "Operator console",
       "layer": "surface",
-      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING — a child can never hold a flag the operator's shell lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
-      "paths": ["src/console"],
+      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING \u2014 a child can never hold a flag the operator's shell lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
+      "paths": [
+        "src/console"
+      ],
       "key_files": {
         "src/console/server.ts": "HTTP server + routes wiring",
         "src/console/flagCeiling.ts": "GATED_FLAG_KEYS + composeChildEnv (ceiling law)",
@@ -332,15 +519,22 @@
         "src/console/runTimeline.ts": "self-contained HTML run timeline artifact"
       },
       "key_exports": {
-        "src/console/flagCeiling.ts": ["composeChildEnv", "GATED_FLAG_KEYS"]
+        "src/console/flagCeiling.ts": [
+          "composeChildEnv",
+          "GATED_FLAG_KEYS"
+        ]
       }
     },
     {
       "id": "cli",
       "label": "CLI",
       "layer": "surface",
-      "purpose": "All operator commands (discover, inspect, fill, submit, pipeline, verify, screeners, accounts, viz). docs/operator-guide.md is the operator contract — update it when CLI behavior changes.",
-      "paths": ["src/cli", "src/index.ts", "src/util"],
+      "purpose": "All operator commands (discover, inspect, fill, submit, pipeline, verify, screeners, accounts, viz). docs/operator-guide.md is the operator contract \u2014 update it when CLI behavior changes.",
+      "paths": [
+        "src/cli",
+        "src/index.ts",
+        "src/util"
+      ],
       "key_files": {
         "src/cli/index.ts": "command dispatch"
       },
@@ -351,7 +545,11 @@
       "label": "Dashboard, recorder, healer",
       "layer": "surface",
       "purpose": "Read-only dashboard; recorder captures live pages into sanitized fixtures; submit-inventory healer proposes (never applies) selector fixes. Heal loops are attempt-capped (house rule).",
-      "paths": ["src/dashboard", "src/recorder", "src/heal"],
+      "paths": [
+        "src/dashboard",
+        "src/recorder",
+        "src/heal"
+      ],
       "key_files": {
         "src/dashboard/server.ts": "read-only report server",
         "src/recorder/recordFlow.ts": "capture -> sanitize -> fixture promotion",
@@ -361,38 +559,199 @@
     }
   ],
   "edges": [
-    { "from": "automation", "to": "pipeline", "kind": "calls", "why": "worker runs runPipeline per app with submit while the arm budget lasts" },
-    { "from": "automation", "to": "queue", "kind": "writes", "why": "arm rows, budget consumption, requeues/revivals via state machine" },
-    { "from": "automation", "to": "navigation", "kind": "calls", "why": "URL audit + requeue sweeps use congruence and nav telemetry" },
-    { "from": "automation", "to": "outreach", "kind": "calls", "why": "post-submit referral tail" },
-    { "from": "console", "to": "automation", "kind": "spawns", "why": "arm/disarm API + automation run kind" },
-    { "from": "console", "to": "cli", "kind": "spawns", "why": "runner children execute CLI commands under the flag ceiling" },
-    { "from": "cli", "to": "pipeline", "kind": "calls", "why": "run --pipeline" },
-    { "from": "pipeline", "to": "queue", "kind": "writes", "why": "every step is a transitionApplication + review items on stops" },
-    { "from": "pipeline", "to": "navigation", "kind": "calls", "why": "APPLICATION_OPENING resolves the employer URL" },
-    { "from": "pipeline", "to": "applications", "kind": "calls", "why": "fill (runAtsLiveFill) and submit (runAtsSubmission) stages" },
-    { "from": "pipeline", "to": "jobright", "kind": "calls", "why": "materials registration + job detail inspection" },
-    { "from": "navigation", "to": "jobright", "kind": "calls", "why": "phase A/B page primitives (hrefs, Apply click, interstitials)" },
-    { "from": "navigation", "to": "agent-sidecar", "kind": "calls", "why": "phase C agent when deterministic phases fail and CDP is reachable" },
-    { "from": "navigation", "to": "verification", "kind": "calls", "why": "portal auth on employer login walls" },
-    { "from": "navigation", "to": "auth-browser", "kind": "uses", "why": "JobRight service session (storage state or CDP)" },
-    { "from": "navigation", "to": "jobs", "kind": "writes", "why": "stores employer_application_url on the job row" },
-    { "from": "applications", "to": "ats", "kind": "calls", "why": "adapter dispatch: gate, discover, fill, verify, upload, submit" },
-    { "from": "applications", "to": "candidate", "kind": "reads", "why": "profile, screener bank, sensitive profile for demographics" },
-    { "from": "applications", "to": "verification", "kind": "calls", "why": "portal auth mid-fill; email-verification recovery at submit" },
-    { "from": "applications", "to": "queue", "kind": "writes", "why": "idempotency claims, submissions, unattended budget, review items" },
-    { "from": "applications", "to": "auth-browser", "kind": "uses", "why": "live pages via service session / public page" },
-    { "from": "ats", "to": "applications", "kind": "reads", "why": "preMutationGate counts fields via discoverFieldsFromHtml" },
-    { "from": "verification", "to": "mail", "kind": "calls", "why": "verification codes from Gmail (read-only) / Outlook" },
-    { "from": "verification", "to": "accounts:vault", "kind": "reads", "why": "per-host stored accounts", "external": true },
-    { "from": "outreach", "to": "mail", "kind": "calls", "why": "Outlook draft creation (never send)" },
-    { "from": "jobright", "to": "jobs", "kind": "writes", "why": "discovery upserts job rows + creates applications" },
-    { "from": "jobright", "to": "auth-browser", "kind": "uses", "why": "JobRight session for feed/detail pages" },
-    { "from": "agent-sidecar", "to": "auth-browser", "kind": "uses", "why": "attaches to the operator's CDP Chrome" },
-    { "from": "config", "to": "applications", "kind": "gates", "why": "fill/submit/essay/screener flags" },
-    { "from": "config", "to": "navigation", "kind": "gates", "why": "NAVIGATION_ENABLED + agent flags" },
-    { "from": "config", "to": "automation", "kind": "gates", "why": "AUTOMATION_ENABLED kill switch beats an arm" },
-    { "from": "observability", "to": "storage", "kind": "reads", "why": "dashboard + timeline read outcomes and artifacts" }
+    {
+      "from": "automation",
+      "to": "pipeline",
+      "kind": "calls",
+      "why": "worker runs runPipeline per app with submit while the arm budget lasts"
+    },
+    {
+      "from": "automation",
+      "to": "queue",
+      "kind": "writes",
+      "why": "arm rows, budget consumption, requeues/revivals via state machine"
+    },
+    {
+      "from": "automation",
+      "to": "navigation",
+      "kind": "calls",
+      "why": "URL audit + requeue sweeps use congruence and nav telemetry"
+    },
+    {
+      "from": "automation",
+      "to": "outreach",
+      "kind": "calls",
+      "why": "post-submit referral tail"
+    },
+    {
+      "from": "console",
+      "to": "automation",
+      "kind": "spawns",
+      "why": "arm/disarm API + automation run kind"
+    },
+    {
+      "from": "console",
+      "to": "cli",
+      "kind": "spawns",
+      "why": "runner children execute CLI commands under the flag ceiling"
+    },
+    {
+      "from": "cli",
+      "to": "pipeline",
+      "kind": "calls",
+      "why": "run --pipeline"
+    },
+    {
+      "from": "pipeline",
+      "to": "queue",
+      "kind": "writes",
+      "why": "every step is a transitionApplication + review items on stops"
+    },
+    {
+      "from": "pipeline",
+      "to": "navigation",
+      "kind": "calls",
+      "why": "APPLICATION_OPENING resolves the employer URL"
+    },
+    {
+      "from": "pipeline",
+      "to": "applications",
+      "kind": "calls",
+      "why": "fill (runAtsLiveFill) and submit (runAtsSubmission) stages"
+    },
+    {
+      "from": "pipeline",
+      "to": "jobright",
+      "kind": "calls",
+      "why": "materials registration + job detail inspection"
+    },
+    {
+      "from": "navigation",
+      "to": "jobright",
+      "kind": "calls",
+      "why": "phase A/B page primitives (hrefs, Apply click, interstitials)"
+    },
+    {
+      "from": "navigation",
+      "to": "agent-sidecar",
+      "kind": "calls",
+      "why": "phase C agent when deterministic phases fail and CDP is reachable"
+    },
+    {
+      "from": "navigation",
+      "to": "verification",
+      "kind": "calls",
+      "why": "portal auth on employer login walls"
+    },
+    {
+      "from": "navigation",
+      "to": "auth-browser",
+      "kind": "uses",
+      "why": "JobRight service session (storage state or CDP)"
+    },
+    {
+      "from": "navigation",
+      "to": "jobs",
+      "kind": "writes",
+      "why": "stores employer_application_url on the job row"
+    },
+    {
+      "from": "applications",
+      "to": "ats",
+      "kind": "calls",
+      "why": "adapter dispatch: gate, discover, fill, verify, upload, submit"
+    },
+    {
+      "from": "applications",
+      "to": "candidate",
+      "kind": "reads",
+      "why": "profile, screener bank, sensitive profile for demographics"
+    },
+    {
+      "from": "applications",
+      "to": "verification",
+      "kind": "calls",
+      "why": "portal auth mid-fill; email-verification recovery at submit"
+    },
+    {
+      "from": "applications",
+      "to": "queue",
+      "kind": "writes",
+      "why": "idempotency claims, submissions, unattended budget, review items"
+    },
+    {
+      "from": "applications",
+      "to": "auth-browser",
+      "kind": "uses",
+      "why": "live pages via service session / public page"
+    },
+    {
+      "from": "ats",
+      "to": "applications",
+      "kind": "reads",
+      "why": "preMutationGate counts fields via discoverFieldsFromHtml"
+    },
+    {
+      "from": "verification",
+      "to": "mail",
+      "kind": "calls",
+      "why": "verification codes from Gmail (read-only) / Outlook"
+    },
+    {
+      "from": "verification",
+      "to": "accounts:vault",
+      "kind": "reads",
+      "why": "per-host stored accounts",
+      "external": true
+    },
+    {
+      "from": "outreach",
+      "to": "mail",
+      "kind": "calls",
+      "why": "Outlook draft creation (never send)"
+    },
+    {
+      "from": "jobright",
+      "to": "jobs",
+      "kind": "writes",
+      "why": "discovery upserts job rows + creates applications"
+    },
+    {
+      "from": "jobright",
+      "to": "auth-browser",
+      "kind": "uses",
+      "why": "JobRight session for feed/detail pages"
+    },
+    {
+      "from": "agent-sidecar",
+      "to": "auth-browser",
+      "kind": "uses",
+      "why": "attaches to the operator's CDP Chrome"
+    },
+    {
+      "from": "config",
+      "to": "applications",
+      "kind": "gates",
+      "why": "fill/submit/essay/screener flags"
+    },
+    {
+      "from": "config",
+      "to": "navigation",
+      "kind": "gates",
+      "why": "NAVIGATION_ENABLED + agent flags"
+    },
+    {
+      "from": "config",
+      "to": "automation",
+      "kind": "gates",
+      "why": "AUTOMATION_ENABLED kill switch beats an arm"
+    },
+    {
+      "from": "observability",
+      "to": "storage",
+      "kind": "reads",
+      "why": "dashboard + timeline read outcomes and artifacts"
+    }
   ],
   "flags": {
     "$comment": "Capability flags. ALL default false (fail-closed); enabled only in the operator's shell for a guarded run. The console ceiling (src/console/flagCeiling.ts) can only narrow, never widen.",
