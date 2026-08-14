@@ -12,7 +12,10 @@ import { greenhouseSelectorsV1 } from "./selectors.js";
 // One class across all ATSes so submitRun's instanceof catch sees the
 // structured evidence no matter which adapter threw.
 export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
-import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+import {
+  SubmissionUncertainError,
+  detectVisibleValidationError,
+} from "../shared/submissionUncertain.js";
 
 export type SubmissionPageClassification =
   | "confirmed"
@@ -93,11 +96,19 @@ export async function greenhouseVerifySubmission(
 
   let classification: SubmissionPageClassification = "unknown";
   let html = "";
+  let validationError: string | null = null;
   while (Date.now() < deadline) {
     html = await page.content();
     classification = detectSubmissionUncertainty(html, page.url());
     if (classification === "confirmed" || classification === "error_page") {
       break;
+    }
+    // Fast fail: still on the form AND a validation message is visible —
+    // the submit was rejected, and the reason is already on screen.
+    // Waiting the rest of the window cannot change the answer.
+    if (classification === "still_on_form") {
+      validationError = detectVisibleValidationError(html);
+      if (validationError) break;
     }
     await page.waitForTimeout(1000);
   }
@@ -108,9 +119,12 @@ export async function greenhouseVerifySubmission(
 
   if (classification !== "confirmed") {
     throw new SubmissionUncertainError(
-      `Submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
+      validationError
+        ? `Submission rejected by the form: "${validationError}" (page classified: ${classification})`
+        : `Submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
       {
         classification,
+        validation_error: validationError,
         final_url: page.url(),
         screenshot_path: options.screenshotPath,
         html_bytes: html.length,

@@ -98,6 +98,13 @@ export type PipelineOptions = {
   /** Test seam: replaces runNavigation for offline pipeline tests. */
   navigationRunner?: (input: RunNavigationInput) => Promise<NavigationReport>;
   /**
+   * Caller-owned JobRight session reused across navigation runs (the L3
+   * worker passes ONE session for the whole loop instead of paying a
+   * fresh browser open+validate per app). Navigation closes only the
+   * pages it opens; the caller closes the session.
+   */
+  navSession?: RunNavigationInput["sessionOverride"];
+  /**
    * Shared automation run to attribute this walk to instead of minting a
    * fresh one. The L3 worker passes its arm-session row here so every
    * submit across every app in the session consumes from the ONE arm
@@ -707,6 +714,9 @@ async function step(
             db,
             applicationId: app.id,
             headless: ctx.options.headless ?? true,
+            ...(ctx.options.navSession
+              ? { sessionOverride: ctx.options.navSession, callerOwnedSession: true }
+              : {}),
           });
           if (nav.resolved_url) {
             // Stored by runNavigation; the next iteration of this same case

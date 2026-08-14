@@ -8,7 +8,10 @@ import { CLICK_WITHHELD_NOTE } from "../adapter.js";
 import { assertSubmitAllowed } from "../../applications/formFillGuards.js";
 import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { workdaySelectorsV1 } from "./selectors.js";
-import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+import {
+  SubmissionUncertainError,
+  detectVisibleValidationError,
+} from "../shared/submissionUncertain.js";
 
 export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
 
@@ -84,6 +87,7 @@ export async function workdayVerifySubmission(
   const deadline = Date.now() + timeoutMs;
   let classification: WorkdaySubmissionClassification = "unknown";
   let html = "";
+  let validationError: string | null = null;
   while (Date.now() < deadline) {
     try {
       html = await page.content();
@@ -100,9 +104,12 @@ export async function workdayVerifySubmission(
     .catch(() => undefined);
   if (classification !== "confirmed") {
     throw new SubmissionUncertainError(
-      `Workday submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
+      validationError
+        ? `Workday submission rejected by the form: "${validationError}" (page classified: ${classification})`
+        : `Workday submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
       {
         classification,
+        validation_error: validationError,
         final_url: page.url(),
         screenshot_path: options.screenshotPath,
         html_bytes: html.length,
