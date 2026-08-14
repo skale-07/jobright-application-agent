@@ -59,7 +59,11 @@ export function selectCandidateApplyLinks(
  * over the Apply click. Social hosts are already dropped above.
  */
 export function looksLikeApplicationUrl(url: string): boolean {
-  if (detectAtsFromUrl(url).ats !== null) return true;
+  // "generic" claims ANY https employer URL now (the adapter lost its
+  // flag), so it can't distinguish an apply route from a homepage — only a
+  // VENDOR detection short-circuits; everything else uses the word test.
+  const ats = detectAtsFromUrl(url).ats;
+  if (ats !== null && ats !== "generic") return true;
   let parsed: URL;
   try {
     parsed = new URL(url);

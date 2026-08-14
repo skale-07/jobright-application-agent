@@ -10,6 +10,7 @@ import {
 } from "../../src/jobright/navigateToEmployer.js";
 import { assertNavigationAllowed } from "../../src/navigation/navigationGuards.js";
 import { storeResolvedEmployerUrl } from "../../src/navigation/storeResult.js";
+import { detectAtsFromUrl } from "../../src/ats/shared/urlValidationDispatch.js";
 import {
   getEmployerApplicationUrl,
   runPipeline,
@@ -367,7 +368,9 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
     expect(raw["nav_session"]).toBe("ephemeral");
   });
 
-  it("stores an unsupported https URL verbatim and the pipeline routes UNSUPPORTED_ATS (UNIT_CONFIRMED)", async () => {
+  it("stores a company-hosted https URL as generic and the pipeline PROCEEDS (UNIT_CONFIRMED)", async () => {
+    // Formerly parked UNSUPPORTED_ATS; the generic adapter (no flag —
+    // operator directive 2026-08-14) makes the long tail a live path.
     const appId = seedApp();
     const stored = storeResolvedEmployerUrl(
       db!,
@@ -375,10 +378,14 @@ describe("storeResolvedEmployerUrl + pipeline routing (N2)", () => {
       "https://careers.example.com/apply/1",
       { runId: "nav-2", session: "ephemeral" },
     );
-    expect(stored.ats).toBeNull();
-    const report = await runPipeline({ db: db!, applicationId: appId });
-    expect(getApplication(db!, appId)?.state).toBe("UNSUPPORTED_ATS");
-    expect(report.applications[0]!.stopped).toBe("review");
+    expect(stored.ats).toBe("generic");
+    // The URL gate itself is deterministic: generic claims the URL, so the
+    // pipeline routes ATS_DETECTION, not the UNSUPPORTED_ATS park. (A full
+    // runPipeline would continue into a live page fetch — not a unit test.)
+    expect(detectAtsFromUrl("https://careers.example.com/apply/1").ats).toBe(
+      "generic",
+    );
+    expect(getApplication(db!, appId)?.state).not.toBe("UNSUPPORTED_ATS");
   });
 
   it("refuses malformed and non-https nav results (UNIT_CONFIRMED)", () => {

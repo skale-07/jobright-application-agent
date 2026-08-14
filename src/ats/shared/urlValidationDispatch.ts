@@ -134,8 +134,17 @@ export function detectAtsFromUrl(rawUrl: string): AtsUrlDetection {
   // 41 resolved URLs in the live corpus, 10 distinct hosts). Trust comes
   // from provenance (JobRight posting -> navigation -> congruence), not
   // from a host allowlist; see generic/urlValidation.ts.
+  //
+  // No flag here (operator directive 2026-08-14, "why are you making the
+  // system have so many useless gates"): the former GENERIC_ATS_ENABLED
+  // gate parked every long-tail employer as UNSUPPORTED_ATS — a live armed
+  // session resolved avature/gusto/saashr/techjobsforgood URLs and every
+  // one dead-ended — and the console never granted the flag, so armed runs
+  // could not use the adapter at all. Detection is read-only; mutation is
+  // still behind FORM_FILL_ENABLED / DRY_RUN / SUBMIT_ENABLED like every
+  // other adapter.
   const generic = validateGenericApplicationUrl(rawUrl);
-  if (generic.passed && getConfig().genericAtsEnabled) {
+  if (generic.passed) {
     return {
       ats: "generic",
       normalizedUrl: generic.normalizedUrl ?? rawUrl,
@@ -145,10 +154,6 @@ export function detectAtsFromUrl(rawUrl: string): AtsUrlDetection {
   }
   return {
     ats: null,
-    failureReason: `no ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}; workable: ${workable.failureReason}; workday: ${workday.failureReason}; generic: ${
-      getConfig().genericAtsEnabled
-        ? generic.failureReason
-        : "GENERIC_ATS_ENABLED is off"
-    }`,
+    failureReason: `no ATS matched — greenhouse: ${greenhouse.failureReason}; lever: ${lever.failureReason}; ashby: ${ashby.failureReason}; workable: ${workable.failureReason}; workday: ${workday.failureReason}; generic: ${generic.failureReason}`,
   };
 }

@@ -538,7 +538,7 @@ about-me can still phrase a claim more strongly than the source supports.
 Check the first few in the artifacts. Off, or context missing, or the
 draft rejected ⇒ the essay routes to review exactly as before.
 
-## 14b. Company-hosted forms (`GENERIC_ATS_ENABLED`)
+## 14b. Company-hosted forms (generic adapter — always on)
 
 Most employers do not use Greenhouse, Lever, Ashby, Workable or Workday.
 In the live corpus, 10 of 41 resolved URLs had no supported ATS — and every
@@ -547,11 +547,16 @@ jobs.jobvite.com, citadel.com, ycombinator.com). Adding vendors one at a
 time never catches up with a tail like that, so those applications used to
 dead-end at `UNSUPPORTED_ATS`.
 
-```ini
-GENERIC_ATS_ENABLED=true
-```
+The generic adapter has **no flag of its own** (operator directive
+2026-08-14 — the old `GENERIC_ATS_ENABLED` gate parked the whole long tail,
+and the console never granted it, so armed sessions could not use the
+adapter at all). Detection and planning are read-only; mutation requires
+`FORM_FILL_ENABLED` / `DRY_RUN=false` / `SUBMIT_ENABLED` exactly like every
+other adapter. An armed session's revival sweep re-opens apps previously
+parked `UNSUPPORTED_ATS` whose URL an adapter now claims (once per app,
+capped per sweep).
 
-With it on, a company-hosted form is filled, verified, resume-uploaded and
+A company-hosted form is filled, verified, resume-uploaded and
 submitted through **the same path as any vendor** — same approved plan,
 same completeness scan, same submit gates.
 

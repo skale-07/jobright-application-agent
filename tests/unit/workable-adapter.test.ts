@@ -100,8 +100,11 @@ describe("workable URL validation (UNIT_CONFIRMED)", () => {
     if (d.ats === "workable") {
       expect(d.normalizedUrl).toBe(FIXTURE_URL);
     }
-    // and still rejects lookalikes
-    expect(detectAtsFromUrl("https://apply.workable.com.evil.com/a/j/B1C2D3E4").ats).toBeNull();
+    // A lookalike host never gets the WORKABLE adapter (it falls to the
+    // generic long-tail path instead — validation and congruence still run).
+    expect(
+      detectAtsFromUrl("https://apply.workable.com.evil.com/a/j/B1C2D3E4").ats,
+    ).not.toBe("workable");
   });
 
   it("workable binding is registered with the generic gate", () => {

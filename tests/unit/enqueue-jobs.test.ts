@@ -166,9 +166,9 @@ describe("enqueueJobRightJobs (UNIT_CONFIRMED)", () => {
     expect(raw["employer_application_ats"]).toBe("lever");
   });
 
-  it("stores an unsupported-ATS https URL verbatim for pipeline routing (W3/W7)", () => {
-    // The pipeline routes these to UNSUPPORTED_ATS + review item — the
-    // tracked path. Only malformed URLs are refused at ingestion.
+  it("stores a company-hosted https URL as generic for pipeline routing (W3/W7)", () => {
+    // The long tail is fillable now (generic adapter, no flag) — ingestion
+    // records the adapter instead of leaving the app to park UNSUPPORTED.
     const id = "6a76229767a1ad0bc53c8e92";
     const report = enqueueJobRightJobs(db, [id], {
       employerApplicationUrl: "https://careers.example.com/apply/123",
@@ -185,7 +185,7 @@ describe("enqueueJobRightJobs (UNIT_CONFIRMED)", () => {
     expect(raw["employer_application_url"]).toBe(
       "https://careers.example.com/apply/123",
     );
-    expect(raw["employer_application_ats"]).toBeNull();
+    expect(raw["employer_application_ats"]).toBe("generic");
   });
 
   it("refuses malformed or non-https employer URLs at ingestion (W7)", () => {

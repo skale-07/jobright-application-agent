@@ -50,14 +50,15 @@ describe("applicationFiller multi-ATS dispatch (W2)", () => {
     expect(nameEntry.value).toBe("Ada Lovelace");
   });
 
-  it("refuses to plan for HTML no fillable adapter matches (UNIT_CONFIRMED)", async () => {
-    await expect(
-      planApplicationFill({
-        url: "https://careers.example.com/apply",
-        html: "<html><body><form><input name='q'></form></body></html>",
-        profile: PROFILE,
-      }),
-    ).rejects.toThrow(/supports greenhouse\/lever\/ashby\/workable\/workday only/);
+  it("a company-hosted URL plans via the generic adapter (UNIT_CONFIRMED)", async () => {
+    // Formerly a refusal: the generic adapter lost its flag (operator
+    // directive 2026-08-14), so the long tail plans instead of parking.
+    const { adapter } = await planApplicationFill({
+      url: "https://careers.example.com/apply",
+      html: "<html><body><form><input name='q'></form></body></html>",
+      profile: PROFILE,
+    });
+    expect(adapter.id).toBe("generic");
   });
 
   it("still refuses non-fillable fixture names", async () => {

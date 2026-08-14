@@ -46,15 +46,17 @@ describe("runAtsLiveFill (W5)", () => {
     expect(report.gate.failure_code).toBe("ATS_MISMATCH");
   });
 
-  it("refuses an unsupported URL with aggregated reasons (UNIT_CONFIRMED)", async () => {
+  it("refuses a URL another adapter claims — binding mismatch, not silence (UNIT_CONFIRMED)", async () => {
+    // careers.example.com is now claimed by the generic adapter (no flag),
+    // so running it under the LEVER binding is a mismatch, still refused
+    // before any mutation.
     const report = await runAtsLiveFill({
       binding: ATS_BINDINGS.lever,
       url: "https://careers.example.com/apply/1",
       execute: false,
     });
     expect(report.mode).toBe("refused");
-    expect(report.gate.failure_code).toBe("UNSAFE_URL");
-    expect(report.gate.reason).toMatch(/lever: /);
+    expect(report.gate.failure_code).toBe("ATS_MISMATCH");
   });
 
   it(

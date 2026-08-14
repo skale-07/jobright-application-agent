@@ -20,7 +20,9 @@ describe("detectAtsFromUrl (W3, UNIT_CONFIRMED)", () => {
     ["https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab", "ashby"],
     ["https://acme.wd1.myworkdayjobs.com/en-US/careers/job/x", null],
     ["http://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890", null],
-    ["https://careers.example.com/apply/123", null],
+    // Company-hosted long tail: generic claims it (no flag — operator
+    // directive 2026-08-14).
+    ["https://careers.example.com/apply/123", "generic"],
     ["javascript:alert(1)", null],
   ];
 

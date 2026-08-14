@@ -239,7 +239,10 @@ describe("runAtsSubmission dispatch (W4, UNIT_CONFIRMED)", () => {
     expect(subs.n).toBe(0);
   });
 
-  it("refuses an app whose URL no supported ATS claims, with aggregated reasons", async () => {
+  it("refuses an app whose URL no adapter claims, with aggregated reasons", async () => {
+    // careers.example.com now belongs to the generic adapter (no flag), so
+    // the refusal path needs a URL that genuinely fails every validator —
+    // non-https is the surviving case a legacy row can carry.
     const database = freshDb();
     const appId = seedApp(database);
     // Bypass setEmployerApplicationUrl (which would refuse) to simulate a
@@ -250,7 +253,7 @@ describe("runAtsSubmission dispatch (W4, UNIT_CONFIRMED)", () => {
       )
       .get(appId) as { id: string; raw_json: string };
     const raw = JSON.parse(row.raw_json) as Record<string, unknown>;
-    raw["employer_application_url"] = "https://careers.example.com/apply/1";
+    raw["employer_application_url"] = "http://careers.example.com/apply/1";
     database
       .prepare(`UPDATE jobs SET raw_json = ? WHERE id = ?`)
       .run(JSON.stringify(raw), row.id);

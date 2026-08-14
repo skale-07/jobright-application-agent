@@ -324,6 +324,27 @@ describe("employer-URL audit + duplicate detection (UNIT_CONFIRMED)", () => {
     expect(findApplicationsWithEmployerUrl(db, url, a)).toEqual([]);
   });
 
+  it("dead siblings never block a URL — live IBM regression 2026-08-14", () => {
+    // nav-74302483: an IBM app parked duplicate_url because its only
+    // "holders" were a FAILED_FINAL and an UNSUPPORTED_ATS twin from
+    // earlier JobRight re-listings — the one app that could still proceed
+    // was the one that got blocked.
+    const url = "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=128526";
+    const dead1 = seedApp("IBM", url);
+    const dead2 = seedApp("IBM", url);
+    const live = seedApp("IBM", url);
+    const fresh = seedApp("IBM");
+    db.prepare(`UPDATE applications SET state = 'FAILED_FINAL' WHERE id = ?`).run(dead1);
+    db.prepare(`UPDATE applications SET state = 'UNSUPPORTED_ATS' WHERE id = ?`).run(dead2);
+    // Only the live holder counts.
+    expect(
+      findApplicationsWithEmployerUrl(db, url, fresh).map((d) => d.application_id),
+    ).toEqual([live]);
+    // A SUBMITTED holder still blocks — that posting was really applied to.
+    db.prepare(`UPDATE applications SET state = 'SUBMITTED' WHERE id = ?`).run(live);
+    expect(findApplicationsWithEmployerUrl(db, url, fresh)).toHaveLength(1);
+  });
+
   it("audit repairs the live poison shape: wrong-employer URL cleared, app re-navigates", () => {
     // Postman app wrongly holding Cohere's URL (the real bug).
     const poisoned = seedApp(

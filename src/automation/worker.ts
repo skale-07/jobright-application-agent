@@ -15,7 +15,10 @@ import {
 import { generateEssayDraftBatch } from "../applications/essayDraft.js";
 import { generateScreenerPredictions } from "../applications/screenerPredictionLlm.js";
 import { autopushArtifacts } from "./artifactAutopush.js";
-import { requeueNavStarvedApplications } from "./navRequeue.js";
+import {
+  requeueNavStarvedApplications,
+  reviveUnsupportedAtsApplications,
+} from "./navRequeue.js";
 import { restartCdpChrome } from "./cdpChrome.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { probeCdpEndpoint } from "../navigation/runNavigation.js";
@@ -353,6 +356,23 @@ export async function runAutomationSession(
   } catch (err) {
     report.notes.push(
       `nav requeue failed (continuing): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
+    );
+  }
+
+  // Revival sweep: UNSUPPORTED_ATS apps whose stored URL an adapter now
+  // claims (the generic adapter losing its flag turned the whole long tail
+  // fillable at once). Fail-open, capped, once per app.
+  try {
+    const rv = reviveUnsupportedAtsApplications(db);
+    if (rv.revived > 0) {
+      report.notes.push(
+        `unsupported-ATS revival: ${rv.revived} app(s) re-opened — an adapter now claims their URL`,
+      );
+    }
+    report.notes.push(...rv.notes);
+  } catch (err) {
+    report.notes.push(
+      `unsupported-ATS revival failed (continuing): ${err instanceof Error ? err.message.slice(0, 160) : String(err)}`,
     );
   }
 
