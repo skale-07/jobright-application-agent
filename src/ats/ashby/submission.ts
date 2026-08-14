@@ -10,7 +10,10 @@ import { detectErrorPageSignals } from "../greenhouse/identityVerification.js";
 import { ashbySelectorsV1 } from "./selectors.js";
 import { resolveSubmitControl } from "../shared/submitControl.js";
 
-import { SubmissionUncertainError } from "../shared/submissionUncertain.js";
+import {
+  SubmissionUncertainError,
+  detectVisibleValidationError,
+} from "../shared/submissionUncertain.js";
 
 export { SubmissionUncertainError } from "../shared/submissionUncertain.js";
 
@@ -114,6 +117,7 @@ export async function ashbyVerifySubmission(
 
   let classification: SubmissionPageClassification = "unknown";
   let html = "";
+  let validationError: string | null = null;
   while (Date.now() < deadline) {
     try {
       html = await page.content();
@@ -127,6 +131,12 @@ export async function ashbyVerifySubmission(
     if (classification === "confirmed" || classification === "error_page") {
       break;
     }
+    // Fast fail: still on the form with a visible validation message —
+    // the submit was rejected and the reason is already on screen.
+    if (classification === "still_on_form") {
+      validationError = detectVisibleValidationError(html);
+      if (validationError) break;
+    }
     await page.waitForTimeout(1000);
   }
 
@@ -136,9 +146,12 @@ export async function ashbyVerifySubmission(
 
   if (classification !== "confirmed") {
     throw new SubmissionUncertainError(
-      `Submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
+      validationError
+        ? `Submission rejected by the form: "${validationError}" (page classified: ${classification})`
+        : `Submission not confirmed within ${timeoutMs}ms (page classified: ${classification})`,
       {
         classification,
+        validation_error: validationError,
         final_url: page.url(),
         screenshot_path: options.screenshotPath,
         html_bytes: html.length,

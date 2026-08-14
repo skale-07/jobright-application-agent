@@ -21,7 +21,8 @@ import {
 } from "./navRequeue.js";
 import { restartCdpChrome } from "./cdpChrome.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
-import { probeCdpEndpoint } from "../navigation/runNavigation.js";
+import { probeCdpEndpoint, type NavSession } from "../navigation/runNavigation.js";
+import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import {
   runOutreachTail,
   OUTREACH_TAIL_STATES,
@@ -50,7 +51,15 @@ import {
 
 export { runOutreachTail, type OutreachTailResult } from "../outreach/outreachTail.js";
 
-const DEFAULT_DELAY_MS: [number, number] = [15_000, 45_000];
+/**
+ * Between-app pause. Was [15s, 45s] — measured at ~50% of session
+ * wall-clock (run 8bcff01c: ~45–55s per app, most of it this sleep).
+ * The pause exists to avoid hammering JobRight, but between apps the
+ * system is not touching JobRight at all — discovery runs every
+ * REDISCOVER_EVERY apps and has its own pacing. A short breath is enough.
+ * Operators can still widen it per-arm via delayMsRange.
+ */
+const DEFAULT_DELAY_MS: [number, number] = [2_000, 5_000];
 /** dfb007f8: the attach failure recurs — one restart was not enough. */
 const MAX_CDP_RESTARTS_PER_SESSION = 3;
 
@@ -338,8 +347,9 @@ export async function runAutomationSession(
   // by an agent-less session get ONE requeue when this session has the
   // agent leg (session edc4d38f drained an "empty" queue past seven of
   // them). Fail-open; the once-per-app marker makes loops impossible.
+  let agentLegUp = false;
   try {
-    const agentLegUp = await (input.agentLegProbe ??
+    agentLegUp = await (input.agentLegProbe ??
       (async () => {
         const cfg = getConfig();
         return cfg.agentFallbackEnabled && (await probeCdpEndpoint(cfg.agentCdpUrl));
@@ -384,6 +394,33 @@ export async function runAutomationSession(
   /** Verified-submit apps whose referral tail runs after the loop (batch). */
   const tailQueue: Array<{ appId: string; appResult: AutomationAppResult }> = [];
 
+  // ONE JobRight browser session for the whole loop (run 8bcff01c paid a
+  // fresh open+validate per app, ~4–6s each). Lazy: only created when an
+  // app actually reaches live navigation (never under the navigationRunner
+  // test seam), recreated at most once per app on failure, closed in the
+  // session-level finally below.
+  let sharedNavSession: NavSession | null = null;
+  const getNavSession = async (): Promise<NavSession | undefined> => {
+    if (input.navigationRunner) return undefined; // offline tests: no browser
+    if (!sharedNavSession) {
+      const s = new PlaywrightServiceSession({
+        service: "jobright",
+        ...(agentLegUp ? { mode: "CDP_ATTACH" as const } : {}),
+        headless: input.headless ?? true,
+        slowMoMs: 40,
+      });
+      await s.open();
+      sharedNavSession = s;
+    }
+    return sharedNavSession;
+  };
+  const dropNavSession = async (): Promise<void> => {
+    const s = sharedNavSession;
+    sharedNavSession = null;
+    if (s) await s.close().catch(() => undefined);
+  };
+
+  try {
   // The active-arm helper both validates status+expiry and lazily sweeps an
   // expired row, so it is the single source of truth for "still armed".
   for (let iter = 0; ; iter++) {
@@ -486,19 +523,38 @@ export async function runAutomationSession(
     });
 
     try {
-      const pipelineReport = await runPipeline({
-        db,
-        applicationId: appId,
-        submit: allowSubmit,
-        assumeYes: true,
-        automationRunId: armRunId,
-        headless: input.headless ?? true,
-        ...(input.fixtureHtmlPath ? { fixtureHtmlPath: input.fixtureHtmlPath } : {}),
-        ...(input.contactsFixtureHtmlPath
-          ? { contactsFixtureHtmlPath: input.contactsFixtureHtmlPath }
-          : {}),
-        ...(input.navigationRunner ? { navigationRunner: input.navigationRunner } : {}),
-      });
+      // Shared-session failures must not kill the loop: if the browser
+      // died since the last app, drop it and retry ONCE with a fresh one.
+      let navSession = await getNavSession().catch(() => undefined);
+      const runOnce = () =>
+        runPipeline({
+          db,
+          applicationId: appId,
+          submit: allowSubmit,
+          assumeYes: true,
+          automationRunId: armRunId,
+          headless: input.headless ?? true,
+          ...(navSession ? { navSession } : {}),
+          ...(input.fixtureHtmlPath ? { fixtureHtmlPath: input.fixtureHtmlPath } : {}),
+          ...(input.contactsFixtureHtmlPath
+            ? { contactsFixtureHtmlPath: input.contactsFixtureHtmlPath }
+            : {}),
+          ...(input.navigationRunner ? { navigationRunner: input.navigationRunner } : {}),
+        });
+      let pipelineReport;
+      try {
+        pipelineReport = await runOnce();
+      } catch (pipelineErr) {
+        if (!navSession) throw pipelineErr;
+        report.notes.push(
+          `shared nav session dropped after error on ${appId}: ${
+            pipelineErr instanceof Error ? pipelineErr.message.slice(0, 120) : String(pipelineErr)
+          }`,
+        );
+        await dropNavSession();
+        navSession = await getNavSession().catch(() => undefined);
+        pipelineReport = await runOnce();
+      }
       const appReport: PipelineAppReport | undefined = pipelineReport.applications[0];
       if (appReport) {
         const appResult = toAppResult(db, appReport);
@@ -614,6 +670,12 @@ export async function runAutomationSession(
       ? input.nextDelayMs(delayRange, iter)
       : delayRange[0] + Math.floor((delayRange[1] - delayRange[0]) * ((iter % 3) / 3));
     await sleep(ms);
+  }
+  } finally {
+    // The shared JobRight session outlived every app on purpose — this is
+    // the one place it closes (CDP mode only disconnects, never closes the
+    // operator's tabs — serviceSession.close() semantics).
+    await dropNavSession();
   }
 
   // Post-session referral batch: drafts only, never send; failures are

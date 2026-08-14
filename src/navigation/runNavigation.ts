@@ -202,6 +202,13 @@ export type RunNavigationInput = {
   headless?: boolean;
   /** Test seam: replaces the JobRight ServiceSession. */
   sessionOverride?: NavSession;
+  /**
+   * The sessionOverride belongs to the caller and outlives this run: the
+   * run closes only the PAGE it opened, never the session. The L3 worker
+   * passes one shared session across the whole loop — opening a fresh
+   * browser per app cost ~4–6s each (run 8bcff01c).
+   */
+  callerOwnedSession?: boolean;
   /** Test seam: replaces the JobRight page URL goto target check. */
   skipAuthLossCheck?: boolean;
   /** Test seam: fake sidecar for the agent phase. */
@@ -342,9 +349,14 @@ export async function runNavigation(
       slowMoMs: 40,
     });
 
+  const callerOwned = input.callerOwnedSession === true && !!input.sessionOverride;
+  let navPage: Page | null = null;
   try {
-    await session.open();
+    if (!callerOwned) {
+      await session.open();
+    }
     const page = await session.newPage({ purpose: "navigation" });
+    navPage = page;
     await page.goto(resolved.target.jobUrl, {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
@@ -893,7 +905,13 @@ export async function runNavigation(
       return persist(report);
     }
   } finally {
-    await session.close().catch(() => undefined);
+    if (callerOwned) {
+      // The session lives on for the next app; only this run's tab dies —
+      // otherwise a 25-app armed loop accumulates 25 tabs.
+      await navPage?.close().catch(() => undefined);
+    } else {
+      await session.close().catch(() => undefined);
+    }
   }
 
   function safeHostOf(url: string): string {
