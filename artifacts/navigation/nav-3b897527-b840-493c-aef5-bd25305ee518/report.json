@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-3b897527-b840-493c-aef5-bd25305ee518",
+  "application_id": "0e26ed49-6fe2-4659-bcb0-b812ca3bf07f",
+  "jobright_job_id": "6a7d450e7c52154b59f5e384",
+  "method": "apply_click_popup",
+  "resolved_url": "https://jobs.gusto.com/postings/gesture-us-inc-ai-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969?jr_id=6a7d450e7c52154b59f5e384",
+  "resolved_ats": null,
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "jobs.gusto.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: 7 non-ATS external host(s) seen: jobs.gusto.com, www.linkedin.com, x.com, www.crunchbase.com, gesture.vip, expertdojo.com, www.digitaljournal.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup captured on attempt 1",
+    "employer verified (token \"gesture\" ~ slug \"gestureusincaifullstackengineerinterne6b31003155a48dda442a664809ff969\" (from URL path)) but no adapter for jobs.gusto.com — routes to human review as unsupported ATS"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "[REDACTED]",
+    "detail": "token \"gesture\" ~ slug \"gestureusincaifullstackengineerinterne6b31003155a48dda442a664809ff969\" (from URL path)",
+    "expected_company": "Gesture",
+    "url": "https://jobs.gusto.com/postings/gesture-us-inc-ai-full-stack-engineer-intern-e6b31003-155a-48dd-a442-a664809ff969?jr_id=6a7d450e7c52154b59f5e384"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T01:27:48.733Z"
+}

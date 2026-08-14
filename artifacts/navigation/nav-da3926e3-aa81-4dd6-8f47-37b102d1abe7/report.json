@@ -1,0 +1,44 @@
+{
+  "run_id": "nav-da3926e3-aa81-4dd6-8f47-37b102d1abe7",
+  "application_id": "f126f245-d5d6-4a1b-a148-02f673ba85d9",
+  "jobright_job_id": "6a7e27bde2030208f2767f05",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "budget",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no known-ATS anchors (9 external links ignored)",
+      "evidence": "ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "skipped: agent phase unavailable (CDP Chrome unreachable at http://127.0.0.1:9222)"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: 9 non-ATS external host(s) seen: ibmglobal.avature.net, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, fr.linkedin.com, webrazzi.com, www.indianweb2.com, www.thefastmode.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup opened but carried no usable URL",
+    "no external URL captured after 2 attempts",
+    "unresolved by deterministic phases; agent phase unavailable: CDP Chrome unreachable at http://127.0.0.1:9222"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-14T01:26:28.721Z"
+}
