@@ -273,7 +273,9 @@
         "src/ats/workday/pageKind.ts": "classifyWorkdayPage: auth checked BEFORE wizard (Create Account is step 1 of the wizard)",
         "src/ats/generic/urlValidation.ts": "https-only, never jobright, vendor-owned hosts rejected",
         "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
-        "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen"
+        "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
+        "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
+        "src/ats/shared/pageClassify.ts": "classifyPage \u2014 vendor-blind landing classifier; a page with inputs but no identity field plus an Apply CTA is a POSTING, not a form"
       },
       "key_exports": {
         "src/ats/shared/urlValidationDispatch.ts": [
@@ -297,6 +299,13 @@
         "src/ats/shared/otherSpecify.ts": [
           "fillOtherSpecify",
           "pickSpecifyField"
+        ],
+        "src/ats/shared/postingAdvance.ts": [
+          "advancePastPosting"
+        ],
+        "src/ats/shared/pageClassify.ts": [
+          "classifyPage",
+          "hasApplicationIdentityFields"
         ]
       }
     },
@@ -486,7 +495,8 @@
         "src/automation/navRequeue.ts": "one-shot requeues: nav-starved + unsupported-ATS revival",
         "src/automation/autoCycle.ts": "scheduled headless cycle (desktop task)",
         "src/automation/artifactAutopush.ts": "ARTIFACT_AUTOPUSH_ENABLED git push of run artifacts",
-        "src/automation/cdpChrome.ts": "CDP_AUTOLAUNCH_ENABLED debug-Chrome self-repair"
+        "src/automation/cdpChrome.ts": "CDP_AUTOLAUNCH_ENABLED debug-Chrome self-repair",
+        "src/automation/skipRequests.ts": "requestSkip \u2014 cooperative operator skip; runPipeline reads it between steps so a stuck job can be abandoned at a safe boundary"
       },
       "key_exports": {
         "src/automation/worker.ts": [
@@ -495,6 +505,13 @@
         "src/automation/navRequeue.ts": [
           "requeueNavStarvedApplications",
           "reviveUnsupportedAtsApplications"
+        ],
+        "src/automation/skipRequests.ts": [
+          "requestSkip",
+          "isSkipRequested",
+          "clearSkipRequest",
+          "unskip",
+          "getSkipRequest"
         ]
       },
       "gates": [

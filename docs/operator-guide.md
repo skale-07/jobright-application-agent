@@ -1239,3 +1239,73 @@ the duplicate-employer-URL guard, and `nav:audit`, the offline sweep that
 repairs a stored URL before a human submits against it. Every report carries
 `congruence.verdict` — `mismatch` there now means "worth a look", not
 "discarded".
+
+### Answer spaces: what a field can accept (2026-08-14)
+
+Every question on a form is one of two kinds, and the system now names
+which before it answers:
+
+- **CLOSED** — a dropdown, listbox or radio group. The only valid answers
+  are the options that control offers. Typing anything else leaves the
+  field empty.
+- **OPEN** — a plain text box or textarea. Anything typeable is valid.
+
+This mattered because planning used to read the page's HTML only, and no
+modern job board ships a plain `<select>` — Greenhouse, Lever, Ashby and
+Workday all render dropdowns whose option list does not exist until the
+control is opened. So every dropdown reached the planner looking like it
+had no options at all, and the system fell back to typing a stored string
+into it. On a live Appian form that produced "Summer Atlantic Capital" in
+a dropdown whose only honest answer was "Other"; the control showed "No
+options" and the field stayed blank.
+
+Now, before anything is planned, each control is opened, its real option
+list is read, and the control is closed again without selecting anything.
+That list is what the matcher and the model both answer from, and a model
+answer is still accepted only if it matches an option character for
+character.
+
+**When your real answer is not on the list**: if the form offers its own
+"Other" (or "None of the above" / "Not listed"), the system chooses it and
+then types your real answer into the "please specify" box the form reveals
+next. "Prefer not to say" is deliberately NOT treated this way — declining
+is a different answer, and it is yours to give, not the system's.
+
+Every run report now carries `harvested_options`: each control, its answer
+space, and the options that were actually on the page. When an answer
+looks wrong, that field tells you whether the system chose badly or never
+saw the choices.
+
+### Wrong page: Apply gets clicked first (2026-08-14)
+
+A landing page that has text inputs is not necessarily an application. A
+job listing carries the site's own search chrome — "Search by job title,
+ID, or keyword", "City, state, or country/region" — and the old field
+counter read those as an application form. On `microsoft.eightfold.ai`
+the system mapped the location *search box* to your country and spent 100
+seconds timing out on it while a plain "Apply now" button sat unclicked.
+
+The discriminator is now what the fields ARE: every real application asks
+who you are (name, email, phone, resume). An Apply button plus no identity
+field means you are on the posting, so the system clicks Apply and looks
+again — up to twice, for any ATS. If it is still on a posting after that,
+the application parks with `FORM_NOT_REACHED` rather than filling a
+listing page's search widgets.
+
+### Skip a job the agent is stuck on
+
+Applications list → **skip ⏭** on any row.
+
+The include/exclude toggle next to it is only read when the worker picks
+its *next* job. Skip also interrupts a job already running: the pipeline
+checks for it between steps and moves on. It lands at a step boundary, so
+a form is never left half-filled and a submit in flight is never abandoned
+mid-click.
+
+Skipping does not change the application's state — it stays exactly where
+it got to, so you can look at what went wrong, fix it, and put the job
+back in the queue with the **included ✓** toggle. A skipped job is
+excluded from automation until you do.
+
+`POST /api/applications/:id/skip` is the same action from a script;
+`{"undo": true}` re-includes it.

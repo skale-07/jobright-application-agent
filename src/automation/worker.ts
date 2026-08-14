@@ -19,6 +19,7 @@ import {
   requeueNavStarvedApplications,
   reviveUnsupportedAtsApplications,
 } from "./navRequeue.js";
+import { clearSkipRequest, isSkipRequested } from "./skipRequests.js";
 import { restartCdpChrome } from "./cdpChrome.js";
 import { auditEmployerUrls } from "../navigation/auditEmployerUrls.js";
 import { probeCdpEndpoint, type NavSession } from "../navigation/runNavigation.js";
@@ -136,6 +137,8 @@ export type AutomationSessionInput = {
   /** Test seams forwarded to each runPipeline call. */
   fixtureHtmlPath?: string;
   navigationRunner?: PipelineOptions["navigationRunner"];
+  /** Test seam for the operator Skip signal; production reads the DB marker. */
+  shouldSkip?: PipelineOptions["shouldSkip"];
   contactsFixtureHtmlPath?: string;
   /** Test seam replacing live discovery. */
   discoveryRunner?: DiscoveryRunner;
@@ -540,6 +543,9 @@ export async function runAutomationSession(
             ? { contactsFixtureHtmlPath: input.contactsFixtureHtmlPath }
             : {}),
           ...(input.navigationRunner ? { navigationRunner: input.navigationRunner } : {}),
+          // The console's Skip button writes a marker; the pipeline reads
+          // it between steps and stops working this app. Tests override.
+          shouldSkip: input.shouldSkip ?? ((id) => isSkipRequested(db, id)),
         });
       let pipelineReport;
       try {
@@ -575,6 +581,15 @@ export async function runAutomationSession(
         if (appReport.stopped == null) {
           noteError("anomaly_no_stop");
           report.notes.push(`anomaly: ${appId} stopped with no reason`);
+        }
+        if (appReport.stopped === "skipped") {
+          // Acted on — clear the pending marker so it does not re-fire, but
+          // KEEP the exclusion: the operator said not this one, and only
+          // the operator says otherwise (via the include toggle).
+          clearSkipRequest(db, appId);
+          report.notes.push(
+            `skipped ${appId} on operator request — moving to the next job`,
+          );
         }
         // Post-submit outreach tail (drafts only, never send). Only states a
         // verified submit can reach; failures are review items, not stops.

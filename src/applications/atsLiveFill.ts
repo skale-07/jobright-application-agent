@@ -20,6 +20,7 @@ import { planApplicationFill } from "./applicationFiller.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
+import { advancePastPosting } from "../ats/shared/postingAdvance.js";
 import {
   harvestFieldOptions,
   type AnswerSpace,
@@ -412,6 +413,33 @@ export async function runAtsLiveFill(input: {
           }
         }
       }
+      // Are we even on the application page? A listing page carries the
+      // site's own search widgets, which look like fields to a field
+      // counter — so "has inputs" was mistaken for "is a form" and the run
+      // filled the posting (live: microsoft.eightfold.ai typed "United
+      // States" into a job-search box). Classify first; if this is a
+      // posting, click Apply and look again, the way a person would.
+      if (input.execute) {
+        const advance = await advancePastPosting({ page, html: planHtml, url: planUrl });
+        report.notes.push(...advance.notes);
+        if (advance.hops > 0) {
+          planHtml = advance.html;
+          planUrl = advance.url;
+          page = advance.page;
+          report.gate.final_url = planUrl;
+        }
+        if (!advance.advanced && advance.page_class === "posting") {
+          report.gate.ok = false;
+          report.gate.failure_code = "FORM_NOT_REACHED";
+          report.gate.reason =
+            "still on the job posting after trying Apply — no application form to fill";
+          report.notes.push(
+            "parked: refused to fill a listing page's own search widgets",
+          );
+          return persist(report);
+        }
+      }
+
       // Scrape each control's REAL answer space before planning anything.
       // HTML cannot see a React-select's option list, so without this every
       // dropdown reaches the planner empty and the tiers below degrade to
