@@ -218,6 +218,45 @@ describe("nav fast exits (FIXTURE_CONFIRMED)", () => {
     });
   }, 30_000);
 
+  it("headless runs CLOSE an unread about:blank popup; headed leaves it", async () => {
+    // With the shared-session loop (2026-08-14) an unread tab per app
+    // would accumulate across a 25-app armed session in one browser.
+    const html = `<!DOCTYPE html><html><body><button id="go">Apply now</button>
+      <script>
+        document.getElementById('go').addEventListener('click', () => {
+          window.open('', '_blank');
+        });
+      </script></body></html>`;
+    const { clickApplyAndCaptureExternalUrl } = await import(
+      "../../src/jobright/navigateToEmployer.js"
+    );
+    const { applyControlledFillEnv, applySafeFillEnv } = await import(
+      "../helpers/fillEnvIsolation.js"
+    );
+    const { resetConfigCache } = await import("../../src/config/index.js");
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await withFixtureHtmlPage(html, async (page) => {
+        const popupSeen: Array<() => boolean> = [];
+        page.context().on("page", (p) => popupSeen.push(() => p.isClosed()));
+        const fakeSession = {
+          getContext: () => page.context(),
+        } as Parameters<typeof clickApplyAndCaptureExternalUrl>[0];
+        const capture = await clickApplyAndCaptureExternalUrl(fakeSession, page, {
+          closeUnreadPopups: true,
+        });
+        expect(capture.url).toBeNull();
+        expect(capture.notes.join(" ")).toMatch(/closed \(headless run\)/);
+        expect(popupSeen.length).toBeGreaterThan(0);
+        expect(popupSeen.every((isClosed) => isClosed())).toBe(true);
+      });
+    } finally {
+      applySafeFillEnv();
+      resetConfigCache();
+    }
+  }, 60_000);
+
   it("employer sibling hosts cover the bytedance redirect, exclude socials", () => {
     const hosts = employerSiblingHosts(
       [

@@ -46,9 +46,44 @@ function predictClosestLocation(profile: PublicProfile): ScreenerPrediction | nu
   return { value: country, derivation: `address country "${country}"` };
 }
 
+/**
+ * Work authorization from the profile's own statement — NEVER invented.
+ * Empty profile value ⇒ null ⇒ the field parks as Answer needed, exactly
+ * as before. "US Citizen" / "Green Card" / "permanent resident" style
+ * facts derive Yes; an explicit no/visa-needed derives No.
+ */
+function predictWorkAuthorization(profile: PublicProfile): ScreenerPrediction | null {
+  const v = String(profile.work_authorization ?? "").trim().toLowerCase();
+  if (!v) return null;
+  if (/^(yes|y|true|1)$/.test(v) || /citizen|green ?card|permanent resident|authorized|eligible/.test(v)) {
+    return { value: "Yes", derivation: `work_authorization "${profile.work_authorization}"` };
+  }
+  if (/^(no|n|false|0)$/.test(v) || /not authorized|need.*visa|require.*sponsor/.test(v)) {
+    return { value: "No", derivation: `work_authorization "${profile.work_authorization}"` };
+  }
+  return null;
+}
+
+function predictRequiresSponsorship(profile: PublicProfile): ScreenerPrediction | null {
+  const raw = profile.requires_sponsorship;
+  if (raw === true) return { value: "Yes", derivation: "requires_sponsorship true" };
+  if (raw === false) return { value: "No", derivation: "requires_sponsorship false" };
+  const v = String(raw ?? "").trim().toLowerCase();
+  if (!v) return null;
+  if (/^(yes|y|true|1)$/.test(v)) {
+    return { value: "Yes", derivation: `requires_sponsorship "${raw}"` };
+  }
+  if (/^(no|n|false|0)$/.test(v)) {
+    return { value: "No", derivation: `requires_sponsorship "${raw}"` };
+  }
+  return null;
+}
+
 const PREDICTORS: Record<string, Predictor> = {
   education_level: predictEducationLevel,
   closest_location: predictClosestLocation,
+  work_authorization: predictWorkAuthorization,
+  requires_sponsorship: predictRequiresSponsorship,
 };
 
 /** Extra option-matching aliases for predicted values (country spellings). */

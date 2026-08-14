@@ -44,11 +44,11 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
     );
     expect(isRecognizedAtsAuthHost("https://jobs.bytedance.com/x")).toBe(false);
     const { account, replaced } = setAccount("jobs.bytedance.com", {
-      email: "candidate@example.com",
+      email: "candidate@fixture.test",
       password: "operator-chosen-secret",
     });
     expect(replaced).toBe(false);
-    expect(account.username).toBe("candidate@example.com");
+    expect(account.username).toBe("candidate@fixture.test");
     expect(account.password).toBe("operator-chosen-secret");
     expect(isRecognizedAtsAuthHost("https://jobs.bytedance.com/x")).toBe(true);
     // jobright is never vault-authorized, whatever is stored.
@@ -71,7 +71,7 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
   // Operator directive 2026-08-12: ONE email + password for every portal,
   // set in .env — signing in must never be a per-site chore.
   it("standing PORTAL_LOGIN_* credentials serve every https employer host", async () => {
-    process.env.PORTAL_LOGIN_EMAIL = "standing@example.com";
+    process.env.PORTAL_LOGIN_EMAIL = "standing@fixture.test";
     process.env.PORTAL_LOGIN_PASSWORD = "one-password-everywhere";
     resetConfigCache();
     try {
@@ -100,7 +100,7 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
       });
       expect(r.credentials).toMatchObject({
         available: true,
-        username: "standing@example.com",
+        username: "standing@fixture.test",
         password: "one-password-everywhere",
       });
       expect(r.notes.join(" ")).toMatch(/standing portal login used/);
@@ -116,10 +116,10 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
 
   it("a site-forced per-host password still overrides the standing one", async () => {
     setAccount("portal.forced.com", {
-      email: "standing@example.com",
+      email: "standing@fixture.test",
       password: "site-forced-rotation",
     });
-    process.env.PORTAL_LOGIN_EMAIL = "standing@example.com";
+    process.env.PORTAL_LOGIN_EMAIL = "standing@fixture.test";
     process.env.PORTAL_LOGIN_PASSWORD = "one-password-everywhere";
     resetConfigCache();
     try {
@@ -133,6 +133,68 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
       });
       expect(r.credentials).toMatchObject({ password: "site-forced-rotation" });
       expect(r.notes.join(" ")).toMatch(/per-host password/);
+    } finally {
+      delete process.env.PORTAL_LOGIN_EMAIL;
+      delete process.env.PORTAL_LOGIN_PASSWORD;
+      resetConfigCache();
+    }
+  });
+
+  /**
+   * Live 2026-08-14: a REAL Workday account was minted with
+   * candidate@example.com (the example-profile placeholder) and its
+   * verification code went to a mailbox nobody owns — the application
+   * wedged permanently. Placeholder addresses must refuse LOUDLY, naming
+   * the fix, on both the standing-login and account-minting paths.
+   */
+  it("refuses placeholder emails on every credential path, loudly", async () => {
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@example.com";
+    process.env.PORTAL_LOGIN_PASSWORD = "one-password-everywhere";
+    resetConfigCache();
+    try {
+      const { prepareCredentialsForHost, isPlaceholderEmail } = await import(
+        "../../src/verification/accountCredentials.js"
+      );
+      // The detector: unroutable placeholders yes, real-looking mail no.
+      for (const bad of [
+        "candidate@example.com",
+        "someone@example.org",
+        "x@invalid",
+        "your.email@gmail.com",
+        "a@email.com",
+      ]) {
+        expect(isPlaceholderEmail(bad), bad).toBe(true);
+      }
+      for (const ok of [
+        "sk.mdia.pts@gmail.com",
+        "jane.doe@outlook.com",
+        "candidate@fixture.test",
+      ]) {
+        expect(isPlaceholderEmail(ok), ok).toBe(false);
+      }
+
+      // Standing path: password set, email is the placeholder — refused
+      // with the fix named, and no account is minted downstream either.
+      const standing = prepareCredentialsForHost({
+        host: "careers.brand-new-employer.com",
+        runId: "t",
+        loginWallDetected: true,
+      });
+      expect(standing.credentials.available).toBe(false);
+      expect(standing.notes.join(" ")).toMatch(/placeholder/);
+      expect(standing.notes.join(" ")).toMatch(/PORTAL_LOGIN_EMAIL/);
+
+      // Minting path: same refusal via emailOverride.
+      delete process.env.PORTAL_LOGIN_PASSWORD;
+      resetConfigCache();
+      const minted = prepareCredentialsForHost({
+        host: "careers.brand-new-employer.com",
+        runId: "t",
+        loginWallDetected: true,
+        emailOverride: "candidate@example.com",
+      });
+      expect(minted.credentials.available).toBe(false);
+      expect(minted.notes.join(" ")).toMatch(/mailbox nobody owns/);
     } finally {
       delete process.env.PORTAL_LOGIN_EMAIL;
       delete process.env.PORTAL_LOGIN_PASSWORD;
@@ -174,11 +236,11 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
 
   it("creates once, reuses thereafter, stored under private/ats-accounts", () => {
     const { account, created } = getOrCreateAccount("careers.example.com", {
-      email: "candidate@example.com",
+      email: "candidate@fixture.test",
       runId: `nav-${randomUUID()}`,
     });
     expect(created).toBe(true);
-    expect(account.username).toBe("candidate@example.com");
+    expect(account.username).toBe("candidate@fixture.test");
 
     const again = getOrCreateAccount("careers.example.com", {
       email: "other@example.com",
@@ -187,7 +249,7 @@ describe("ATS account vault (N5, UNIT_CONFIRMED)", () => {
     expect(again.created).toBe(false);
     expect(again.account.password).toBe(account.password);
     expect(getAccount("careers.example.com")?.username).toBe(
-      "candidate@example.com",
+      "candidate@fixture.test",
     );
 
     const files = fs.readdirSync(path.join(privateDir, "ats-accounts"));

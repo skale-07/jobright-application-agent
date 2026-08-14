@@ -473,6 +473,9 @@ export async function runNavigation(
     const capture = await clickApplyAndCaptureExternalUrl(
       session as PlaywrightServiceSession,
       page,
+      // Nobody is watching a headless run — an unread about:blank popup is
+      // clutter (and with the shared session, cumulative clutter).
+      { closeUnreadPopups: input.headless ?? true },
     );
     report.notes.push(...capture.notes);
     if (capture.url) {

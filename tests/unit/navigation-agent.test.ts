@@ -285,13 +285,13 @@ describe("navigation agent phase (N3)", () => {
             notes: [],
             need: {
               kind: "verification_email",
-              sent_to: "candidate@example.com",
+              sent_to: "candidate@fixture.test",
               requested_at: "2026-08-07T00:00:00Z",
             },
           }),
         );
         expect(report.wall).toBe("auth");
-        expect(report.need?.sent_to).toBe("candidate@example.com");
+        expect(report.need?.sent_to).toBe("candidate@fixture.test");
         expect(report.resolved_url).toBeNull();
         expect(getEmployerApplicationUrl(db!, appId)).toBeNull();
       } finally {
@@ -390,7 +390,7 @@ describe("navigation agent phase (N3)", () => {
             notes: [],
             need: {
               kind: "verification_email",
-              sent_to: "candidate@example.com",
+              sent_to: "candidate@fixture.test",
               requested_at: "2026-08-07T00:00:00Z",
               // Evidence shows a plain login page — NO verification prompt.
               evidence: "Sign in to continue. Email. Password. Forgot password?",
@@ -429,7 +429,7 @@ describe("navigation agent phase (N3)", () => {
           "if(t.resume.injected.code!=='482193'){console.log(JSON.stringify({status:'error',final_url:null,wall:'budget',steps_used:0,domains_visited:[],notes:['wrong code injected'],reason:'bad'}));return;}",
           `console.log(JSON.stringify({status:'ok',final_url:'https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application',wall:'none',steps_used:2,domains_visited:['jobs.ashbyhq.com'],notes:['continuation ok']}));`,
           "}else{",
-          "console.log(JSON.stringify({status:'needs_input',final_url:'https://jobs.ashbyhq.com/acme/login',wall:'auth',steps_used:4,domains_visited:['jobs.ashbyhq.com'],notes:[],need:{kind:'verification_email',sent_to:'candidate@example.com',requested_at:'2026-08-07T00:00:00Z',evidence:'EMAIL_VERIFICATION_REQUIRED: We sent a verification code to candidate@example.com — enter the code to continue.'}}));",
+          "console.log(JSON.stringify({status:'needs_input',final_url:'https://jobs.ashbyhq.com/acme/login',wall:'auth',steps_used:4,domains_visited:['jobs.ashbyhq.com'],notes:[],need:{kind:'verification_email',sent_to:'candidate@fixture.test',requested_at:'2026-08-07T00:00:00Z',evidence:'EMAIL_VERIFICATION_REQUIRED: We sent a verification code to candidate@fixture.test — enter the code to continue.'}}));",
           "}});",
         ].join("");
         const report = await runWithAgentAndGmail(
@@ -474,7 +474,7 @@ describe("navigation agent phase (N3)", () => {
       resetConfigCache();
       try {
         const { account } = getOrCreateAccount("careers.acme.com", {
-          email: "candidate@example.com",
+          email: "candidate@fixture.test",
           runId: "seed",
         });
 

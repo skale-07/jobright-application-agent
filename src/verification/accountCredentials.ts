@@ -43,6 +43,20 @@ export function candidateEmailForAccounts(overrides?: {
   );
 }
 
+/**
+ * Live 2026-08-14: a REAL Workday account was created with
+ * candidate@example.com — the placeholder from the example profile — and
+ * its verification code went to a mailbox nobody owns, wedging the
+ * application permanently. An address like that is never usable: refuse
+ * loudly (naming the fix) instead of minting an unreachable account.
+ */
+const PLACEHOLDER_EMAIL_RE =
+  /@example\.(com|org|net)$|@(example|placeholder|invalid|localhost)$|@email\.com$|^your[._-]?email@/i;
+
+export function isPlaceholderEmail(email: string): boolean {
+  return PLACEHOLDER_EMAIL_RE.test(email.trim());
+}
+
 export function prepareCredentialsForHost(input: {
   host: string | null;
   runId: string;
@@ -66,8 +80,14 @@ export function prepareCredentialsForHost(input: {
   const cfg = getConfig();
   const standingPassword = cfg.portalLoginPassword;
   if (standingPassword) {
-    const standingEmail =
+    let standingEmail =
       cfg.portalLoginEmail ?? input.emailOverride ?? candidateEmailForAccounts();
+    if (standingEmail && isPlaceholderEmail(standingEmail)) {
+      notes.push(
+        `REFUSED: login email "${standingEmail}" is a placeholder — a real portal account would send its verification mail to a mailbox nobody owns. Set PORTAL_LOGIN_EMAIL to your real address.`,
+      );
+      standingEmail = "";
+    }
     if (standingEmail) {
       const perHost = getAccount(host);
       // A per-host entry wins ONLY when its password differs from the
@@ -126,6 +146,12 @@ export function prepareCredentialsForHost(input: {
   if (!email) {
     notes.push(
       `vault: cannot mint an account for ${host} — no candidate email (Gmail token and public profile both missing)`,
+    );
+    return { credentials: { available: false }, notes, secrets };
+  }
+  if (isPlaceholderEmail(email)) {
+    notes.push(
+      `REFUSED: will not mint an account for ${host} with placeholder email "${email}" — its verification mail would go to a mailbox nobody owns (live 2026-08-14: candidate@example.com wedged a real Workday application). Fix the email in your public profile / PORTAL_LOGIN_EMAIL.`,
     );
     return { credentials: { available: false }, notes, secrets };
   }

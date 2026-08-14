@@ -111,7 +111,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
       await onWorkdayPage(AUTH_HTML, async (page) => {
         let waiterCalls = 0;
         const r = await authenticateAtsPortal(page, {
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
           settleMs: 0,
           waiter: async () => {
             waiterCalls += 1;
@@ -121,7 +121,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
         // The form is still present in this fixture (no SPA transition), so
         // the flow reports wall_remains — but the load-bearing facts hold:
         expect(await page.locator("[data-automation-id='email']").inputValue()).toBe(
-          "candidate@example.com",
+          "candidate@fixture.test",
         );
         expect(
           (await page.locator("[data-automation-id='password']").inputValue()).length,
@@ -178,7 +178,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     try {
       await onWorkdayPage(REJECT_HTML, async (page) => {
         const r = await authenticateAtsPortal(page, {
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
           settleMs: 0,
         });
         expect(r.escalated_to_create).toBe(true);
@@ -217,7 +217,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     try {
       await onWorkdayPage(OK_HTML, async (page) => {
         const r = await authenticateAtsPortal(page, {
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
           settleMs: 0,
         });
         expect(r.status).toBe("signed_in");
@@ -246,7 +246,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
         // No email/password inputs here ⇒ not_an_auth_wall short-circuits
         // BEFORE any mailbox logic, proving the flow needs the sign-in form.
         const r = await authenticateAtsPortal(page, {
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
           settleMs: 0,
           waiter: async () => ({ kind: "code", code: "482193", messageId: "m", pollsUsed: 1 }),
         });
@@ -308,7 +308,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
     const prevEmail = process.env.PORTAL_LOGIN_EMAIL;
     const prevPassword = process.env.PORTAL_LOGIN_PASSWORD;
-    process.env.PORTAL_LOGIN_EMAIL = "candidate@example.com";
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@fixture.test";
     process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
     resetConfigCache();
     try {
@@ -394,7 +394,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
     const prevEmail = process.env.PORTAL_LOGIN_EMAIL;
     const prevPassword = process.env.PORTAL_LOGIN_PASSWORD;
-    process.env.PORTAL_LOGIN_EMAIL = "candidate@example.com";
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@fixture.test";
     process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
     resetConfigCache();
     try {
@@ -449,7 +449,7 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
       await onWorkdayPage(OTP_HTML, async (page) => {
         let waiterCalls = 0;
         const r = await authenticateAtsPortal(page, {
-          emailOverride: "candidate@example.com",
+          emailOverride: "candidate@fixture.test",
           settleMs: 0,
           waiter: async () => {
             waiterCalls += 1;

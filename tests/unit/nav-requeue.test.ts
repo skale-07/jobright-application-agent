@@ -99,6 +99,16 @@ describe("nav-starved requeue (UNIT_CONFIRMED)", () => {
     expect(getApplication(db, starved)?.state).toBe("QUEUED");
   });
 
+  it("agent_unavailable parks are starvation too — requeued (regression)", () => {
+    // The wall rename (budget → agent_unavailable, 2026-08-14) silently
+    // orphaned these: the sweep's regex only matched "budget", so every
+    // CDP-Chrome-down park would have waited forever.
+    const starved = seedFailedApp("navigation unresolved (agent_unavailable)");
+    const r = requeueNavStarvedApplications(db);
+    expect(r.requeued).toBe(1);
+    expect(getApplication(db, starved)?.state).toBe("QUEUED");
+  });
+
   function seedUnsupportedApp(url?: string): string {
     const job = upsertJobByFingerprint(db, {
       jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,

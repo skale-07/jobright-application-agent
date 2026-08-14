@@ -65,7 +65,13 @@ export function requeueNavStarvedApplications(
     if (
       !lastEvent ||
       lastEvent.next_state !== "FAILED_RETRYABLE" ||
-      !/^navigation unresolved \(budget\)/.test(lastEvent.reason ?? "")
+      // agent_unavailable is the honest name budget was split into
+      // (2026-08-14): "CDP Chrome unreachable" parks. Both are exactly the
+      // starvation this sweep exists for — a session WITH the agent leg
+      // owes them one retry.
+      !/^navigation unresolved \((budget|agent_unavailable)\)/.test(
+        lastEvent.reason ?? "",
+      )
     ) {
       continue;
     }

@@ -1,0 +1,183 @@
+import { describe, expect, it } from "vitest";
+import { findApplicationFrameUrl } from "../../src/ats/shared/frameHop.js";
+import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
+import { useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
+
+/**
+ * Iframe-hosted forms (fix 4 of the 2026-08-14 batch). page.content()
+ * excludes iframe content, so an embedded application form used to
+ * discover ZERO fields and refuse NO_APPLICATION_FORM while a human saw a
+ * form. findApplicationFrameUrl names the frame worth hopping to; the
+ * live-fill runner then navigates there and re-runs the full gate.
+ */
+describe("iframe application-form hop (FIXTURE_CONFIRMED)", () => {
+  useIsolatedFillEnv("safe");
+
+  const EMBED_FORM_HTML = `<!DOCTYPE html><html><body>
+    <form>
+      <label>First Name<input name="first_name" /></label>
+      <label>Last Name<input name="last_name" /></label>
+      <label>Email<input type="email" name="email" /></label>
+    </form></body></html>`;
+
+  it("finds the frame whose document carries fillable fields", async () => {
+    const outer = `<!DOCTYPE html><html><body>
+      <h1>Join our team</h1>
+      <iframe src="https://embed.ats-example.com/careers/apply/42"></iframe>
+    </body></html>`;
+    await withFixtureHtmlPage("<html><body></body></html>", async (page) => {
+      await page.context().route("**/*", (route) =>
+        route.fulfill({
+          body: route.request().url().includes("embed.ats-example.com")
+            ? EMBED_FORM_HTML
+            : outer,
+          contentType: "text/html",
+        }),
+      );
+      await page.goto("https://careers.example-employer.com/jobs/42", {
+        waitUntil: "domcontentloaded",
+      });
+      // Give the child frame a beat to load its routed document.
+      await page.waitForTimeout(500);
+      const hit = await findApplicationFrameUrl(page);
+      expect(hit).not.toBeNull();
+      expect(hit!.url).toBe("https://embed.ats-example.com/careers/apply/42");
+      expect(hit!.fieldCount).toBeGreaterThanOrEqual(3);
+    });
+  }, 45_000);
+
+  it("returns null when no frame carries a form (no false hop)", async () => {
+    const outer = `<!DOCTYPE html><html><body>
+      <h1>About us</h1>
+      <iframe src="https://media.example.com/video/9"></iframe>
+    </body></html>`;
+    await withFixtureHtmlPage("<html><body></body></html>", async (page) => {
+      await page.context().route("**/*", (route) =>
+        route.fulfill({
+          body: route.request().url().includes("media.example.com")
+            ? "<html><body><p>a video player, no form</p></body></html>"
+            : outer,
+          contentType: "text/html",
+        }),
+      );
+      await page.goto("https://careers.example-employer.com/about", {
+        waitUntil: "domcontentloaded",
+      });
+      await page.waitForTimeout(500);
+      expect(await findApplicationFrameUrl(page)).toBeNull();
+    });
+  }, 45_000);
+});
+
+/**
+ * Workday multi-page wizard walk (fix 5). Crowe live: a 7-step wizard got
+ * only its landing page filled; every later page's required questions were
+ * never even seen, so submit refused on "unanswered questions". The walk
+ * clicks Next → settles → re-plans → re-fills, bounded, and NEVER touches
+ * the submit button — the gated submit path owns that click.
+ */
+describe("workday wizard walk (FIXTURE_CONFIRMED)", () => {
+  useIsolatedFillEnv("fixture_fill");
+
+  it("fills the page BEHIND Next and stops at review without submitting", async () => {
+    const { walkWorkdayWizard } = await import(
+      "../../src/applications/workdayWizard.js"
+    );
+    const WIZARD_SPA = `<!DOCTYPE html><html><body>
+      <div data-automation-id="progressBar">My Information · My Experience · Review</div>
+      <div id="stage">
+        <label>First Name<input data-automation-id="legalNameSection_firstName" name="firstName" /></label>
+        <label>Last Name<input data-automation-id="legalNameSection_lastName" name="lastName" /></label>
+        <button data-automation-id="bottom-navigation-next-button" type="button">Next</button>
+      </div>
+      <script>
+        let step = 1;
+        document.addEventListener('click', (e) => {
+          const t = e.target;
+          if (!(t instanceof HTMLElement)) return;
+          if (t.getAttribute('data-automation-id') === 'bottom-navigation-next-button') {
+            step += 1;
+            if (step === 2) {
+              document.getElementById('stage').innerHTML =
+                '<label>Email<input data-automation-id="email" type="email" name="email" /></label>' +
+                '<button data-automation-id="bottom-navigation-next-button" type="button">Next</button>';
+            } else {
+              document.getElementById('stage').innerHTML =
+                '<h2>Review</h2><p>Check your application.</p>' +
+                '<button data-automation-id="bottom-navigation-submit-button" type="button">Submit</button>';
+              document.querySelector('[data-automation-id=bottom-navigation-submit-button]')
+                .addEventListener('click', () => { (globalThis).__submitted = true; });
+            }
+          }
+        });
+      </script></body></html>`;
+
+    await withFixtureHtmlPage(WIZARD_SPA, async (page) => {
+      const seenPages: string[] = [];
+      const walk = await walkWorkdayWizard(
+        page,
+        async ({ html }) => {
+          seenPages.push(html);
+          // The filler sees the email page — fill it directly to prove the
+          // page handed over is live and typable.
+          await page.locator("[data-automation-id=email]").fill("ada@fixture.test");
+          return { fillable: 1, filled: 1, verifyPassed: true };
+        },
+        { settleMs: 0 },
+      );
+      // Page 2 (the email page) was reached and handed to the filler.
+      expect(walk.pages.length).toBe(1);
+      expect(walk.pages[0]).toMatchObject({ page: 2, filled: 1, verify_passed: true });
+      expect(seenPages[0]).toContain('data-automation-id="email"');
+      expect(walk.verifyFailed).toBe(false);
+      // The walk continued to review and STOPPED there.
+      expect(await page.locator("[data-automation-id=email]").count()).toBe(0);
+      expect(
+        await page
+          .locator("[data-automation-id=bottom-navigation-submit-button]")
+          .count(),
+      ).toBe(1);
+      // The submit button was NEVER clicked.
+      expect(
+        await page.evaluate(() => (globalThis as unknown as { __submitted?: boolean }).__submitted),
+      ).toBeUndefined();
+      expect(walk.notes.join(" ")).toMatch(/wizard: filled 1 additional page/);
+    });
+  }, 45_000);
+
+  it("stops immediately when Workday flags validation errors", async () => {
+    const { walkWorkdayWizard } = await import(
+      "../../src/applications/workdayWizard.js"
+    );
+    const ERROR_SPA = `<!DOCTYPE html><html><body>
+      <div id="stage">
+        <input data-automation-id="legalNameSection_firstName" name="firstName" />
+        <button data-automation-id="bottom-navigation-next-button" type="button">Next</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=bottom-navigation-next-button]')
+          .addEventListener('click', () => {
+            document.getElementById('stage').innerHTML =
+              '<div data-automation-id="errorBanner">Please fix the errors below</div>' +
+              '<input data-automation-id="legalNameSection_firstName" name="firstName" />' +
+              '<button data-automation-id="bottom-navigation-next-button" type="button">Next</button>';
+          });
+      </script></body></html>`;
+    await withFixtureHtmlPage(ERROR_SPA, async (page) => {
+      let fillerCalls = 0;
+      const walk = await walkWorkdayWizard(
+        page,
+        async () => {
+          fillerCalls += 1;
+          return { fillable: 0, filled: 0, verifyPassed: true };
+        },
+        { settleMs: 0 },
+      );
+      // The error banner stops the walk BEFORE any fill on that page —
+      // missing required fields park for review, nothing is forced.
+      expect(fillerCalls).toBe(0);
+      expect(walk.verifyFailed).toBe(true);
+      expect(walk.notes.join(" ")).toMatch(/flagged errors/);
+    });
+  }, 45_000);
+});

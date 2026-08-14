@@ -638,3 +638,68 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     expect(filled.has("hobby")).toBe(false);
   });
 });
+
+/**
+ * Live 2026-08-14: "Are you legally authorized to work…" was the single
+ * most common pre-click refusal (7 of 52 submit runs). The registry now
+ * matches the label deterministically and the predictor derives Yes/No
+ * from the operator's own profile facts — never from nothing.
+ */
+describe("work authorization + sponsorship screeners (UNIT_CONFIRMED)", () => {
+  it("matches the live refusal labels to the new keys", async () => {
+    const { matchScreenerKey } = await import(
+      "../../src/candidate/screenerMatch.js"
+    );
+    expect(
+      matchScreenerKey("Are you legally authorized to work in the United States?")?.key,
+    ).toBe("work_authorization");
+    expect(matchScreenerKey("Work Authorization")?.key).toBe("work_authorization");
+    expect(
+      matchScreenerKey(
+        "Will you now or in the future require sponsorship for employment visa status?",
+      )?.key,
+    ).toBe("requires_sponsorship");
+    expect(matchScreenerKey("Do you require visa sponsorship?")?.key).toBe(
+      "requires_sponsorship",
+    );
+  });
+
+  it("derives Yes/No from profile facts and never invents on empty", async () => {
+    const { predictScreenerAnswer } = await import(
+      "../../src/candidate/screenerPredict.js"
+    );
+    const base = { work_authorization: "", requires_sponsorship: "" };
+    const p = (over: Record<string, unknown>) =>
+      ({ ...base, ...over }) as never;
+
+    expect(predictScreenerAnswer("work_authorization", p({ work_authorization: "US Citizen" }))?.value).toBe("Yes");
+    expect(predictScreenerAnswer("work_authorization", p({ work_authorization: "yes" }))?.value).toBe("Yes");
+    expect(predictScreenerAnswer("work_authorization", p({ work_authorization: "Green Card holder" }))?.value).toBe("Yes");
+    expect(predictScreenerAnswer("work_authorization", p({ work_authorization: "No — need a visa" }))?.value).toBe("No");
+    expect(predictScreenerAnswer("work_authorization", p({}))).toBeNull();
+
+    expect(predictScreenerAnswer("requires_sponsorship", p({ requires_sponsorship: false }))?.value).toBe("No");
+    expect(predictScreenerAnswer("requires_sponsorship", p({ requires_sponsorship: "no" }))?.value).toBe("No");
+    expect(predictScreenerAnswer("requires_sponsorship", p({ requires_sponsorship: true }))?.value).toBe("Yes");
+    expect(predictScreenerAnswer("requires_sponsorship", p({}))).toBeNull();
+    // An ambiguous string never coerces.
+    expect(predictScreenerAnswer("requires_sponsorship", p({ requires_sponsorship: "maybe" }))).toBeNull();
+  });
+
+  it("end to end: an empty bank + a profile fact fills the radio verbatim", async () => {
+    const { resolveScreenerForField } = await import(
+      "../../src/candidate/screenerMatch.js"
+    );
+    const resolution = resolveScreenerForField(
+      {
+        label: "Are you legally authorized to work in the United States?",
+        type: "radio",
+        options: ["Yes", "No"],
+      },
+      { version: 1, answers: {}, custom: {} },
+      undefined,
+      { work_authorization: "US Citizen" } as never,
+    );
+    expect(resolution).toMatchObject({ status: "fill", value: "Yes" });
+  });
+});
