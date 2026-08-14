@@ -2,16 +2,26 @@ import type { Page } from "playwright";
 import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { classifyWorkdayPage } from "../ats/workday/pageKind.js";
 import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
+import { scanRequiredCompleteness } from "../ats/shared/requiredCompleteness.js";
+import { performTransition } from "../browser/transition.js";
+import { recordTransitionOutcome } from "../storage/transitionOutcomes.js";
 
 /**
  * Workday multi-page wizard walk (Crowe live 2026-08-14: a 7-step wizard
  * got only its landing page filled; every later page's required questions
  * were never even seen, so submit refused on "unanswered questions").
  *
- * The walk clicks Next → settles → hands the new page to the caller's
- * filler → repeats, bounded. It NEVER clicks the submit button — the
- * gated submit path owns that click — and stops on Workday's own error
- * banner (missing required fields park for review; nothing is forced).
+ * The walk clicks Next through the shared transition primitive (bounded
+ * change-detection, obstruction retry, popup adoption) and hands each new
+ * page to the caller's filler. It NEVER clicks the submit button — the
+ * gated submit path owns that click.
+ *
+ * Two diagnoses replace silent stops:
+ *   - Next DISABLED → the required-completeness scan names the exact
+ *     fields blocking it ("blocked by: Phone Device Type, Country").
+ *   - Landing on an auth wall mid-walk (session expired between pages) →
+ *     the caller's onAuthWall seam may sign back in ONCE; the walk then
+ *     resumes instead of stopping.
  */
 export type WizardPageResult = {
   page: number;
@@ -39,12 +49,22 @@ export async function walkWorkdayWizard(
     html: string;
     url: string;
   }) => Promise<{ fillable: number; filled: number; verifyPassed: boolean }>,
-  options: { settleMs?: number } = {},
+  options: {
+    settleMs?: number;
+    /**
+     * Mid-walk auth recovery (used at most once): return true when the
+     * wall was cleared and the walk may resume. Absent ⇒ auth stops the
+     * walk, as before.
+     */
+    onAuthWall?: (page: Page) => Promise<boolean>;
+    applicationId?: string | null;
+  } = {},
 ): Promise<WizardWalkResult> {
   const notes: string[] = [];
   const pages: WizardPageResult[] = [];
   let verifyFailed = false;
-  const settleMs = options.settleMs ?? 2_000;
+  let authRecoveryUsed = false;
+  const settleTimeoutMs = options.settleMs === 0 ? 0 : (options.settleMs ?? 10_000);
 
   for (let extra = 1; extra <= WIZARD_PAGE_CAP; extra++) {
     const bySelector = page.locator(workdaySelectorsV1.wizard.nextButton).first();
@@ -60,31 +80,50 @@ export async function walkWorkdayWizard(
       notes.push(`wizard: no Next control after page ${extra} — review/summary reached`);
       break;
     }
-    // Snapshot BEFORE the click so the settle below can verify the page
-    // actually changed — a sleep alone races the SPA's re-render (the
-    // walk once snapshotted the pre-click page and handed a stale form to
-    // the filler while the live DOM had already moved on).
-    const preClickHtml = await page.content().catch(() => "");
-    await next.click({ timeout: 10_000 }).catch((e: Error) => {
-      notes.push(`wizard: Next click failed: ${e.message.slice(0, 100)}`);
-    });
-    await page
-      .waitForLoadState("domcontentloaded", { timeout: 15_000 })
-      .catch(() => undefined);
-    if (settleMs > 0) await page.waitForTimeout(settleMs);
 
-    let html = await page.content().catch(() => "");
-    // Bounded change-detection: up to 10s for the wizard page to differ
-    // from its pre-click DOM. An unchanged page after that is itself a
-    // signal (Next did nothing) — noted, walk ends.
-    for (let poll = 0; poll < 50 && html === preClickHtml; poll++) {
-      await page.waitForTimeout(200);
-      html = await page.content().catch(() => "");
+    // Workday DISABLES Next while required fields are empty. Clicking a
+    // disabled button "fails" as an unchanged page — diagnose it up front
+    // and name the blockers instead.
+    const nextDisabled =
+      (await next.isDisabled().catch(() => false)) ||
+      (await next.getAttribute("aria-disabled").catch(() => null)) === "true";
+    if (nextDisabled) {
+      const scan = await scanRequiredCompleteness(page).catch(() => null);
+      const blockers =
+        scan?.unanswered.map((u) => u.label).filter(Boolean).slice(0, 8) ?? [];
+      notes.push(
+        blockers.length > 0
+          ? `wizard: Next disabled on page ${extra} — blocked by: ${blockers.join(", ")}`
+          : `wizard: Next disabled on page ${extra} — no unanswered required fields found (control-level block)`,
+      );
+      verifyFailed = true;
+      break;
     }
-    if (html === preClickHtml) {
+
+    const transition = await performTransition(page, next, {
+      settleTimeoutMs,
+      readyMarker: workdaySelectorsV1.formMarkers,
+      // The caller is already inside the fill mutation gate.
+      sweepObstructions: true,
+    });
+    notes.push(...transition.notes.map((n) => `wizard: ${n}`));
+    recordTransitionOutcome({
+      seam: "workday_wizard_next",
+      host: safeHost(page.url()),
+      result: transition,
+      applicationId: options.applicationId ?? null,
+    });
+    if (transition.adopted_popup) {
+      // Workday never legitimately continues its wizard in a new tab.
+      notes.push("wizard: click opened a tab — not a wizard page, stopping the walk");
+      break;
+    }
+    if (!transition.landed) {
       notes.push(`wizard: page unchanged after Next on page ${extra} — stopping the walk`);
       break;
     }
+
+    let html = transition.html;
     if (
       /data-automation-id=["']errorBanner|please fix the errors|required information is missing/i.test(
         html,
@@ -96,7 +135,33 @@ export async function walkWorkdayWizard(
       verifyFailed = true;
       break;
     }
-    const kind = classifyWorkdayPage(html);
+
+    let kind = classifyWorkdayPage(html);
+    if (kind === "auth") {
+      // Session expired between pages. One recovery, then resume.
+      if (options.onAuthWall && !authRecoveryUsed) {
+        authRecoveryUsed = true;
+        notes.push("wizard: auth wall mid-walk — attempting portal sign-in");
+        const cleared = await options.onAuthWall(page).catch(() => false);
+        if (!cleared) {
+          notes.push("wizard: auth wall not cleared — stopping the walk");
+          verifyFailed = true;
+          break;
+        }
+        html = await page.content().catch(() => "");
+        kind = classifyWorkdayPage(html);
+        notes.push(`wizard: signed back in — page kind now ${kind}`);
+        if (kind === "auth") {
+          verifyFailed = true;
+          break;
+        }
+      } else {
+        notes.push("wizard: auth wall mid-walk — stopping the walk");
+        verifyFailed = true;
+        break;
+      }
+    }
+
     if (discoverFieldsFromHtml(html).length === 0) {
       notes.push(`wizard page ${extra + 1} (${kind}): no fillable fields — stopping the walk`);
       break;
@@ -120,4 +185,12 @@ export async function walkWorkdayWizard(
     );
   }
   return { pages, verifyFailed, notes };
+}
+
+function safeHost(url: string): string | null {
+  try {
+    return new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
 }
