@@ -22,6 +22,7 @@ import {
   generateEssayAnswers,
 } from "./essayAutofill.js";
 import { logger } from "../logging/logger.js";
+import type { EmailLlmClient } from "../contacts/emailLlm.js";
 import { WorkdayAdapterV1 } from "../ats/workday/v1.js";
 import {
   annotateFullNameField,
@@ -74,6 +75,7 @@ import type { ApprovedFillPlan } from "./approvedFillPlan.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
 import { buildHumanEssayEntries } from "./essayFill.js";
 import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
+import { pickOptionLabel } from "../ats/greenhouse/comboboxFill.js";
 
 /**
  * The three fill-capable adapters all carry this surface (the base
@@ -183,6 +185,12 @@ export async function planApplicationFill(input: {
    * string the control will reject.
    */
   answerSpace?: Map<string, AnswerSpace>;
+  /**
+   * Test seam (predictive gauntlet): injected LLM client for the
+   * option-select and predict tiers. Production always builds its own from
+   * the configured key; both tiers stay behind their flags either way.
+   */
+  llmClient?: EmailLlmClient;
 }): Promise<{
   adapter: FillCapableAdapter;
   plan: ReturnType<typeof buildFillPlan>;
@@ -293,6 +301,7 @@ export async function planApplicationFill(input: {
           label: f.label,
           options: f.options,
         })),
+        input.llmClient,
       );
       for (const [id, p] of predicted) {
         screenerResolutions.set(id, {
@@ -358,7 +367,10 @@ export async function planApplicationFill(input: {
       });
     }
     if (mismatched.length > 0) {
-      const chosen = await selectScreenerOptions({ items: mismatched });
+      const chosen = await selectScreenerOptions({
+        items: mismatched,
+        ...(input.llmClient ? { client: input.llmClient } : {}),
+      });
       for (const c of chosen) {
         const prior = screenerResolutions.get(c.key);
         screenerResolutions.set(c.key, {
@@ -446,6 +458,44 @@ export async function planApplicationFill(input: {
     screenerResolutions,
     ...(essayAnswers.size > 0 ? { essayAnswers } : {}),
   });
+
+  // Off-list PROFILE values on closed fields take the form's "Other" too.
+  // The screener pass above only covers screener-resolved fields; a field
+  // the ALIASES mapped (school, city…) is filled from the profile inside
+  // buildFillPlan — and when that value is not on the control's list, the
+  // fill-time option matcher refuses and the field stays empty. Live
+  // (neuralink, run 2a9f9930): the relocation combobox got the profile's
+  // "Baltimore, Maryland…" — "no option matches", blank field. The check
+  // here uses the SAME matcher fill-time uses (pickOptionLabel, with all
+  // its degree/location/yes-no synonym tiers), so a value that fill-time
+  // WOULD place is left alone; only a value that is provably going to fail
+  // is diverted to the form's own escape hatch. Demographics never divert
+  // — a wrong guess there puts words in the candidate's mouth.
+  for (const entry of plan.entries) {
+    // Plan-level actions are lowercase ("fill"); the approved plan
+    // uppercases later. Compare case-blind so this pass sees them.
+    if (String(entry.action).toUpperCase() !== "FILL") continue;
+    if (entry.value === undefined || entry.value === null) continue;
+    const field = mapped.find((f) => f.id === entry.field_id);
+    const options = field?.options ?? [];
+    if (!field || options.length < 2) continue;
+    if (screenerIsDemographic(field)) continue;
+    if (otherFallbacks.some((o) => o.field_id === entry.field_id)) continue;
+    const pick = pickOptionLabel(options, String(entry.value));
+    if (pick.ok) continue;
+    const other = findOtherOption(options);
+    if (!other) continue; // no escape hatch — fill-time refuses honestly
+    const intended = String(entry.value);
+    entry.value = other;
+    entry.reason = `${entry.reason}; value "${intended.slice(0, 40)}" not on the control's list — using the form's own "${other}"`;
+    otherFallbacks.push({
+      field_id: entry.field_id,
+      label: entry.label,
+      chose: other,
+      intended,
+    });
+  }
+
   const approvedPlan = toApprovedFillPlan(plan.entries);
   adapter.setFillContext(plan.entries, fields);
   adapter.setApprovedFillPlan(approvedPlan, profile);

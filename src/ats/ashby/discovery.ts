@@ -58,7 +58,7 @@ const GROUP_WINDOW_CAP = 4_000;
  * the same name, balancing depth. Falls back to the cap on malformed HTML
  * — a too-wide window only risks extra option candidates, never a miss.
  */
-function balancedInner(html: string, tag: string, start: number): string {
+function balancedInner(html: string, tag: string, start: number, cap = GROUP_WINDOW_CAP): string {
   const tokenRe = new RegExp(`<(/?)${tag}\\b[^>]*>`, "gi");
   tokenRe.lastIndex = start;
   let depth = 1;
@@ -66,9 +66,9 @@ function balancedInner(html: string, tag: string, start: number): string {
   while ((t = tokenRe.exec(html)) !== null) {
     depth += t[1] === "/" ? -1 : 1;
     if (depth === 0) return html.slice(start, t.index);
-    if (t.index - start > GROUP_WINDOW_CAP) break;
+    if (t.index - start > cap) break;
   }
-  return html.slice(start, Math.min(html.length, start + GROUP_WINDOW_CAP));
+  return html.slice(start, Math.min(html.length, start + cap));
 }
 
 export function discoverAshbyButtonGroups(html: string): DiscoveredField[] {
@@ -142,9 +142,116 @@ export function discoverAshbyButtonGroups(html: string): DiscoveredField[] {
   return out;
 }
 
+/**
+ * Fieldset question groups — the live 2026-08-15 Ashby shape that the
+ * radiogroup pass above cannot see.
+ *
+ * Run 2a9f9930 (Abridge 40 skips, Notion 38 skips): Ashby renders a choice
+ * question as a plain <fieldset> whose first label carries the class
+ * `ashby-application-form-question-title` ("What pronouns do you use?"),
+ * followed by one checkbox/radio PER OPTION whose `name` attribute is the
+ * option text itself (name="She/her", name="Glassdoor", name="Man"). The
+ * generic discovery therefore surfaced every OPTION as its own field —
+ * "Man | No answer-alias mapping" ×38 — and the question text reached
+ * nothing: the screener bank had no label to match, the predict tier had
+ * zero askable questions, and the option harvest found zero select-likes.
+ * The entire intelligence stack was starved at discovery.
+ *
+ * This pass rebuilds the truth: one field per fieldset, labeled by the
+ * question title, with options[] = the option texts — exactly the shape
+ * every downstream tier (bank matcher → LLM option-select → LLM predict →
+ * Other fallback) is built to consume. The per-option inputs inside
+ * grouped fieldsets are suppressed from the generic scan so the plan sees
+ * each question once.
+ */
+const QUESTION_TITLE_RE =
+  /<label\b[^>]*class=["'][^"']*question-title[^"']*["'][^>]*>([\s\S]*?)<\/label>/i;
+
+export function discoverAshbyFieldsetGroups(html: string): {
+  fields: DiscoveredField[];
+  /** Option input names consumed by a group — exclude from the generic pass. */
+  consumedNames: Set<string>;
+} {
+  const fields: DiscoveredField[] = [];
+  const consumedNames = new Set<string>();
+  const openRe = /<fieldset\b[^>]*>/gi;
+  let m: RegExpExecArray | null;
+  let idx = 0;
+  while ((m = openRe.exec(html)) !== null) {
+    const inner = balancedInner(html, "fieldset", m.index + m[0].length, 16_000);
+
+    const titleMatch = inner.match(QUESTION_TITLE_RE);
+    if (!titleMatch) continue;
+    const label = stripTags(titleMatch[1] ?? "")
+      .replace(/\s*\*\s*$/, "")
+      .trim();
+    if (!label) continue;
+    const forId = getAttr(titleMatch[0] ?? "", "for");
+
+    // Option TEXT comes from the per-option labels (for="…-labeled-radio-N"
+    // / "…-labeled-checkbox-N") — Ashby has two shapes and only the labels
+    // are reliable in both. Checkbox questions put the option text in
+    // name= too, but radio questions name every input with the SAME entry
+    // uuid (that is what makes them a group), so name is useless there —
+    // and it is exactly why the generic radio collapse emitted these
+    // questions labeled by their first option ("Under 30", "Man"…).
+    const options: string[] = [];
+    const optLabelRe =
+      /<label\b[^>]*for=["'][^"']*-labeled-(?:checkbox|radio)-\d+["'][^>]*>([\s\S]*?)<\/label>/gi;
+    let o: RegExpExecArray | null;
+    while ((o = optLabelRe.exec(inner)) !== null) {
+      const clean = stripTags(o[1] ?? "").replace(/\s+/g, " ").trim();
+      if (clean && !options.includes(clean) && options.length < 30) {
+        options.push(clean);
+      }
+    }
+    if (options.length < 2) continue; // one checkbox is consent, not a choice
+
+    // Names of the inputs this group consumed — both shapes — so the
+    // generic pass's per-option fields (checkbox shape) and its collapsed
+    // radio group (radio shape, first-option label) can be suppressed.
+    const consumedHere: string[] = [];
+    const inputRe = /<input\b([^>]*type=["'](?:checkbox|radio)["'][^>]*)>/gi;
+    let inp: RegExpExecArray | null;
+    while ((inp = inputRe.exec(inner)) !== null) {
+      const name = getAttr(inp[1] ?? "", "name");
+      if (name) consumedHere.push(name);
+    }
+
+    // Required from the title label's class (`_required_`) or an
+    // aria-required anywhere in the group.
+    const required =
+      /_required_/.test(titleMatch[0] ?? "") ||
+      /aria-required=["']true["']/i.test(inner);
+
+    const field: DiscoveredField = {
+      id: forId ?? `fieldset_group_${idx}`,
+      label,
+      type: "select",
+      required,
+      options,
+    };
+    if (forId) field.name = forId;
+    fields.push(field);
+    for (const n of consumedHere) consumedNames.add(n);
+    for (const opt of options) consumedNames.add(opt);
+    idx++;
+  }
+  return { fields, consumedNames };
+}
+
 export function ashbyDiscoverFields(html: string): DiscoveredField[] {
+  const groups = discoverAshbyFieldsetGroups(html);
+  const generic = discoverFieldsFromHtml(html).filter((f) => {
+    // Drop the per-option inputs a fieldset group already represents —
+    // they are answers, not questions, and 38 of them drowned the plan.
+    if (f.name && groups.consumedNames.has(f.name)) return false;
+    if (groups.consumedNames.has(f.label)) return false;
+    return true;
+  });
   return [
-    ...discoverFieldsFromHtml(html),
+    ...generic,
+    ...groups.fields,
     ...discoverAshbyButtonGroups(html),
   ];
 }

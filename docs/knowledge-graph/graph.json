@@ -276,7 +276,8 @@
         "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
         "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
         "src/ats/shared/pageClassify.ts": "classifyPage \u2014 vendor-blind landing classifier; a page with inputs but no identity field plus an Apply CTA is a POSTING, not a form",
-        "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest"
+        "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
+        "src/ats/ashby/discovery.ts": "ashbyDiscoverFields \u2014 generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs \u2192 ONE field with options[]; per-option fields suppressed)"
       },
       "key_exports": {
         "src/ats/shared/urlValidationDispatch.ts": [
@@ -314,6 +315,12 @@
           "parseGreenhouseBoardRef",
           "parseQuestionsPayload",
           "normalizeQuestionLabel"
+        ],
+        "src/ats/ashby/discovery.ts": [
+          "ashbyDiscoverFields",
+          "discoverAshbyButtonGroups",
+          "discoverAshbyFieldsetGroups",
+          "looksLikeUnrenderedShell"
         ]
       }
     },

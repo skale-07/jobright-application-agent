@@ -11,6 +11,18 @@ import {
   planApplicationFill,
   type ApplicationFillReport,
 } from "../../applications/applicationFiller.js";
+import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import {
+  applyLabelOptions,
+  harvestFieldOptions,
+  type AnswerSpace,
+  type OptionHarvestResult,
+} from "../shared/optionHarvest.js";
+import {
+  fillOtherSpecify,
+  type OtherSpecifyOutcome,
+} from "../shared/otherSpecify.js";
+import { fetchGreenhouseQuestions } from "./questionsApi.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { redactFillReportForArtifact } from "../../applications/fillReportRedaction.js";
 import { withPublicUrlPage } from "../../browser/fixtureSession.js";
@@ -69,6 +81,17 @@ export type GreenhouseLiveFillReport = ApplicationFillReport & {
   mutation_attempted: boolean;
   /** Phase 6a′ heal pass, present when read-back verification failed. */
   heal?: HealReport;
+  /** Answer space scraped per control before planning (see optionHarvest.ts). */
+  harvested_options?: Array<{
+    field_id: string;
+    label: string;
+    answer_space: AnswerSpace;
+    option_count: number;
+    options: string[];
+    other_option: string | null;
+  }>;
+  /** Text boxes revealed by choosing "Other", and what went into them. */
+  other_specify?: OtherSpecifyOutcome[];
 };
 
 /** Approved FILL entries whose read-back verification failed. */
@@ -415,12 +438,54 @@ export async function runGreenhouseLiveFill(input: {
           base.notes.push(`popups dismissed: ${obstructions.dismissed.join(", ")}`);
         }
       }
-      const { adapter, plan, approvedPlan } = await planApplicationFill({
-        url: verified.finalUrl,
-        html: verified.html,
-        ...(input.profile ? { profile: input.profile } : {}),
-        ...(input.capture ? { capture: input.capture } : {}),
-      });
+      // Answer spaces BEFORE planning — the same pipeline atsLiveFill got
+      // in c9be0b5, which this dedicated runner never did. Live run
+      // 2a9f9930 (neuralink): the relocation combobox got "Baltimore,
+      // Maryland…" typed into it ("no option matches"), the season select
+      // parked, and the report carried no harvested_options at all —
+      // because this runner still planned HTML-only. Board API first (one
+      // request, complete lists), then the DOM harvest for what's left.
+      let harvest: OptionHarvestResult | null = null;
+      if (input.execute) {
+        let planFields = discoverFieldsFromHtml(verified.html);
+        const declared = await fetchGreenhouseQuestions(verified.finalUrl).catch(
+          () => null,
+        );
+        const apiOptions = new Map<string, string[]>();
+        if (declared) {
+          const applied = applyLabelOptions(planFields, declared.byLabel);
+          planFields = applied.fields;
+          for (const f of planFields) {
+            if ((f.options?.length ?? 0) > 0) apiOptions.set(f.id, f.options!);
+          }
+          base.notes.push(
+            `board API declared ${declared.questions.length} question(s); matched complete option lists onto ${applied.matched} field(s)`,
+          );
+        }
+        harvest = await harvestFieldOptions(page, planFields);
+        base.notes.push(...harvest.notes);
+        for (const [id, options] of apiOptions) {
+          harvest.options.set(id, options);
+          harvest.answerSpace.set(id, "closed");
+        }
+        base.harvested_options = harvest.harvested.map((h) => ({
+          field_id: h.field_id,
+          label: h.label,
+          answer_space: h.answer_space,
+          option_count: h.options.length,
+          options: h.options.slice(0, 25),
+          other_option: h.other_option,
+        }));
+      }
+      const { adapter, plan, approvedPlan, fields: plannedFields, otherFallbacks } =
+        await planApplicationFill({
+          url: verified.finalUrl,
+          html: verified.html,
+          ...(input.profile ? { profile: input.profile } : {}),
+          ...(input.capture ? { capture: input.capture } : {}),
+          ...(harvest ? { liveOptions: harvest.options } : {}),
+          ...(harvest ? { answerSpace: harvest.answerSpace } : {}),
+        });
       base.plan = plan;
       base.approved_plan = approvedPlan;
 
@@ -448,7 +513,23 @@ export async function runGreenhouseLiveFill(input: {
           answer_keys: Object.keys(approvedPlan.answers),
         },
       });
+      const knownFieldIds = new Set(plannedFields.map((f) => f.id));
       base.fill = await adapter.fill(page, approvedPlan.answers);
+      // "Other" chosen on a closed list reveals a specify box that only
+      // exists after the option commits — the real answer goes in there.
+      if (otherFallbacks.length > 0) {
+        const specified = await fillOtherSpecify({
+          page,
+          knownFieldIds,
+          requests: otherFallbacks.map((o) => ({
+            field_id: o.field_id,
+            label: o.label,
+            intended: o.intended,
+          })),
+        });
+        base.other_specify = specified;
+        base.notes.push(...specified.map((s) => `other-specify: ${s.note}`));
+      }
       logger.info("live fill: field plan applied", {
         service: "greenhouse",
         action: "fill",
