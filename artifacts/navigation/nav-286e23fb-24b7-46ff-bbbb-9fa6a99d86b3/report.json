@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-286e23fb-24b7-46ff-bbbb-9fa6a99d86b3",
+  "application_id": "5902f351-002f-4cca-b444-310354f8db81",
+  "jobright_job_id": "6a7f36adad9ff00c26bad125",
+  "method": "apply_click_popup",
+  "resolved_url": "https://job-boards.greenhouse.io/transmarketgroup/jobs/5212335007",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (9 external links)",
+      "evidence": "www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.businesswire.com, boards.greenhouse.io"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: anchor reads as \"greenhouse\" (URL names \"greenhouse\" (host), which shares nothing with company \"TransMarket Group\") — not preferred, deferring to the Apply click",
+    "phase A: 6 external host(s) seen: www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.businesswire.com, boards.greenhouse.io",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "transmarketgroup",
+    "detail": "token \"transmarket\" ~ slug \"transmarketgroup\"",
+    "expected_company": "TransMarket Group",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=transmarketgroup&jr_id=6a7f36adad9ff00c26bad125&token=5212335007&utm_source=jobright"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:04:14.820Z"
+}

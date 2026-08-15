@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-1b8e99eb-1f57-422d-9390-f2e6eac516c6",
+  "application_id": "71ab785a-2ac8-414b-89d1-057ee65b2359",
+  "jobright_job_id": "6a7f94f9b56bea5779c0d048",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.ashbyhq.com/hypercubic/ab7a23f9-7280-4443-b442-2813dc39d490/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "hypercubic",
+    "detail": "token \"hypercubic\" ~ slug \"hypercubic\"",
+    "expected_company": "Hypercubic",
+    "url": "https://jobs.ashbyhq.com/hypercubic/ab7a23f9-7280-4443-b442-2813dc39d490/application?utm_source=jobright&jr_id=6a7f94f9b56bea5779c0d048"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:08:41.779Z"
+}

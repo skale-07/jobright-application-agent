@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "5902f351-002f-4cca-b444-310354f8db81",
+  "submission_id": "2fa5f499-0e5b-42b1-9a60-0f6a2954c9d2",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": "dc5ce1f1-4a08-4211-967e-a13e3282d743",
+  "reason": "Refusing to click submit: 19 required question(s) unanswered — Country* [text]; School* [text]; Degree* [text]; Discipline* [text]; Start date month* [text]; End date month* [text]; Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown [text]; Country:* [text]; Are you legally authorized to work for all employers in the U.S.?* [text]; Do you now, or will you in the future, require sponsorship (H-1B visa) for continued work authorization in the U.S.?* [text]; Country* [combobox]; School* [combobox]; Degree* [combobox]; Discipline* [combobox]; Start date month* [combobox]; End date month* [combobox]; Country:* [combobox]; Are you legally authorized to work for all employers in the U.S.?* [combobox]; Do you now, or will you in the future, require sponsorship (H-1B visa) for continued work authorization in the U.S.?* [combobox]",
+  "artifact_path": null
+}

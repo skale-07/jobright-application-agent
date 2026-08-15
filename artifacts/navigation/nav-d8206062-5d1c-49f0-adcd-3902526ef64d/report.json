@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-d8206062-5d1c-49f0-adcd-3902526ef64d",
+  "application_id": "9a30b836-b571-4d65-a416-731da7efe6bf",
+  "jobright_job_id": "6a807a91e51a1e18a2419559",
+  "method": "apply_click_popup",
+  "resolved_url": "https://joinbytedance.com/search/7668212952030841093",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (9 external links)",
+      "evidence": "joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "joinbytedance.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com, www.media-outreach.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup settled off about:blank after the interstitial",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "joinbytedance",
+    "detail": "token \"bytedance\" ~ slug \"joinbytedance\" (from URL host)",
+    "expected_company": "ByteDance",
+    "url": "https://joinbytedance.com/search/7668212952030841093?jr_id=6a807a91e51a1e18a2419559"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:09:35.789Z"
+}

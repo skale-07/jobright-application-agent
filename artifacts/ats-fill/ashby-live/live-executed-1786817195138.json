@@ -1,0 +1,599 @@
+{
+  "ats": "ashby",
+  "url": "https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application",
+  "requested_url": "https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application"
+  },
+  "plan_summary": {
+    "fillable_count": 8,
+    "skipped_count": 40,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "f_0",
+      "label": "Compensation",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "_systemfield_name",
+      "label": "Full Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+    },
+    {
+      "field_id": "971d71c6-2515-4f48-b151-ef750ec202af",
+      "label": "Preferred&nbsp; Name",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_0c362b4e-d1c9-4cac-8a67-9db82a7c41c7-labeled-checkbox-0",
+      "label": "She/her",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_0c362b4e-d1c9-4cac-8a67-9db82a7c41c7-labeled-checkbox-1",
+      "label": "He/him",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_0c362b4e-d1c9-4cac-8a67-9db82a7c41c7-labeled-checkbox-2",
+      "label": "They/them",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_0c362b4e-d1c9-4cac-8a67-9db82a7c41c7-labeled-checkbox-3",
+      "label": "Prefer not to answer",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_0c362b4e-d1c9-4cac-8a67-9db82a7c41c7-labeled-checkbox-4",
+      "label": "Prefer to self-describe",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "_systemfield_email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "6dd5d543-444d-4fbb-b115-6fd0d67d2ade",
+      "label": "Phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "communicationConsent",
+      "label": "communicationConsent",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "_systemfield_resume",
+      "label": "Resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "0629d44f-063b-46c1-9de3-ebf94d5cafca",
+      "label": "LinkedIn Profile",
+      "type": "text",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "c68a4a0b-5582-4670-9d08-25f40914111c",
+      "label": "Github",
+      "type": "text",
+      "canonical_field": "github_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "e89980aa-6907-4fa0-95cd-0e5341a101f6",
+      "label": "e89980aa-6907-4fa0-95cd-0e5341a101f6",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "f_16",
+      "label": "Start typing...",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_5ccd55f2-a496-4874-bfa3-b0627d275380",
+      "label": "I am currently living in the San Francisco Bay or New York areas",
+      "type": "radio",
+      "canonical_field": "screener:willing_to_relocate",
+      "action": "FILL",
+      "reason": "Screener bank answer (llm_option)"
+    },
+    {
+      "field_id": "962fceaf-615b-474e-a901-926b34855059",
+      "label": "962fceaf-615b-474e-a901-926b34855059",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "27f96564-7d36-4408-827b-917fef620a28",
+      "label": "27f96564-7d36-4408-827b-917fef620a28",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "370a6579-8574-4821-8375-56a9d92b9c4f",
+      "label": "370a6579-8574-4821-8375-56a9d92b9c4f",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "33ddc778-f8f6-4a10-a821-99f3065770cf",
+      "label": "33ddc778-f8f6-4a10-a821-99f3065770cf",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "74b42a07-16db-491d-a540-c565ec0e8d32",
+      "label": "74b42a07-16db-491d-a540-c565ec0e8d32",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_f64cbf20-85cb-47ec-aa5d-6ac9553b59d7",
+      "label": "LinkedIn",
+      "type": "radio",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_cf0f1bc7-7ce6-4eb3-aebc-b6562141cb68",
+      "label": "Under 30",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_8d7dcc65-3a0b-476a-b679-574b869780bb",
+      "label": "Man",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_0a90dc7e-908c-449f-9151-95612d844b10",
+      "label": "Yes",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-0",
+      "label": "Bisexual",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-1",
+      "label": "Lesbian",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-2",
+      "label": "Gay",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-3",
+      "label": "Queer",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-4",
+      "label": "Heterosexual / straight",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-5",
+      "label": "Other",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a63b6f87-d090-40f0-a462-bf5bb03f5e45-labeled-checkbox-6",
+      "label": "I prefer not to answer",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-0",
+      "label": "Asian or Asian American",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-1",
+      "label": "Black or African American",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-2",
+      "label": "Hispanic or Latine",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Demographics deferred to sensitive-profile policy path"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-3",
+      "label": "Indigenous or Native American",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-4",
+      "label": "Native Hawaiian or Other Pacific Islander",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-5",
+      "label": "White",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-6",
+      "label": "Other",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_1e21d43f-548e-481a-aa5f-f048c73f3de3-labeled-checkbox-7",
+      "label": "I prefer not to answer",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-0",
+      "label": "Person with disability",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Demographics deferred to sensitive-profile policy path"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-1",
+      "label": "Neurodiverse",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-2",
+      "label": "Veteran",
+      "type": "checkbox",
+      "canonical_field": "veteran_status",
+      "action": "FILL",
+      "reason": "Mapped from sensitive profile (operator-supplied)"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-3",
+      "label": "Parent",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-4",
+      "label": "Refugee or immigrant",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-5",
+      "label": "None of the above",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-6",
+      "label": "I prefer not to answer",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\ashby-live\\form-snapshot-1786817193875.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "linkedin_url",
+      "github_url",
+      "veteran_status"
+    ],
+    "skipped": [],
+    "errors": [
+      "e710b207-890e-4bb1-afe6-72c12ec2ee19_5ccd55f2-a496-4874-bfa3-b0627d275380: button group not found by data-field-id or accessible name",
+      "e710b207-890e-4bb1-afe6-72c12ec2ee19_f64cbf20-85cb-47ec-aa5d-6ac9553b59d7: button group not found by data-field-id or accessible name"
+    ],
+    "field_meta": [
+      {
+        "field_id": "_systemfield_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "_systemfield_email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "6dd5d543-444d-4fbb-b115-6fd0d67d2ade",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "0629d44f-063b-46c1-9de3-ebf94d5cafca",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "c68a4a0b-5582-4670-9d08-25f40914111c",
+        "canonical_field": "github_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-2",
+        "canonical_field": "veteran_status",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham Kale",
+        "observed": "Shubham Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "github_url",
+        "expected": "https://github.com/skale-07",
+        "observed": "https://github.com/skale-07",
+        "match": true
+      },
+      {
+        "canonical_field": "veteran_status",
+        "expected": "I am not a veteran",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:willing_to_relocate",
+        "expected": "I am currently living in the San Francisco Bay or New York areas",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": null,
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": [
+      "verify screener:willing_to_relocate: button group not found",
+      "verify linkedin_url: button group not found"
+    ]
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [],
+  "operator_brief": {
+    "title": "Live fill — ashby https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application",
+    "summary": "5 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:veteran_status",
+        "question": "Veteran",
+        "field_id": "974ff793-8643-4210-9187-d4aa0e7a91ce_a76e67f9-eeb8-4d06-a9a5-b1596a9726e7-labeled-checkbox-2",
+        "canonical_field": "veteran_status",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"I am not a veteran\"; page shows \"true\"",
+        "expected": "I am not a veteran",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"I am not a veteran\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: veteran_status)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"veteran_status\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:willing_to_relocate",
+        "question": "I am currently living in the San Francisco Bay or New York areas",
+        "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_5ccd55f2-a496-4874-bfa3-b0627d275380",
+        "canonical_field": "screener:willing_to_relocate",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"I am currently living in the San Francisco Bay or New York areas\"; page shows \"(empty)\"",
+        "expected": "I am currently living in the San Francisco Bay or New York areas",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"I am currently living in the San Francisco Bay or New York areas\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:willing_to_relocate)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:willing_to_relocate\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:linkedin_url",
+        "question": "LinkedIn",
+        "field_id": "e710b207-890e-4bb1-afe6-72c12ec2ee19_f64cbf20-85cb-47ec-aa5d-6ac9553b59d7",
+        "canonical_field": "linkedin_url",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\"; page shows \"(empty)\"",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → linkedin_url",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"linkedin_url\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:e710b207-890e-4bb1-afe6-72c12ec2ee19_5ccd55f2-a496-4874-bfa3-b0627d275380: butto",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "e710b207-890e-4bb1-afe6-72c12ec2ee19_5ccd55f2-a496-4874-bfa3-b0627d275380: button group not found by data-field-id or accessible name",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:e710b207-890e-4bb1-afe6-72c12ec2ee19_f64cbf20-85cb-47ec-aa5d-6ac9553b59d7: butto",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "e710b207-890e-4bb1-afe6-72c12ec2ee19_f64cbf20-85cb-47ec-aa5d-6ac9553b59d7: button group not found by data-field-id or accessible name",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 5,
+    "fail_count": 5
+  },
+  "written_at": "2026-08-15T18:06:35.154Z"
+}

@@ -1,0 +1,49 @@
+{
+  "run_id": "nav-c0f5ae7c-6852-468f-aeb4-fc28f2cab260",
+  "application_id": "246956ed-7753-4a0f-81e6-57ec2682b40a",
+  "jobright_job_id": "6a7f63b9e2030208f276daa6",
+  "method": "apply_click_popup",
+  "resolved_url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/210773869",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (11 external links)",
+      "evidence": "jpmc.fa.oraclecloud.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.jpmorganchase.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "jpmc.fa.oraclecloud.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: anchor reads as \"hcmui\" (URL names \"hcmui\" (path), which shares nothing with company \"JPMorganChase\") — not preferred, deferring to the Apply click",
+    "phase A: 8 external host(s) seen: jpmc.fa.oraclecloud.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.jpmorganchase.com, www.morningstar.com, www.marketscreener.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup settled off about:blank after the interstitial",
+    "popup captured on attempt 1",
+    "phase B: captured URL reads as \"hcmui\" (URL names \"hcmui\" (path), which shares nothing with company \"JPMorganChase\") — kept, provenance is the Apply click",
+    "congruence: URL names \"hcmui\", not \"JPMorganChase\" (URL names \"hcmui\" (path), which shares nothing with company \"JPMorganChase\") — recorded, not refused"
+  ],
+  "congruence": {
+    "verdict": "mismatch",
+    "slug": "hcmui",
+    "detail": "URL names \"hcmui\" (path), which shares nothing with company \"JPMorganChase\"",
+    "expected_company": "JPMorganChase",
+    "url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/210773869?jr_id=6a7f63b9e2030208f276daa6"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:06:09.922Z"
+}

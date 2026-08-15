@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-3dd41670-3270-4dfb-9854-994aaec0419f",
+  "application_id": "a600b3bc-8305-40fb-bbeb-8132a23b9b92",
+  "jobright_job_id": "6a7f67b119ce4e6e9d9379a1",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "notion",
+    "detail": "token \"notion\" ~ slug \"notion\"",
+    "expected_company": "Notion",
+    "url": "https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application?utm_source=jobright&jr_id=6a7f67b119ce4e6e9d9379a1"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:09:07.049Z"
+}

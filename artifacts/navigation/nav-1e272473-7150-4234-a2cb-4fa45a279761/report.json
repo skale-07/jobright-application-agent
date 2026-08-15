@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-1e272473-7150-4234-a2cb-4fa45a279761",
+  "application_id": "6509763b-4f01-4984-a2ef-1fe91bed471a",
+  "jobright_job_id": "6a7f957e927c79391ad0ac2e",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "abridge",
+    "detail": "token \"abridge\" ~ slug \"abridge\"",
+    "expected_company": "Abridge",
+    "url": "https://jobs.ashbyhq.com/abridge/3f07a457-dc14-4238-bf4e-5c33b5c1f883/application?utm_source=jobright&jr_id=6a7f957e927c79391ad0ac2e"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:06:19.540Z"
+}

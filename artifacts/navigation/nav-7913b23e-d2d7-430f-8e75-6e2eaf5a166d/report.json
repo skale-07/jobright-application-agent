@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-7913b23e-d2d7-430f-8e75-6e2eaf5a166d",
+  "application_id": "d607b204-6ef4-45cd-94b6-fdc6d718ba50",
+  "jobright_job_id": "6a7e8616e2030208f2769de4",
+  "method": "anchor_href",
+  "resolved_url": "https://jobs.ashbyhq.com/composio/eea3c0be-8589-4e3d-a684-de29a9eada0d/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (10 candidates, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "composio",
+    "detail": "token \"composio\" ~ slug \"composio\"",
+    "expected_company": "Composio",
+    "url": "https://jobs.ashbyhq.com/composio/eea3c0be-8589-4e3d-a684-de29a9eada0d/application?utm_source=jobright&jr_id=6a7e8616e2030208f2769de4"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:03:12.904Z"
+}

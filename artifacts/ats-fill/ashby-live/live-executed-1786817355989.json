@@ -1,0 +1,558 @@
+{
+  "ats": "ashby",
+  "url": "https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application",
+  "requested_url": "https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application"
+  },
+  "plan_summary": {
+    "fillable_count": 8,
+    "skipped_count": 38,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "f_0",
+      "label": "Department",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "_systemfield_name",
+      "label": "Full Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+    },
+    {
+      "field_id": "_systemfield_email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "d58506bf-393d-4769-a6ec-bdebe07843ed",
+      "label": "Phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "_systemfield_resume",
+      "label": "Resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "0d099a21-e3a6-4b7b-8c5f-94feefa0e5c0",
+      "label": "LinkedIn Profile",
+      "type": "text",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "f_6",
+      "label": "Start typing...",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_a05e892e-4a9f-4431-b491-013d6a3f804a",
+      "label": "He/Him",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "30fcdc85-13b8-43a4-9fb4-0ea387642215",
+      "label": "30fcdc85-13b8-43a4-9fb4-0ea387642215",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "67a1260d-35c7-443b-b143-7f0c00ada15e",
+      "label": "67a1260d-35c7-443b-b143-7f0c00ada15e",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_2ff3be8b-ab56-445f-ad6c-8753234d2a91-labeled-checkbox-0",
+      "label": "New York, NY",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_2ff3be8b-ab56-445f-ad6c-8753234d2a91-labeled-checkbox-1",
+      "label": "San Francisco, CA",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "f86ea170-ae22-4fdd-b53f-eaa42f13fbb3",
+      "label": "f86ea170-ae22-4fdd-b53f-eaa42f13fbb3",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_2dd78cc0-401a-4ea3-a148-5f1f5b9478b3",
+      "label": "J1",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_8c5fe320-bbac-4094-b92f-c67fe0636176",
+      "label": "OPT",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-0",
+      "label": "LinkedIn",
+      "type": "checkbox",
+      "canonical_field": "linkedin_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-1",
+      "label": "Glassdoor",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-2",
+      "label": "Notion Blog",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-3",
+      "label": "Notion Employee",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-4",
+      "label": "Notion Website",
+      "type": "checkbox",
+      "canonical_field": "personal_website",
+      "action": "SKIP",
+      "reason": "Profile value empty for personal_website"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-5",
+      "label": "Billboard/Outdoor Ads",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-6",
+      "label": "Conference or Meetup",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_a9e25c22-b51b-4103-b18e-4dc24d1ce19a",
+      "label": "0",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-0",
+      "label": "Product",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-1",
+      "label": "Growth",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-2",
+      "label": "Infra",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-3",
+      "label": "Security",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-4",
+      "label": "Data",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-5",
+      "label": "AI",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-6",
+      "label": "Android",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_5f7757f0-b2ee-41b2-b9d0-0212461ed5a2-labeled-checkbox-7",
+      "label": "iOS",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "923456d0-f814-4fda-9654-4d20d3a02438",
+      "label": "923456d0-f814-4fda-9654-4d20d3a02438",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "e96a3128-bd47-4d94-b93e-abdc8037cf11",
+      "label": "e96a3128-bd47-4d94-b93e-abdc8037cf11",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "72cc748d-485c-4924-8e9c-5ef163d6c254",
+      "label": "What are some AI specific technologies you are comfortable with?",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "1c25bf6e-4a26-4d56-a5d0-89cd3b75d28a",
+      "label": "Why do you want to work at Notion?",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "3fcd7a80-e8bd-49a9-8b3e-778b17d963e6",
+      "label": "Github Link",
+      "type": "text",
+      "canonical_field": "github_url",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "26fc2946-7292-4ab9-929b-18ec794fd3da",
+      "label": "School",
+      "type": "text",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "f_51",
+      "label": "Pick date...",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_1e43231b-b1da-460c-be3b-ddc12d02fe6f-labeled-checkbox-0",
+      "label": "Undergraduate/Bachelors",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_1e43231b-b1da-460c-be3b-ddc12d02fe6f-labeled-checkbox-1",
+      "label": "Master's",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_1e43231b-b1da-460c-be3b-ddc12d02fe6f-labeled-checkbox-2",
+      "label": "PhD",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_1e43231b-b1da-460c-be3b-ddc12d02fe6f-labeled-checkbox-3",
+      "label": "MBA",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_gender",
+      "label": "Male",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Demographics deferred to sensitive-profile policy path"
+    },
+    {
+      "field_id": "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_race",
+      "label": "Hispanic or Latino",
+      "type": "radio",
+      "canonical_field": "hispanic_latino",
+      "action": "FILL",
+      "reason": "Mapped from sensitive profile (operator-supplied)"
+    },
+    {
+      "field_id": "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_veteran_status",
+      "label": "I identify as one or more of the classifications of protected veteran listed above",
+      "type": "radio",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Demographics deferred to sensitive-profile policy path"
+    },
+    {
+      "field_id": "g-recaptcha-response-100000",
+      "label": "g-recaptcha-response",
+      "type": "textarea",
+      "canonical_field": "address.line2",
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\ashby-live\\form-snapshot-1786817355333.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "linkedin_url",
+      "linkedin_url",
+      "github_url",
+      "school"
+    ],
+    "skipped": [],
+    "errors": [
+      "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_race: button group not found by data-field-id or accessible name"
+    ],
+    "field_meta": [
+      {
+        "field_id": "_systemfield_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "_systemfield_email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "d58506bf-393d-4769-a6ec-bdebe07843ed",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "0d099a21-e3a6-4b7b-8c5f-94feefa0e5c0",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-0",
+        "canonical_field": "linkedin_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "3fcd7a80-e8bd-49a9-8b3e-778b17d963e6",
+        "canonical_field": "github_url",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "26fc2946-7292-4ab9-929b-18ec794fd3da",
+        "canonical_field": "school",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham Kale",
+        "observed": "Shubham Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "match": true
+      },
+      {
+        "canonical_field": "linkedin_url",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "github_url",
+        "expected": "https://github.com/skale-07",
+        "observed": "https://github.com/skale-07",
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": "Johns Hopkins University",
+        "match": true
+      },
+      {
+        "canonical_field": "hispanic_latino",
+        "expected": "No",
+        "observed": null,
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": [
+      "verify hispanic_latino: button group not found"
+    ]
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [],
+  "operator_brief": {
+    "title": "Live fill — ashby https://jobs.ashbyhq.com/notion/3fba1c39-c5cb-47d7-9ad2-1cec4d7e9d0c/application",
+    "summary": "3 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:linkedin_url",
+        "question": "LinkedIn",
+        "field_id": "ffd08c0f-6afc-4125-bf16-e935fbb51a14_39f16850-ea19-4a96-af1c-263f083a39d9-labeled-checkbox-0",
+        "canonical_field": "linkedin_url",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\"; page shows \"true\"",
+        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json → linkedin_url",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"linkedin_url\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:hispanic_latino",
+        "question": "Hispanic or Latino",
+        "field_id": "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_race",
+        "canonical_field": "hispanic_latino",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"No\"; page shows \"(empty)\"",
+        "expected": "No",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"No\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: hispanic_latino)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"hispanic_latino\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_race: button group not fo",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "57cf9084-3824-45cc-af20-38110594e387__systemfield_eeoc_race: button group not found by data-field-id or accessible name",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 6,
+    "fail_count": 3
+  },
+  "written_at": "2026-08-15T18:09:16.008Z"
+}
