@@ -1,0 +1,48 @@
+{
+  "run_id": "nav-0be0f7d6-5d89-46d9-a7dc-6c4c07210ae8",
+  "application_id": "b3e645ce-78af-4acf-af27-e57f563a8c1c",
+  "jobright_job_id": "6a0f484f83d714428981e3d4",
+  "method": "apply_click_popup",
+  "resolved_url": "https://www.linkedin.com/jobs/view/4416715074",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (10 external links)",
+      "evidence": "www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "www.linkedin.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 7 external host(s) seen: www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org",
+    "Apply control matched via broad name tier",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup settled off about:blank after the interstitial",
+    "popup captured on attempt 1",
+    "phase B: captured URL reads as \"view\" (URL names \"view\" (path), which shares nothing with company \"Neuralink\") — kept, provenance is the Apply click",
+    "congruence: URL names \"view\", not \"Neuralink\" (URL names \"view\" (path), which shares nothing with company \"Neuralink\") — recorded, not refused"
+  ],
+  "congruence": {
+    "verdict": "mismatch",
+    "slug": "view",
+    "detail": "URL names \"view\" (path), which shares nothing with company \"Neuralink\"",
+    "expected_company": "Neuralink",
+    "url": "https://www.linkedin.com/jobs/view/4416715074?jr_id=6a0f484f83d714428981e3d4"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-15T18:42:20.878Z"
+}

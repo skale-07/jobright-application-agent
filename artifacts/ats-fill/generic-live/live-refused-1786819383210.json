@@ -1,0 +1,25 @@
+{
+  "ats": "generic",
+  "url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881",
+  "requested_url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "NO_APPLICATION_FORM",
+    "reason": "application form markers not found on the final page",
+    "final_url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "refused before any mutation — page gate failed"
+  ],
+  "written_at": "2026-08-15T18:43:03.210Z"
+}

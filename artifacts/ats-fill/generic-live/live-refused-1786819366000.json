@@ -1,0 +1,25 @@
+{
+  "ats": "generic",
+  "url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=129220",
+  "requested_url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=129220&src=jobright&jr_id=6a7e7d4319ce4e6e9d93386b",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "UNTRUSTED_FINAL_HOST",
+    "reason": "navigation ended on an untrusted host: https://careers.ibm.com/en_US/careers/JobDetail?jobId=129220",
+    "final_url": "https://careers.ibm.com/en_US/careers/JobDetail?jobId=129220"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "refused before any mutation — page gate failed"
+  ],
+  "written_at": "2026-08-15T18:42:46.000Z"
+}
