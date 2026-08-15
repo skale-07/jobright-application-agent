@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<!--
+  The predictive gauntlet (operator directive 2026-08-15: "developing a
+  test script/suite that creates frontend mimicking a job application with
+  really weird, odd questions that the system would need predictive
+  capabilities for").
+
+  Every question here is deliberately OUTSIDE the deterministic registry:
+  no screener pattern matches, no answer alias maps, no profile rule
+  derives an answer. If a question on this form fills, the PREDICTIVE
+  tiers did it — there is no other path. That is the point: this fixture
+  measures exactly the capability the operator says is missing.
+-->
+<body>
+  <h1>Frobnicator Industries — Application</h1>
+  <form>
+    <label for="q_appliance">If you were a kitchen appliance, which would you be?</label>
+    <select id="q_appliance" name="q_appliance" required>
+      <option value="">Select...</option>
+      <option>Toaster</option>
+      <option>Blender</option>
+      <option>Rice cooker</option>
+      <option>Other</option>
+    </select>
+
+    <label for="q_cobol">Have you ever maintained a COBOL system in production?</label>
+    <select id="q_cobol" name="q_cobol" required>
+      <option value="">Select...</option>
+      <option>Yes</option>
+      <option>No</option>
+    </select>
+
+    <label for="q_timezone">Which time zone will you primarily frobnicate from?</label>
+    <select id="q_timezone" name="q_timezone" required>
+      <option value="">Select...</option>
+      <option>Eastern (US)</option>
+      <option>Central (US)</option>
+      <option>Mountain (US)</option>
+      <option>Pacific (US)</option>
+    </select>
+
+    <label for="q_uni">Which university do you attend? Select "Other" if not listed.</label>
+    <select id="q_uni" name="q_uni" required>
+      <option value="">Select...</option>
+      <option>Miskatonic University</option>
+      <option>Unseen University</option>
+      <option>Other</option>
+    </select>
+
+    <label for="q_spirit">Describe your debugging spirit animal in one word.</label>
+    <input type="text" id="q_spirit" name="q_spirit" />
+  </form>
+</body>
+</html>
