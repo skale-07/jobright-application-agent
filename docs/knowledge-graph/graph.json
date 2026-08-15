@@ -588,6 +588,24 @@
         "src/heal/submitInventoryHealer.ts": "selector proposal healer"
       },
       "key_exports": {}
+    },
+    {
+      "id": "sandbox",
+      "label": "Employer sandbox",
+      "layer": "operator",
+      "purpose": "A fake employer on the operator's OWN machine (loopback only), driven by the real pipeline with the operator's real presets. /gauntlet = weird-questions application (predictive tiers, incl. odd questions from live artifacts in both CLOSED and OPEN classes); /portal = posting \u2192 email/password wall \u2192 form (posting advance + portalAuth account creation/sign-in). Received submissions echo to console + artifacts/sandbox/. Generic URL validation and portal-auth host recognition carry narrow loopback-only allowances so ats:fill --url http://localhost:4599/\u2026 drives it.",
+      "paths": [
+        "src/sandbox"
+      ],
+      "key_files": {
+        "src/sandbox/server.ts": "startEmployerSandbox \u2014 zero-dependency HTTP server, binds 127.0.0.1 only",
+        "src/cli/sandboxCli.ts": "npm run sandbox \u2014 start + print the drive-it recipes"
+      },
+      "key_exports": {
+        "src/sandbox/server.ts": [
+          "startEmployerSandbox"
+        ]
+      }
     }
   ],
   "edges": [
@@ -783,6 +801,11 @@
       "to": "storage",
       "kind": "reads",
       "why": "dashboard + timeline read outcomes and artifacts"
+    },
+    {
+      "from": "sandbox",
+      "to": "ats",
+      "why": "the sandbox is designed to be driven by ats:fill (generic adapter, loopback allowance)"
     }
   ],
   "flags": {

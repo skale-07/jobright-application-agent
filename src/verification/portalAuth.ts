@@ -87,7 +87,17 @@ export function isRecognizedAtsAuthHost(url: string): boolean {
     return false;
   }
   if (/(^|\.)jobright\.ai$/i.test(host)) return false;
-  if (getConfig().portalLoginPassword && parsed.protocol === "https:") {
+  // Loopback = the operator's own sandbox (src/sandbox/server.ts): the
+  // https transport requirement protects nothing on 127.0.0.1, and
+  // recognizing it lets the operator rehearse the account-creation /
+  // sign-in flow locally with the same PORTAL_LOGIN_* credentials the
+  // live portals use.
+  const isLoopback =
+    host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  if (
+    getConfig().portalLoginPassword &&
+    (parsed.protocol === "https:" || isLoopback)
+  ) {
     return true;
   }
   return getAccount(host) !== null;
