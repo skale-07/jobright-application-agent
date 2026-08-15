@@ -305,7 +305,7 @@ Severity reflects blast radius and reversibility, not effort to fix.
 
 ## Changelog
 
-- **2026-08-15** — Fifth review (this one, and the first to actually merge).
+- **2026-08-15** — Fifth review (this one).
   Baselined against the unmerged 2026-08-13 draft (`claude/epic-pasteur-559fdc`)
   per the session-start-ritual instruction, then independently re-verified
   every carried-forward claim against current `HEAD` in both repos rather
@@ -328,9 +328,11 @@ Severity reflects blast radius and reversibility, not effort to fix.
   tSearch 186/186 tests passing, typecheck clean; jobright typecheck clean,
   791/960 tests passing with the remaining 161 traced to the same missing-
   browser-binary environment gap seen 08-13 (not a regression). Both repos:
-  zero open issues, zero open PRs. This review's copy is merged directly to
-  `main`/`master` in both repos rather than left on an unmerged draft branch,
-  breaking the pattern of the last three reviews.
+  zero open issues, zero open PRs. Pushed to each repo's designated review
+  branch (`claude/busy-clarke-kz1f9y` jobright, `claude/epic-pasteur-kz1f9y`
+  tSearch) — same unmerged-branch pattern as the last three reviews; whoever
+  merges these into `main`/`master` should do so deliberately, not assume it
+  already happened because this entry says "review."
 - **2026-08-13** — Fourth review (drafted on `claude/epic-pasteur-559fdc`,
   never merged — used as this review's baseline). Baselined against the
   unmerged 2026-08-11 draft. Found the Critical resume-PDF leak escalated
