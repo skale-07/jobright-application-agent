@@ -1326,3 +1326,47 @@ Two sources, best first:
 Both feed the same place, and a model answer is accepted only if it matches
 an option exactly, so neither source can widen what the system is willing
 to fill.
+
+## 20. Employer sandbox — test Dispatch yourself, locally
+
+`npm run sandbox` starts a fake employer on your machine
+(`http://localhost:4599`). It exists so you can WATCH the real system —
+your real profile, your real flags, your real LLM key — work a form whose
+right answers you know, without touching a real employer.
+
+Two obstacle courses:
+
+- **`/gauntlet`** — an application whose screener questions no
+  deterministic rule can answer (kitchen-appliance identity, COBOL
+  history), plus the exact odd questions real boards asked in your own
+  runs — university organizations Yes/No, the CS/CE majors Yes/No, GPA
+  bands, graduation season, "Where is your hometown?", "Tell us something
+  about yourself that we can't find on your resume", "Ideal start date in
+  office" — in both classes: CLOSED (dropdowns, one of which only renders
+  its options after opening, like a real board) and OPEN (free text). If a
+  gauntlet dropdown fills correctly, the predictive tier did it with your
+  context; there is no other path.
+- **`/portal`** — a job posting with an Apply button and search chrome
+  (the system must recognize it is NOT the form), behind it an
+  email/password wall (Create Account / Sign In — exercises your
+  `PORTAL_LOGIN_EMAIL`/`PORTAL_LOGIN_PASSWORD` exactly like Workday and
+  Paycom walls), and only then the application form. Accounts live in
+  memory: restart the sandbox and account creation is testable again.
+
+Drive it (second terminal, with your usual flags in the shell):
+
+```
+npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --headed
+npm run ats:fill -- --url http://localhost:4599/portal   --execute --headed
+```
+
+`--headed` opens the browser so you can watch every click. Everything the
+"employer" receives is echoed in the sandbox terminal and written to
+`artifacts/sandbox/`, so you can diff what Dispatch claims it filled
+against what actually arrived.
+
+Safety shape: the sandbox binds 127.0.0.1 only — it is unreachable from
+any other machine. The generic adapter and portal auth accept loopback
+URLs precisely because a loopback page can only be your own sandbox; every
+non-loopback URL keeps the https-only rule unchanged, and every fill/
+submit flag behaves exactly as it does against a real employer.

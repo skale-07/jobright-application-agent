@@ -17,6 +17,7 @@
     "run:dry": "tsx src/cli/index.ts run --dry-run",
     "dashboard": "tsx src/cli/index.ts dashboard",
     "console": "tsx src/cli/index.ts console",
+    "sandbox": "tsx src/cli/index.ts sandbox",
     "frontend:install": "npm --prefix frontend install",
     "frontend:typecheck": "npm --prefix frontend run typecheck",
     "frontend:build": "npm --prefix frontend run build",

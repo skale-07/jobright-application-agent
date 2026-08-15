@@ -72,7 +72,17 @@ export function validateGenericApplicationUrl(
       failureReason: "unparseable URL",
     };
   }
-  if (parsed.protocol !== "https:") {
+  const host = parsed.hostname.toLowerCase();
+  // The operator's own machine is not "the network". The employer sandbox
+  // (src/sandbox/server.ts) binds 127.0.0.1 so the operator can watch the
+  // real pipeline drive a fake employer with their real presets — and a
+  // loopback address is unreachable from anywhere else by definition, so
+  // the https transport invariant protects nothing there. Loopback ONLY:
+  // any other http host is refused exactly as before.
+  const isLoopback = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  if (isLoopback) {
+    warnings.push("loopback host — operator sandbox, not an employer");
+  } else if (parsed.protocol !== "https:") {
     return {
       passed: false,
       normalizedUrl: null,
@@ -80,8 +90,7 @@ export function validateGenericApplicationUrl(
       failureReason: `not https (${parsed.protocol})`,
     };
   }
-  const host = parsed.hostname.toLowerCase();
-  if (!host || !host.includes(".")) {
+  if (!isLoopback && (!host || !host.includes("."))) {
     return {
       passed: false,
       normalizedUrl: null,
