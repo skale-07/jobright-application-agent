@@ -91,6 +91,29 @@ export type SubmissionRunReport = {
 };
 
 /**
+ * An emailed-code wall is a LOGIN_WALL to the classifier (portal tuning
+ * 390c113 — correct for fill/nav routing), but on the SUBMIT path it is a
+ * RECOVERABLE state, not a refusal: the disabled-submit diagnostics detect
+ * the one-time-code input, the mailbox waiter fetches the newest code, and
+ * submit unlocks. Refusing at the page gate killed exactly that recovery.
+ * Only the PURE code-wall signature passes through — any wall that also
+ * shows a password input still refuses, because a password prompt is not
+ * recoverable by reading mail.
+ */
+export function isEmailedCodeWallOnly(gate: {
+  ok: boolean;
+  failureCode?: string | null;
+  reason?: string | null;
+}): boolean {
+  return (
+    !gate.ok &&
+    gate.failureCode === "LOGIN_WALL" &&
+    /emailed_code_wall/.test(gate.reason ?? "") &&
+    !/password_input/.test(gate.reason ?? "")
+  );
+}
+
+/**
  * Human-approved submission (Phase 7), dispatched per ATS via ATS_BINDINGS
  * (greenhouse / lever / ashby).
  *
@@ -261,7 +284,14 @@ export async function runAtsSubmission(input: {
       detected.normalizedUrl,
       async (page) => {
         const gate = await binding.gate(page, employerUrl, detected.normalizedUrl);
-        if (!gate.ok) {
+        const emailedCodeWallOnly = isEmailedCodeWallOnly(gate);
+        if (emailedCodeWallOnly) {
+          logger.info(
+            "emailed-code wall at the submit gate — proceeding to the verification-code recovery",
+            { service: "submit", action: "code_wall_passthrough", application_id: applicationId },
+          );
+        }
+        if (!gate.ok && !emailedCodeWallOnly) {
           markSubmissionFailed(db, pending.id, `page gate: ${gate.failureCode}`);
           failIdempotencyKey(db, idemKey, gate.failureCode ?? "gate");
           transitionApplication(db, {

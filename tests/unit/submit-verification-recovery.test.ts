@@ -57,7 +57,58 @@ vi.mock("../../src/browser/fixtureSession.js", async (importOriginal) => {
   };
 });
 
-const { runAtsSubmission } = await import("../../src/applications/submitRun.js");
+const { runAtsSubmission, isEmailedCodeWallOnly } = await import(
+  "../../src/applications/submitRun.js"
+);
+
+describe("isEmailedCodeWallOnly gate passthrough (UNIT_CONFIRMED)", () => {
+  const wall = (reason: string) => ({
+    ok: false,
+    failureCode: "LOGIN_WALL",
+    reason,
+  });
+
+  it("a pure emailed-code wall passes through to the recovery", () => {
+    expect(
+      isEmailedCodeWallOnly(wall("login wall detected: emailed_code_wall")),
+    ).toBe(true);
+  });
+
+  it("a wall that ALSO shows a password input still refuses", () => {
+    // A password prompt is not recoverable by reading mail — the pre-tuning
+    // refusal must survive for every mixed signature detectLoginWall emits.
+    expect(
+      isEmailedCodeWallOnly(
+        wall(
+          "login wall detected: password_input_visible_in_dom, emailed_code_wall",
+        ),
+      ),
+    ).toBe(false);
+    expect(
+      isEmailedCodeWallOnly(
+        wall(
+          "login wall detected: email_and_password_inputs, emailed_code_wall",
+        ),
+      ),
+    ).toBe(false);
+  });
+
+  it("non-LOGIN_WALL failures and passing gates never match", () => {
+    expect(
+      isEmailedCodeWallOnly({
+        ok: false,
+        failureCode: "NO_APPLICATION_FORM",
+        reason: "emailed_code_wall",
+      }),
+    ).toBe(false);
+    expect(
+      isEmailedCodeWallOnly({ ok: true, failureCode: null, reason: null }),
+    ).toBe(false);
+    expect(
+      isEmailedCodeWallOnly(wall("login wall detected: sign_in_heading_or_title")),
+    ).toBe(false);
+  });
+});
 const { withFixtureHtmlPage } = await import("../../src/browser/fixtureSession.js");
 
 const LEVER_URL =
