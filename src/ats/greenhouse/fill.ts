@@ -40,6 +40,18 @@ export function locatorForField(
     name?: string;
     inputId?: string;
   },
+  /**
+   * The entry's planned control type. Live 2026-08-16 (neuralink run): a
+   * URL entry labeled "LinkedIn" resolved via getByLabel onto the
+   * how-did-you-hear "LinkedIn" CHECKBOX — the URL was written into a
+   * checkbox, verify read `true`, and the real LinkedIn input stayed
+   * empty. Labels are not unique on a page; the control CLASS is the
+   * discriminator. When provided, the label fallback only matches
+   * controls compatible with the type — a text/url entry never lands on
+   * a checkbox/radio, and a checkbox/radio entry never lands on a text
+   * input. id/name lookups are already unambiguous and skip the filter.
+   */
+  type?: FillPlanEntry["type"],
 ): Locator {
   if (entry.inputId) {
     // Greenhouse free-text / EEO question ids are pure digits (e.g. 4010536008).
@@ -50,7 +62,18 @@ export function locatorForField(
   if (entry.name) {
     return page.locator(`[name="${entry.name.replace(/"/g, '\\"')}"]`).first();
   }
-  return page.getByLabel(entry.label, { exact: false }).first();
+  const byLabel = page.getByLabel(entry.label, { exact: false });
+  if (type === "checkbox" || type === "radio") {
+    return byLabel
+      .and(page.locator('input[type="checkbox"], input[type="radio"]'))
+      .first();
+  }
+  if (type !== undefined && type !== "select") {
+    return byLabel
+      .and(page.locator(':not(input[type="checkbox"]):not(input[type="radio"])'))
+      .first();
+  }
+  return byLabel.first();
 }
 
 async function setSelectByValueOrLabel(
@@ -481,13 +504,37 @@ export async function greenhouseFillFromPlan(
 
     const meta = fieldMeta.get(entry.field_id);
     try {
-      const loc = locatorForField(page, {
-        field_id: entry.field_id,
-        label: entry.label,
-        ...(meta?.name ? { name: meta.name } : {}),
-        ...(meta?.inputId ? { inputId: meta.inputId } : {}),
-      });
       const type = meta?.type ?? entry.type;
+      let loc = locatorForField(
+        page,
+        {
+          field_id: entry.field_id,
+          label: entry.label,
+          ...(meta?.name ? { name: meta.name } : {}),
+          ...(meta?.inputId ? { inputId: meta.inputId } : {}),
+        },
+        type,
+      );
+      // Reachability before mutation, with a bounded ladder instead of a
+      // 30s hang: the type-filtered label match first; if that finds
+      // nothing, the unfiltered label match (the filter must never make a
+      // previously-fillable control unreachable); still nothing ⇒ an
+      // INSTANT named error. Live f_28 burned 30s in locator.evaluate
+      // waiting for a label that was never going to appear.
+      if ((await loc.count()) === 0) {
+        const unfiltered = locatorForField(page, {
+          field_id: entry.field_id,
+          label: entry.label,
+          ...(meta?.name ? { name: meta.name } : {}),
+          ...(meta?.inputId ? { inputId: meta.inputId } : {}),
+        });
+        if ((await unfiltered.count()) === 0) {
+          throw new Error(
+            `control not found on the page (label "${entry.label.slice(0, 60)}") — failing fast instead of waiting 30s`,
+          );
+        }
+        loc = unfiltered;
+      }
       if (type === "select") {
         // Offline discovery types both native selects and React-select
         // comboboxes as "select"; only the live element tells them apart.
@@ -648,7 +695,19 @@ export async function greenhouseReadFieldValue(
   page: Page,
   entry: FillPlanEntry & { name?: string; inputId?: string },
 ): Promise<unknown> {
-  const loc = locatorForField(page, entry);
+  // Same type-aware resolution as the fill side — verify must read the
+  // control the fill wrote, not a same-label sibling (live: verify read
+  // `true` off the "LinkedIn" checkbox while the URL input sat empty).
+  let loc = locatorForField(page, entry, entry.type);
+  if ((await loc.count()) === 0) {
+    const unfiltered = locatorForField(page, entry);
+    if ((await unfiltered.count()) === 0) {
+      throw new Error(
+        `control not found on the page (label "${entry.label.slice(0, 60)}") — failing fast instead of waiting 30s`,
+      );
+    }
+    loc = unfiltered;
+  }
   const tag = await loc.evaluate((el: { tagName: string }) =>
     el.tagName.toLowerCase(),
   );
