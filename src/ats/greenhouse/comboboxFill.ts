@@ -627,12 +627,31 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
     textContent: string | null;
     closest: (s: string) => ContainerEl | null;
   };
-  const raw = await loc.evaluate((el: ContainerEl) => {
+  const raw = await loc.evaluate((el: ContainerEl & { value?: string; parentElement?: ContainerEl | null }) => {
     const shell =
       el.closest('[class*="select-shell"]') ??
       el.closest('[class*="select__control"]') ??
       el.closest('[class*="select_"]');
-    if (!shell) return null;
+    if (!shell) {
+      // Native role=combobox (employer sandbox / company-hosted): the
+      // input value IS the committed display. Ignore it while the
+      // listbox is open — that is filter residue, the Greenhouse lie.
+      const host = el.closest("[class*='combo']") ?? el.parentElement;
+      const list = host?.querySelector('[role="listbox"]');
+      const doc = (
+        globalThis as unknown as {
+          getComputedStyle?: (n: unknown) => { display: string; visibility: string };
+        }
+      ).getComputedStyle;
+      const open =
+        list != null &&
+        doc != null &&
+        doc(list).display !== "none" &&
+        doc(list).visibility !== "hidden";
+      if (open) return null;
+      const value = typeof el.value === "string" ? el.value.trim() : "";
+      return value || null;
+    }
 
     // ONLY the single-value node counts as committed — never the open menu or
     // the filter input. Using control textContent caused false positives when

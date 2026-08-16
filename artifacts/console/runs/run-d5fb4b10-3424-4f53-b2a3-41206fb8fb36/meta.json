@@ -27,7 +27,7 @@
     "SUBMIT_ENABLED"
   ],
   "denied_flags": [],
-  "status": "running",
+  "status": "canceled",
   "created_at": "2026-08-16T19:48:54.851Z",
   "started_at": "2026-08-16T19:48:54.915Z",
   "ended_at": null,
@@ -59,5 +59,5 @@
   },
   "pending_confirmation": null,
   "report": null,
-  "log_seq": 0
+  "log_seq": 39
 }

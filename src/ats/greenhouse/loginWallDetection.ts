@@ -51,12 +51,15 @@ export function detectLoginWall(input: {
     signals.push("auth_provider_marker");
   }
   if (PASSWORD_INPUT.test(html)) {
-    score += 3;
     signals.push("password_input_visible_in_dom");
-  }
-  if (EMAIL_OR_USER_INPUT.test(html) && PASSWORD_INPUT.test(html)) {
-    score += 2;
-    signals.push("email_and_password_inputs");
+    if (EMAIL_OR_USER_INPUT.test(html)) {
+      signals.push("email_and_password_inputs");
+    }
+    // A password field is the wall. The old score>=5 threshold left
+    // password-only SPA pages as MEDIUM, so the mutation gate collapsed
+    // them to NO_APPLICATION_FORM and fill never attempted sign-in.
+    // Header "Log in" links still do not count — they add no password input.
+    return { detected: true, confidence: "HIGH", signals };
   }
   if (AUTH_HEADING.test(html) || /\b(sign in|log in)\b/i.test(title)) {
     score += 2;

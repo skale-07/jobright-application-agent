@@ -809,6 +809,17 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     expect(wall.signals).toContain("generic_login_nav_ignored");
   });
 
+  it("password-only form is HIGH confidence — no type=email required", () => {
+    const wall = detectLoginWall({
+      finalUrl: "https://careers.example.com/apply",
+      html: `<html><body><form><input name="user"><input type="password" name="password"><button>Continue</button></form></body></html>`,
+      title: "Careers",
+    });
+    expect(wall.detected).toBe(true);
+    expect(wall.confidence).toBe("HIGH");
+    expect(wall.signals).toContain("password_input_visible_in_dom");
+  });
+
   it("password + sign-in form is HIGH confidence login wall", () => {
     const html = fs.readFileSync(loginWallFixture, "utf8");
     const wall = detectLoginWall({

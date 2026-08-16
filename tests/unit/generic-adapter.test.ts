@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isSameEmployerOrigin,
+  isLoopbackUrl,
   validateGenericApplicationUrl,
 } from "../../src/ats/generic/urlValidation.js";
 import { genericSelectorsV1 } from "../../src/ats/generic/selectors.js";
@@ -49,6 +50,12 @@ describe("generic ATS URL validation (UNIT_CONFIRMED)", () => {
     ]) {
       expect(validateGenericApplicationUrl(url).passed).toBe(true);
     }
+  });
+
+  it("names loopback hosts (UNIT_CONFIRMED)", () => {
+    expect(isLoopbackUrl("http://localhost:4599/gauntlet")).toBe(true);
+    expect(isLoopbackUrl("http://127.0.0.1:4599/gauntlet")).toBe(true);
+    expect(isLoopbackUrl("https://jobs.lever.co/acme/apply")).toBe(false);
   });
 
   it("still refuses the two things provenance cannot supply", () => {

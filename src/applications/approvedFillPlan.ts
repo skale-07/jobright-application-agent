@@ -64,7 +64,7 @@ export function isScreenerFillCanonical(
   const key = segments[0] ?? "";
   // screener:custom:<key> — human-promoted bank entries, profile-fact
   // checkboxes, and plan-time predictions that already passed
-  // validatePrediction (option verbatim or grounded free-text).
+  // validatePrediction (option verbatim, or free-text the model returned).
   if (key === "custom") {
     return (segments[1] ?? "").length >= 2;
   }
@@ -72,9 +72,17 @@ export function isScreenerFillCanonical(
   return def?.policy === "auto_fill" || def?.policy === "skip_if_empty";
 }
 
+/** Generated essay answers recorded on the plan (about-me + validateDraft). */
+export function isEssayGeneratedCanonical(
+  canonical: string | null | undefined,
+): boolean {
+  return Boolean(canonical?.startsWith("essay:generated:"));
+}
+
 export function isAllowlistedCanonical(canonical: string | null | undefined): boolean {
   if (!canonical) return false;
   if (isScreenerFillCanonical(canonical)) return true;
+  if (isEssayGeneratedCanonical(canonical)) return true;
   if (isConsentCanonical(canonical)) return true;
   return (
     SAFE_FACTUAL_CANONICALS.has(canonical) ||
@@ -181,6 +189,12 @@ export function toApprovedFillPlan(entries: FillPlanEntry[]): ApprovedFillPlan {
 
 function rejectFillCandidate(entry: FillPlanEntry): ApprovedFillPlanEntry | null {
   if (entry.type === "textarea") {
+    if (
+      isEssayGeneratedCanonical(entry.canonical_field) &&
+      !isEmptyValue(entry.value)
+    ) {
+      return null;
+    }
     return {
       field_id: entry.field_id,
       label: entry.label,
@@ -278,7 +292,10 @@ export function assertExecutableApprovedEntry(
       `Refusing fill for ${entry.field_id}: not approved (action=${entry.action})`,
     );
   }
-  if (entry.type === "textarea") {
+  if (
+    entry.type === "textarea" &&
+    !isEssayGeneratedCanonical(entry.canonical_field)
+  ) {
     throw new Error(`Refusing fill for ${entry.field_id}: textarea/essay`);
   }
   if (

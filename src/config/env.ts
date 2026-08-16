@@ -157,7 +157,7 @@ export type AppConfig = {
   screenerPredictLlmEnabled: boolean;
   artifactAutopushEnabled: boolean;
   essayDraftEnabled: boolean;
-  /** Generate essay answers from about-me.md and FILL them (operator opt-in). */
+  /** Generate essay answers from about-me.md and FILL them. Also unlocked by SCREENER_PREDICT_LLM_ENABLED. */
   essayAutofillEnabled: boolean;
   agentFallbackEnabled: boolean;
   automationEnabled: boolean;

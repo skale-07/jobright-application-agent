@@ -55,6 +55,43 @@ describe("posting vs form discrimination (UNIT_CONFIRMED)", () => {
     expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe("form");
   });
 
+  it("a password field is a login wall even without a type=email companion", () => {
+    const html = `<html><body>
+      <form>
+        <input name="username" />
+        <input type="password" name="password" />
+        <button>Continue</button>
+      </form>
+    </body></html>`;
+    expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe(
+      "auth",
+    );
+  });
+
+  it("first + last without a resume is still a form — resume is not required", () => {
+    const html = `<html><body><form>
+      <label>First Name<input name="first_name"/></label>
+      <label>Last Name<input name="last_name"/></label>
+    </form></body></html>`;
+    expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe(
+      "form",
+    );
+  });
+
+  it("email on a login form does not beat a password field", () => {
+    const html = `<html><body>
+      <h1>Sign in</h1>
+      <form action="/login">
+        <label>Email<input type="email" name="email"/></label>
+        <label>Password<input type="password" name="password"/></label>
+        <button>Log in</button>
+      </form>
+    </body></html>`;
+    expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe(
+      "auth",
+    );
+  });
+
   it("a form with no Apply CTA is a form regardless of identity fields", () => {
     const html = `<html><body><form><label>Why us<input name="why"/></label></form></body></html>`;
     expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe("form");
@@ -162,6 +199,32 @@ describe("advancePastPosting (FIXTURE_CONFIRMED)", () => {
         ),
       ).toBeUndefined();
       expect(r.page_class).toBe("form");
+    });
+  }, 45_000);
+
+  it("clicks the wrapping Apply link when the visible control is a nested button", async () => {
+    // Invalid HTML employers still ship; type=button inside <a> does not
+    // navigate. The advance must click the href ancestor.
+    const html = `<!DOCTYPE html><html><body>
+      <input placeholder="Search by job title, ID, or keyword" />
+      <a href="https://forms.ats-example.com/portal/auth"><button type="button">Apply</button></a>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      await page.context().route("**/portal/auth", (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: "<html><body><form><label>Email<input type='email' name='email'/></label></form></body></html>",
+        }),
+      );
+      const r = await advancePastPosting({
+        page,
+        html,
+        url: page.url(),
+        settleTimeoutMs: 5_000,
+      });
+      expect(r.advanced).toBe(true);
+      expect(r.page_class).toBe("form");
+      expect(r.url).toMatch(/\/portal\/auth/);
     });
   }, 45_000);
 

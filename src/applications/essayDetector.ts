@@ -73,13 +73,9 @@ export function classifyEssayFields(fields: DiscoveredField[]): EssayClassificat
       reasons.push("essay-like label");
       isEssay = true;
     }
-    // Short optional text fields are not essays
-    if (
-      f.type === "text" &&
-      !f.minLength &&
-      (!f.maxLength || f.maxLength < 200) &&
-      !ESSAY_LABEL_HINTS.test(f.label)
-    ) {
+    // A one-line <input> is a screener, even if the label says "describe".
+    // "Describe your debugging spirit animal in one word" is not a cover letter.
+    if (f.type === "text" && !f.minLength && (!f.maxLength || f.maxLength < 200)) {
       isEssay = false;
       reasons.length = 0;
     }

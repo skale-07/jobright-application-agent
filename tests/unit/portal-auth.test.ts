@@ -4,6 +4,7 @@ import path from "node:path";
 import { chromium, type Browser, type Page } from "playwright";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { authenticateAtsPortal } from "../../src/verification/portalAuth.js";
+import { startEmployerSandbox } from "../../src/sandbox/server.js";
 import { resetConfigCache } from "../../src/config/index.js";
 import {
   applyControlledFillEnv,
@@ -467,4 +468,110 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
       applySafeFillEnv();
     }
   }, 30_000);
+
+  it("dual-form wall: does not POST empty Sign In as a view-flip; creates after sign-in miss (FIXTURE_CONFIRMED)", async () => {
+    // Sandbox /portal/auth shape: Create Account and Sign In on one page.
+    // Live 2026-08-16: portal auth clicked Sign In (the submit) as if it
+    // were Workday's view-switch, then typed into the Create Account
+    // fields, then reported wall_remains.
+    const DUAL_HTML = `<!DOCTYPE html><html><body>
+      <p id="err"></p>
+      <h2>Create Account</h2>
+      <form id="create">
+        <input id="email" type="email" name="email" />
+        <input id="password" type="password" name="password" />
+        <input id="verifyPassword" type="password" name="verifyPassword" />
+        <button type="submit">Create Account</button>
+      </form>
+      <h2>Sign In</h2>
+      <form id="signin">
+        <input id="si_email" type="email" name="email" />
+        <input id="si_password" type="password" name="password" />
+        <button type="submit">Sign In</button>
+      </form>
+      <script>
+        var accounts = {};
+        document.getElementById('create').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = document.getElementById('email').value.toLowerCase();
+          var pw = document.getElementById('password').value;
+          var v = document.getElementById('verifyPassword').value;
+          if (!email || !pw || pw !== v) {
+            document.getElementById('err').textContent = 'Email and password are required.';
+            return;
+          }
+          if (accounts[email]) {
+            document.getElementById('err').textContent =
+              'An account with this email already exists. Sign in instead.';
+            return;
+          }
+          accounts[email] = pw;
+          document.body.innerHTML = '<p>Application form</p><input name="first_name" />';
+        });
+        document.getElementById('signin').addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = document.getElementById('si_email').value.toLowerCase();
+          var pw = document.getElementById('si_password').value;
+          if (accounts[email] !== pw) {
+            document.getElementById('err').textContent = 'Invalid email or password.';
+            return;
+          }
+          document.body.innerHTML = '<p>Application form</p><input name="first_name" />';
+        });
+      </script>
+    </body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@fixture.test";
+    process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
+    resetConfigCache();
+    try {
+      await onWorkdayPage(DUAL_HTML, async (page) => {
+        const r = await authenticateAtsPortal(page, { settleMs: 0 });
+        expect(r.notes.join(" ")).not.toMatch(/flipped Create Account → Sign In/);
+        expect(r.notes.join(" ")).toMatch(/Sign In form already on this page/);
+        expect(r.notes.join(" ")).toMatch(/sign-in rejected/);
+        expect(r.status).toBe("account_created");
+        expect(await page.locator("input[name='first_name']").count()).toBe(1);
+      });
+    } finally {
+      applySafeFillEnv();
+    }
+  }, 30_000);
+});
+
+describe("employer-sandbox portal auth (FIXTURE_CONFIRMED)", () => {
+  useIsolatedFillEnv("safe");
+  let browser: Browser;
+
+  beforeEach(async () => {
+    applySafeFillEnv();
+    browser = await chromium.launch({ headless: true });
+  });
+  afterEach(async () => {
+    await browser.close().catch(() => undefined);
+    applySafeFillEnv();
+  });
+
+  it("clears /portal/auth with standing credentials when no account exists yet", async () => {
+    const outDir = path.join(os.tmpdir(), `jaa-portal-sb-${Date.now()}`);
+    const sandbox = await startEmployerSandbox({ port: 0, quiet: true, outDir });
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    process.env.PORTAL_LOGIN_EMAIL = "candidate@fixture.test";
+    process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";
+    resetConfigCache();
+    const page = await browser.newPage();
+    try {
+      await page.goto(`${sandbox.url}/portal/auth`, {
+        waitUntil: "domcontentloaded",
+      });
+      const r = await authenticateAtsPortal(page, { settleMs: 0 });
+      expect(r.notes.join(" ")).not.toMatch(/flipped Create Account → Sign In/);
+      expect(["signed_in", "account_created"]).toContain(r.status);
+      expect(page.url()).toMatch(/\/portal\/form$/);
+    } finally {
+      await page.close().catch(() => undefined);
+      await sandbox.close();
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
+  }, 45_000);
 });

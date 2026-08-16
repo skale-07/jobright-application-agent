@@ -16,6 +16,7 @@ Mirror of `CLAUDE.md` (repo root) — keep both files identical when editing.
   `MATERIALS_DOWNLOAD_ENABLED`,
   `LINKEDIN_ENRICHMENT_ENABLED`, `NAVIGATION_ENABLED`, `GMAIL_VERIFICATION_ENABLED`,
   `SCREENER_LLM_MATCH_ENABLED`, `SCREENER_PREDICT_LLM_ENABLED`, `ESSAY_DRAFT_ENABLED`,
+  `ESSAY_AUTOFILL_ENABLED`,
   `ARTIFACT_AUTOPUSH_ENABLED`, `CDP_AUTOLAUNCH_ENABLED`,
   `OUTLOOK_VERIFICATION_ENABLED`, `AUTOMATION_ENABLED`.
   Flags are enabled only in an operator's shell for a
@@ -28,20 +29,19 @@ Mirror of `CLAUDE.md` (repo root) — keep both files identical when editing.
   into a field, both operator opt-in and both fail-closed:
   - Demographic (EEO/self-ID) fields fill ONLY from the operator's own encrypted
     sensitive profile. Nothing is ever inferred or defaulted; no value on file ⇒ skipped.
-  - Essays: `ESSAY_DRAFT_ENABLED` generates a SUGGESTION into the review item (human
-    approves, only approved text fills). `ESSAY_AUTOFILL_ENABLED` (operator directive
-    2026-08-13) generates from `private/candidate/about-me.md` and fills directly — it
-    additionally requires that file to exist and an LLM key, the output must pass the
-    same `validateDraft` checks as a review draft, and every generated answer is
-    recorded on its plan entry so the artifact shows what an employer received. Off,
-    or context missing, or draft rejected ⇒ the essay routes to review as before.
+  - Essays: generated from `private/candidate/about-me.md` and filled when
+    `ESSAY_AUTOFILL_ENABLED` or `SCREENER_PREDICT_LLM_ENABLED` is on (operator
+    directive 2026-08-15). Requires that file and an LLM key. Output must
+    pass `validateDraft`. Recorded on the plan entry. Context missing, no
+    key, or draft rejected ⇒ skip with the real reason. `ESSAY_DRAFT_ENABLED`
+    still writes a review suggestion when autofill did not fill.
   Screener answers may be placed onto a page's option list by the model
   (`SCREENER_LLM_MATCH_ENABLED`), but only by CHOOSING from that page's own options,
   validated verbatim. `SCREENER_PREDICT_LLM_ENABLED` may fill a previously-unmapped
   screener at plan time when `validatePrediction` passes: option answers must match
-  the page verbatim; free-text must appear in about-me or public profile facts.
-  Ungrounded invention still parks as Answer needed. Demographic / EEO / pronoun
-  fields never take this path.
+  the page verbatim (or the form's own Other); free-text the model returns is
+  filled and remembered as a custom bank entry so a later verbatim question is
+  deterministic. Demographic / EEO / pronoun fields never take this path.
 - `chromium.launch` is allowed only in session infrastructure
   (`src/auth/serviceSession.ts`, `src/auth/loginFlow.ts`, `src/browser/fixtureSession.ts`).
   Everything else enters the browser through those seams.

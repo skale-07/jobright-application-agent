@@ -12,8 +12,15 @@ import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
  * immediately.
  *
  * Order matters: captcha and auth walls dominate (a login page can carry
- * stray inputs), confirmation beats form (thank-you pages keep search
- * boxes), and a field-less page with an Apply-ish CTA is a posting.
+ * stray inputs — a password field is auth, even if an email box is also
+ * present), confirmation beats form (thank-you pages keep search boxes),
+ * and Apply without applicant identity is a posting.
+ *
+ * Form identity is disjunctive, not "first + last + resume". Wizard step 1
+ * is often name+email with the resume on step 2; Lever uses one Full Name
+ * field. Requiring the full contact block classifies real forms as unknown.
+ * The listing-page discriminator is the one Eightfold taught: Apply CTA
+ * plus none of the inputs asking who you are.
  */
 export type PageClass =
   | "captcha"

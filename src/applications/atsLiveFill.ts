@@ -15,12 +15,21 @@ import { logger } from "../logging/logger.js";
 import { writeJsonAtomic } from "../storage/atomicJson.js";
 import { recordFillRun } from "../storage/fillOutcomes.js";
 import { redactFillReportForArtifact } from "./fillReportRedaction.js";
-import { assertFormFillAllowed } from "./formFillGuards.js";
+import { assertFormFillAllowed, assertSubmitAllowed } from "./formFillGuards.js";
+import {
+  defaultTtyConfirm,
+  type ConfirmSubmission,
+} from "./submitConfirmation.js";
+import { scanRequiredCompleteness } from "../ats/shared/requiredCompleteness.js";
+import { SubmissionUncertainError } from "../ats/shared/submissionUncertain.js";
+import { isLoopbackUrl } from "../ats/generic/urlValidation.js";
 import { planApplicationFill } from "./applicationFiller.js";
+import { postSandboxTrace } from "../sandbox/trace.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
 import { advancePastPosting } from "../ats/shared/postingAdvance.js";
+import { classifyPage } from "../ats/shared/pageClassify.js";
 import { fetchGreenhouseQuestions } from "../ats/greenhouse/questionsApi.js";
 import {
   applyLabelOptions,
@@ -42,6 +51,7 @@ import type { PublicProfile } from "../candidate/publicProfile.js";
 import type {
   FillResult,
   FormVerificationResult,
+  SubmissionReceipt,
   UploadVerification,
 } from "../ats/adapter.js";
 import {
@@ -49,6 +59,134 @@ import {
   printOperatorFieldBrief,
 } from "./operatorFieldBrief.js";
 import type { ApprovedFillPlan } from "./approvedFillPlan.js";
+
+async function attemptSandboxSubmit(args: {
+  page: Page;
+  binding: AtsBinding;
+  report: AtsLiveFillReport;
+  approvedPlan: ApprovedFillPlan;
+  assumeYes?: boolean;
+  confirmSubmission?: ConfirmSubmission;
+}): Promise<void> {
+  const { page, binding, report, approvedPlan } = args;
+  const notes: string[] = [];
+  const refuse = (
+    outcome: NonNullable<AtsLiveFillReport["submit"]>["outcome"],
+    reason: string,
+  ) => {
+    notes.push(reason);
+    report.notes.push(reason);
+    report.submit = { outcome, clicked: false, receipt: null, notes: [...notes] };
+  };
+
+  if (!isLoopbackUrl(report.url) && !isLoopbackUrl(page.url())) {
+    refuse(
+      "refused",
+      "submit refused — ats:fill --submit is sandbox/loopback only; use `submit --application` for an employer",
+    );
+    return;
+  }
+  if (!report.verify?.passed || (report.fill?.errors.length ?? 0) > 0) {
+    refuse("failed_before_click", "submit withheld — fill verify did not pass");
+    return;
+  }
+
+  assertSubmitAllowed(`atsLiveFill.${binding.id}.submit`);
+
+  const completeness = await scanRequiredCompleteness(page);
+  if (completeness.unanswered.length > 0) {
+    const names = completeness.unanswered
+      .map((u) => `${u.label} [${u.control}]`)
+      .join("; ");
+    refuse(
+      "failed_before_click",
+      `submit withheld — ${completeness.unanswered.length} required question(s) unanswered: ${names}`,
+    );
+    return;
+  }
+  notes.push(...completeness.notes);
+
+  const cfg = getConfig();
+  if (cfg.submitRequiresLocalConfirmation) {
+    const confirm = args.confirmSubmission ?? defaultTtyConfirm();
+    const approved = await confirm({
+      application_id: "sandbox",
+      company: "employer sandbox",
+      role: null,
+      url: page.url(),
+      attempt: 1,
+      resume_sha256: "0".repeat(64),
+      resume_size_bytes: 0,
+      plan: {
+        fillable_count: approvedPlan.fillable_count,
+        skipped_count: approvedPlan.skipped_count,
+        review_required_count: approvedPlan.review_required_count,
+      },
+    });
+    if (!approved) {
+      refuse("refused", "submit withheld — operator declined confirmation");
+      return;
+    }
+  } else if (!args.assumeYes) {
+    refuse(
+      "refused",
+      "submit withheld — unattended sandbox submit requires --yes",
+    );
+    return;
+  }
+
+  const attempt = await binding.submit(page);
+  notes.push(...attempt.notes);
+  report.submit_attempted = attempt.clicked;
+  if (!attempt.clicked) {
+    report.submit = {
+      outcome: "failed_before_click",
+      clicked: false,
+      receipt: null,
+      notes,
+    };
+    report.notes.push("submit control was not clicked");
+    return;
+  }
+
+  const screenshotPath = path.join(
+    cfg.artifactsDir,
+    "ats-submit",
+    binding.id,
+    `sandbox-receipt-${Date.now()}.png`,
+  );
+  fs.mkdirSync(path.dirname(screenshotPath), { recursive: true });
+  try {
+    const receipt = await binding.verifySubmission(page, { screenshotPath });
+    report.submit = { outcome: "confirmed", clicked: true, receipt, notes };
+    report.notes.push(
+      `submit confirmed: ${receipt.confirmation_text} (${receipt.confirmation_url})`,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const evidence =
+      err instanceof SubmissionUncertainError ? err.evidence : undefined;
+    report.submit = {
+      outcome: "uncertain",
+      clicked: true,
+      receipt: null,
+      notes: [
+        ...notes,
+        message,
+        ...(evidence ? [`evidence: ${JSON.stringify(evidence)}`] : []),
+      ],
+    };
+    report.notes.push(`submit uncertain: ${message}`);
+    report.validation_level = "UNVERIFIED";
+  }
+  await postSandboxTrace(report.url, {
+    kind: "submit",
+    lines: [
+      `submit: ${report.submit?.outcome ?? "unknown"}`,
+      ...(report.submit?.notes ?? []).map((n) => `  ${n}`),
+    ],
+  });
+}
 
 function briefPlanEntries(approvedPlan: ApprovedFillPlan) {
   return approvedPlan.entries.map((e) => ({
@@ -68,10 +206,33 @@ function briefPlanEntries(approvedPlan: ApprovedFillPlan) {
 }
 
 /**
+ * Resume for a live fill. `--resume` always wins. On loopback only, a
+ * missing flag falls back to DEFAULT_RESUME_PATH when that file exists —
+ * so a sandbox run exercises the upload path. A real employer URL never
+ * gets a silent attach.
+ */
+export function resolveLiveFillResumePath(input: {
+  url: string;
+  explicitResumePath?: string;
+  defaultResumePath: string;
+  fileExists?: (p: string) => boolean;
+}): { path: string; source: "flag" | "sandbox_default" } | null {
+  if (input.explicitResumePath) {
+    return { path: input.explicitResumePath, source: "flag" };
+  }
+  if (!isLoopbackUrl(input.url)) return null;
+  const exists = input.fileExists ?? ((p) => fs.existsSync(p));
+  if (!exists(input.defaultResumePath)) return null;
+  return { path: input.defaultResumePath, source: "sandbox_default" };
+}
+
+/**
  * Shared guarded live fill for the non-greenhouse ATSes (lever/ashby).
  * Greenhouse keeps its own runGreenhouseLiveFill (full identity
  * verification, healer, essay path); this runner uses the binding's weaker
- * pre-mutation gate — see preMutationGate.ts — and NEVER submits.
+ * pre-mutation gate — see preMutationGate.ts. Submit is opt-in and
+ * loopback-only (`--submit` + SUBMIT_ENABLED): a real employer URL still
+ * never clicks Submit here. Use `submit --application` for that.
  *
  * Validation-ladder honesty: plan_only runs are LIVE_READ_ONLY_CONFIRMED at
  * most; executed runs are LIVE_MUTATION_CONFIRMED only when the read-back
@@ -88,6 +249,8 @@ export type AtsLiveFillReport = {
     failure_code: string | null;
     reason: string | null;
     final_url: string | null;
+    /** classifyPage result — recovery branches on this, not the collapsed gate code. */
+    page_class?: string | null;
   };
   plan_summary: {
     fillable_count: number;
@@ -133,7 +296,13 @@ export type AtsLiveFillReport = {
     | "LIVE_MUTATION_CONFIRMED"
     | "LIVE_READ_ONLY_CONFIRMED"
     | "UNVERIFIED";
-  submit_attempted: false;
+  submit_attempted: boolean;
+  submit?: {
+    outcome: "confirmed" | "uncertain" | "refused" | "failed_before_click";
+    clicked: boolean;
+    receipt: SubmissionReceipt | null;
+    notes: string[];
+  };
   /**
    * Workday only: the wizard pages walked BEYOND the landing page
    * (Next → re-plan → re-fill, bounded; the submit button is never
@@ -152,6 +321,37 @@ export type AtsLiveFillReport = {
   /** Built when fill/verify/uploads need operator attention. */
   operator_brief?: import("./operatorFieldBrief.js").OperatorFieldBrief;
 };
+
+type BindingGate = {
+  ok: boolean;
+  html: string;
+  finalUrl: string;
+  failureCode?: string | null;
+  reason?: string | null;
+};
+
+function applyGateToReport(
+  report: AtsLiveFillReport,
+  gate: BindingGate,
+): ReturnType<typeof classifyPage> {
+  const landing = classifyPage({ html: gate.html, url: gate.finalUrl });
+  report.gate = {
+    ok: gate.ok,
+    failure_code: gate.failureCode ?? null,
+    reason: gate.reason ?? null,
+    final_url: gate.finalUrl,
+    page_class: landing.page_class,
+  };
+  return landing;
+}
+
+const TERMINAL_GATE_CODES = new Set([
+  "UNTRUSTED_FINAL_HOST",
+  "POSTING_MISMATCH",
+  "BLOCKING_CAPTCHA",
+  "ATS_MISMATCH",
+  "UNSAFE_URL",
+]);
 
 export async function runAtsLiveFill(input: {
   binding: AtsBinding;
@@ -174,6 +374,15 @@ export async function runAtsLiveFill(input: {
    * lifetime; this runner navigates it but never closes it.
    */
   existingPage?: Page;
+  /**
+   * Click Submit after a passing verify. Refused unless the URL is
+   * loopback (employer sandbox). Still requires SUBMIT_ENABLED and the
+   * same confirmation seam as `submit --application`.
+   */
+  submit?: boolean;
+  /** Honored only when SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false. */
+  assumeYes?: boolean;
+  confirmSubmission?: ConfirmSubmission;
 }): Promise<AtsLiveFillReport> {
   // Mutable: the iframe hop can re-detect a different vendor's adapter for
   // the embedded form (e.g. company page → embedded Greenhouse board).
@@ -279,32 +488,20 @@ export async function runAtsLiveFill(input: {
           gate = await binding.gate(page, frameForm.url, frameForm.url);
         }
       }
-      report.gate = {
-        ok: gate.ok,
-        failure_code: gate.failureCode ?? null,
-        reason: gate.reason ?? null,
-        final_url: gate.finalUrl,
-      };
-      // Name the page BEFORE auth as well as after. A bare
-      // NO_APPLICATION_FORM on a Workday URL reads as a selector bug; the
-      // kind says which of posting / chooser / auth we actually landed on,
-      // and pairs with the post-auth note below to show what the Apply →
-      // Apply Manually walk in portalAuth accomplished.
+      let landing = applyGateToReport(report, gate);
+      report.notes.push(
+        `page class at gate: ${landing.page_class} (${landing.evidence})`,
+      );
       if (binding.id === "workday") {
         report.notes.push(
           `workday page kind at gate: ${classifyWorkdayPage(gate.html)}`,
         );
       }
-      const tryPortalAuth =
-        input.execute &&
-        getConfig().navigationEnabled &&
-        isRecognizedAtsAuthHost(page.url()) &&
-        (binding.id === "workday" || gate.failureCode === "LOGIN_WALL");
 
-      // LOGIN_WALL used to return here before portal auth ran. Workday
-      // postings often scored below the wall threshold so auth still
-      // ran; Greenhouse/Lever/Ashby account walls never did.
-      if (!gate.ok && !tryPortalAuth) {
+      // Host / captcha / mismatch are terminal. Everything else recovers
+      // from page_class (auth → portal auth, posting → Apply, unknown →
+      // park), not from the gate's collapsed NO_APPLICATION_FORM.
+      if (!gate.ok && TERMINAL_GATE_CODES.has(gate.failureCode ?? "")) {
         report.notes.push("refused before any mutation — page gate failed");
         return persist(report);
       }
@@ -312,8 +509,6 @@ export async function runAtsLiveFill(input: {
       let planHtml = gate.html;
       let planUrl = gate.finalUrl;
 
-      // Cookie banners / consent modals block clicks under them — clear
-      // before mutating. Execute-only: plan_only stays zero-mutation.
       if (input.execute) {
         const obstructions = await dismissPageObstructions(page);
         if (obstructions.dismissed.length > 0) {
@@ -321,6 +516,47 @@ export async function runAtsLiveFill(input: {
             `popups dismissed: ${obstructions.dismissed.join(", ")}`,
           );
         }
+
+        const canAuth = () =>
+          getConfig().navigationEnabled &&
+          isRecognizedAtsAuthHost(page.url());
+
+        // Workday's Apply → Apply Manually walk lives in portalAuth.
+        // Generic posting advance would click Apply and land on the
+        // chooser, which classifyPage cannot name — do not steal that.
+        const workdayOwnsWalk = binding.id === "workday" && canAuth();
+
+        if (!workdayOwnsWalk && landing.page_class === "posting") {
+          const advance = await advancePastPosting({
+            page,
+            html: planHtml,
+            url: planUrl,
+          });
+          report.notes.push(...advance.notes);
+          if (advance.hops > 0) {
+            page = advance.page;
+            planHtml = advance.html;
+            planUrl = advance.url;
+            gate = await binding.gate(page, advance.url, advance.url);
+            landing = applyGateToReport(report, gate);
+          }
+          if (landing.page_class === "posting") {
+            report.gate.ok = false;
+            report.gate.failure_code = "FORM_NOT_REACHED";
+            report.gate.reason =
+              "still on the job posting after trying Apply — no application form to fill";
+            report.gate.page_class = "posting";
+            report.notes.push(
+              "parked: refused to fill a listing page's own search widgets",
+            );
+            return persist(report);
+          }
+        }
+
+        const tryPortalAuth =
+          canAuth() &&
+          (workdayOwnsWalk || landing.page_class === "auth");
+
         if (tryPortalAuth) {
           // portalAuth keeps secrets OUT of its notes by construction, and
           // the form snapshot scrubs every value= attribute — so the
@@ -337,6 +573,7 @@ export async function runAtsLiveFill(input: {
             report.gate.ok = false;
             report.gate.failure_code = "AUTH_REQUIRED";
             report.gate.reason = `portal auth did not clear the wall (${auth.status})`;
+            report.gate.page_class = "auth";
             report.notes.push("parked: account wall not cleared");
             return persist(report);
           }
@@ -361,6 +598,7 @@ export async function runAtsLiveFill(input: {
               report.gate.ok = false;
               report.gate.failure_code = "AUTH_REQUIRED";
               report.gate.reason = "still on Workday sign-in after portal auth";
+              report.gate.page_class = "auth";
               report.notes.push("parked: Workday account wall not cleared");
               return persist(report);
             }
@@ -379,6 +617,12 @@ export async function runAtsLiveFill(input: {
               );
               return persist(report);
             }
+            landing = classifyPage({ html: planHtml, url: planUrl });
+            report.gate.ok = true;
+            report.gate.failure_code = null;
+            report.gate.reason = null;
+            report.gate.final_url = planUrl;
+            report.gate.page_class = landing.page_class;
           } else {
             const again = await binding.gate(
               page,
@@ -388,58 +632,58 @@ export async function runAtsLiveFill(input: {
             if (again.ok) {
               planHtml = again.html;
               planUrl = again.finalUrl;
-              report.gate = {
-                ok: true,
-                failure_code: null,
-                reason: null,
-                final_url: again.finalUrl,
-              };
+              landing = applyGateToReport(report, again);
             } else if (again.failureCode === "POSTING_MISMATCH") {
               report.notes.push(
                 "post-auth path differs from posting URL — planning the landed page",
               );
+              landing = classifyPage({ html: planHtml, url: planUrl });
               report.gate = {
                 ok: true,
                 failure_code: null,
                 reason: null,
                 final_url: planUrl,
+                page_class: landing.page_class,
               };
             } else {
+              landing = applyGateToReport(report, again);
               report.gate.ok = false;
               report.gate.failure_code = again.failureCode ?? "AUTH_REQUIRED";
               report.gate.reason = again.reason ?? "page gate still failed after portal auth";
-              report.gate.final_url = again.finalUrl;
               report.notes.push("refused after portal auth — page gate still failed");
               return persist(report);
             }
           }
         }
       }
-      // Are we even on the application page? A listing page carries the
-      // site's own search widgets, which look like fields to a field
-      // counter — so "has inputs" was mistaken for "is a form" and the run
-      // filled the posting (live: microsoft.eightfold.ai typed "United
-      // States" into a job-search box). Classify first; if this is a
-      // posting, click Apply and look again, the way a person would.
-      if (input.execute) {
-        const advance = await advancePastPosting({ page, html: planHtml, url: planUrl });
-        report.notes.push(...advance.notes);
-        if (advance.hops > 0) {
-          planHtml = advance.html;
-          planUrl = advance.url;
-          page = advance.page;
-          report.gate.final_url = planUrl;
-        }
-        if (!advance.advanced && advance.page_class === "posting") {
-          report.gate.ok = false;
-          report.gate.failure_code = "FORM_NOT_REACHED";
-          report.gate.reason =
-            "still on the job posting after trying Apply — no application form to fill";
+
+      landing = classifyPage({ html: planHtml, url: planUrl });
+      report.gate.page_class = landing.page_class;
+
+      if (!report.gate.ok && landing.page_class !== "form") {
+        if (landing.page_class === "auth") {
+          report.gate.failure_code = report.gate.failure_code ?? "LOGIN_WALL";
           report.notes.push(
-            "parked: refused to fill a listing page's own search widgets",
+            "refused — login wall; set NAVIGATION_ENABLED=true and PORTAL_LOGIN_EMAIL/PASSWORD to sign in",
           );
-          return persist(report);
+        } else if (landing.page_class === "posting") {
+          report.gate.failure_code = input.execute
+            ? "FORM_NOT_REACHED"
+            : "NO_APPLICATION_FORM";
+          report.notes.push("refused before any mutation — page is a posting, not a form");
+        } else if (landing.page_class === "unknown") {
+          report.gate.failure_code = "UNKNOWN_LANDING";
+          report.gate.reason = landing.evidence;
+          report.notes.push(
+            `parked: page class unknown (${landing.evidence}) — not a form, posting, or login wall`,
+          );
+        } else if (landing.page_class === "confirmation") {
+          report.gate.failure_code = "ALREADY_CONFIRMED";
+          report.notes.push("refused — page already shows an application confirmation");
+        } else {
+          report.notes.push("refused before any mutation — page gate failed");
         }
+        return persist(report);
       }
 
       // Scrape each control's REAL answer space before planning anything.
@@ -486,6 +730,15 @@ export async function runAtsLiveFill(input: {
           options: h.options.slice(0, 25),
           other_option: h.other_option,
         }));
+        await postSandboxTrace(input.url, {
+          kind: "harvest",
+          lines: harvest.harvested.map(
+            (h) =>
+              `${h.label.slice(0, 60)}: ${h.answer_space} (${h.options.length} options)${
+                h.other_option ? ` other="${h.other_option}"` : ""
+              }`,
+          ),
+        });
       }
       const { adapter, plan, approvedPlan, fields: plannedFields, otherFallbacks } =
         await planApplicationFill({
@@ -515,6 +768,19 @@ export async function runAtsLiveFill(input: {
         action: String(e.action),
         reason: e.reason,
       }));
+      await postSandboxTrace(input.url, {
+        kind: "plan",
+        lines: [
+          `${approvedPlan.fillable_count} fill / ${approvedPlan.skipped_count} skip / ${approvedPlan.review_required_count} review`,
+          ...approvedPlan.entries.map((e) => {
+            const val =
+              e.value === undefined || e.value === null
+                ? ""
+                : ` → ${String(e.value).slice(0, 70)}`;
+            return `${String(e.action).padEnd(16)} ${e.label.slice(0, 48)}${val}  [${e.reason}]`;
+          }),
+        ],
+      });
       // Ground truth for skipped-question diagnosis: the pre-fill DOM, with
       // control values scrubbed (a handoff page can arrive pre-filled).
       if (approvedPlan.skipped_count > 0 && planHtml) {
@@ -551,6 +817,15 @@ export async function runAtsLiveFill(input: {
         report.notes.push(...specified.map((s) => `other-specify: ${s.note}`));
       }
       report.verify = await adapter.verify(page, approvedPlan.answers);
+      await postSandboxTrace(input.url, {
+        kind: "fill",
+        lines: [
+          `filled: ${(report.fill.filled ?? []).join(", ") || "(none)"}`,
+          ...(report.fill.errors ?? []).map((e) => `ERROR ${e}`),
+          `verify: ${report.verify.passed ? "passed" : "failed"}`,
+          ...(report.other_specify ?? []).map((s) => `other-specify: ${s.note}`),
+        ],
+      });
       // Uploads after field mutation is settled, matching the greenhouse order.
       if (input.resumePath) {
         report.uploads = [await adapter.uploadResume(page, input.resumePath)];
@@ -621,7 +896,20 @@ export async function runAtsLiveFill(input: {
         (report.uploads?.every((u) => u.verified) ?? true)
           ? "LIVE_MUTATION_CONFIRMED"
           : "UNVERIFIED";
-      report.notes.push("submit not attempted — live fill never submits");
+      if (input.submit) {
+        await attemptSandboxSubmit({
+          page,
+          binding,
+          report,
+          approvedPlan,
+          ...(input.assumeYes ? { assumeYes: true } : {}),
+          ...(input.confirmSubmission
+            ? { confirmSubmission: input.confirmSubmission }
+            : {}),
+        });
+      } else {
+        report.notes.push("submit not attempted — live fill never submits");
+      }
       if (report.validation_level === "UNVERIFIED") {
         const brief = buildOperatorFieldBrief({
           context: `Live fill — ${binding.id} ${gate.finalUrl}`,

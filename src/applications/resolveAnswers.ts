@@ -119,11 +119,13 @@ export function buildFillPlan(
     screenerResolutions?: Map<string, ScreenerResolution>;
     /**
      * Essay answers generated from the operator's own about-me context and
-     * already validated (essayAutofill.ts), keyed by field id. Present only
-     * when ESSAY_AUTOFILL_ENABLED is on; absent restores the historical
-     * "essays are never auto-filled" behavior exactly.
+     * already validated (essayAutofill.ts), keyed by field id.
      */
     essayAnswers?: Map<string, string>;
+    /** Why an essay field has no generated answer — shown on skip_essay. */
+    essaySkipReason?: string;
+    /** Why an unmapped field has no predict/bank answer — shown on skip_unmapped. */
+    unmappedReasons?: Map<string, string>;
   } = {},
 ): ResolvedFillPlan {
   const essayIds = new Set(
@@ -137,20 +139,16 @@ export function buildFillPlan(
 
   for (const field of mapped) {
     if (essayIds.has(field.id) || field.type === "textarea") {
-      // Operator-generated essay answer (ESSAY_AUTOFILL_ENABLED): written
-      // from their own about-me context and already validated. Absent ⇒
-      // the historical skip, unchanged.
       const generated = opts.essayAnswers?.get(field.id);
       if (generated) {
         entries.push({
           field_id: field.id,
           label: field.label,
           type: field.type,
-          canonical_field: field.canonical_field,
+          canonical_field: `essay:generated:${field.id}`,
           action: "fill",
           value: generated,
-          reason:
-            "Essay generated from the operator's about-me context (ESSAY_AUTOFILL_ENABLED)",
+          reason: "Essay generated from the operator's about-me context",
         });
         continue;
       }
@@ -161,7 +159,7 @@ export function buildFillPlan(
         canonical_field: field.canonical_field,
         action: "skip_essay",
         value: null,
-        reason: "Essays are never auto-filled",
+        reason: opts.essaySkipReason ?? "Essay generation produced no answer",
       });
       continue;
     }
@@ -260,9 +258,13 @@ export function buildFillPlan(
             action: "fill",
             value: screener.value,
             reason:
-            screener.basis === "llm_predict"
-              ? `Predicted from operator context (${screener.basis})`
-              : `Screener bank answer (${screener.basis})`,
+              screener.basis === "llm_predict" || screener.basis === "other_option"
+                ? `Predicted from operator context (${screener.basis})${
+                    screener.rationale ? `: ${screener.rationale}` : ""
+                  }`
+                : `Screener bank answer (${screener.basis})${
+                    screener.rationale ? `: ${screener.rationale}` : ""
+                  }`,
           });
           continue;
         }
@@ -296,7 +298,8 @@ export function buildFillPlan(
         canonical_field: null,
         action: "skip_unmapped",
         value: null,
-        reason: "No answer-alias mapping",
+        reason:
+          opts.unmappedReasons?.get(field.id) ?? "No answer-alias mapping",
       });
       continue;
     }

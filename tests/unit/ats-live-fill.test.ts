@@ -1,10 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { runAtsLiveFill } from "../../src/applications/atsLiveFill.js";
+import {
+  resolveLiveFillResumePath,
+  runAtsLiveFill,
+} from "../../src/applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../../src/applications/atsBindings.js";
 import { parsePublicProfile } from "../../src/candidate/publicProfile.js";
 import {
+  applyControlledFillEnv,
+  applyFixtureFillEnv,
   applySafeFillEnv,
   useIsolatedFillEnv,
 } from "../helpers/fillEnvIsolation.js";
@@ -27,6 +32,49 @@ const PROFILE = parsePublicProfile({
   legal_name: { first: "Ada", last: "Lovelace" },
   email: "ada@example.com",
   phone: "555-0100",
+});
+
+describe("resolveLiveFillResumePath (UNIT_CONFIRMED)", () => {
+  const defaultPath = "private/candidate/resumes/default.pdf";
+
+  it("honors --resume on any host", () => {
+    const r = resolveLiveFillResumePath({
+      url: "https://jobs.lever.co/acme/apply",
+      explicitResumePath: "C:\\tmp\\cv.pdf",
+      defaultResumePath: defaultPath,
+      fileExists: () => true,
+    });
+    expect(r).toEqual({ path: "C:\\tmp\\cv.pdf", source: "flag" });
+  });
+
+  it("never silently attaches a resume on an employer host", () => {
+    expect(
+      resolveLiveFillResumePath({
+        url: "https://jobs.lever.co/acme/apply",
+        defaultResumePath: defaultPath,
+        fileExists: () => true,
+      }),
+    ).toBeNull();
+  });
+
+  it("falls back to DEFAULT_RESUME_PATH on loopback when the file exists", () => {
+    const r = resolveLiveFillResumePath({
+      url: "http://localhost:4599/gauntlet",
+      defaultResumePath: defaultPath,
+      fileExists: (p) => p === defaultPath,
+    });
+    expect(r).toEqual({ path: defaultPath, source: "sandbox_default" });
+  });
+
+  it("stays skipped on loopback when the default file is missing", () => {
+    expect(
+      resolveLiveFillResumePath({
+        url: "http://localhost:4599/gauntlet",
+        defaultResumePath: defaultPath,
+        fileExists: () => false,
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("runAtsLiveFill (W5)", () => {
@@ -69,7 +117,8 @@ describe("runAtsLiveFill (W5)", () => {
         fixtureHtml: "<html><body><h1>Position closed</h1></body></html>",
       });
       expect(report.mode).toBe("refused");
-      expect(report.gate.failure_code).toBe("NO_APPLICATION_FORM");
+      expect(report.gate.failure_code).toBe("UNKNOWN_LANDING");
+      expect(report.gate.page_class).toBe("unknown");
       expect(report.fill).toBeNull();
       expect(report.validation_level).toBe("UNVERIFIED");
     },
@@ -111,6 +160,265 @@ describe("runAtsLiveFill (W5)", () => {
           fixtureHtml: fixtureHtml("ashby"),
         }),
       ).rejects.toThrow(/FORM_FILL_ENABLED|DRY_RUN/);
+    },
+    45_000,
+  );
+
+  it(
+    "refuses --submit on a non-loopback employer URL (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.lever,
+        url: LEVER_URL,
+        execute: true,
+        submit: true,
+        profile: PROFILE,
+        fixtureHtml: fixtureHtml("lever"),
+        confirmSubmission: async () => true,
+      });
+      expect(report.submit_attempted).toBe(false);
+      expect(report.submit?.outcome).toBe("refused");
+      expect(report.submit?.clicked).toBe(false);
+      expect(report.notes.join(" ")).toMatch(/sandbox\/loopback only/);
+    },
+    45_000,
+  );
+
+  it(
+    "sandbox submit is refused when SUBMIT_ENABLED is off (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      await expect(
+        runAtsLiveFill({
+          binding: ATS_BINDINGS.generic,
+          url: "http://localhost:4599/gauntlet",
+          execute: true,
+          submit: true,
+          profile: PROFILE,
+          fixtureHtml: `<!doctype html><html><body>
+            <form>
+              <label for="first_name">First Name</label>
+              <input id="first_name" name="first_name" />
+              <button type="submit">Submit application</button>
+            </form>
+          </body></html>`,
+          confirmSubmission: async () => true,
+        }),
+      ).rejects.toThrow(/SUBMIT_ENABLED/);
+    },
+    45_000,
+  );
+
+  it(
+    "sandbox submit withholds the click when a required control is empty (FIXTURE_CONFIRMED)",
+    async () => {
+      applyControlledFillEnv({
+        FORM_FILL_ENABLED: "true",
+        DRY_RUN: "false",
+        SUBMIT_ENABLED: "true",
+        SUBMIT_REQUIRES_LOCAL_CONFIRMATION: "true",
+      });
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/gauntlet",
+        execute: true,
+        submit: true,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <form>
+            <label for="first_name">First Name</label>
+            <input id="first_name" name="first_name" />
+            <label for="w_grad">Expected graduation</label>
+            <select id="w_grad" name="w_grad" required>
+              <option value="">Select...</option>
+              <option>Spring 2026</option>
+            </select>
+            <button type="submit">Submit application</button>
+          </form>
+        </body></html>`,
+        confirmSubmission: async () => true,
+      });
+      expect(report.submit_attempted).toBe(false);
+      expect(report.submit?.outcome).toBe("failed_before_click");
+      expect(report.notes.join(" ")).toMatch(/required question/);
+    },
+    45_000,
+  );
+
+  it(
+    "sandbox submit clicks and confirms on a loopback form (FIXTURE_CONFIRMED)",
+    async () => {
+      applyControlledFillEnv({
+        FORM_FILL_ENABLED: "true",
+        DRY_RUN: "false",
+        SUBMIT_ENABLED: "true",
+        SUBMIT_REQUIRES_LOCAL_CONFIRMATION: "true",
+      });
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/gauntlet",
+        execute: true,
+        submit: true,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <form>
+            <label for="first_name">First Name</label>
+            <input id="first_name" name="first_name" required />
+            <button type="submit">Submit application</button>
+          </form>
+          <script>
+            document.querySelector('form').addEventListener('submit', function (e) {
+              e.preventDefault();
+              document.body.innerHTML =
+                '<h1>Thank you for applying!</h1><p>Your application has been received.</p>';
+            });
+          </script>
+        </body></html>`,
+        confirmSubmission: async () => true,
+      });
+      expect(report.submit_attempted).toBe(true);
+      expect(report.submit?.outcome).toBe("confirmed");
+      expect(report.submit?.clicked).toBe(true);
+      expect(report.submit?.receipt?.submitted).toBe(true);
+    },
+    45_000,
+  );
+
+  it(
+    "execute on a posting clicks Apply before refusing NO_APPLICATION_FORM (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal",
+        execute: true,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <h1>AI Engineer Intern</h1>
+          <input placeholder="Search by job title, ID, or keyword" />
+          <input placeholder="City, state, or country/region" />
+          <button type="button" id="apply">Apply</button>
+          <script>
+            document.getElementById('apply').addEventListener('click', function () {
+              var form = document.createElement('form');
+              function add(name, type, labelText) {
+                var lab = document.createElement('label');
+                lab.htmlFor = name;
+                lab.textContent = labelText;
+                var inp = document.createElement('input');
+                inp.id = name;
+                inp.name = name;
+                inp.type = type;
+                form.appendChild(lab);
+                form.appendChild(inp);
+              }
+              add('first_name', 'text', 'First Name');
+              add('email', 'email', 'Email');
+              document.body.replaceChildren(form);
+            });
+          </script>
+        </body></html>`,
+      });
+      expect(report.notes.join(" ")).toMatch(/landed on a posting/);
+      expect(report.mode).toBe("executed");
+      expect(report.fill).not.toBeNull();
+      expect(report.gate.ok).toBe(true);
+    },
+    45_000,
+  );
+
+  it(
+    "execute on a posting that reveals a login wall refuses LOGIN_WALL, not the auth form (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal",
+        execute: true,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <h1>AI Engineer Intern</h1>
+          <input placeholder="Search by job title, ID, or keyword" />
+          <button type="button" id="apply">Apply</button>
+          <script>
+            document.getElementById('apply').addEventListener('click', function () {
+              var h1 = document.createElement('h1');
+              h1.textContent = 'Sign In';
+              var form = document.createElement('form');
+              form.setAttribute('action', '/login');
+              function add(name, type, labelText) {
+                var lab = document.createElement('label');
+                lab.textContent = labelText;
+                var inp = document.createElement('input');
+                inp.name = name;
+                inp.type = type;
+                form.appendChild(lab);
+                form.appendChild(inp);
+              }
+              add('email', 'email', 'Email');
+              add('password', 'password', 'Password');
+              var btn = document.createElement('button');
+              btn.textContent = 'Sign In';
+              form.appendChild(btn);
+              document.body.replaceChildren(h1, form);
+            });
+          </script>
+        </body></html>`,
+      });
+      expect(report.notes.join(" ")).toMatch(/landed on a posting/);
+      expect(report.mode).toBe("refused");
+      expect(report.gate.failure_code).toBe("LOGIN_WALL");
+      expect(report.fill).toBeNull();
+      expect(report.notes.join(" ")).toMatch(/login wall/);
+    },
+    45_000,
+  );
+
+  it(
+    "plan_only on a posting still refuses — Apply is execute-only (FIXTURE_CONFIRMED)",
+    async () => {
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal",
+        execute: false,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <h1>AI Engineer Intern</h1>
+          <input placeholder="Search by job title, ID, or keyword" />
+          <button type="button">Apply</button>
+        </body></html>`,
+      });
+      expect(report.mode).toBe("refused");
+      expect(report.gate.failure_code).toBe("NO_APPLICATION_FORM");
+      expect(report.fill).toBeNull();
+      expect(report.notes.join(" ")).not.toMatch(/landed on a posting/);
+    },
+    45_000,
+  );
+
+  it(
+    "execute on a password-only wall refuses LOGIN_WALL, not NO_APPLICATION_FORM (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal/auth",
+        execute: true,
+        profile: PROFILE,
+        fixtureHtml: `<!doctype html><html><body>
+          <form action="/session">
+            <input name="username" />
+            <input type="password" name="password" />
+            <button type="submit">Continue</button>
+          </form>
+        </body></html>`,
+      });
+      expect(report.mode).toBe("refused");
+      expect(report.gate.page_class).toBe("auth");
+      expect(report.gate.failure_code).toBe("LOGIN_WALL");
+      expect(report.fill).toBeNull();
+      expect(report.notes.join(" ")).toMatch(/login wall/i);
     },
     45_000,
   );

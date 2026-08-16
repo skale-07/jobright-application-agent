@@ -117,7 +117,8 @@ export function findOtherOption(options: string[]): string | null {
 
 /** One form does not have 40 dropdowns; a runaway page must not stall a run. */
 const MAX_FIELDS = 30;
-const MAX_OPTIONS_PER_FIELD = 60;
+/** Runaway guard only — country lists and long boards must reach the model intact. */
+const MAX_OPTIONS_PER_FIELD = 500;
 /** Whole-pass wall clock. Past this the plan proceeds with what it has. */
 const DEFAULT_BUDGET_MS = 45_000;
 const OPEN_TIMEOUT_MS = 2_500;

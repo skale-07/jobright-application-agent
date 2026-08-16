@@ -127,6 +127,40 @@ async function visibleNamed(
   return null;
 }
 
+/**
+ * A <button> inside a <form> with no type, or type=submit, submits that
+ * form. Workday's "Already have an account? Sign In" is type=button (a
+ * view switch). The sandbox puts Create Account and Sign In on ONE page;
+ * clicking Sign In as a "flip" POSTs the empty sign-in form.
+ */
+async function isFormSubmitControl(loc: Locator): Promise<boolean> {
+  return loc
+    .evaluate((el: {
+      tagName: string;
+      getAttribute: (n: string) => string | null;
+      closest: (s: string) => unknown;
+    }) => {
+      const tag = el.tagName;
+      if (tag !== "BUTTON" && tag !== "INPUT") return false;
+      const raw = el.getAttribute("type");
+      const type = (raw ?? (tag === "BUTTON" ? "submit" : "")).toLowerCase();
+      if (type !== "submit") return false;
+      return el.closest("form") !== null;
+    })
+    .catch(() => false);
+}
+
+/** The wrapping <form> of a submit, or null when the ATS does not use one. */
+async function formOf(loc: Locator): Promise<Locator | null> {
+  const inside = await loc
+    .evaluate((el: { closest: (s: string) => unknown }) =>
+      Boolean(el.closest("form")),
+    )
+    .catch(() => false);
+  if (!inside) return null;
+  return loc.locator("xpath=./ancestor::form[1]");
+}
+
 async function locateAuthFields(page: Page): Promise<{
   email: Locator | null;
   password: Locator | null;
@@ -215,6 +249,9 @@ export async function authenticateAtsPortal(
 
   // Workday lands on Create Account after Apply Manually. Prefer Sign In
   // when standing credentials exist (operator already has the account).
+  // Do NOT click a Sign In *submit* — that posts an empty form. A real
+  // flip is Workday's type=button signInLink. When both forms are already
+  // on the page, skip the click and just target the Sign In form.
   let preferSignIn = false;
   const wallNow = await diagnoseLoginWall(page);
   if (
@@ -224,33 +261,22 @@ export async function authenticateAtsPortal(
     const signIn =
       (await firstVisible(page, sel.signInLink)) ??
       (await visibleNamed(page, /^(already have an account\??\s*)?sign in$/i));
-    if (signIn) {
+    if (signIn && !(await isFormSubmitControl(signIn))) {
       await signIn.click({ timeout: 5_000 }).catch(() => undefined);
       await settlePage(page, settle, 800);
       preferSignIn = true;
       notes.push("portal auth: flipped Create Account → Sign In (standing credentials)");
+    } else if (await visibleNamed(page, /^(sign in|log ?in)$/i)) {
+      preferSignIn = true;
+      notes.push(
+        "portal auth: Sign In form already on this page — using standing credentials",
+      );
     }
   }
 
   const attempt = async (
     kind: "sign_in" | "create",
   ): Promise<{ diag: LoginWallDiagnosis; formGone: boolean }> => {
-    const emailField =
-      (await firstVisible(page, sel.emailInput)) ??
-      (await firstVisible(
-        page,
-        "input[type='email'], input[name*='email' i], input[autocomplete='username']",
-      ));
-    const passwordFields = page.locator("input[type='password']");
-    const passwordCount = await passwordFields.count().catch(() => 0);
-    if (emailField) await emailField.fill(username, { timeout: 5_000 }).catch(() => undefined);
-    for (let i = 0; i < Math.min(passwordCount, 2); i++) {
-      await passwordFields.nth(i).fill(password, { timeout: 5_000 }).catch(() => undefined);
-    }
-    const checkbox = await firstVisible(page, sel.createAccountCheckbox);
-    if (kind === "create" && checkbox) {
-      await checkbox.check({ timeout: 3_000 }).catch(() => undefined);
-    }
     const submit =
       (await firstVisible(
         page,
@@ -265,6 +291,32 @@ export async function authenticateAtsPortal(
     if (!submit) {
       notes.push(`portal auth: no ${kind} submit control found`);
       return { diag: await diagnoseLoginWall(page), formGone: false };
+    }
+    const form = await formOf(submit);
+    const emailField = form
+      ? form
+          .locator(
+            "input[type='email'], input[name*='email' i], input[autocomplete='username']",
+          )
+          .first()
+      : ((await firstVisible(page, sel.emailInput)) ??
+        (await firstVisible(
+          page,
+          "input[type='email'], input[name*='email' i], input[autocomplete='username']",
+        )));
+    const passwordFields = form
+      ? form.locator("input[type='password']")
+      : page.locator("input[type='password']");
+    const passwordCount = await passwordFields.count().catch(() => 0);
+    if (emailField && (await emailField.count().catch(() => 0)) > 0) {
+      await emailField.fill(username, { timeout: 5_000 }).catch(() => undefined);
+    }
+    for (let i = 0; i < Math.min(passwordCount, 2); i++) {
+      await passwordFields.nth(i).fill(password, { timeout: 5_000 }).catch(() => undefined);
+    }
+    const checkbox = await firstVisible(page, sel.createAccountCheckbox);
+    if (kind === "create" && checkbox) {
+      await checkbox.check({ timeout: 3_000 }).catch(() => undefined);
     }
     await submit.click({ timeout: 10_000 }).catch(() => undefined);
     await settlePage(page, settle, 1_200);
@@ -286,12 +338,22 @@ export async function authenticateAtsPortal(
 
   if (!state.formGone && state.diag.classification === "credentials_rejected") {
     const route = state.diag.createAccountRoute;
-    if (route) {
+    // Dual-form walls already show Create Account. Clicking that submit
+    // would POST an empty create form; just fill it.
+    if (state.diag.fields.confirmPassword) {
+      notes.push("portal auth: sign-in rejected — creating the account on this page");
+      escalated = true;
+      state = await attempt("create");
+    } else if (route) {
       const control = await visibleNamed(page, new RegExp(`^${escapeRe(route)}$`, "i"));
-      if (control) {
+      if (control && !(await isFormSubmitControl(control))) {
         await control.click({ timeout: 5_000 }).catch(() => undefined);
         await settlePage(page, settle, 1_000);
         notes.push(`portal auth: sign-in rejected — opened "${route}" to create the account`);
+        escalated = true;
+        state = await attempt("create");
+      } else if (control && (await isFormSubmitControl(control))) {
+        notes.push("portal auth: sign-in rejected — creating the account on this page");
         escalated = true;
         state = await attempt("create");
       }

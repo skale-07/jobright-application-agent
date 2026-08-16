@@ -6,7 +6,7 @@ Stage 2: **fill / upload / verify / reset** on Greenhouse fixtures.
 
 - `FORM_FILL_ENABLED` must be `true` and `DRY_RUN=false` to mutate a page
 - `SUBMIT_ENABLED` stays `false` — submit throws
-- Essays are never auto-filled
+- Essays fill from about-me.md when ESSAY_AUTOFILL_ENABLED or SCREENER_PREDICT_LLM_ENABLED is on
 - Demographics skipped (sensitive-profile path later)
 - Lever/Ashby fill deferred until Greenhouse is green on live pages
 

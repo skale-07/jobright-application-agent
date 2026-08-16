@@ -23,7 +23,7 @@ import {
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
 import { SCREENER_REGISTRY } from "../candidate/screeners.js";
-import { normalizeScreenerLabel } from "../candidate/screenerMatch.js";
+import { normalizeScreenerLabel, screenerKeyFitsField } from "../candidate/screenerMatch.js";
 
 let migratedFor: Db | null = null;
 function ensureMigrated(db: Db): void {
@@ -54,7 +54,7 @@ export type ScreenerKeyMapping = {
 const SYSTEM_PROMPT = `You classify job-application screener questions.
 Input: a list of question labels (with their answer options when present) and a registry of screener keys with descriptions.
 Output STRICT JSON: {"mappings":[{"label": string, "key": string|null}]} — one entry per input label, in order.
-Rules: pick a key ONLY when the label clearly asks that registry question; anything ambiguous, essay-like ("why", "tell us", "describe"), demographic (gender/race/veteran/disability), or unlisted maps to null. Never invent keys.`;
+Rules: pick a key ONLY when the label clearly asks that registry question; anything ambiguous, essay-like ("why", "tell us", "describe"), demographic (gender/race/veteran/disability), or unlisted maps to null. Never invent keys. Yes/No questions about ability to relocate or work on-site are willing_to_relocate, never remote_or_onsite.`;
 
 function readCache(db: Db, labels: LabelToMap[]): Map<string, string | null> {
   const out = new Map<string, string | null>();
@@ -121,7 +121,12 @@ export async function mapScreenerLabels(input: {
     const toAsk: LabelToMap[] = [];
     for (const l of input.labels) {
       if (cached.has(l.label)) {
-        results.push({ label: l.label, key: cached.get(l.label) ?? null, source: "cache" });
+        const key = cached.get(l.label) ?? null;
+        if (key && !screenerKeyFitsField(key, l)) {
+          toAsk.push(l);
+        } else {
+          results.push({ label: l.label, key, source: "cache" });
+        }
       } else {
         toAsk.push(l);
       }
@@ -143,7 +148,7 @@ export async function mapScreenerLabels(input: {
           })),
           questions: toAsk.map((l) => ({
             label: l.label,
-            options: (l.options ?? []).slice(0, 12),
+            options: l.options ?? [],
           })),
         }),
       });
@@ -159,7 +164,8 @@ export async function mapScreenerLabels(input: {
       }
       const fresh: Array<{ label: string; key: string | null; source: string }> = [];
       for (const l of toAsk) {
-        const key = byLabel.get(normalizeScreenerLabel(l.label)) ?? null;
+        let key = byLabel.get(normalizeScreenerLabel(l.label)) ?? null;
+        if (key && !screenerKeyFitsField(key, l)) key = null;
         results.push({ label: l.label, key, source: "llm" });
         fresh.push({ label: l.label, key, source: "llm" });
       }

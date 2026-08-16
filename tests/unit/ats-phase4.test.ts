@@ -77,6 +77,25 @@ describe("Phase 4 ATS inspection", () => {
     expect(report.essays.length).toBeGreaterThanOrEqual(1);
   });
 
+  it("a one-line 'describe … in one word' input is not an essay", () => {
+    const essays = classifyEssayFields([
+      {
+        id: "q_spirit",
+        label: "Describe your debugging spirit animal in one word.",
+        type: "text",
+        required: false,
+      },
+      {
+        id: "w_about",
+        label: "Tell us something about yourself that we can't find on your resume.",
+        type: "textarea",
+        required: false,
+      },
+    ]);
+    expect(essays.find((e) => e.field_id === "q_spirit")?.is_essay).toBe(false);
+    expect(essays.find((e) => e.field_id === "w_about")?.is_essay).toBe(true);
+  });
+
   it("detects demographics fields", async () => {
     const { report } = await runAtsFixtureInspection("demographics");
     expect(report.demographics_fields.length).toBeGreaterThanOrEqual(1);

@@ -54,6 +54,7 @@
     "training:export": "tsx src/cli/index.ts training:export",
     "heal:submit-proposals": "tsx src/cli/index.ts heal:submit-proposals",
     "screeners:init": "tsx src/cli/index.ts screeners:init",
+    "screeners:forget": "tsx src/cli/index.ts screeners:forget",
     "screeners:suggest": "tsx src/cli/index.ts screeners:suggest",
     "review:bulk": "tsx src/cli/index.ts review:bulk",
     "essay:draft": "tsx src/cli/index.ts essay:draft",

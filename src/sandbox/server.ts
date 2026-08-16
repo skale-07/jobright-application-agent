@@ -161,6 +161,7 @@ function gauntletPage(): string {
       <option value="">Select...</option>
       <option>Prior to December 2025</option><option>Spring 2026</option><option>Fall 2026</option>
       <option>Spring 2027</option><option>Fall 2027</option><option>Spring 2028</option>
+      <option>2029 or later</option>
     </select>
 
     <label class="req" for="w_season">Please choose the season that most accurately reflects your availability.</label>
@@ -223,7 +224,7 @@ function portalPostingPage(): string {
   <input placeholder="Search by job title, ID, or keyword" />
   <input placeholder="City, state, or country/region" />
   <p class="muted">Search chrome above is page furniture — the classifier must not call this a form.</p>
-  <a href="/portal/auth"><button type="button">Apply</button></a>`,
+  <a href="/portal/auth">Apply</a>`,
   );
 }
 
@@ -334,10 +335,28 @@ export function startEmployerSandbox(
         file,
         JSON.stringify({ kind, received_at: new Date().toISOString(), data }, null, 2),
       );
-      log(`${kind} submission recorded → ${file}`);
-      for (const [k, v] of Object.entries(data)) log(`  ${k} = ${v.slice(0, 80)}`);
+      log(`── ${kind} submission (${Object.keys(data).length} fields) → ${file}`);
+      for (const [k, v] of Object.entries(data)) {
+        const shown = v.length > 160 ? `${v.slice(0, 160)}…` : v;
+        log(`  ${k} = ${shown || "(empty)"}`);
+      }
     } catch {
       // recording is best-effort; the page response is the contract
+    }
+  };
+
+  const readJson = async (
+    req: http.IncomingMessage,
+  ): Promise<Record<string, unknown>> => {
+    const chunks: Buffer[] = [];
+    for await (const c of req) chunks.push(c as Buffer);
+    try {
+      return JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<
+        string,
+        unknown
+      >;
+    } catch {
+      return {};
     }
   };
 
@@ -359,6 +378,21 @@ export function startEmployerSandbox(
     };
 
     try {
+      if (req.method === "GET" && url.pathname !== "/favicon.ico") {
+        log(`GET ${url.pathname}`);
+      }
+      if (req.method === "POST" && url.pathname === "/trace") {
+        const body = await readJson(req);
+        const kind = typeof body["kind"] === "string" ? body["kind"] : "trace";
+        const lines = Array.isArray(body["lines"])
+          ? body["lines"].filter((l): l is string => typeof l === "string")
+          : [];
+        log(`── ${kind} ──`);
+        for (const line of lines) log(`  ${line}`);
+        res.writeHead(204);
+        res.end();
+        return;
+      }
       if (req.method === "GET" && url.pathname === "/") {
         send(
           200,

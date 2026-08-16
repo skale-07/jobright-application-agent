@@ -13,6 +13,7 @@ import { upsertJobByFingerprint } from "../../src/jobs/repository.js";
 import { createApplication } from "../../src/queue/stateMachine.js";
 import { resetConfigCache } from "../../src/config/index.js";
 import {
+  forgetScreenerPredictionRows,
   generateScreenerPredictions,
   isCaptureWorthyQuestion,
   predictAnswersForQuestions,
@@ -20,6 +21,7 @@ import {
   suggestKey,
   validatePrediction,
 } from "../../src/applications/screenerPredictionLlm.js";
+import { forgetCustomScreenerAnswers } from "../../src/candidate/screenersIO.js";
 import { promoteScreenerPrediction } from "../../src/queue/reviewResolvers.js";
 import {
   listOpenReviewItems,
@@ -32,9 +34,10 @@ import { isScreenerFillCanonical } from "../../src/applications/approvedFillPlan
 
 /**
  * Predict-into-review with one-click promote. UNIT_CONFIRMED — the model
- * is a stub; every trust boundary is exercised: predictions never fill,
- * choice answers must match page options, only the promote resolver
- * writes the bank, and promoted entries resolve deterministically.
+ * is a stub; every trust boundary is exercised: post-session predictions
+ * never fill, choice answers must match page options, plan-time fills
+ * persist first-write-wins, and promoted/remembered entries resolve
+ * deterministically.
  */
 describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
   let dbPath: string;
@@ -179,7 +182,7 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     const item = listOpenReviewItems(db)[0]!;
     // No answer supplied and none predicted: refused, item stays open.
     expect(() => promoteScreenerPrediction(db, { reviewItemId: item.id })).toThrow(
-      /1-200 characters/,
+      /1-4000 characters/,
     );
     // Off-option operator answer: refused.
     expect(() =>
@@ -504,11 +507,13 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
   it("validatePrediction + suggestKey guardrails", () => {
     expect(validatePrediction("May 2029", null).ok).toBe(true);
     expect(validatePrediction("", null).ok).toBe(false);
-    expect(validatePrediction("x".repeat(150), null).ok).toBe(false);
+    expect(validatePrediction("x".repeat(501), null).ok).toBe(true);
+    expect(validatePrediction("x".repeat(4001), null).ok).toBe(false);
     expect(validatePrediction("[insert date]", null).ok).toBe(false);
     expect(validatePrediction("engineering", ["Engineering", "Product"]).value).toBe(
       "Engineering",
     );
+    expect(validatePrediction('"Yes."', ["Yes", "No"]).value).toBe("Yes");
     expect(validatePrediction("Design", ["Engineering", "Product"]).ok).toBe(false);
     expect(suggestKey("Expected Graduation!", "expected graduation date")).toBe(
       "expected_graduation",
@@ -592,7 +597,7 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
     ).toBe(0);
   });
 
-  it("plan-time predict fills a page option and grounded free-text; skips invention", async () => {
+  it("plan-time predict fills a page option and inferred free-text", async () => {
     enable();
     const filled = await predictAnswersForQuestions(
       [
@@ -628,14 +633,241 @@ describe("screener prediction + promote (UNIT_CONFIRMED)", () => {
             label: "What is your favorite obscure hobby to mention?",
             answer: "underwater basket weaving championships",
             key: "hobby",
-            basis: "guess",
+            basis: "inferred",
           },
         ],
       }),
     );
     expect(filled.get("wa")?.value).toBe("Yes");
     expect(filled.get("proj")?.value).toBe("anomaly-detection FastAPI service");
-    expect(filled.has("hobby")).toBe(false);
+    expect(filled.get("hobby")?.value).toBe(
+      "underwater basket weaving championships",
+    );
+  });
+
+  it("plan-time predict fills and remembers a long free-text tech-stack answer", async () => {
+    enable();
+    const answer =
+      "PyTorch and XGBoost for modeling (CNN facial-landmark work, gradient-boosted models on ~10M survey records with SHAP for interpretation), RNN/Transformer-style sequence models for anomaly detection, and scikit-learn/pandas for the surrounding data work. On the LLM side: OpenAI APIs, retrieval-augmented generation, embeddings with Pinecone and Neo4j for retrieval, rubric-driven LLM judging and evaluation pipelines (I benchmarked model outputs against a 4,169-case clinical standard), plus FastAPI/Flask for serving and Playwright for agent-style browser automation.";
+    expect(answer.length).toBeGreaterThan(500);
+    const filled = await predictAnswersForQuestions(
+      [
+        {
+          id: "w_ai",
+          label: "What are some AI specific technologies you are comfortable with?",
+        },
+      ],
+      stub({
+        predictions: [
+          {
+            label: "What are some AI specific technologies you are comfortable with?",
+            answer,
+            key: "ai_technologies",
+            basis: "about-me",
+          },
+        ],
+      }),
+    );
+    expect(filled.get("w_ai")?.value).toBe(answer);
+    expect(
+      resolveCustomScreener(
+        {
+          label: "What are some AI specific technologies you are comfortable with?",
+          type: "text",
+        },
+        tryLoadScreenerBank()!,
+      ),
+    ).toMatchObject({ status: "fill", value: answer });
+  });
+
+  it("plan-time predict remembers the pair; a later verbatim question is deterministic", async () => {
+    enable();
+    await predictAnswersForQuestions(
+      [
+        {
+          id: "animal",
+          label: "Are unicorns or llamas your favorite animal, and why?",
+        },
+      ],
+      stub({
+        predictions: [
+          {
+            label: "Are unicorns or llamas your favorite animal, and why?",
+            answer: "Llamas — I work with messy real-world data, not myths.",
+            key: "favorite_animal",
+            basis: "inferred from about-me",
+          },
+        ],
+      }),
+    );
+    const bank = tryLoadScreenerBank();
+    expect(bank).not.toBeNull();
+    const first = resolveCustomScreener(
+      {
+        label: "Are unicorns or llamas your favorite animal, and why?",
+        type: "text",
+      },
+      bank!,
+    );
+    expect(first).toMatchObject({
+      status: "fill",
+      value: "Llamas — I work with messy real-world data, not myths.",
+    });
+
+    // A second predict with a different answer must not clobber the first.
+    await predictAnswersForQuestions(
+      [
+        {
+          id: "animal",
+          label: "Are unicorns or llamas your favorite animal, and why?",
+        },
+      ],
+      stub({
+        predictions: [
+          {
+            label: "Are unicorns or llamas your favorite animal, and why?",
+            answer: "Unicorns forever",
+            key: "favorite_animal",
+            basis: "flip",
+          },
+        ],
+      }),
+    );
+    expect(
+      resolveCustomScreener(
+        {
+          label: "Are unicorns or llamas your favorite animal, and why?",
+          type: "text",
+        },
+        tryLoadScreenerBank()!,
+      ),
+    ).toMatchObject({
+      status: "fill",
+      value: "Llamas — I work with messy real-world data, not myths.",
+    });
+
+    const forgotten = forgetCustomScreenerAnswers();
+    expect(forgotten.cleared).toBeGreaterThanOrEqual(1);
+    expect(tryLoadScreenerBank()?.custom ?? {}).toEqual({});
+  });
+
+  it("forgetScreenerPredictionRows empties the queue", () => {
+    recordUnmappedScreenerQuestions({
+      db,
+      questions: [{ label: "What is your expected graduation date?", type: "text" }],
+    });
+    expect(
+      (db.prepare(`SELECT COUNT(*) AS n FROM screener_predictions`).get() as { n: number })
+        .n,
+    ).toBe(1);
+    expect(forgetScreenerPredictionRows(db)).toBe(1);
+    expect(
+      (db.prepare(`SELECT COUNT(*) AS n FROM screener_predictions`).get() as { n: number })
+        .n,
+    ).toBe(0);
+  });
+
+  it("sends learned_answers and the full option list to the model", async () => {
+    enable();
+    fs.writeFileSync(
+      path.join(privDir, "candidate", "screeners.json"),
+      JSON.stringify({
+        version: 1,
+        answers: {},
+        custom: {
+          favorite_animal: {
+            answer: "Llamas",
+            labels: ["Are unicorns or llamas your favorite animal, and why?"],
+            promoted_at: "2026-08-15T00:00:00.000Z",
+          },
+        },
+      }),
+    );
+    const countries = Array.from({ length: 80 }, (_, i) => `Country ${i + 1}`);
+    let sawUser = "";
+    await predictAnswersForQuestions(
+      [
+        {
+          id: "c",
+          label: "Which country are you authorized to work in?",
+          options: countries,
+        },
+      ],
+      {
+        generateJson: async (input: { user: string }) => {
+          sawUser = input.user;
+          return {
+            text: JSON.stringify({
+              predictions: [
+                {
+                  label: "Which country are you authorized to work in?",
+                  answer: "Country 80",
+                  key: "work_country",
+                  basis: "last option",
+                },
+              ],
+            }),
+            model: "stub",
+          };
+        },
+      },
+    );
+    const payload = JSON.parse(sawUser) as {
+      learned_answers: Array<{ answer: string }>;
+      questions: Array<{ options: string[] }>;
+    };
+    expect(payload.learned_answers.some((a) => a.answer === "Llamas")).toBe(false);
+    expect(payload.questions[0]?.options).toHaveLength(80);
+    expect(payload.questions[0]?.options[79]).toBe("Country 80");
+  });
+
+  it("includes a learned pair only when the asked question overlaps it", async () => {
+    enable();
+    fs.writeFileSync(
+      path.join(privDir, "candidate", "screeners.json"),
+      JSON.stringify({
+        version: 1,
+        answers: {},
+        custom: {
+          favorite_animal: {
+            answer: "Llamas",
+            labels: ["Are unicorns or llamas your favorite animal, and why?"],
+            promoted_at: "2026-08-15T00:00:00.000Z",
+          },
+        },
+      }),
+    );
+    let sawUser = "";
+    await predictAnswersForQuestions(
+      [
+        {
+          id: "a",
+          label: "Unicorns or llamas — pick one and say why in a sentence.",
+        },
+      ],
+      {
+        generateJson: async (input: { user: string }) => {
+          sawUser = input.user;
+          return {
+            text: JSON.stringify({
+              predictions: [
+                {
+                  label: "Unicorns or llamas — pick one and say why in a sentence.",
+                  answer: "Llamas",
+                  key: "favorite_animal",
+                  basis: "learned",
+                },
+              ],
+            }),
+            model: "stub",
+          };
+        },
+      },
+    );
+    const payload = JSON.parse(sawUser) as {
+      learned_answers: Array<{ answer: string }>;
+    };
+    expect(payload.learned_answers.some((a) => a.answer === "Llamas")).toBe(true);
   });
 });
 

@@ -296,13 +296,13 @@ export function buildOperatorFieldBrief(input: {
           problem:
             e.reason ||
             (essay
-              ? "Essay / free-text is never auto-filled"
+              ? "Essay generation produced no answer"
               : "Requires human review"),
           expected: null,
           observed: null,
           how_to_answer: essay
             ? [
-                "Write the answer yourself (agent must not invent free-text).",
+                "Essay autofill needs about-me.md + an LLM key, or write the answer yourself.",
                 `CLI when app is ESSAY_REQUIRED: npm run resume:essay -- --application <id> --field ${e.field_id} --file answers.txt`,
                 "Or answer on the live form before submit.",
               ]

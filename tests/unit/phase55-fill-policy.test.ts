@@ -58,7 +58,7 @@ describe("Phase 5.5 fill policy", () => {
     ).rejects.toThrow(/Approved fill plan required/);
   });
 
-  it("rejects essay/textarea entries in the executor", async () => {
+  it("rejects essay/textarea entries without a generated canonical", async () => {
     const essay: ApprovedFillPlanEntry = factualFillEntry({
       field_id: "cover",
       label: "Why do you want this job?",
@@ -79,6 +79,19 @@ describe("Phase 5.5 fill policy", () => {
     expect(result.errors.some((e) => /textarea|essay|not approved|Refusing/i.test(e))).toBe(
       true,
     );
+  });
+
+  it("allows a generated essay through the executor gate", () => {
+    const essay: ApprovedFillPlanEntry = factualFillEntry({
+      field_id: "cover",
+      label: "Tell us something about yourself",
+      type: "textarea",
+      canonical_field: "essay:generated:cover",
+      action: "FILL",
+      approved: true,
+      value: "I knocked on Garland Hall until someone let us pitch.",
+    });
+    expect(() => assertExecutableApprovedEntry(essay)).not.toThrow();
   });
 
   it("rejects unapproved entries even when action pretends to fill", async () => {

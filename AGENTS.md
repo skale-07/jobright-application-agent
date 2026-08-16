@@ -53,8 +53,9 @@ Abbreviated — `CLAUDE.md` is canonical:
 - No Outlook send-style APIs ever (`scripts/check-forbidden.ts` bans the
   identifiers; do not extend its allowlist to make code compile).
 - Never weaken `assertExecutableApprovedEntry` or the submit gating.
-- Form values come only from the approved plan; essays and demographic
-  (EEO/self-ID) fields are never auto-filled.
+- Form values come only from the approved plan. Demographic (EEO/self-ID)
+  fields are never inferred. Essays fill from about-me.md when the LLM
+  path is on (`ESSAY_AUTOFILL_ENABLED` or `SCREENER_PREDICT_LLM_ENABLED`).
 - `chromium.launch` only inside the session seams (`src/auth/serviceSession.ts`,
   `src/auth/loginFlow.ts`, `src/browser/fixtureSession.ts`).
 - Never commit `private/`, `.env*` (except `.env.example`), real PDFs, or

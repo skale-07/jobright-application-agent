@@ -14,6 +14,7 @@ import {
 } from "./submissionsRepo.js";
 import { setEmployerApplicationUrl } from "../applications/employerUrl.js";
 import { addCustomScreenerAnswer } from "../candidate/screenersIO.js";
+import { MAX_PREDICTED_ANSWER_CHARS } from "../applications/screenerPredictionLlm.js";
 
 /**
  * Operator review-item resolvers — the domain layer behind both the CLI
@@ -322,8 +323,8 @@ export function dismissReviewItem(
  * field blank, no suggestion yet) or the prediction batch
  * ("screener_prediction" — a model suggestion to approve/edit). For choice
  * questions the final answer must still match one of the captured page
- * options, so nothing can drift off the form. This function is the ONLY
- * write path into the bank's custom section.
+ * options, so nothing can drift off the form. Plan-time predict also
+ * writes first-seen pairs; this path is the operator edit/approve write.
  */
 export function promoteScreenerPrediction(
   db: Db,
@@ -360,8 +361,11 @@ export function promoteScreenerPrediction(
     throw new ReviewResolverError("prediction item payload is incomplete", 400);
   }
   const answer = (input.answer ?? predicted).trim();
-  if (answer === "" || answer.length > 200) {
-    throw new ReviewResolverError("answer must be 1-200 characters", 400);
+  if (answer === "" || answer.length > MAX_PREDICTED_ANSWER_CHARS) {
+    throw new ReviewResolverError(
+      `answer must be 1-${MAX_PREDICTED_ANSWER_CHARS} characters`,
+      400,
+    );
   }
   const options = Array.isArray(payload["options"])
     ? (payload["options"] as unknown[]).filter((o): o is string => typeof o === "string")

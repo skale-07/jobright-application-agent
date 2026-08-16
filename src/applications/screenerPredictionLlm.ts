@@ -15,11 +15,13 @@
  *     inside the review item until the human promotes it.
  *   - Plan-time (`predictAnswersForQuestions`, same flag): a prediction
  *     MAY fill when `validatePrediction` passes — option answers must
- *     match the page verbatim; free-text must appear in about-me or
- *     public profile facts (length ≥ 12). Ungrounded invention parks.
- *     Predictions are not written into screeners.json.
- *   - The promote resolver (reviewResolvers.ts) is the single write path
- *     into the bank's custom section.
+ *     match the page verbatim (or the form's own Other). Free-text the
+ *     model returns is filled as-is (operator directive 2026-08-15:
+ *     trust the model; EEO stays on the deterministic sensitive-profile
+ *     path). Each accepted prediction is remembered as a custom bank
+ *     entry so a later verbatim question is deterministic.
+ *   - The promote resolver still writes operator-edited answers; plan-time
+ *     persist is first-write-wins and will not clobber a stored pair.
  *   - Demographic questions never reach this module (filtered upstream,
  *     same as the bank path).
  *
@@ -36,14 +38,22 @@ import {
   makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
-import { normalizeScreenerLabel } from "../candidate/screenerMatch.js";
+import {
+  learnedCustomAnswersFor,
+  normalizeScreenerLabel,
+} from "../candidate/screenerMatch.js";
 import { labelFingerprint } from "./screenerLlmMap.js";
-import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import {
+  rememberPredictedScreenerAnswer,
+  tryLoadScreenerBank,
+} from "../candidate/screenersIO.js";
+import type { ScreenerAnswerBank } from "../candidate/screeners.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
 import { tryLoadAboutMe } from "./essayDraft.js";
 import { isApplicationConsentField } from "./consentFields.js";
 import { isDemographicsField } from "./essayDetector.js";
 import { findOtherOption } from "../ats/shared/optionHarvest.js";
+import { llmTraceEvent, postSandboxTrace } from "../sandbox/trace.js";
 import {
   resolveReviewItem,
   updateReviewItemPayload,
@@ -105,7 +115,7 @@ export function recordUnmappedScreenerQuestions(input: {
       if (!isCaptureWorthyQuestion(q)) continue;
       const rowId = randomUUID();
       const options =
-        q.options && q.options.length > 0 ? q.options.slice(0, 20) : null;
+        q.options && q.options.length > 0 ? q.options : null;
       const r = stmt.run(
         rowId,
         labelFingerprint(q.label),
@@ -152,15 +162,17 @@ export function recordUnmappedScreenerQuestions(input: {
   }
 }
 
-const SYSTEM_PROMPT = `You predict a job-application screener ANSWER for a candidate, using ONLY the facts in their context (an about-me document, their existing saved answers, and profile_facts from their structured profile). One entry per input question, in order.
-Rules:
-- The answer must be short (a value, not an essay): max 100 characters.
-- For a question with "options", the answer MUST be copied verbatim from that options list. If none fits the candidate's facts, use null.
-- READ THE QUESTION'S OWN INSTRUCTIONS. If the label instructs a fallback — e.g. 'Select "Other" if not listed' — and the candidate's true answer (e.g. their university from profile_facts) is NOT among the options while that fallback option IS, answer the fallback option verbatim (e.g. "Other"). This is following the form, not guessing.
-- Office/location-preference questions with options: pick the option consistent with the candidate's location and relocation facts (e.g. nearest listed office). If the context gives no basis to prefer one, use null. NEVER answer with a city that is not among the options.
-- Never guess facts the context doesn't state. Unknown ⇒ null.
+const SYSTEM_PROMPT = `You predict a job-application screener ANSWER for a candidate. Use their about-me, saved registry answers, learned_answers (prior question/answer pairs this system already filled), and profile_facts. One entry per input question, in order.
+
+When a question includes "options", that array is the entire answer space. The fill engine clicks one of those strings. Your job is to choose the single option that best fits the candidate — then return that option's text EXACTLY as it appears in the array (same characters, same punctuation, same capitalization). Do not paraphrase, do not add a sentence around it, do not invent a new option. If the true answer is not listed and the array contains a not-listed hatch (Other / None of the above / Not listed), return that hatch exactly. Otherwise null.
+
+Other rules:
+- Free-text questions (no options): answer at the length the question needs. A one-word prompt stays one word; a technologies/skills question can be a short paragraph. Only null when you cannot form any answer.
+- Prefer a learned_answers pair when the question is the same or clearly the same intent.
+- READ THE QUESTION'S OWN INSTRUCTIONS (e.g. 'Select "Other" if not listed').
+- Do not contradict explicit biographical facts in the profile (school, work authorization, sponsorship, company).
 - Never answer demographic/self-ID questions (gender, race, veteran, disability): always null.
-- Also propose a short snake_case key naming the question (e.g. "expected_graduation"), and a one-sentence basis citing which context fact the answer comes from.
+- Also propose a short snake_case key and a one-sentence basis.
 Output STRICT JSON: {"predictions":[{"label": string, "answer": string|null, "key": string, "basis": string}]}`;
 
 /**
@@ -257,7 +269,15 @@ export type ScreenerPredictionBatchReport = {
   notes: string[];
 };
 
-/** Deterministic gate every model proposal must survive. */
+/**
+ * Snap a model answer onto a page option so the fill click hits.
+ * The model already chose; this only strips wrapping quotes / trailing
+ * punctuation and matches case-insensitively. It does not second-guess
+ * which option was right.
+ */
+/** Runaway guard, not a quality filter. A tech-stack paragraph is fine. */
+export const MAX_PREDICTED_ANSWER_CHARS = 4000;
+
 export function validatePrediction(
   answer: unknown,
   options: string[] | null,
@@ -265,38 +285,66 @@ export function validatePrediction(
   if (typeof answer !== "string" || answer.trim() === "") {
     return { ok: false, value: "", reason: "no answer" };
   }
-  const value = answer.trim();
-  if (value.length > 100) return { ok: false, value, reason: "too long" };
+  const value = unwrapModelOption(answer);
+  if (value.length > MAX_PREDICTED_ANSWER_CHARS) {
+    return { ok: false, value, reason: "too long" };
+  }
   if (/\[(insert|your|todo|placeholder)/i.test(value)) {
     return { ok: false, value, reason: "placeholder text" };
   }
   if (options && options.length > 0) {
-    const exact = options.find((o) => o === value);
-    if (exact !== undefined) return { ok: true, value: exact, reason: "exact_option" };
-    const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
-    const ci = options.filter((o) => norm(o) === norm(value));
-    if (ci.length === 1) return { ok: true, value: ci[0]!, reason: "ci_option" };
+    const hit = snapToOption(value, options);
+    if (hit) return hit;
     return { ok: false, value, reason: "answer matches no page option" };
   }
   return { ok: true, value, reason: "free_text" };
 }
 
-function answerGroundedInContext(
-  answer: string,
-  about: string | null,
-  facts: Record<string, unknown> | null,
-): boolean {
-  const a = answer.toLowerCase().trim();
-  if (a.length < 12) return false;
-  const blob = `${about ?? ""} ${JSON.stringify(facts ?? {})}`.toLowerCase();
-  return blob.includes(a);
+/** Models sometimes wrap a copied option in quotes. */
+export function unwrapModelOption(raw: string): string {
+  return raw.trim().replace(/^['"]+|['"]+$/g, "").replace(/\s+/g, " ").trim();
+}
+
+function snapToOption(
+  value: string,
+  options: string[],
+): { ok: true; value: string; reason: string } | null {
+  const candidates = [value];
+  if (/[.!]$/.test(value)) candidates.push(value.replace(/[.!]+$/, "").trim());
+  const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
+  for (const c of candidates) {
+    const exact = options.find((o) => o === c);
+    if (exact !== undefined) return { ok: true, value: exact, reason: "exact_option" };
+    const ci = options.filter((o) => norm(o) === norm(c));
+    if (ci.length === 1) return { ok: true, value: ci[0]!, reason: "ci_option" };
+  }
+  return null;
+}
+
+function learnedAnswersForPrompt(
+  bank: ScreenerAnswerBank | null,
+  labels: string[],
+): Array<{ labels: string[]; answer: string }> {
+  if (!bank) return [];
+  return learnedCustomAnswersFor(bank, labels);
+}
+
+function persistPrediction(label: string, answer: string, key: unknown): void {
+  try {
+    rememberPredictedScreenerAnswer({
+      key: suggestKey(key, normalizeScreenerLabel(label)),
+      answer,
+      label,
+    });
+  } catch {
+    // Persist is best-effort; a bank write must never drop a fill.
+  }
 }
 
 /**
  * Plan-time fill from operator context. Option answers must match the
- * page verbatim. Free-text must appear in about-me or profile facts —
- * ungrounded invention still parks as Answer needed. Does not write
- * screeners.json.
+ * page verbatim (or the form's Other). Free-text the model returns is
+ * filled and remembered so a later verbatim question is deterministic.
  */
 export async function predictAnswersForQuestions(
   questions: Array<{
@@ -305,6 +353,7 @@ export async function predictAnswersForQuestions(
     options?: string[] | undefined;
   }>,
   client?: EmailLlmClient,
+  traceUrl?: string,
 ): Promise<
   Map<string, { value: string; basis: string; intended?: string | null }>
 > {
@@ -315,9 +364,9 @@ export async function predictAnswersForQuestions(
   const cfg = getConfig();
   if (!cfg.screenerPredictLlmEnabled) return out;
   if (!client && !hasLlmKey(cfg)) return out;
-  const askable = questions
-    .filter((q) => isCaptureWorthyQuestion({ label: q.label, type: "text" }))
-    .slice(0, 12);
+  const askable = questions.filter((q) =>
+    isCaptureWorthyQuestion({ label: q.label, type: "text" }),
+  );
   if (askable.length === 0) return out;
   const about = tryLoadAboutMe();
   const bank = tryLoadScreenerBank();
@@ -325,18 +374,34 @@ export async function predictAnswersForQuestions(
   if (!about && !bank && !profileFacts) return out;
   try {
     const llm = client ?? makeLlmClient();
+    const userPayload = {
+      candidate_context: about ?? "",
+      saved_answers: bank?.answers ?? {},
+      learned_answers: learnedAnswersForPrompt(
+        bank,
+        askable.map((q) => q.label),
+      ),
+      profile_facts: profileFacts ?? {},
+      questions: askable.map((q) => ({
+        label: q.label,
+        options: q.options,
+      })),
+    };
     const { text } = await llm.generateJson({
       system: SYSTEM_PROMPT,
-      user: JSON.stringify({
-        candidate_context: about ?? "",
-        saved_answers: bank?.answers ?? {},
-        profile_facts: profileFacts ?? {},
-        questions: askable.map((q) => ({
-          label: q.label,
-          options: q.options,
-        })),
-      }),
+      user: JSON.stringify(userPayload),
     });
+    if (traceUrl) {
+      await postSandboxTrace(
+        traceUrl,
+        llmTraceEvent({
+          surface: "predict",
+          system: SYSTEM_PROMPT,
+          user: userPayload,
+          response: text,
+        }),
+      );
+    }
     const parsed = JSON.parse(text) as {
       predictions?: Array<Record<string, unknown>>;
     };
@@ -367,14 +432,23 @@ export async function predictAnswersForQuestions(
               basis: `${basis} — not on the form's list, chose "${other}"`,
               intended: check.value,
             });
+            persistPrediction(q.label, check.value, p?.["key"]);
+            continue;
           }
+        }
+        if (traceUrl) {
+          await postSandboxTrace(traceUrl, {
+            kind: "predict reject",
+            lines: [
+              `${q.label.slice(0, 80)}: ${check.reason}`,
+              check.value.slice(0, 200),
+            ],
+          });
         }
         continue;
       }
-      if (!options && !answerGroundedInContext(check.value, about, profileFacts)) {
-        continue;
-      }
       out.set(q.id, { value: check.value, basis });
+      persistPrediction(q.label, check.value, p?.["key"]);
     }
   } catch {
     return out;
@@ -548,6 +622,10 @@ export async function generateScreenerPredictions(input: {
       user: JSON.stringify({
         candidate_context: about ?? "",
         saved_answers: bank?.answers ?? {},
+        learned_answers: learnedAnswersForPrompt(
+          bank,
+          askable.map((r) => r.raw_label),
+        ),
         profile_facts: profileFacts ?? {},
         questions: askable.map((r) => ({
           label: r.raw_label,
@@ -676,4 +754,10 @@ export function suggestKey(raw: unknown, normalizedLabel: string): string {
     .join("_")
     .replace(/[^a-z0-9_]/g, "");
   return /^[a-z0-9_]{2,60}$/.test(fromLabel) ? fromLabel : `question_${Date.now() % 100000}`;
+}
+
+/** Drop the prediction queue so a forgotten question can be asked again. */
+export function forgetScreenerPredictionRows(db: Db): number {
+  ensureMigrated(db);
+  return db.prepare(`DELETE FROM screener_predictions`).run().changes;
 }

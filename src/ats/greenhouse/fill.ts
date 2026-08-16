@@ -58,42 +58,27 @@ async function setSelectByValueOrLabel(
   value: unknown,
 ): Promise<void> {
   const text = String(value);
-  try {
-    await locator.selectOption({ label: text });
-    return;
-  } catch {
-    // fall through
-  }
-  try {
-    await locator.selectOption({ value: text.toLowerCase() });
-    return;
-  } catch {
-    // fall through
-  }
+  // Read the list first. Playwright's selectOption waits ~30s for a
+  // missing label to appear — that is what made the gauntlet look like
+  // it "stopped" on Yes/No fields planned as company/major strings.
   const options = await locator.locator("option").allTextContents();
   const match = options.find(
     (o) => o.trim().toLowerCase() === text.toLowerCase(),
   );
   if (match) {
-    await locator.selectOption({ label: match });
+    await locator.selectOption({ label: match, timeout: 2_000 });
     return;
   }
   const partial = options.find((o) =>
     o.toLowerCase().includes(text.toLowerCase()),
   );
   if (partial) {
-    await locator.selectOption({ label: partial });
+    await locator.selectOption({ label: partial, timeout: 2_000 });
     return;
   }
-  // Last resort: the guarded option matcher shared with comboboxes —
-  // exact / synonym / unique-substring, with polarity-aware veteran
-  // handling ("I am not a protected veteran" ↔ "I am not a veteran").
-  // A loose token overlap is NOT safe here: dropping negation words can
-  // flip a self-ID answer to its opposite, so anything the guarded
-  // matcher cannot uniquely resolve fails closed to a fill error.
   const pick = pickOptionLabel(options, text);
   if (pick.ok) {
-    await locator.selectOption({ label: pick.label });
+    await locator.selectOption({ label: pick.label, timeout: 2_000 });
     return;
   }
   throw new Error(
@@ -485,9 +470,6 @@ export async function greenhouseFillFromPlan(
 
     try {
       assertExecutableApprovedEntry(entry);
-      if (entry.type === "textarea") {
-        throw new Error("textarea/essay never filled");
-      }
       // Demographics only when approved via sensitive-profile values
       // (assertExecutableApprovedEntry already gates the allowlist).
     } catch (err) {

@@ -35,7 +35,7 @@ answers are typed into forms **verbatim**).
 | `closest_location` | "Which location are you the closest to?" | option | auto-fill · **predictable** (from address) |
 | `how_heard` | "How did you hear about this role?" | text | auto-fill |
 | `referral_name` | "(Optional) If you were referred, tell us who" | text | skip when empty |
-| `willing_to_relocate` | "Are you willing to relocate?" | yes/no | auto-fill |
+| `willing_to_relocate` | "Are you willing to relocate?" / "able to work on-site?" | yes/no | auto-fill **Yes** — never the remote-preference key |
 | `remote_or_onsite` | "Remote, hybrid, or on-site?" | option | auto-fill |
 | `start_availability` | "Earliest start date?" | text | auto-fill |
 | `internship_term` | "Which term are you applying for?" | option | auto-fill |

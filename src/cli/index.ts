@@ -9,7 +9,12 @@ import {
   exportSubmitAttemptsJsonl,
 } from "../storage/navSubmitOutcomes.js";
 import { proposeSubmitSelectorPatches } from "../heal/submitInventoryHealer.js";
-import { initScreenerBank, tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import {
+  forgetCustomScreenerAnswers,
+  initScreenerBank,
+  tryLoadScreenerBank,
+} from "../candidate/screenersIO.js";
+import { forgetScreenerPredictionRows } from "../applications/screenerPredictionLlm.js";
 import { suggestBankAdditions } from "../candidate/screenerSuggest.js";
 import {
   dismissReviewItem,
@@ -30,9 +35,13 @@ import {
 } from "../queue/reviewResolvers.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import { printOperatorFieldBrief } from "../applications/operatorFieldBrief.js";
-import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import {
+  resolveLiveFillResumePath,
+  runAtsLiveFill,
+} from "../applications/atsLiveFill.js";
 import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import { isLoopbackUrl } from "../ats/generic/urlValidation.js";
 import { runNavigation } from "../navigation/runNavigation.js";
 import { runGmailAuthFlow } from "../gmail/authFlow.js";
 import { GmailClient } from "../gmail/client.js";
@@ -127,11 +136,12 @@ Commands:
   ats:inspect --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--headed] [--save-diagnostics]
   ats:inspect --fixture <name> | --all-fixtures | --html <path> --url <url>
   ats:fill --fixture <greenhouse|essay|lever|ashby> [--execute] [--resume path] [--cover path] [--reset]
-  ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]
+  ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby|localhost sandbox)> [--execute] [--submit] [--resume path] [--headed]
   ats:fill-outcomes [--summary] [--export <path.jsonl>]
   training:export [--out <dir>]         Dump fill/nav/submit attempt corpora as JSONL + manifest
   heal:submit-proposals [--limit N]     LLM selector-patch PROPOSALS from submit-miss inventories (AGENT_AUTHORING_ENABLED)
   screeners:init                        Create private/candidate/screeners.json from the example answer bank
+  screeners:forget                      Wipe learned question/answer pairs so the next fill starts fresh
   screeners:suggest                     Verified screener predictions with no bank answer — ready-to-paste labels
   review:bulk --action dismiss|requeue-wall [--kind K] [--limit N] [--apply]   Triage open review items in bulk (dry-run by default)
   essay:draft --application <uuid>      LLM suggestion drafts for open essay questions (ESSAY_DRAFT_ENABLED; edit/approve in review)
@@ -1191,7 +1201,7 @@ async function cmdAtsFill(
       `Usage: ats:fill --fixture <${FILLABLE_FIXTURE_NAMES.join("|")}> [--execute] [--resume path] [--cover path] [--reset]`,
     );
     console.error(
-      "   or: ats:fill --url <ATS_APPLICATION_URL (greenhouse|lever|ashby)> [--execute] [--resume path] [--headed]",
+      "   or: ats:fill --url <ATS_APPLICATION_URL> [--execute] [--submit] [--resume path] [--headed]",
     );
     process.exit(1);
   }
@@ -1200,10 +1210,44 @@ async function cmdAtsFill(
   resetConfigCache();
 
   const execute = Boolean(flags["execute"]);
-  const resumePath =
+  const wantSubmit = flags["submit"] === true;
+  const explicitResume =
     typeof flags["resume"] === "string" ? flags["resume"] : undefined;
+  const resolvedResume =
+    typeof url === "string"
+      ? resolveLiveFillResumePath({
+          url,
+          ...(explicitResume ? { explicitResumePath: explicitResume } : {}),
+          defaultResumePath: getConfig().defaultResumePath,
+        })
+      : explicitResume
+        ? { path: explicitResume, source: "flag" as const }
+        : null;
+  const resumePath = resolvedResume?.path;
+  if (resolvedResume?.source === "sandbox_default") {
+    console.error(
+      `note: sandbox fill using DEFAULT_RESUME_PATH (${resolvedResume.path})`,
+    );
+  }
   const coverPath =
     typeof flags["cover"] === "string" ? flags["cover"] : undefined;
+
+  if (wantSubmit && !execute) {
+    console.error("ats:fill --submit requires --execute");
+    process.exit(1);
+  }
+  if (wantSubmit && typeof url !== "string") {
+    console.error(
+      "ats:fill --submit is sandbox-only — pass --url http://localhost:4599/gauntlet",
+    );
+    process.exit(1);
+  }
+  if (wantSubmit && typeof url === "string" && !isLoopbackUrl(url)) {
+    console.error(
+      "ats:fill --submit is sandbox/loopback only. Use `submit --application <uuid>` for an employer.",
+    );
+    process.exit(1);
+  }
 
   if (typeof url === "string") {
     const detected = detectAtsFromUrl(url);
@@ -1236,6 +1280,8 @@ async function cmdAtsFill(
       profile: profileForLive,
       ...(resumePath ? { resumePath } : {}),
       headless: flags["headed"] !== true,
+      ...(wantSubmit ? { submit: true } : {}),
+      ...(flags["yes"] === true ? { assumeYes: true } : {}),
     });
     if (coverPath) {
       console.error(
@@ -1246,6 +1292,15 @@ async function cmdAtsFill(
       JSON.stringify(redactFillReportForArtifact(liveReport), null, 2),
     );
     if (execute && (!liveReport.gate.ok || !liveReport.verify?.passed)) {
+      process.exitCode = 2;
+    }
+    if (wantSubmit && liveReport.submit?.outcome === "uncertain") {
+      process.exitCode = 3;
+    } else if (
+      wantSubmit &&
+      liveReport.submit?.outcome &&
+      liveReport.submit.outcome !== "confirmed"
+    ) {
       process.exitCode = 2;
     }
     return;
@@ -1361,6 +1416,30 @@ function cmdReviewBulk(flags: Record<string, string | boolean>): void {
           applied: ok,
           failed,
           items: results,
+        },
+        null,
+        2,
+      ),
+    );
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+function cmdScreenersForget(): void {
+  const custom = forgetCustomScreenerAnswers();
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const predictions_cleared = forgetScreenerPredictionRows(db);
+    console.log(
+      JSON.stringify(
+        {
+          custom_cleared: custom.cleared,
+          custom_keys: custom.keys,
+          predictions_cleared,
+          path: custom.path,
+          note: "Registry answers (how_heard, etc.) were left alone. Custom learned pairs and the prediction queue are empty.",
         },
         null,
         2,
@@ -1514,6 +1593,9 @@ async function main(): Promise<void> {
       return;
     case "screeners:init":
       cmdScreenersInit();
+      break;
+    case "screeners:forget":
+      cmdScreenersForget();
       break;
     case "essay:draft": {
       const appId = flags["application"];

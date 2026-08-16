@@ -6,7 +6,10 @@ import {
   isOptionMismatchReview,
   selectScreenerOptions,
 } from "../../src/applications/screenerOptionSelect.js";
-import { generateEssayAnswers } from "../../src/applications/essayAutofill.js";
+import {
+  essayAutofillAvailable,
+  generateEssayAnswers,
+} from "../../src/applications/essayAutofill.js";
 import {
   discoverFieldsFromHtml,
   isUninformativeLabel,
@@ -112,6 +115,43 @@ describe("screener option selection (UNIT_CONFIRMED)", () => {
     ).toBe(false);
   });
 
+  it("sends the full harvested option list to the model", async () => {
+    applyControlledFillEnv({ SCREENER_LLM_MATCH_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      const options = Array.from({ length: 80 }, (_, i) => `Option ${i + 1}`);
+      let sawUser = "";
+      await selectScreenerOptions({
+        items: [
+          {
+            key: "a",
+            question: "Pick a country",
+            answer: "Option 80",
+            options,
+          },
+        ],
+        client: {
+          generateJson: async (input: { user: string }) => {
+            sawUser = input.user;
+            return {
+              text: JSON.stringify({
+                choices: [{ key: "a", option: "Option 80" }],
+              }),
+            };
+          },
+        } as never,
+      });
+      const payload = JSON.parse(sawUser) as {
+        items: Array<{ options: string[] }>;
+      };
+      expect(payload.items[0]?.options).toHaveLength(80);
+      expect(payload.items[0]?.options[79]).toBe("Option 80");
+    } finally {
+      applySafeFillEnv();
+      resetConfigCache();
+    }
+  });
+
   it("fills only with an option that exists verbatim on the page", async () => {
     applyControlledFillEnv({ SCREENER_LLM_MATCH_ENABLED: "true" });
     resetConfigCache();
@@ -139,6 +179,35 @@ describe("screener option selection (UNIT_CONFIRMED)", () => {
       });
       expect(out).toHaveLength(1);
       expect(out[0]).toMatchObject({ key: "a", option: "Job board", basis: "llm_option" });
+    } finally {
+      applySafeFillEnv();
+      resetConfigCache();
+    }
+  });
+
+  it("does not ask the model to turn Remote into Yes/No", async () => {
+    applyControlledFillEnv({ SCREENER_LLM_MATCH_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      let asked = 0;
+      const out = await selectScreenerOptions({
+        items: [
+          {
+            key: "c",
+            question: "Are you able to work onsite?",
+            answer: "Remote",
+            options: ["Yes", "No"],
+          },
+        ],
+        client: {
+          generateJson: async () => {
+            asked += 1;
+            return { text: JSON.stringify({ choices: [{ key: "c", option: "No" }] }) };
+          },
+        } as never,
+      });
+      expect(asked).toBe(0);
+      expect(out).toEqual([]);
     } finally {
       applySafeFillEnv();
       resetConfigCache();
@@ -181,6 +250,11 @@ describe("essay autofill (UNIT_CONFIRMED)", () => {
       client,
     });
     expect(out.answers).toEqual([]);
+  });
+
+  it("stays fail-closed when both LLM essay flags are off", () => {
+    expect(essayAutofillAvailable().ok).toBe(false);
+    expect(essayAutofillAvailable().reason).toMatch(/both off/);
   });
 });
 

@@ -1,7 +1,12 @@
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
 import { makeLlmClient, type EmailLlmClient } from "../contacts/emailLlm.js";
-import type { ScreenerResolution } from "../candidate/screenerMatch.js";
+import {
+  isYesNoOptionList,
+  type ScreenerResolution,
+} from "../candidate/screenerMatch.js";
+import { validatePrediction } from "./screenerPredictionLlm.js";
+import { llmTraceEvent, postSandboxTrace } from "../sandbox/trace.js";
 
 /**
  * Map an answer we ALREADY HOLD onto the page's option list.
@@ -29,16 +34,16 @@ import type { ScreenerResolution } from "../candidate/screenerMatch.js";
 
 const SYSTEM_PROMPT = `You map a job applicant's stored answer onto the exact options an application form offers.
 
-For each item you get: the question, the applicant's stored answer, and the form's option list.
-Choose the single option that best represents the applicant's stored answer.
+For each item you get: the question, the applicant's stored answer, and the form's full option list.
+Choose the single option that best represents the stored answer.
 
-Rules:
-- Return an option EXACTLY as it appears in the list, character for character.
-- If no option faithfully represents the stored answer, return null. Do not force a match.
-- Never choose an option that changes the meaning of the answer. "Remote" must not become "Onsite".
+The options array is the entire answer space. The fill engine clicks one of those strings. Return that option's text EXACTLY as it appears in the array (same characters, same punctuation, same capitalization). Do not paraphrase.
+
+- If no option faithfully represents the stored answer, return null.
+- Never choose an option that changes the meaning. "Remote" must not become "Onsite".
+- Never map a work-arrangement preference (Remote / Hybrid / On-site) onto a Yes/No ability question. Abstain.
 - For "how did you hear about us"-style questions, a general channel option
   (e.g. "Job board", "Other", "Online search") faithfully represents a specific job board.
-- Prefer null over a guess. A null costs one human click; a wrong answer goes to an employer.
 
 Respond with JSON only: {"choices":[{"key":"<key>","option":"<exact option or null>"}]}`;
 
@@ -60,30 +65,52 @@ export type OptionSelectResult = {
 
 /** Cap per call: one batch per form, and forms do not have 40 dropdowns. */
 const MAX_ITEMS = 25;
-const MAX_OPTIONS = 30;
+
+const PREFERENCE_ANSWER_RE = /^(remote|hybrid|on-?site|onsite|fully remote|in-?office)$/i;
+
+function optionSelectable(item: OptionSelectItem): boolean {
+  if (item.options.length === 0) return false;
+  if (isYesNoOptionList(item.options) && PREFERENCE_ANSWER_RE.test(item.answer.trim())) {
+    return false;
+  }
+  return true;
+}
 
 export async function selectScreenerOptions(input: {
   items: OptionSelectItem[];
   client?: EmailLlmClient;
+  traceUrl?: string;
 }): Promise<OptionSelectResult[]> {
   const cfg = getConfig();
-  const items = input.items.filter((i) => i.options.length > 0).slice(0, MAX_ITEMS);
+  const items = input.items.filter(optionSelectable).slice(0, MAX_ITEMS);
   if (!cfg.screenerLlmMatchEnabled || items.length === 0) return [];
   if (!cfg.anthropicApiKey && !cfg.openaiApiKey && !input.client) return [];
 
   try {
     const client = input.client ?? makeLlmClient();
+    const userPayload = {
+      items: items.map((i) => ({
+        key: i.key,
+        question: i.question.slice(0, 300),
+        stored_answer: i.answer.slice(0, 300),
+        options: i.options,
+      })),
+    };
     const { text } = await client.generateJson({
       system: SYSTEM_PROMPT,
-      user: JSON.stringify({
-        items: items.map((i) => ({
-          key: i.key,
-          question: i.question.slice(0, 300),
-          stored_answer: i.answer.slice(0, 300),
-          options: i.options.slice(0, MAX_OPTIONS),
-        })),
-      }),
+      user: JSON.stringify(userPayload),
     });
+    if (input.traceUrl) {
+      await postSandboxTrace(
+        input.traceUrl,
+        llmTraceEvent({
+          surface: "option-select",
+          system: SYSTEM_PROMPT,
+          user: userPayload,
+          response: text,
+        }),
+      );
+    }
     const parsed = JSON.parse(text) as {
       choices?: Array<{ key?: unknown; option?: unknown }>;
     };
@@ -95,10 +122,8 @@ export async function selectScreenerOptions(input: {
       }
       const item = byKey.get(choice.key);
       if (!item) continue;
-      // The model may only CHOOSE. Verbatim membership is what makes this
-      // safe to fill without a human: an invented string never matches.
-      const exact = item.options.find((o) => o === choice.option);
-      if (exact === undefined) {
+      const snapped = validatePrediction(choice.option, item.options);
+      if (!snapped.ok) {
         logger.warn("screener option choice rejected (not on the page)", {
           service: "screeners",
           action: "option_select_rejected",
@@ -106,7 +131,7 @@ export async function selectScreenerOptions(input: {
         });
         continue;
       }
-      out.push({ key: item.key, option: exact, basis: "llm_option" });
+      out.push({ key: item.key, option: snapped.value, basis: "llm_option" });
     }
     logger.info("screener option selection", {
       service: "screeners",

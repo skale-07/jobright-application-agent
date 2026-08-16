@@ -194,8 +194,10 @@ npm run ats:fill -- --url $ATS_URL --execute --headed --resume private\candidate
 ```
 
 Expected: `verify.passed: true` with per-field read-back results, and
-`submit_attempted: false` — this command has no submit path at all. Essays
-and demographics are skipped by policy; sponsorship is never invented.
+`submit_attempted: false`. This command does not submit employer URLs.
+Sandbox/loopback is the exception — see §20. Essays and demographics
+are skipped by policy unless the operator opted into those flags;
+sponsorship is never invented.
 
 **Failure modes:** refusal naming a flag = working as designed; a failed
 `verify` on specific fields = custom widgets; `validation_level` stays
@@ -519,24 +521,24 @@ nothing else. If they are being skipped, one of three things is true:
 The rule that never changes: a demographic answer is never inferred,
 defaulted, or generated. No value on file ⇒ the field is left blank.
 
-### Essays (`ESSAY_AUTOFILL_ENABLED`)
+### Essays (`ESSAY_AUTOFILL_ENABLED` or `SCREENER_PREDICT_LLM_ENABLED`)
 
 ```ini
 ESSAY_AUTOFILL_ENABLED=true
+# or SCREENER_PREDICT_LLM_ENABLED=true — same generate-and-fill path
 ```
 
 Generates essay answers from `private/candidate/about-me.md` and fills
-them, instead of routing every essay to you. Requires that file to exist
-and an LLM key. Generated text must pass the same validation a review
-draft does (length bounds, no placeholder brackets, no model
-self-reference), and each answer is recorded on its plan entry, so the run
-artifact shows exactly what an employer received.
+them. Requires that file and an LLM key. Generated text must pass the
+same validation a review draft does (length bounds, no placeholder
+brackets, no model self-reference), and each answer is recorded on its
+plan entry, so the run artifact shows exactly what an employer received.
 
 **Worth knowing once:** essay prose is the part a human reads, and unlike
 a dropdown it cannot be verified by read-back. A model writing from your
 about-me can still phrase a claim more strongly than the source supports.
-Check the first few in the artifacts. Off, or context missing, or the
-draft rejected ⇒ the essay routes to review exactly as before.
+Check the first few in the artifacts. Both flags off, or context missing,
+or the draft rejected ⇒ the essay parks with the real reason.
 
 ## 14b. Company-hosted forms (generic adapter — always on)
 
@@ -967,21 +969,25 @@ No flag needed; this works even with all LLM features off.
 
 - **At fill time**, previously-unmapped screeners may be filled when the
   proposal survives `validatePrediction`: a choice must match the page's
-  options verbatim; free-text must already appear in your about-me or
-  public profile (12+ characters). Invented answers stay blank and still
-  open **Answer needed**. Nothing is written into `screeners.json`.
-- **After the session**, the same questions get a suggested answer in
-  the review item (drawn from about-me + bank + profile facts). **Approve
-  & save** (or edit first) joins the bank. A dismissed question never
-  comes back.
+  options verbatim (or the form's own Other). Free-text the model returns
+  is filled. Every accepted prediction is written into `screeners.json`
+  as a `custom` entry (first write wins). The next form asking the same
+  question — exact wording or a high-overlap paraphrase — fills from
+  the bank with no model call. Only stored pairs that overlap the
+  current questions are sent as `learned_answers` when predict still
+  runs; the whole bank is not dumped into every call.
+- **After the session**, parked questions still get a suggested answer
+  in the review item. **Approve & save** (or edit first) joins the bank
+  if plan-time did not already write that label. A dismissed question
+  never comes back.
 
 Major-option checkboxes ("Electrical Engineering"), inspector
 placeholders (`field_12`), UUID labels, and terms/privacy checkboxes are
 not queued as questions — terms auto-check; majors check only when they
 match your profile. Pronouns / EEO stay on the sensitive-profile path.
 
-Long-form essays still need `ESSAY_AUTOFILL_ENABLED` (and
-`private/candidate/about-me.md`) to fill rather than park.
+Long-form essays fill from `private/candidate/about-me.md` when
+`ESSAY_AUTOFILL_ENABLED` or `SCREENER_PREDICT_LLM_ENABLED` is on.
 
 **Essay drafts (automatic suggestions).** Copy `about-me.example.md` to
 `private/candidate/about-me.md` and write your context once. With
@@ -1352,18 +1358,60 @@ Two obstacle courses:
   `PORTAL_LOGIN_EMAIL`/`PORTAL_LOGIN_PASSWORD` exactly like Workday and
   Paycom walls), and only then the application form. Accounts live in
   memory: restart the sandbox and account creation is testable again.
+  `/portal` is not a form URL. `--execute` is what clicks Apply;
+  `NAVIGATION_ENABLED=true` plus standing `PORTAL_LOGIN_*` credentials
+  are what sign in after that. Plan-only on `/portal` still refuses
+  (`NO_APPLICATION_FORM`) — that is the posting, not a command bug.
+  Execute recovery is `classifyPage`: password → sign in, Apply without
+  applicant identity → click Apply, identity fields → fill, anything else
+  → park as `UNKNOWN_LANDING` instead of a generic `NO_APPLICATION_FORM`.
 
 Drive it (second terminal, with your usual flags in the shell):
 
 ```
-npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --headed
-npm run ats:fill -- --url http://localhost:4599/portal   --execute --headed
+npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --submit --yes --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+npm run ats:fill -- --url http://localhost:4599/portal   --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
 ```
 
-`--headed` opens the browser so you can watch every click. Everything the
-"employer" receives is echoed in the sandbox terminal and written to
-`artifacts/sandbox/`, so you can diff what Dispatch claims it filled
-against what actually arrived.
+The portal command also needs `NAVIGATION_ENABLED=true` and
+`PORTAL_LOGIN_EMAIL` / `PORTAL_LOGIN_PASSWORD` in that same shell.
+Without them, Apply lands on the account wall and the run refuses
+`LOGIN_WALL` instead of filling the auth form. The wall shows Create
+Account and Sign In on one page: standing credentials sign in first, and
+if that miss means there is no account yet, the same run creates it.
+Sandbox accounts reset when you restart `npm run sandbox`.
+
+`--resume` is the upload path. The planner always SKIPs `type=file`; the
+adapter attaches the PDF after field fill. On loopback, omitting the flag
+uses `DEFAULT_RESUME_PATH` when that file exists. A real employer URL
+never gets a silent attach — pass `--resume` explicitly.
+
+`--submit` is loopback-only. It still requires `SUBMIT_ENABLED=true`,
+`FORM_FILL_ENABLED=true`, `DRY_RUN=false`, a passing verify, no unanswered
+required controls, and the same confirmation prompt as §7 (Enter to click,
+or `--yes` when `SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false`). A Greenhouse
+or Lever URL with `--submit` is refused before any click. Employer
+submits stay on `npm run submit -- --application <uuid>`.
+
+`--headed` opens the browser so you can watch every click. The **sandbox
+terminal** (`npm run sandbox`) is the live transcript: page hits, the
+full LLM request and response (`── llm predict ──`), the fill plan with
+each field's action/value and the model's basis, then what the fake
+employer actually received. The same dumps are written to
+`artifacts/sandbox/` (including `llm-predict-*.json`) so they survive a
+stale sandbox process.
+
+Restart the sandbox after pulling code that adds `/trace`. Before a
+fresh gauntlet run, wipe learned question/answer pairs so the model
+does not reuse the last run:
+
+```
+npm run screeners:forget
+```
+
+That clears `screeners.json` **custom** entries and the
+`screener_predictions` queue. Registry answers (`how_heard`, etc.) stay.
 
 Safety shape: the sandbox binds 127.0.0.1 only — it is unreachable from
 any other machine. The generic adapter and portal auth accept loopback

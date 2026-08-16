@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startEmployerSandbox, type SandboxHandle } from "../../src/sandbox/server.js";
+import {
+  llmTraceEvent,
+  postSandboxTrace,
+  sandboxOriginFromUrl,
+} from "../../src/sandbox/trace.js";
 import { classifyPage } from "../../src/ats/shared/pageClassify.js";
 import { discoverFieldsFromHtml } from "../../src/applications/fieldDiscovery.js";
 import { validateGenericApplicationUrl } from "../../src/ats/generic/urlValidation.js";
@@ -40,6 +45,8 @@ describe("employer sandbox (FIXTURE_CONFIRMED)", () => {
     const { html } = await get("/portal");
     const c = classifyPage({ html, url: `${sandbox.url}/portal` });
     expect(c.page_class).toBe("posting");
+    // Nested <button> inside <a> does not navigate; Apply must be the link.
+    expect(html).toMatch(/<a href="\/portal\/auth">Apply<\/a>/);
   });
 
   it("the /gauntlet page classifies as a FORM with the wild questions discoverable", async () => {
@@ -111,6 +118,36 @@ describe("employer sandbox (FIXTURE_CONFIRMED)", () => {
     expect(
       classifyPage({ html, url: `${sandbox.url}/gauntlet/submit` }).page_class,
     ).toBe("confirmation");
+  });
+
+  it("POST /trace accepts plan lines (the ats:fill → sandbox terminal channel)", async () => {
+    const res = await fetch(`${sandbox.url}/trace`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "plan",
+        lines: ["FILL COBOL → No  [Predicted from operator context: no COBOL in about-me]"],
+      }),
+    });
+    expect(res.status).toBe(204);
+    const llm = llmTraceEvent({
+      surface: "predict",
+      system: "sys",
+      user: { questions: [{ label: "spirit animal" }] },
+      response: '{"predictions":[]}',
+    });
+    expect(llm.kind).toBe("llm predict");
+    expect(llm.lines.join("\n")).toMatch(/request\.user/);
+    expect(llm.lines.join("\n")).toMatch(/spirit animal/);
+    expect(llm.lines.join("\n")).toMatch(/response/);
+    expect(sandboxOriginFromUrl(`${sandbox.url}/gauntlet`)).toBe(sandbox.url);
+    expect(sandboxOriginFromUrl("https://boards.greenhouse.io/x")).toBeNull();
+    await expect(
+      postSandboxTrace(`${sandbox.url}/gauntlet`, {
+        kind: "plan",
+        lines: ["ok"],
+      }),
+    ).resolves.toBeUndefined();
   });
 });
 

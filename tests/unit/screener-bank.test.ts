@@ -6,13 +6,18 @@ import {
   type ScreenerAnswerBank,
 } from "../../src/candidate/screeners.js";
 import {
+  findCustomScreenerMatch,
+  learnedCustomAnswersFor,
   matchScreenerKey,
   normalizeScreenerLabel,
+  resolveCustomScreener,
   resolveOptionValue,
   resolveScreenerForField,
+  scoreScreenerLabelOverlap,
 } from "../../src/candidate/screenerMatch.js";
 import { buildFillPlan } from "../../src/applications/resolveAnswers.js";
 import { toApprovedFillPlan } from "../../src/applications/approvedFillPlan.js";
+import { releaseUnplaceableProfileMappings } from "../../src/applications/applicationFiller.js";
 import { resolveScreenerForField as resolveField } from "../../src/candidate/screenerMatch.js";
 import type { MappedField } from "../../src/applications/fieldNormalization.js";
 import type { ScreenerResolution } from "../../src/candidate/screenerMatch.js";
@@ -55,6 +60,35 @@ describe("screener registry + matcher (UNIT_CONFIRMED)", () => {
         "(Optional) If you were referred by a Cohere employee, please tell us who!",
       )?.key,
     ).toBe("referral_name");
+  });
+
+  it("on-site ability is willing_to_relocate, not remote_or_onsite", () => {
+    expect(
+      matchScreenerKey("Are you able to work on-site in Strongsville, OH?")?.key,
+    ).toBe("willing_to_relocate");
+    expect(matchScreenerKey("Are you able to work onsite?")?.key).toBe(
+      "willing_to_relocate",
+    );
+    expect(matchScreenerKey("Remote, hybrid, or on-site?")?.key).toBe(
+      "remote_or_onsite",
+    );
+  });
+
+  it("on-site ability fills Yes even when the remote-preference bank is Remote", () => {
+    const r = resolveField(
+      {
+        label: "Are you able to work on-site in Strongsville, OH?",
+        type: "select",
+        options: ["Select...", "Yes", "No"],
+      },
+      { ...BANK, answers: { ...BANK.answers, remote_or_onsite: "Remote", willing_to_relocate: "" } },
+    );
+    expect(r).toEqual({
+      status: "fill",
+      key: "willing_to_relocate",
+      value: "Yes",
+      basis: "synonym_option",
+    });
   });
 
   it("never maps essays or demographics-shaped labels", () => {
@@ -119,7 +153,7 @@ describe("screener registry + matcher (UNIT_CONFIRMED)", () => {
     expect(referral?.status).toBe("skip");
 
     const noAnswer = resolveField(
-      { label: "Are you willing to relocate?", type: "radio", options: ["Yes", "No"] },
+      { label: "Have you previously applied to this company?", type: "radio", options: ["Yes", "No"] },
       { version: 1, answers: {}, custom: {} },
     );
     expect(noAnswer?.status).toBe("review");
@@ -206,6 +240,25 @@ describe("buildFillPlan screener integration (UNIT_CONFIRMED)", () => {
     expect(f3.action).toBe("SKIP");
   });
 
+  it("llm_predict rationale is copied onto the plan reason", () => {
+    const fields = [field("cobol", "Have you ever maintained a COBOL system?", "select", ["Yes", "No"])];
+    const plan = buildFillPlan(fields, profile, {
+      screenerResolutions: new Map([
+        [
+          "cobol",
+          {
+            status: "fill",
+            key: "custom:predicted:cobol",
+            value: "No",
+            basis: "llm_predict",
+            rationale: "about-me never mentions COBOL",
+          },
+        ],
+      ]),
+    });
+    expect(plan.entries[0]?.reason).toMatch(/about-me never mentions COBOL/);
+  });
+
   it("prediction tier: education level derives from the profile degree, option-verified", () => {
     // The example profile says "Bachelor of Science" — no bank needed.
     const r = resolveField(
@@ -272,5 +325,127 @@ describe("buildFillPlan screener integration (UNIT_CONFIRMED)", () => {
     const plan = buildFillPlan(fields, profile, { screenerResolutions: resolutions });
     // The essay branch runs BEFORE the unmapped/screener branch.
     expect(plan.entries[0]!.action).toBe("skip_essay");
+  });
+
+  it("fills a generated essay instead of skip_essay", () => {
+    const fields = [field("essay", "Tell us about yourself", "textarea")];
+    const plan = buildFillPlan(fields, profile, {
+      essayAnswers: new Map([["essay", "I build things."]]),
+    });
+    expect(plan.entries[0]!.action).toBe("fill");
+    expect(plan.entries[0]!.value).toBe("I build things.");
+    expect(plan.entries[0]!.canonical_field).toBe("essay:generated:essay");
+    const approved = toApprovedFillPlan(plan.entries);
+    expect(approved.entries[0]!.action).toBe("FILL");
+    expect(approved.entries[0]!.approved).toBe(true);
+  });
+
+  it("drops a profile mapping that cannot land on a closed Yes/No list", () => {
+    const fields = [
+      field(
+        "w_orgs",
+        "Are you currently a member of any university organizations?",
+        "select",
+        ["Select...", "Yes", "No"],
+      ),
+    ];
+    fields[0]!.canonical_field = "current_company";
+    releaseUnplaceableProfileMappings(fields, {
+      ...profile,
+      current_company: "Summer Atlantic Capital",
+    });
+    expect(fields[0]!.canonical_field).toBeNull();
+  });
+
+  it("keeps a profile mapping when the form offers Other", () => {
+    const fields = [
+      field("q_uni", "Which university do you attend?", "select", [
+        "Select...",
+        "MIT",
+        "Other",
+      ]),
+    ];
+    fields[0]!.canonical_field = "school";
+    releaseUnplaceableProfileMappings(fields, {
+      ...profile,
+      school: "Johns Hopkins University",
+    });
+    expect(fields[0]!.canonical_field).toBe("school");
+  });
+});
+
+describe("custom-bank question reuse (UNIT_CONFIRMED)", () => {
+  const bank: ScreenerAnswerBank = {
+    version: 1,
+    answers: {},
+    custom: {
+      favorite_animal: {
+        answer: "Llamas",
+        labels: ["Are unicorns or llamas your favorite animal, and why?"],
+        promoted_at: "",
+      },
+      school: {
+        answer: "Johns Hopkins University",
+        labels: ["Which university do you attend?"],
+        promoted_at: "",
+      },
+      hometown: {
+        answer: "Baltimore",
+        labels: ["Where is your hometown?"],
+        promoted_at: "",
+      },
+      company: {
+        answer: "Summer Atlantic Capital",
+        labels: ["Current organization"],
+        promoted_at: "",
+      },
+    },
+  };
+
+  it("reuses a paraphrase of a stored question and ignores a short alias hitchhike", () => {
+    expect(
+      scoreScreenerLabelOverlap(
+        "Are unicorns or llamas your favorite animal, and why?",
+        "Unicorns or llamas — which is your favorite animal?",
+      ),
+    ).toBeGreaterThanOrEqual(0.75);
+    expect(
+      resolveCustomScreener(
+        {
+          label: "Which university are you currently attending? Select Other if not listed",
+          type: "text",
+        },
+        bank,
+      ),
+    ).toMatchObject({ status: "fill", value: "Johns Hopkins University" });
+    expect(
+      resolveCustomScreener(
+        {
+          label:
+            "Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown?",
+          type: "text",
+        },
+        bank,
+      ),
+    ).toMatchObject({ status: "fill", value: "Baltimore" });
+    // The alias failure mode: a 2-word "Current organization" must not
+    // steal a Yes/No membership question.
+    expect(
+      findCustomScreenerMatch(
+        "Are you currently a member of any university organizations, such as clubs or fraternities/sororities?",
+        bank,
+      ),
+    ).toBeNull();
+  });
+
+  it("sends only overlapping learned pairs to the model, not the whole bank", () => {
+    const animal = learnedCustomAnswersFor(bank, [
+      "Unicorns or llamas — which is your favorite animal?",
+    ]);
+    expect(animal).toHaveLength(1);
+    expect(animal[0]?.answer).toBe("Llamas");
+    expect(
+      learnedCustomAnswersFor(bank, ["Which country are you authorized to work in?"]),
+    ).toEqual([]);
   });
 });

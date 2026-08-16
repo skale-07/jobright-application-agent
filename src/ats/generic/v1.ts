@@ -58,10 +58,9 @@ export const GENERIC_ADAPTER_VERSION = 2;
  * confirmation requires the form to be structurally gone, not just
  * confirmation text on the page).
  *
- * Fails closed where it cannot be generic: essays are not fillable here
- * (supportsEssayFill=false on the binding), so an application carrying
- * human essay answers is refused before the submit gate rather than
- * submitted incomplete.
+ * Human-authored essay answers at submit still require a vendor that
+ * supportsEssayFill. Generated about-me essays go through the same
+ * greenhouseFillFromPlan path as every other approved text field.
  */
 export class GenericAdapterV1 implements ApplicationAdapter {
   readonly id = "generic";

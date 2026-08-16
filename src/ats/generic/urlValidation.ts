@@ -79,7 +79,7 @@ export function validateGenericApplicationUrl(
   // loopback address is unreachable from anywhere else by definition, so
   // the https transport invariant protects nothing there. Loopback ONLY:
   // any other http host is refused exactly as before.
-  const isLoopback = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  const isLoopback = isLoopbackHost(host);
   if (isLoopback) {
     warnings.push("loopback host — operator sandbox, not an employer");
   } else if (parsed.protocol !== "https:") {
@@ -137,6 +137,20 @@ export function validateGenericApplicationUrl(
     warnings,
     failureReason: null,
   };
+}
+
+/** 127.0.0.1 / localhost / [::1] — the employer sandbox, never an ATS host. */
+export function isLoopbackHost(host: string): boolean {
+  const h = host.toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+}
+
+export function isLoopbackUrl(raw: string): boolean {
+  try {
+    return isLoopbackHost(new URL(raw).hostname);
+  } catch {
+    return false;
+  }
 }
 
 /**

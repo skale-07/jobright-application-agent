@@ -155,10 +155,20 @@ export const SCREENER_REGISTRY: ScreenerDef[] = [
   },
   {
     key: "willing_to_relocate",
-    description: "Willingness to relocate for the role",
+    description:
+      "Whether the candidate is willing and able to relocate or work on-site for the role (Yes/No). Distinct from remote vs hybrid vs on-site preference.",
     kind: "yes_no",
     policy: "auto_fill",
-    patterns: [/willing to relocate/, /open to relocat/, /able to relocate/],
+    patterns: [
+      /willing to relocate/,
+      /open to relocat/,
+      /able to relocate/,
+      /able to (work |commute )?on-?site/,
+      /willing to work on-?site/,
+      /can you work on-?site/,
+      /work on-?site in\b/,
+      /relocate for (this|the) (role|job|position)/,
+    ],
     synonyms: { Yes: YES, No: NO },
   },
   {

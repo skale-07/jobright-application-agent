@@ -1,4 +1,4 @@
-import type { Page } from "playwright";
+import type { Locator, Page } from "playwright";
 import { performTransition } from "../../browser/transition.js";
 import { classifyPage } from "./pageClassify.js";
 
@@ -56,11 +56,28 @@ export type PostingAdvanceResult = {
   notes: string[];
 };
 
+/**
+ * `<a href="…"><button>Apply</button></a>` is invalid HTML employers still
+ * ship. Clicking the button (type=button) does not follow the href; click
+ * the wrapping link instead.
+ */
+async function preferHrefAncestor(loc: Locator): Promise<Locator> {
+  const alreadyLink = await loc
+    .evaluate((el: { tagName: string }) => el.tagName === "A")
+    .catch(() => false);
+  if (alreadyLink) return loc;
+  const wrapped = loc.locator("xpath=./ancestor::a[@href][1]");
+  if ((await wrapped.count().catch(() => 0)) > 0) return wrapped.first();
+  return loc;
+}
+
 /** Every clickable whose accessible text reads exactly "Apply". */
 async function findApplyControl(page: Page) {
   for (const selector of APPLY_SELECTORS) {
     const loc = page.locator(selector).filter({ visible: true }).first();
-    if ((await loc.count().catch(() => 0)) > 0) return { loc, how: selector };
+    if ((await loc.count().catch(() => 0)) > 0) {
+      return { loc: await preferHrefAncestor(loc), how: selector };
+    }
   }
   // Text-based last: scan candidates and require the WHOLE label to be
   // Apply-ish, so "Apply filters" and "How to apply" never match.
@@ -70,7 +87,10 @@ async function findApplyControl(page: Page) {
     const candidate = clickables.nth(i);
     const text = (await candidate.textContent().catch(() => "")) ?? "";
     if (APPLY_TEXT_RE.test(text.replace(/\s+/g, " "))) {
-      return { loc: candidate, how: `text "${text.trim().slice(0, 20)}"` };
+      return {
+        loc: await preferHrefAncestor(candidate),
+        how: `text "${text.trim().slice(0, 20)}"`,
+      };
     }
   }
   return null;

@@ -5,7 +5,10 @@ import { writeJsonAtomic } from "../storage/atomicJson.js";
 import { recordFillRun } from "../storage/fillOutcomes.js";
 import { loadAnswerAliases } from "../candidate/answerAliases.js";
 import { loadPublicProfile } from "../candidate/publicProfileIO.js";
-import type { PublicProfile } from "../candidate/publicProfile.js";
+import {
+  getProfileValue,
+  type PublicProfile,
+} from "../candidate/publicProfile.js";
 import { GreenhouseAdapterV1 } from "../ats/greenhouse/v1.js";
 import { LeverAdapterV1, leverFullNameMatcher } from "../ats/lever/v1.js";
 import { AshbyAdapterV1, ashbyFullNameMatcher } from "../ats/ashby/v1.js";
@@ -21,6 +24,8 @@ import {
   essayAutofillAvailable,
   generateEssayAnswers,
 } from "./essayAutofill.js";
+import { essayFieldsOnly } from "./essayDetector.js";
+import { postSandboxTrace } from "../sandbox/trace.js";
 import { logger } from "../logging/logger.js";
 import type { EmailLlmClient } from "../contacts/emailLlm.js";
 import { WorkdayAdapterV1 } from "../ats/workday/v1.js";
@@ -34,7 +39,10 @@ import {
   findOtherOption,
   type AnswerSpace,
 } from "../ats/shared/optionHarvest.js";
-import { mapDiscoveredFields } from "./fieldNormalization.js";
+import {
+  mapDiscoveredFields,
+  type MappedField,
+} from "./fieldNormalization.js";
 import { buildFillPlan } from "./resolveAnswers.js";
 import { toApprovedFillPlan } from "./approvedFillPlan.js";
 import { assertFormFillAllowed } from "./formFillGuards.js";
@@ -56,11 +64,15 @@ import type {
 } from "../ats/adapter.js";
 import type { Page } from "playwright";
 import type { FillPlanEntry } from "./resolveAnswers.js";
-import { tryLoadScreenerBank } from "../candidate/screenersIO.js";
+import {
+  attachCustomScreenerLabel,
+  tryLoadScreenerBank,
+} from "../candidate/screenersIO.js";
 import {
   matchScreenerKey,
   resolveCustomScreener,
   resolveScreenerForField,
+  screenerKeyFitsField,
   type ScreenerResolution,
 } from "../candidate/screenerMatch.js";
 import { mapScreenerLabels } from "./screenerLlmMap.js";
@@ -115,6 +127,32 @@ const FULL_NAME_MATCHERS: Record<string, FullNameFieldMatcher> = {
   lever: leverFullNameMatcher,
   ashby: ashbyFullNameMatcher,
 };
+
+/**
+ * Alias/profile mapping is greedy: "organization" inside a Yes/No
+ * question becomes current_company. If the control's own list cannot
+ * hold that value and has no Other, the mapping is wrong — drop it so
+ * predict answers the question that is actually on the page.
+ */
+export function releaseUnplaceableProfileMappings(
+  mapped: MappedField[],
+  profile: PublicProfile,
+): void {
+  for (const f of mapped) {
+    if (!f.canonical_field) continue;
+    if (screenerIsDemographic(f)) continue;
+    const options = (f.options ?? []).filter(
+      (o) => o.trim() !== "" && !/^select\b/i.test(o.trim()),
+    );
+    if (options.length < 2) continue;
+    const raw = getProfileValue(profile, f.canonical_field);
+    if (raw === undefined || raw === null || raw === "") continue;
+    if (pickOptionLabel(options, String(raw)).ok) continue;
+    if (findOtherOption(f.options ?? [])) continue;
+    f.canonical_field = null;
+    f.mapping_confidence = "none";
+  }
+}
 
 /**
  * Fixtures runAtsFixtureFill will execute against ("essay" is a
@@ -225,6 +263,10 @@ export async function planApplicationFill(input: {
     ? annotateFullNameField(mapDiscoveredFields(fields, aliases), nameMatcher)
     : mapDiscoveredFields(fields, aliases);
   const profile = input.profile ?? loadPublicProfile();
+  // A Yes/No (or any closed list) that aliases mapped to a profile fact
+  // whose value is not on the list is not a profile field. Drop the
+  // mapping so predict can answer the question that is actually there.
+  releaseUnplaceableProfileMappings(mapped, profile);
 
   // Screener pass for otherwise-unmapped fields: deterministic patterns
   // first; the flag-gated LLM assist maps only the leftovers (labels +
@@ -256,14 +298,22 @@ export async function planApplicationFill(input: {
         if (r) screenerResolutions.set(f.id, r);
         continue;
       }
-      // Promoted custom entries: exact normalized-label match against
-      // answers the operator approved via the prediction review flow.
+      // Custom bank: exact or high-overlap question label. A hit
+      // compounds the new wording onto the entry so the next form is exact.
       const custom = resolveCustomScreener(
         { label: f.label, type: f.type, options: f.options },
         bank,
       );
       if (custom) {
         screenerResolutions.set(f.id, custom);
+        const rawKey = custom.key.startsWith("custom:")
+          ? custom.key.slice("custom:".length)
+          : custom.key;
+        try {
+          attachCustomScreenerLabel(rawKey, f.label);
+        } catch {
+          // compounding the label is best-effort
+        }
         continue;
       }
       unmatchedForLlm.push(f);
@@ -279,7 +329,7 @@ export async function planApplicationFill(input: {
       const byLabel = new Map(mappings.map((m) => [m.label, m.key]));
       for (const f of unmatchedForLlm) {
         const key = byLabel.get(f.label);
-        if (!key) continue;
+        if (!key || !screenerKeyFitsField(key, f)) continue;
         const r = resolveScreenerForField(
           { label: f.label, type: f.type, options: f.options },
           bank,
@@ -302,6 +352,7 @@ export async function planApplicationFill(input: {
           options: f.options,
         })),
         input.llmClient,
+        input.url,
       );
       for (const [id, p] of predicted) {
         screenerResolutions.set(id, {
@@ -309,6 +360,7 @@ export async function planApplicationFill(input: {
           key: `custom:predicted:${id}`,
           value: p.value,
           basis: p.intended ? "other_option" : "llm_predict",
+          rationale: p.basis,
         });
         // The model's real answer was not on the list, so it chose the
         // form's "Other". Remember what it actually meant — that goes in
@@ -325,6 +377,15 @@ export async function planApplicationFill(input: {
       }
     } catch {
       // plan-time predict is best-effort; a model error must never break a plan
+    }
+  }
+
+  const unmappedReasons = new Map<string, string>();
+  if (getConfig().screenerPredictLlmEnabled) {
+    for (const f of unanswered) {
+      if (!screenerResolutions.has(f.id)) {
+        unmappedReasons.set(f.id, "Predict produced no usable answer");
+      }
     }
   }
 
@@ -370,6 +431,7 @@ export async function planApplicationFill(input: {
       const chosen = await selectScreenerOptions({
         items: mismatched,
         ...(input.llmClient ? { client: input.llmClient } : {}),
+        traceUrl: input.url,
       });
       for (const c of chosen) {
         const prior = screenerResolutions.get(c.key);
@@ -427,24 +489,37 @@ export async function planApplicationFill(input: {
     });
   }
 
-  // Essay autofill (operator opt-in, ESSAY_AUTOFILL_ENABLED). Generated
-  // from about-me.md only, validated by the same checker the human-review
-  // drafting path uses, and recorded on the plan entry so what was written
-  // is readable in the artifact afterwards. Off / no context / rejected
-  // draft ⇒ the essay routes to review exactly as before.
+  // Essays fill from about-me.md when the LLM path is already on
+  // (ESSAY_AUTOFILL_ENABLED or SCREENER_PREDICT_LLM_ENABLED). Off / no
+  // context / rejected draft ⇒ skip with the real reason, not a policy lie.
   const essayAnswers = new Map<string, string>();
   const essayNotes: string[] = [];
-  if (essayAutofillAvailable().ok) {
-    const essayFields = mapped.filter(
-      (f) => f.type === "textarea" && (f.label ?? "").trim().length > 0,
-    );
-    if (essayFields.length > 0) {
-      const generated = await generateEssayAnswers({
-        items: essayFields.map((f) => ({ fieldId: f.id, question: f.label })),
-      });
-      essayNotes.push(...generated.notes);
-      for (const a of generated.answers) essayAnswers.set(a.fieldId, a.answer);
-    }
+  const essayIds = new Set(
+    essayFieldsOnly(mapped)
+      .filter((e) => e.is_essay)
+      .map((e) => e.field_id),
+  );
+  const essayFields = mapped.filter(
+    (f) =>
+      (essayIds.has(f.id) || f.type === "textarea") &&
+      (f.label ?? "").trim().length > 0,
+  );
+  const essayAvail = essayAutofillAvailable();
+  if (essayFields.length > 0 && !essayAvail.ok) {
+    essayNotes.push(`essay autofill skipped: ${essayAvail.reason}`);
+    await postSandboxTrace(input.url, {
+      kind: "essay skip",
+      lines: [`essay autofill skipped: ${essayAvail.reason}`],
+    });
+  }
+  if (essayFields.length > 0 && essayAvail.ok) {
+    const generated = await generateEssayAnswers({
+      items: essayFields.map((f) => ({ fieldId: f.id, question: f.label })),
+      ...(input.llmClient ? { client: input.llmClient } : {}),
+      traceUrl: input.url,
+    });
+    essayNotes.push(...generated.notes);
+    for (const a of generated.answers) essayAnswers.set(a.fieldId, a.answer);
   }
   for (const note of essayNotes) {
     logger.info("essay autofill note", {
@@ -457,6 +532,13 @@ export async function planApplicationFill(input: {
   const plan = buildFillPlan(mapped, profile, {
     screenerResolutions,
     ...(essayAnswers.size > 0 ? { essayAnswers } : {}),
+    ...(essayFields.length > 0 && essayAnswers.size === 0
+      ? {
+          essaySkipReason:
+            essayNotes[0] ?? "Essay generation produced no answer",
+        }
+      : {}),
+    ...(unmappedReasons.size > 0 ? { unmappedReasons } : {}),
   });
 
   // Off-list PROFILE values on closed fields take the form's "Other" too.

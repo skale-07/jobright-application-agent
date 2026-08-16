@@ -459,4 +459,42 @@ describe("combobox interaction on fixture (FIXTURE_CONFIRMED)", () => {
       );
     });
   }, 30_000);
+
+  it("commits a native role=combobox whose value lives on the input (FIXTURE_CONFIRMED)", async () => {
+    const html = `<!doctype html><html><body>
+      <label for="q_tz">Which time zone will you primarily frobnicate from?</label>
+      <div class="combo">
+        <input id="q_tz" name="q_tz" role="combobox" aria-autocomplete="list"
+               autocomplete="off" placeholder="Select..." />
+        <div id="q_tz_list" class="combo-list" style="display:none" role="listbox"></div>
+      </div>
+      <script>
+        const TZ = ['Eastern (US)', 'Central (US)', 'Mountain (US)', 'Pacific (US)'];
+        const tz = document.getElementById('q_tz');
+        const list = document.getElementById('q_tz_list');
+        const renderList = (filter) => {
+          const items = TZ.filter((t) => !filter || t.toLowerCase().includes(filter.toLowerCase()));
+          list.innerHTML = items.map((t) => '<div role="option">' + t + '</div>').join('');
+          list.style.display = 'block';
+        };
+        tz.addEventListener('focus', () => renderList(''));
+        tz.addEventListener('click', () => renderList(tz.value));
+        tz.addEventListener('input', () => renderList(tz.value));
+        list.addEventListener('click', (e) => {
+          const t = e.target.closest('[role=option]');
+          if (t) { tz.value = t.textContent; list.style.display = 'none'; }
+        });
+      </script>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const loc = page.locator("#q_tz");
+      expect(await detectControlKind(loc)).toBe("combobox");
+      expect(await readComboboxValue(loc)).toBeNull();
+      const result = await fillComboboxControl(page, loc, "Eastern (US)");
+      expect(result.committed).toBe(true);
+      expect(result.selectedLabel).toBe("Eastern (US)");
+      expect(await readComboboxValue(loc)).toBe("Eastern (US)");
+      expect(await loc.inputValue()).toBe("Eastern (US)");
+    });
+  }, 30_000);
 });
