@@ -61,11 +61,13 @@ export function discoverFieldsFromHtml(
   // — the Workday wizard walk handed a review page to the filler because
   // the page's own script mentioned form markup. DOM-invisible blocks go
   // first.
-  const html = rawHtml
-    .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-    .replace(/<style\b[\s\S]*?<\/style>/gi, "")
-    .replace(/<template\b[\s\S]*?<\/template>/gi, "")
-    .replace(/<!--[\s\S]*?-->/g, "");
+  const html = stripHiddenSubtrees(
+    rawHtml
+      .replace(/<script\b[\s\S]*?<\/script>/gi, "")
+      .replace(/<style\b[\s\S]*?<\/style>/gi, "")
+      .replace(/<template\b[\s\S]*?<\/template>/gi, "")
+      .replace(/<!--[\s\S]*?-->/g, ""),
+  );
   const fields: DiscoveredField[] = [];
   const labelMap = buildLabelMap(html);
 
@@ -98,6 +100,18 @@ export function discoverFieldsFromHtml(
       name ??
       `field_${idx}`;
 
+    const fieldType = mapType(tag, typeAttr);
+    const wrap = wrappingLabelTexts(html, m.index, m.index + m[0].length);
+    // Spec-standard wrapping <label> with no `for`. For checkboxes/text
+    // this IS the question. For radios it is usually the option ("Yes").
+    if (
+      fieldType !== "radio" &&
+      wrap?.full &&
+      (isUninformativeLabel(label) || (name !== undefined && label === name))
+    ) {
+      label = wrap.full;
+    }
+
     // A machine name or a placeholder is not a question. Live corpus:
     // "cards[631785a2-…][field0]" ×13 (Lever's education/experience cards —
     // school, degree, dates: data the profile HOLDS), "Type your response"
@@ -114,9 +128,24 @@ export function discoverFieldsFromHtml(
       if (greenhouseLabel) label = greenhouseLabel;
     }
 
-    const fieldType = mapType(tag, typeAttr);
-    const options =
+    const valueAttr = getAttr(attrs, "value");
+    let options =
       tag === "select" ? parseSelectOptions(inner) : undefined;
+    if (fieldType === "radio") {
+      const optionText = radioOptionText({
+        wrap,
+        value: valueAttr,
+        label,
+        name,
+      });
+      const question =
+        nearestBareQuestionLabel(html, m.index) ??
+        (radioNeedsQuestionLabel(label, name)
+          ? nearestSectionHeading(html, m.index)
+          : null);
+      if (question) label = question;
+      options = [optionText];
+    }
 
     const maxLengthRaw = getAttr(attrs, "maxlength");
     const minLengthRaw = getAttr(attrs, "minlength");
@@ -139,6 +168,68 @@ export function discoverFieldsFromHtml(
 
   // Radio groups: collapse by name
   return collapseRadioGroups(fields);
+}
+
+const VOID_TAGS = new Set([
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
+]);
+
+function isHiddenAttrs(attrs: string): boolean {
+  if (/aria-hidden\s*=\s*["']true["']/i.test(attrs)) return true;
+  if (/display\s*:\s*none/i.test(attrs)) return true;
+  const withoutAria = attrs.replace(/aria-hidden\s*=\s*["'][^"']*["']/gi, "");
+  return /(?:^|\s)hidden(?:\s|=|\/|$)/i.test(withoutAria);
+}
+
+function matchingCloseIndex(html: string, tag: string, from: number): number {
+  const token = new RegExp(`<${tag}\\b[^>]*>|</${tag}\\s*>`, "gi");
+  token.lastIndex = from;
+  let depth = 1;
+  let m: RegExpExecArray | null;
+  while ((m = token.exec(html)) !== null) {
+    if (m[0].startsWith("</")) depth -= 1;
+    else if (!/\/\s*>$/.test(m[0])) depth += 1;
+    if (depth === 0) return m.index + m[0].length;
+  }
+  return -1;
+}
+
+/**
+ * Wizard steps and Other-specify wraps ship in the same document with
+ * `display:none`. Regex discovery otherwise plans those controls, fill
+ * waits 2s for visibility, errors, and the Next walker never starts
+ * (/fillhard page 2).
+ */
+function stripHiddenSubtrees(html: string): string {
+  const openRe = /<([a-z][a-z0-9]*)\b([^>]*?)>/gi;
+  let out = "";
+  let last = 0;
+  let m: RegExpExecArray | null;
+  while ((m = openRe.exec(html)) !== null) {
+    const tag = (m[1] ?? "").toLowerCase();
+    const attrs = m[2] ?? "";
+    if (VOID_TAGS.has(tag) || !isHiddenAttrs(attrs)) continue;
+    if (/\/\s*$/.test(attrs)) continue;
+    const end = matchingCloseIndex(html, tag, m.index + m[0].length);
+    if (end < 0) continue;
+    out += html.slice(last, m.index);
+    last = end;
+    openRe.lastIndex = end;
+  }
+  return out + html.slice(last);
 }
 
 function buildLabelMap(html: string): Map<string, string> {
@@ -218,20 +309,98 @@ function inferGreenhouseLabel(name: string, fallback: string): string | null {
   return map[name] ?? (fallback.includes("[") ? null : fallback);
 }
 
+function looksLikeOptionOnlyLabel(text: string): boolean {
+  return /^(yes|no|true|false|y|n|n\/a|none)$/i.test(text.trim());
+}
+
+function radioNeedsQuestionLabel(label: string, name: string | undefined): boolean {
+  if (looksLikeOptionOnlyLabel(label)) return true;
+  if (isUninformativeLabel(label)) return true;
+  return name !== undefined && label === name;
+}
+
+/**
+ * A question-only <label> with no `for` and no nested input — Paycom-class
+ * lead-capture radios sit under `<label>Do you consent…?</label>` then
+ * wrapping option labels. Preceding option-wrapping labels are skipped so
+ * "Yes" is not stolen as the group question (see nearestSectionHeading).
+ */
+function nearestBareQuestionLabel(html: string, position: number): string | null {
+  const window = html.slice(Math.max(0, position - 2_000), position);
+  const re = /<label\b([^>]*)>([\s\S]*?)<\/label>/gi;
+  let best: string | null = null;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(window)) !== null) {
+    const attrs = m[1] ?? "";
+    if (getAttr(attrs, "for")) continue;
+    const body = m[2] ?? "";
+    if (/<input\b/i.test(body)) continue;
+    const text = cleanLabel(decodeEntities(stripTags(body)));
+    if (text.length < 8 || text.length > 300) continue;
+    if (looksLikeOptionOnlyLabel(text) || isUninformativeLabel(text)) continue;
+    best = text;
+  }
+  return best;
+}
+
+function wrappingLabelTexts(
+  html: string,
+  inputStart: number,
+  inputEnd: number,
+): { full: string; after: string } | null {
+  const before = html.slice(Math.max(0, inputStart - 800), inputStart);
+  const lower = before.toLowerCase();
+  const openIdx = lower.lastIndexOf("<label");
+  const closeIdx = lower.lastIndexOf("</label");
+  if (openIdx < 0 || openIdx < closeIdx) return null;
+  const tagEnd = before.indexOf(">", openIdx);
+  if (tagEnd < 0) return null;
+  if (getAttr(before.slice(openIdx, tagEnd), "for")) return null;
+  const afterChunk = html.slice(inputEnd, inputEnd + 500);
+  const closeRel = afterChunk.search(/<\/label>/i);
+  if (closeRel < 0) return null;
+  const after = cleanLabel(decodeEntities(stripTags(afterChunk.slice(0, closeRel))));
+  const innerStart = inputStart - before.length + tagEnd + 1;
+  const full = cleanLabel(
+    decodeEntities(stripTags(html.slice(innerStart, inputEnd + closeRel))),
+  );
+  if (!full && !after) return null;
+  return { full, after };
+}
+
+function radioOptionText(input: {
+  wrap: { full: string; after: string } | null;
+  value: string | null;
+  label: string;
+  name: string | undefined;
+}): string {
+  const fromWrap = input.wrap?.after || input.wrap?.full || "";
+  if (fromWrap && fromWrap !== input.name) return fromWrap;
+  const value = input.value?.trim() ?? "";
+  // Lever cards use value="0"/"1" with the visible answer in the wrapping
+  // label. A bare integer is not an option the filler can click by label.
+  if (value && !/^\d+$/.test(value)) return value;
+  if (looksLikeOptionOnlyLabel(input.label)) return input.label;
+  if (value) return value;
+  return input.label;
+}
+
 function collapseRadioGroups(fields: DiscoveredField[]): DiscoveredField[] {
   const radios = new Map<string, DiscoveredField>();
   const out: DiscoveredField[] = [];
   for (const f of fields) {
     if (f.type === "radio" && f.name) {
+      const optionSlice =
+        f.options && f.options.length > 0 ? f.options : [f.label];
       const existing = radios.get(f.name);
       if (existing) {
-        existing.options = [...(existing.options ?? []), f.label];
+        existing.options = [...(existing.options ?? []), ...optionSlice];
       } else {
         const group: DiscoveredField = {
           ...f,
           id: f.name,
           label: f.label,
-          options: [f.label],
+          options: [...optionSlice],
         };
         radios.set(f.name, group);
         out.push(group);

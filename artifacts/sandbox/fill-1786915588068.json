@@ -1,0 +1,8 @@
+{
+  "kind": "fill",
+  "lines": [
+    "filled: legal_name.first, legal_name.last, email, phone",
+    "ERROR sms_consent: No radio option for \"sms_consent\"",
+    "verify: failed"
+  ]
+}

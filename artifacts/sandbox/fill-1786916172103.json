@@ -1,0 +1,7 @@
+{
+  "kind": "fill",
+  "lines": [
+    "filled: legal_name.first, legal_name.last, email, phone, screener:custom:sms_consent",
+    "verify: passed"
+  ]
+}

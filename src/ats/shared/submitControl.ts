@@ -123,6 +123,12 @@ export async function resolveSubmitControl(
         notes.push(`skipped ${tier.via} candidate "${text.slice(0, 40)}" (excluded name)`);
         continue;
       }
+      if (!(await candidate.isVisible().catch(() => false))) {
+        notes.push(
+          `skipped ${tier.via} candidate "${text.slice(0, 40)}" (not visible)`,
+        );
+        continue;
+      }
       // The CSS tier can hit controls with no submit-ish name at all (an
       // unnamed icon button). Accept those only when the name tier found
       // nothing — which is exactly this loop order.
@@ -145,4 +151,48 @@ export async function resolveSubmitControl(
   );
   notes.push(`no submit control matched; ${inventory.length} CTA candidates inventoried`);
   return { found: false, notes, inventory };
+}
+
+/**
+ * Wizard/lead-capture advance: Next, Continue, "Continue to application".
+ * Deliberately NOT a submit name — `resolveSubmitControl` excludes these
+ * so `--submit` cannot click a page-advance and call it a submission.
+ * "Continue shopping" / "Continue browsing" do not match.
+ */
+export const ADVANCE_NAME_RE =
+  /^(next|save and continue|continue(\s+to(\s+the)?\s+(application|apply))?)$/i;
+
+/**
+ * The control that advances this form page. Returns not-found when a
+ * final submit is already visible — the gated submit path owns that click.
+ */
+export async function resolveAdvanceControl(
+  page: Page,
+  cfg: Pick<SubmitCascadeConfig, "form">,
+): Promise<SubmitControlResolution> {
+  const notes: string[] = [];
+  const form = page.locator(cfg.form).first();
+  const formPresent = (await form.count().catch(() => 0)) > 0;
+  const root = formPresent ? form : page.locator("body");
+  const loc = root.getByRole("button", { name: ADVANCE_NAME_RE });
+  const n = Math.min(await loc.count().catch(() => 0), CANDIDATE_CAP);
+  for (let i = 0; i < n; i++) {
+    const candidate = loc.nth(i);
+    const text = await accessibleText(candidate);
+    await candidate.scrollIntoViewIfNeeded().catch(() => undefined);
+    try {
+      await candidate.waitFor({ state: "visible", timeout: VISIBLE_WAIT_MS });
+    } catch {
+      notes.push(`advance candidate "${text.slice(0, 40)}" never became visible`);
+      continue;
+    }
+    if (await candidate.isDisabled().catch(() => false)) {
+      notes.push(`advance candidate "${text.slice(0, 40)}" is disabled`);
+      continue;
+    }
+    notes.push(`resolved advance: "${text.slice(0, 40)}"`);
+    return { found: true, control: candidate, via: "advance-name", notes };
+  }
+  notes.push("no Next/Continue advance control matched");
+  return { found: false, notes, inventory: [] };
 }

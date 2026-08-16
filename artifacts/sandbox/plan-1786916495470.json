@@ -1,0 +1,18 @@
+{
+  "kind": "plan",
+  "lines": [
+    "6 fill / 6 skip / 0 review",
+    "FILL             First Name → Shubham  [Mapped from public profile]",
+    "FILL             Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email → skale1@jh.edu  [Mapped from public profile]",
+    "FILL             Which technology are you strongest in? → Python  [Predicted from operator context (llm_predict): Python underpins his ML and modeling work (XGBoost, PyTorch, FastAPI, SIR modeling, evaluation pipelines), with TypeScript a close second.]",
+    "SKIP             Machine Learning  [No answer-alias mapping]",
+    "SKIP             Infrastructure  [No answer-alias mapping]",
+    "SKIP             Product  [No answer-alias mapping]",
+    "SKIP             Security  [No answer-alias mapping]",
+    "FILL             Which development environment feels most like ho → VS Code  [Predicted from operator context (llm_predict): Standard editor for his TypeScript/Node and Python full-stack building work.]",
+    "SKIP             If other, please specify  [Predict produced no usable answer]",
+    "FILL             Have you ever committed directly to main on a Fr → Only with a green CI  [Predicted from operator context (llm_predict): His projects emphasize CI scaffolding, fail-closed flags, and a validation ladder before calling anything working.]",
+    "SKIP             Why Frobnicator?  [essay not answered (model abstained): Why Frobnicator?]"
+  ]
+}

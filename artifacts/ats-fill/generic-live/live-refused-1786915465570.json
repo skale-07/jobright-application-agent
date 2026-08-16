@@ -1,0 +1,29 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/navhard",
+  "requested_url": "http://localhost:4599/navhard",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "FORM_NOT_REACHED",
+    "reason": "still on the job posting after trying Apply — no application form to fill",
+    "final_url": "http://localhost:4599/navhard",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application)",
+    "popups dismissed: Accept Cookies",
+    "landed on a posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application); clicking Apply via button[id*=\"apply\" i]",
+    "Apply click did not change the page: click opened a tab that never left about:blank — ignored",
+    "parked: refused to fill a listing page's own search widgets"
+  ],
+  "written_at": "2026-08-16T21:24:25.570Z"
+}

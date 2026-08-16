@@ -1,0 +1,324 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/fillhard",
+  "requested_url": "http://localhost:4599/fillhard",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/fillhard/embed",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 6,
+    "skipped_count": 6,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_skill",
+      "label": "Which technology are you strongest in?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_skill",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Python spans his ML and research work (XGBoost/SHAP, PyTorch CNN, FastAPI microservice, Flask apps, epidemiological modeling), making it his broadest strength."
+    },
+    {
+      "field_id": "area",
+      "label": "Machine Learning",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Infrastructure",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Product",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Security",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "q_env",
+      "label": "Which development environment feels most like home?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_env",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): A student building full-stack TypeScript/Node and Python projects most plausibly works in VS Code, and it is an available option."
+    },
+    {
+      "field_id": "q_env_specify",
+      "label": "If other, please specify",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Predict produced no usable answer"
+    },
+    {
+      "field_id": "q_commit",
+      "label": "Have you ever committed directly to main on a Friday?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_commit",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): His engineering style emphasizes fail-closed gates, CI scaffolding, and explicit validation ladders before calling anything working."
+    },
+    {
+      "field_id": "q_why",
+      "label": "Why Frobnicator?",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "essay not answered (model abstained): Why Frobnicator?"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786916423117.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "screener:custom:predicted:q_skill"
+    ],
+    "skipped": [],
+    "errors": [
+      "q_env: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"q_env\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <select id=\"q_env\" required=\"\" name=\"q_env\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    4 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+      "q_commit: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"q_commit\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <select required=\"\" id=\"q_commit\" name=\"q_commit\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    4 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n"
+    ],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_skill",
+        "canonical_field": "screener:custom:predicted:q_skill",
+        "control_kind": "combobox",
+        "selected_option": "Python",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Python\" → 1 option(s); match",
+          "picked \"Python\" (exact)"
+        ],
+        "options_sample": [
+          "Python"
+        ]
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_skill",
+        "expected": "Python",
+        "observed": {
+          "value": "Python",
+          "label": "Python"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_env",
+        "expected": "VS Code",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_commit",
+        "expected": "Only with a green CI",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "application form found in an iframe (12 fields) — hopping to http://localhost:4599/fillhard/embed",
+    "page class at gate: form (12 fillable field(s))",
+    "option harvest: scraped real options for 1/5 control(s) before planning",
+    "resume on disk but this page has no file input — not an upload miss",
+    "submit withheld — fill verify did not pass"
+  ],
+  "harvested_options": [
+    {
+      "field_id": "q_skill",
+      "label": "Which technology are you strongest in?",
+      "answer_space": "closed",
+      "option_count": 8,
+      "options": [
+        "TypeScript",
+        "Python",
+        "Rust",
+        "Go",
+        "Java",
+        "Kotlin",
+        "Swift",
+        "C++"
+      ],
+      "other_option": null
+    }
+  ],
+  "submit": {
+    "outcome": "failed_before_click",
+    "clicked": false,
+    "receipt": null,
+    "notes": [
+      "submit withheld — fill verify did not pass"
+    ]
+  },
+  "operator_brief": {
+    "title": "Live fill — generic http://localhost:4599/fillhard/embed",
+    "summary": "4 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:screener:custom:predicted:q_env",
+        "question": "Which development environment feels most like home?",
+        "field_id": "q_env",
+        "canonical_field": "screener:custom:predicted:q_env",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"VS Code\"; page shows \"Select...\"",
+        "expected": "VS Code",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"VS Code\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:q_env)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:q_env\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:custom:predicted:q_commit",
+        "question": "Have you ever committed directly to main on a Friday?",
+        "field_id": "q_commit",
+        "canonical_field": "screener:custom:predicted:q_commit",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Only with a green CI\"; page shows \"Select...\"",
+        "expected": "Only with a green CI",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"Only with a green CI\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:q_commit)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:q_commit\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:q_env: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiting ",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "q_env: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"q_env\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <select id=\"q_env\" required=\"\" name=\"q_env\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    4 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:q_commit: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiti",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "q_commit: locator.selectOption: Timeout 2000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[id=\"q_commit\"]').first()\u001b[22m\n\u001b[2m    - locator resolved to <select required=\"\" id=\"q_commit\" name=\"q_commit\">…</select>\u001b[22m\n\u001b[2m  - attempting select option action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    4 × waiting for element to be visible and enabled\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying select option action\u001b[22m\n\u001b[2m      - waiting 500ms\u001b[22m\n",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 4,
+    "fail_count": 4
+  },
+  "written_at": "2026-08-16T21:40:28.180Z"
+}

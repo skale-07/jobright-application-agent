@@ -1,0 +1,14 @@
+{
+  "kind": "plan",
+  "lines": [
+    "4 fill / 4 skip / 0 review",
+    "FILL             First Name → Shubham  [Mapped from public profile]",
+    "FILL             Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email → skale1@jh.edu  [Mapped from public profile]",
+    "FILL             Which technology are you strongest in? → Python  [Predicted from operator context (llm_predict): Most of the candidate's ML, modeling, and backend work (XGBoost, PyTorch, Flask, FastAPI, epidemiological modeling, evaluation pipelines) is in Python.]",
+    "SKIP             Machine Learning  [No answer-alias mapping]",
+    "SKIP             Infrastructure  [No answer-alias mapping]",
+    "SKIP             Product  [No answer-alias mapping]",
+    "SKIP             Security  [No answer-alias mapping]"
+  ]
+}

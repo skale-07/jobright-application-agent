@@ -1,0 +1,11 @@
+{
+  "kind": "plan",
+  "lines": [
+    "5 fill / 0 skip / 0 review",
+    "FILL             Legal First Name → Shubham  [Mapped from public profile]",
+    "FILL             Legal Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email Address → skale1@jh.edu  [Mapped from public profile]",
+    "FILL             Primary Phone Number → 4805897636  [Mapped from public profile]",
+    "FILL             sms_consent → sms_consent  [Predicted from operator context (llm_predict): The options array contains only the string \"sms_consent\", so that is the only selectable value for this consent field.]"
+  ]
+}

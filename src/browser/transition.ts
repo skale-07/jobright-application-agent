@@ -128,11 +128,27 @@ export async function performTransition(
     // stranded the runner on the launcher page).
     const adopted = popup as Page | null;
     if (adopted !== null) {
-      await adopted
-        .waitForLoadState("domcontentloaded", { timeout: 10_000 })
-        .catch(() => undefined);
-      const popupUrl = adopted.url();
+      // window.open('') reports about:blank until the opener assigns
+      // location (navhard 1200ms delay; JobRight interstitial). Reading
+      // the URL immediately closed the tab and stranded the fill on the
+      // posting. Navigation already waits (settledPopupUrl); this is the
+      // same wait on the fill hop.
+      let popupUrl = adopted.url();
+      if ((!popupUrl || popupUrl === "about:blank") && settleTimeoutMs > 0) {
+        await adopted
+          .waitForURL((u) => u.toString() !== "about:blank", {
+            timeout: settleTimeoutMs,
+          })
+          .catch(() => undefined);
+        popupUrl = adopted.url();
+        if (popupUrl && popupUrl !== "about:blank") {
+          notes.push("popup settled off about:blank after the interstitial");
+        }
+      }
       if (popupUrl && popupUrl !== "about:blank") {
+        await adopted
+          .waitForLoadState("domcontentloaded", { timeout: 10_000 })
+          .catch(() => undefined);
         const popupHtml = await adopted.content().catch(() => "");
         notes.push(`click opened a tab — flow adopted ${popupUrl}`);
         return {

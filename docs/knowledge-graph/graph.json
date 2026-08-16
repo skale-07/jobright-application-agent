@@ -267,7 +267,7 @@
         "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl \u2014 the single URL-to-adapter decision",
         "src/ats/shared/preMutationGate.ts": "verifyPageBeforeMutationGeneric (host/captcha/mismatch terminal; login wall and zero-field pages still fail the mutation lock)",
         "src/ats/shared/requiredCompleteness.ts": "refuse submit with unanswered required questions",
-        "src/ats/shared/submitControl.ts": "submit control resolve cascade",
+        "src/ats/shared/submitControl.ts": "submit control resolve cascade; resolveAdvanceControl is Next/Continue (never the gated submit)",
         "src/ats/registry.ts": "adapter registry + HTML-based detection",
         "src/ats/greenhouse/liveFill.ts": "shared guarded live fill core (all vendors call it)",
         "src/ats/workday/pageKind.ts": "classifyWorkdayPage: auth checked BEFORE wizard (Create Account is step 1 of the wizard)",
@@ -275,6 +275,7 @@
         "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
         "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
         "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
+        "src/ats/shared/frameHop.ts": "findApplicationFrameUrl \u2014 hop into an iframe whose document has fillable fields (https, or loopback http for the operator sandbox)",
         "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password or emailed-code wall \u2192 auth, identity fields \u2192 form, Apply without identity \u2192 posting, else unknown. Fill recovers from page_class, not the collapsed gate code.",
         "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
         "src/ats/ashby/discovery.ts": "ashbyDiscoverFields \u2014 generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs \u2192 ONE field with options[]; per-option fields suppressed)"
@@ -307,6 +308,9 @@
         ],
         "src/ats/shared/postingAdvance.ts": [
           "advancePastPosting"
+        ],
+        "src/ats/shared/frameHop.ts": [
+          "findApplicationFrameUrl"
         ],
         "src/ats/shared/pageClassify.ts": [
           "classifyPage",
@@ -342,6 +346,7 @@
         "src/applications/submitRun.ts": "runAtsSubmission \u2014 click gate + unattended budget consumption",
         "src/applications/fieldDiscovery.ts": "discoverFieldsFromHtml (also the pre-mutation gate's field count)",
         "src/applications/atsBindings.ts": "ATS_BINDINGS: per-vendor gate/fill/submit fns",
+        "src/applications/genericFormAdvance.ts": "walkGenericFormPages \u2014 after a passing generic fill, click Next/Continue (never Submit), re-plan, fill; bounded",
         "src/applications/essayAutofill.ts": "essay generate-and-fill from about-me (ESSAY_AUTOFILL_ENABLED or SCREENER_PREDICT_LLM_ENABLED; validateDraft-checked)",
         "src/applications/screenerOptionSelect.ts": "LLM chooses from the page's own options, validated verbatim"
       },
@@ -364,6 +369,9 @@
         ],
         "src/applications/atsBindings.ts": [
           "ATS_BINDINGS"
+        ],
+        "src/applications/genericFormAdvance.ts": [
+          "walkGenericFormPages"
         ]
       },
       "gates": [

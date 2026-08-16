@@ -1387,8 +1387,11 @@ when you restart `npm run sandbox`.
 
 `/navhard` is also a posting: `--execute` clicks Apply through the cookie
 banner, decoys, and late-settling popup, then fill answers the lead-capture
-identity modal from your profile. `/fillhard` is a form whose fields live
-in an iframe — `--execute` is what hops in. Neither needs `PORTAL_LOGIN_*`.
+identity modal from your profile. After that page verifies, fill clicks
+**Continue To Application** (a page advance, not `--submit`) and fills the
+real application. `--submit` clicks **Submit application**. `/fillhard` is a
+form whose fields live in an iframe — `--execute` is what hops in. Neither
+needs `PORTAL_LOGIN_*`.
 Details of what each course is testing are in §20.1.
 
 `--resume` is the upload path. The planner always SKIPs `type=file`; the

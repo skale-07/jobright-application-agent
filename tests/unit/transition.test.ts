@@ -81,6 +81,34 @@ describe("performTransition (FIXTURE_CONFIRMED)", () => {
     });
   }, 30_000);
 
+  it("adopts a popup that starts about:blank and navigates late", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <button id="go">Apply now</button>
+      <script>
+        document.getElementById('go').addEventListener('click', () => {
+          const w = window.open('', '_blank');
+          setTimeout(() => { if (w) w.location = 'https://forms.ats-example.com/apply/late'; }, 1200);
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      await page.context().route("**/apply/late", (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: "<html><body><form><label>Email<input type='email' name='email'/></label></form></body></html>",
+        }),
+      );
+      const r = await performTransition(page, page.locator("#go"), {
+        settleTimeoutMs: 5_000,
+      });
+      expect(r.landed).toBe(true);
+      expect(r.adopted_popup).toBe(true);
+      expect(r.url).toMatch(/\/apply\/late/);
+      expect(r.notes.join(" ")).toMatch(/settled off about:blank/);
+      expect(r.classification.page_class).toBe("form");
+      await r.page.close().catch(() => undefined);
+    });
+  }, 30_000);
+
   it("settleTimeoutMs 0 keeps synchronous fixtures synchronous (single check)", async () => {
     const html = `<!DOCTYPE html><html><body>
       <div id="stage"><button id="go">Next</button></div>

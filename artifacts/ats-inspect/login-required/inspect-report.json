@@ -1,6 +1,6 @@
 {
   "fixture": "login-required",
-  "inspected_at": "2026-08-16T00:39:22.354Z",
+  "inspected_at": "2026-08-16T21:42:15.531Z",
   "inspection": {
     "ats": "greenhouse",
     "adapter_version": 1,
@@ -9,15 +9,7 @@
     "requires_login": true,
     "captcha_detected": false,
     "account_creation_detected": true,
-    "fields": [
-      {
-        "id": "email",
-        "label": "email",
-        "type": "text",
-        "required": false,
-        "name": "email"
-      }
-    ],
+    "fields": [],
     "warnings": [
       "Login wall detected",
       "Account creation markers detected"
@@ -28,17 +20,7 @@
     "greenhouse URL host",
     "greenhouse form markers"
   ],
-  "mapped_fields": [
-    {
-      "id": "email",
-      "label": "email",
-      "type": "text",
-      "required": false,
-      "name": "email",
-      "canonical_field": "email",
-      "mapping_confidence": "high"
-    }
-  ],
+  "mapped_fields": [],
   "essays": [],
   "demographics_fields": [],
   "unmapped_required": [],

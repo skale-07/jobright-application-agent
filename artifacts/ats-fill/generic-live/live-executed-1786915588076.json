@@ -1,0 +1,191 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/navhard",
+  "requested_url": "http://localhost:4599/navhard",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/navhard/started",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 5,
+    "skipped_count": 0,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "Legal First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Legal Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email Address",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "Primary Phone Number",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "sms_consent",
+      "label": "sms_consent",
+      "type": "radio",
+      "canonical_field": "screener:custom:predicted:sms_consent",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): The options array contains only the string \"sms_consent\", so that is the only selectable value for this consent field."
+    }
+  ],
+  "form_snapshot_path": null,
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "phone"
+    ],
+    "skipped": [],
+    "errors": [
+      "sms_consent: No radio option for \"sms_consent\""
+    ],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:sms_consent",
+        "expected": "sms_consent",
+        "observed": false,
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application)",
+    "popups dismissed: Accept Cookies",
+    "landed on a posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application); clicking Apply via button[id*=\"apply\" i]",
+    "Apply landed on: form (5 fillable field(s))",
+    "Apply opened a new tab — the flow continues there",
+    "resume on disk but this page has no file input — not an upload miss",
+    "submit withheld — fill verify did not pass"
+  ],
+  "harvested_options": [],
+  "submit": {
+    "outcome": "failed_before_click",
+    "clicked": false,
+    "receipt": null,
+    "notes": [
+      "submit withheld — fill verify did not pass"
+    ]
+  },
+  "operator_brief": {
+    "title": "Live fill — generic http://localhost:4599/navhard/started",
+    "summary": "2 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:screener:custom:predicted:sms_consent",
+        "question": "sms_consent",
+        "field_id": "sms_consent",
+        "canonical_field": "screener:custom:predicted:sms_consent",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"sms_consent\"; page shows \"false\"",
+        "expected": "sms_consent",
+        "observed": false,
+        "how_to_answer": [
+          "DOM shows \"false\" but plan expected \"sms_consent\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:sms_consent)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:sms_consent\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:sms_consent: No radio option for \"sms_consent\"",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "sms_consent: No radio option for \"sms_consent\"",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 4,
+    "fail_count": 2
+  },
+  "written_at": "2026-08-16T21:26:28.094Z"
+}

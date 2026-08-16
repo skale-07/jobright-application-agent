@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
 import {
   inventorySubmitCandidates,
+  resolveAdvanceControl,
   resolveSubmitControl,
 } from "../../src/ats/shared/submitControl.js";
 import {
@@ -11,6 +12,7 @@ import {
   resolveResumeFileInput,
 } from "../../src/ats/shared/uploadResolve.js";
 import { ashbySelectorsV1 } from "../../src/ats/ashby/selectors.js";
+import { genericSelectorsV1 } from "../../src/ats/generic/selectors.js";
 import { ashbyUploadFile } from "../../src/ats/ashby/fill.js";
 import {
   applyFixtureFillEnv,
@@ -102,6 +104,35 @@ describe("shared submit-control cascade (FIXTURE_CONFIRMED)", () => {
         if (!r.found) {
           expect(r.notes.some((n) => /excluded name/.test(n))).toBe(true);
           expect(r.inventory.map((c) => c.text)).toContain("Next");
+        }
+      });
+    },
+    30_000,
+  );
+
+  it(
+    "Continue To Application is an advance, not a submit (Paycom lead-capture)",
+    async () => {
+      const html = `
+        <form>
+          <input name="first_name" />
+          <button type="submit">Continue To Application</button>
+        </form>`;
+      await withFixtureHtmlPage(html, async (page) => {
+        const submit = await resolveSubmitControl(
+          page,
+          genericSelectorsV1.submitCascade,
+        );
+        expect(submit.found).toBe(false);
+        const advance = await resolveAdvanceControl(
+          page,
+          genericSelectorsV1.submitCascade,
+        );
+        expect(advance.found).toBe(true);
+        if (advance.found) {
+          expect((await advance.control.innerText()).trim()).toBe(
+            "Continue To Application",
+          );
         }
       });
     },

@@ -1,6 +1,6 @@
 {
   "fixture": "demographics",
-  "inspected_at": "2026-08-16T00:39:22.340Z",
+  "inspected_at": "2026-08-16T21:42:15.516Z",
   "inspection": {
     "ats": "greenhouse",
     "adapter_version": 1,
@@ -20,15 +20,15 @@
       },
       {
         "id": "gender",
-        "label": "gender",
+        "label": "Gender (EEO voluntary)",
         "type": "radio",
         "required": false,
-        "name": "gender",
         "options": [
-          "gender",
-          "gender",
-          "gender"
-        ]
+          "Female",
+          "Male",
+          "Decline to self-identify"
+        ],
+        "name": "gender"
       },
       {
         "id": "race",
@@ -75,17 +75,17 @@
     },
     {
       "id": "gender",
-      "label": "gender",
+      "label": "Gender (EEO voluntary)",
       "type": "radio",
       "required": false,
-      "name": "gender",
       "options": [
-        "gender",
-        "gender",
-        "gender"
+        "Female",
+        "Male",
+        "Decline to self-identify"
       ],
+      "name": "gender",
       "canonical_field": "gender",
-      "mapping_confidence": "high"
+      "mapping_confidence": "medium"
     },
     {
       "id": "race",
@@ -120,15 +120,15 @@
   "demographics_fields": [
     {
       "id": "gender",
-      "label": "gender",
+      "label": "Gender (EEO voluntary)",
       "type": "radio",
       "required": false,
-      "name": "gender",
       "options": [
-        "gender",
-        "gender",
-        "gender"
-      ]
+        "Female",
+        "Male",
+        "Decline to self-identify"
+      ],
+      "name": "gender"
     },
     {
       "id": "race",

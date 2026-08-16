@@ -299,4 +299,45 @@ describe("label resolution for machine-named fields (UNIT_CONFIRMED)", () => {
     const html = `<form><input name="cards[abc][field0]" /></form>`;
     expect(nearestSectionHeading(html, html.indexOf("<input"))).toBeNull();
   });
+
+  it("does not discover controls inside display:none wizard steps", () => {
+    const html = `<form>
+      <div id="page1">
+        <label for="email">Email</label><input id="email" name="email" />
+      </div>
+      <div id="page2" style="display:none">
+        <label for="q_env">Which development environment feels most like home?</label>
+        <select id="q_env" name="q_env"><option>VS Code</option></select>
+      </div>
+    </form>`;
+    const fields = discoverFieldsFromHtml(html);
+    expect(fields.map((f) => f.id)).toEqual(["email"]);
+    expect(fields.some((f) => f.id === "q_env")).toBe(false);
+  });
+
+  it("wrapping radios use the question label and value/visible options, not the name", () => {
+    // /navhard lead-capture: no id, no label[for], name=sms_consent.
+    // Collapse used to publish options ["sms_consent","sms_consent"] and
+    // predict treated the machine name as a valid answer.
+    const html = `<form>
+      <label class="req">Do you consent to receiving text communications related to your job application?</label>
+      <label><input type="radio" name="sms_consent" value="Yes" /> Yes</label>
+      <label><input type="radio" name="sms_consent" value="No" /> No</label>
+    </form>`;
+    const sms = discoverFieldsFromHtml(html).find((f) => f.name === "sms_consent");
+    expect(sms?.type).toBe("radio");
+    expect(sms?.label).toMatch(/text communications/i);
+    expect(sms?.options).toEqual(["Yes", "No"]);
+  });
+
+  it("fieldset legend is the radio question when options are wrapping Yes/No", () => {
+    const html = `<form><fieldset>
+      <legend>Are you available for a full-time internship?</legend>
+      <label><input type="radio" name="avail" value="Yes" />Yes</label>
+      <label><input type="radio" name="avail" value="No" />No</label>
+    </fieldset></form>`;
+    const avail = discoverFieldsFromHtml(html).find((f) => f.name === "avail");
+    expect(avail?.label).toBe("Are you available for a full-time internship?");
+    expect(avail?.options).toEqual(["Yes", "No"]);
+  });
 });

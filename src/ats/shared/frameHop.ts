@@ -1,5 +1,6 @@
 import type { Page } from "playwright";
 import { discoverFieldsFromHtml } from "../../applications/fieldDiscovery.js";
+import { isLoopbackUrl } from "../generic/urlValidation.js";
 
 /**
  * Iframe-hosted application forms.
@@ -26,7 +27,7 @@ export async function findApplicationFrameUrl(
   for (const frame of page.frames()) {
     if (frame === page.mainFrame()) continue;
     const url = frame.url();
-    if (!url || url === "about:blank" || !url.startsWith("https://")) continue;
+    if (!isHopableFrameUrl(url)) continue;
     const html = await frame.content().catch(() => null);
     if (!html) continue;
     const fields = discoverFieldsFromHtml(html);
@@ -36,4 +37,15 @@ export async function findApplicationFrameUrl(
     }
   }
   return best;
+}
+
+/**
+ * Live embeds are https. The operator sandbox is loopback http — the
+ * same hop must see `/fillhard/embed` or the outer zero-field page
+ * parks as UNKNOWN_LANDING. Arbitrary http frames stay ignored.
+ */
+function isHopableFrameUrl(url: string): boolean {
+  if (!url || url === "about:blank") return false;
+  if (url.startsWith("https://")) return true;
+  return isLoopbackUrl(url);
 }

@@ -69,10 +69,15 @@ describe("hard sandbox courses (FIXTURE_CONFIRMED)", () => {
     expect(classifyPage({ html, url: `${sandbox.url}/navhard/started` }).page_class).toBe(
       "form",
     );
-    const labels = discoverFieldsFromHtml(html).map((f) => f.label);
+    const fields = discoverFieldsFromHtml(html);
+    const labels = fields.map((f) => f.label);
     expect(labels).toContain("Legal First Name");
     expect(labels).toContain("Email Address");
     expect(labels).toContain("Primary Phone Number");
+    const sms = fields.find((f) => f.name === "sms_consent");
+    expect(sms?.type).toBe("radio");
+    expect(sms?.label).toMatch(/text communications/i);
+    expect(sms?.options).toEqual(["Yes", "No"]);
   });
 
   it("the lead-capture continue leads to the real form, then confirmation", async () => {
@@ -108,12 +113,13 @@ describe("hard sandbox courses (FIXTURE_CONFIRMED)", () => {
     const email = fields.find((f) => f.id === "email");
     expect(html).toMatch(/value="wrong\.person@example\.com"/);
     expect(email).toBeDefined();
-    // The Other→specify pair and the closed selects are discoverable.
     const labels = fields.map((f) => f.label);
-    expect(labels).toContain("Which development environment feels most like home?");
-    expect(
-      fields.find((f) => f.label.includes("committed directly to main"))?.options,
-    ).toContain("Only with a green CI");
+    expect(labels).toContain("Which technology are you strongest in?");
+    // Page 2 is display:none — planning those selects on step 1 made fill
+    // timeout on hidden controls and blocked the Next walker.
+    expect(labels).not.toContain(
+      "Which development environment feels most like home?",
+    );
   });
 });
 

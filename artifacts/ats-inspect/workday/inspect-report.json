@@ -1,6 +1,6 @@
 {
   "fixture": "workday",
-  "inspected_at": "2026-08-16T00:39:22.362Z",
+  "inspected_at": "2026-08-16T21:42:15.538Z",
   "inspection": {
     "ats": "workday",
     "adapter_version": 1,
@@ -25,37 +25,6 @@
         "required": false,
         "name": "password",
         "inputId": "password"
-      },
-      {
-        "id": "legalNameSection_firstName",
-        "label": "firstName",
-        "type": "text",
-        "required": false,
-        "name": "firstName",
-        "inputId": "legalNameSection_firstName"
-      },
-      {
-        "id": "legalNameSection_lastName",
-        "label": "lastName",
-        "type": "text",
-        "required": false,
-        "name": "lastName",
-        "inputId": "legalNameSection_lastName"
-      },
-      {
-        "id": "phone-number",
-        "label": "phone",
-        "type": "text",
-        "required": false,
-        "name": "phone",
-        "inputId": "phone-number"
-      },
-      {
-        "id": "file-upload-input-ref",
-        "label": "Software Engineer Intern",
-        "type": "file",
-        "required": false,
-        "inputId": "file-upload-input-ref"
       }
     ],
     "warnings": [
@@ -88,45 +57,6 @@
       "required": false,
       "name": "password",
       "inputId": "password",
-      "canonical_field": null,
-      "mapping_confidence": "none"
-    },
-    {
-      "id": "legalNameSection_firstName",
-      "label": "firstName",
-      "type": "text",
-      "required": false,
-      "name": "firstName",
-      "inputId": "legalNameSection_firstName",
-      "canonical_field": null,
-      "mapping_confidence": "none"
-    },
-    {
-      "id": "legalNameSection_lastName",
-      "label": "lastName",
-      "type": "text",
-      "required": false,
-      "name": "lastName",
-      "inputId": "legalNameSection_lastName",
-      "canonical_field": null,
-      "mapping_confidence": "none"
-    },
-    {
-      "id": "phone-number",
-      "label": "phone",
-      "type": "text",
-      "required": false,
-      "name": "phone",
-      "inputId": "phone-number",
-      "canonical_field": "phone",
-      "mapping_confidence": "high"
-    },
-    {
-      "id": "file-upload-input-ref",
-      "label": "Software Engineer Intern",
-      "type": "file",
-      "required": false,
-      "inputId": "file-upload-input-ref",
       "canonical_field": null,
       "mapping_confidence": "none"
     }

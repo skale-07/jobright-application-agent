@@ -67,6 +67,36 @@ describe("iframe application-form hop (FIXTURE_CONFIRMED)", () => {
       expect(await findApplicationFrameUrl(page)).toBeNull();
     });
   }, 45_000);
+
+  it("hops a loopback http embed — the sandbox /fillhard shape", async () => {
+    const embed = `<!DOCTYPE html><html><body>
+      <form>
+        <label>First Name<input name="first_name" /></label>
+        <label>Email<input type="email" name="email" /></label>
+      </form></body></html>`;
+    const outer = `<!DOCTYPE html><html><body>
+      <h1>Careers</h1>
+      <iframe src="http://127.0.0.1/fillhard/embed"></iframe>
+    </body></html>`;
+    await withFixtureHtmlPage("<html><body></body></html>", async (page) => {
+      await page.context().route("**/*", (route) =>
+        route.fulfill({
+          body: route.request().url().includes("/fillhard/embed")
+            ? embed
+            : outer,
+          contentType: "text/html",
+        }),
+      );
+      await page.goto("http://127.0.0.1/fillhard", {
+        waitUntil: "domcontentloaded",
+      });
+      await page.waitForTimeout(500);
+      const hit = await findApplicationFrameUrl(page);
+      expect(hit).not.toBeNull();
+      expect(hit!.url).toBe("http://127.0.0.1/fillhard/embed");
+      expect(hit!.fieldCount).toBeGreaterThanOrEqual(2);
+    });
+  }, 45_000);
 });
 
 /**

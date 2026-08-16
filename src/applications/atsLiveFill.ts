@@ -7,6 +7,7 @@ import {
 import { classifyWorkdayPage } from "../ats/workday/pageKind.js";
 import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { walkWorkdayWizard } from "./workdayWizard.js";
+import { walkGenericFormPages } from "./genericFormAdvance.js";
 import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
 import path from "node:path";
 import fs from "node:fs";
@@ -305,9 +306,9 @@ export type AtsLiveFillReport = {
     notes: string[];
   };
   /**
-   * Workday only: the wizard pages walked BEYOND the landing page
-   * (Next → re-plan → re-fill, bounded; the submit button is never
-   * clicked here). Absent for single-page ATSes.
+   * Extra form pages walked BEYOND the landing page (Workday Next, or
+   * generic Continue/Next). Bounded; the submit button is never clicked
+   * here. Absent for single-page fills.
    */
   wizard_pages?: Array<{
     page: number;
@@ -461,13 +462,10 @@ export async function runAtsLiveFill(input: {
     async (page) => {
       let gate = await binding.gate(page, input.url, detected.normalizedUrl);
       // Iframe hop: a page whose FORM lives in an iframe discovers zero
-      // fields (page.content() excludes frames) and fails
-      // NO_APPLICATION_FORM. If a child frame's own document carries
-      // fillable fields, navigate to the frame's URL — an embedded ATS
-      // form is a standalone page — re-detect the adapter (the embed often
-      // belongs to a vendor the outer host does not), and re-gate so every
-      // pre-mutation check runs on the hopped page.
-      if (!gate.ok && gate.failureCode === "NO_APPLICATION_FORM") {
+      // fields (page.content() excludes frames). Trigger on that fact,
+      // not on a collapsed gate code — after page_class recovery a
+      // zero-field shell is UNKNOWN_LANDING, not always NO_APPLICATION_FORM.
+      if (discoverFieldsFromHtml(gate.html).length === 0) {
         const frameForm = await findApplicationFrameUrl(page);
         if (frameForm) {
           report.notes.push(
@@ -895,6 +893,63 @@ export async function runAtsLiveFill(input: {
             return auth.status === "signed_in" || auth.status === "account_created";
           },
         });
+        report.wizard_pages = walk.pages;
+        report.notes.push(...walk.notes);
+        wizardVerifyFailed = walk.verifyFailed;
+      } else if (
+        binding.id === "generic" &&
+        report.verify.passed &&
+        report.fill.errors.length === 0
+      ) {
+        // Paycom-class lead-capture and in-form Next: the submit cascade
+        // correctly refuses "Continue"/"Next" so --submit cannot fake a
+        // receipt. After this page verifies, click that CTA, re-plan, fill.
+        const walk = await walkGenericFormPages(page, async ({ page: formPage, html, url }) => {
+          const pagePlan = await planApplicationFill({
+            url,
+            html,
+            ...(input.profile ? { profile: input.profile } : {}),
+            ...(input.capture ? { capture: input.capture } : {}),
+          });
+          const fillResult = await pagePlan.adapter.fill(
+            formPage,
+            pagePlan.approvedPlan.answers,
+          );
+          const verifyResult = await pagePlan.adapter.verify(
+            formPage,
+            pagePlan.approvedPlan.answers,
+          );
+          report.fill = {
+            filled: [...(report.fill?.filled ?? []), ...fillResult.filled],
+            skipped: [...(report.fill?.skipped ?? []), ...fillResult.skipped],
+            errors: [...(report.fill?.errors ?? []), ...fillResult.errors],
+            field_meta: [
+              ...(report.fill?.field_meta ?? []),
+              ...(fillResult.field_meta ?? []),
+            ],
+          };
+          report.verify = verifyResult;
+          report.plan_fields = [
+            ...(report.plan_fields ?? []),
+            ...pagePlan.approvedPlan.entries.map((e) => ({
+              field_id: e.field_id,
+              label: e.label,
+              type: String(e.type),
+              canonical_field: e.canonical_field ?? null,
+              action: String(e.action),
+              reason: e.reason,
+            })),
+          ];
+          if (pagePlan.approvedPlan.skipped_count > 0) {
+            report.form_snapshot_path = writeFormSnapshot(html);
+          }
+          return {
+            fillable: pagePlan.approvedPlan.fillable_count,
+            filled: fillResult.filled.length,
+            verifyPassed: verifyResult.passed && fillResult.errors.length === 0,
+          };
+        });
+        page = walk.page;
         report.wizard_pages = walk.pages;
         report.notes.push(...walk.notes);
         wizardVerifyFailed = walk.verifyFailed;
