@@ -2,6 +2,16 @@ import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import {
+  fillHardEmbedPage,
+  fillHardOuterPage,
+  HARD_CSS,
+  navHardFormPage,
+  navHardLeadCapturePage,
+  navHardPostingPage,
+  portalVerifyPage,
+} from "./hardPages.js";
+import { deliverVerificationCode, generateVerificationCode } from "./email.js";
 
 /**
  * The employer sandbox — a fake company's careers site running on the
@@ -40,6 +50,12 @@ import { randomUUID } from "node:crypto";
 
 export type SandboxOptions = {
   port?: number;
+  /**
+   * The /portal emailed-code wall (default ON — it is the point of the
+   * portal course). Tests that exercise ONLY the password wall may turn
+   * it off so they need no mailbox.
+   */
+  verificationWall?: boolean;
   /** Where received submissions are written (default artifacts/sandbox). */
   outDir?: string;
   quiet?: boolean;
@@ -51,9 +67,11 @@ export type SandboxHandle = {
   close: () => Promise<void>;
   /** Accounts created through /portal this session (emails only). */
   accountEmails: () => string[];
+  /** Test seam: the code currently expected for an account, if any. */
+  pendingCodeFor: (email: string) => string | null;
 };
 
-type Account = { email: string; password: string };
+type Account = { email: string; password: string; verified: boolean };
 
 const PAGE_CSS = `
   body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #17202a; }
@@ -71,7 +89,7 @@ const PAGE_CSS = `
 `;
 
 function page(title: string, body: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${PAGE_CSS}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${PAGE_CSS}${HARD_CSS}</style></head><body>${body}</body></html>`;
 }
 
 /**
@@ -322,6 +340,21 @@ export function startEmployerSandbox(
 ): Promise<SandboxHandle> {
   const accounts = new Map<string, Account>();
   const sessions = new Map<string, string>(); // sid → email
+  // email → the one-time code currently expected (regenerated per send).
+  const pendingCodes = new Map<string, string>();
+
+  const wallEnabled = options.verificationWall !== false;
+  const issueCode = async (email: string): Promise<void> => {
+    const code = generateVerificationCode();
+    pendingCodes.set(email, code);
+    // ALWAYS visible in the terminal so the wall is testable without mail;
+    // with RESEND_API_KEY (+ SANDBOX_VERIFY_TO / PORTAL_LOGIN_EMAIL) the
+    // same code also lands in the operator's real inbox for the full
+    // mailbox-scan rehearsal.
+    log(`verification code for ${email}: ${code}`);
+    const delivery = await deliverVerificationCode({ code, accountEmail: email });
+    log(`  ${delivery.note}`);
+  };
   const outDir = options.outDir ?? path.join(process.cwd(), "artifacts", "sandbox");
   const log = (msg: string): void => {
     if (!options.quiet) console.log(`[sandbox] ${msg}`);
@@ -401,7 +434,9 @@ export function startEmployerSandbox(
             `<h1>Dispatch employer sandbox</h1>
              <ul>
                <li><a href="/gauntlet">/gauntlet</a> — weird-questions application (predictive tiers)</li>
-               <li><a href="/portal">/portal</a> — posting → email/password wall → form (navigation + portal auth)</li>
+               <li><a href="/portal">/portal</a> — posting → email/password wall → EMAILED CODE wall → form (portal auth + mailbox scan)</li>
+               <li><a href="/navhard">/navhard</a> — HARD navigation: cookie banner, decoys, late-settling popup, lead-capture identity modal</li>
+               <li><a href="/fillhard">/fillhard</a> — HARD fill: iframe-embedded wizard, virtualized combobox, pre-filled wrong value, error banner</li>
              </ul>
              <p class="muted">Loopback only. Accounts reset when the server restarts.</p>`,
           ),
@@ -427,11 +462,17 @@ export function startEmployerSandbox(
         } else if (accounts.has(email)) {
           send(409, portalAuthPage("An account with this email already exists. Sign in instead."));
         } else {
-          accounts.set(email, { email, password: body["password"] });
+          accounts.set(email, { email, password: body["password"], verified: !wallEnabled });
           const sid = randomUUID();
           sessions.set(sid, email);
-          log(`account created: ${email}`);
-          redirect("/portal/form", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          if (wallEnabled) {
+            log(`account created: ${email} (unverified)`);
+            await issueCode(email);
+            redirect("/portal/verify", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          } else {
+            log(`account created: ${email}`);
+            redirect("/portal/form", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          }
         }
       } else if (req.method === "POST" && url.pathname === "/portal/sign-in") {
         const body = await readBody(req);
@@ -442,12 +483,48 @@ export function startEmployerSandbox(
         } else {
           const sid = randomUUID();
           sessions.set(sid, email);
-          log(`signed in: ${email}`);
-          redirect("/portal/form", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          log(`signed in: ${email}${account.verified ? "" : " (unverified)"}`);
+          if (!account.verified) {
+            await issueCode(email);
+            redirect("/portal/verify", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          } else {
+            redirect("/portal/form", { "set-cookie": `sandbox_sid=${sid}; Path=/` });
+          }
+        }
+      } else if (req.method === "GET" && url.pathname === "/portal/verify") {
+        const email = sessionEmail(req);
+        if (!email) redirect("/portal/auth");
+        else send(200, page("Verify your email", portalVerifyPage(email)));
+      } else if (req.method === "POST" && url.pathname === "/portal/verify") {
+        const email = sessionEmail(req);
+        if (!email) {
+          redirect("/portal/auth");
+        } else {
+          const body = await readBody(req);
+          const expected = pendingCodes.get(email);
+          const given = (body["code"] ?? "").trim();
+          if (expected && given === expected) {
+            const account = accounts.get(email);
+            if (account) account.verified = true;
+            pendingCodes.delete(email);
+            log(`email verified: ${email}`);
+            redirect("/portal/form");
+          } else {
+            log(`verification failed for ${email}: got "${given.slice(0, 8)}"`);
+            send(
+              401,
+              page(
+                "Verify your email",
+                portalVerifyPage(email, "That code is incorrect. Check your email for the most recent code."),
+              ),
+            );
+          }
         }
       } else if (req.method === "GET" && url.pathname === "/portal/form") {
         const email = sessionEmail(req);
+        const verified = email ? accounts.get(email)?.verified === true : false;
         if (!email) redirect("/portal/auth");
+        else if (!verified) redirect("/portal/verify");
         else send(200, portalFormPage(email));
       } else if (req.method === "POST" && url.pathname === "/portal/submit") {
         const email = sessionEmail(req);
@@ -458,6 +535,25 @@ export function startEmployerSandbox(
           record("portal", { account: email, ...body });
           send(200, confirmationPage());
         }
+      } else if (req.method === "GET" && url.pathname === "/navhard") {
+        send(200, page("Machine Intelligence Intern", navHardPostingPage()));
+      } else if (req.method === "GET" && url.pathname === "/navhard/started") {
+        send(200, page("Getting You Started", navHardLeadCapturePage()));
+      } else if (req.method === "POST" && url.pathname === "/navhard/continue") {
+        record("navhard-lead-capture", await readBody(req));
+        redirect("/navhard/form");
+      } else if (req.method === "GET" && url.pathname === "/navhard/form") {
+        send(200, page("Application", navHardFormPage()));
+      } else if (req.method === "POST" && url.pathname === "/navhard/submit") {
+        record("navhard", await readBody(req));
+        send(200, confirmationPage());
+      } else if (req.method === "GET" && url.pathname === "/fillhard") {
+        send(200, page("Careers at Frobnicator", fillHardOuterPage()));
+      } else if (req.method === "GET" && url.pathname === "/fillhard/embed") {
+        send(200, page("Application", fillHardEmbedPage()));
+      } else if (req.method === "POST" && url.pathname === "/fillhard/submit") {
+        record("fillhard", await readBody(req));
+        send(200, confirmationPage());
       } else {
         send(404, page("Not found", "<h1>404</h1>"));
       }
@@ -480,6 +576,7 @@ export function startEmployerSandbox(
         url: `http://localhost:${port}`,
         close: () => new Promise<void>((r) => server.close(() => r())),
         accountEmails: () => [...accounts.keys()],
+        pendingCodeFor: (email: string) => pendingCodes.get(email.toLowerCase()) ?? null,
       });
     });
   });

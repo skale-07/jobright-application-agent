@@ -602,14 +602,16 @@
       "id": "sandbox",
       "label": "Employer sandbox",
       "layer": "operator",
-      "purpose": "A fake employer on the operator's OWN machine (loopback only), driven by the real pipeline with the operator's real presets. /gauntlet = weird-questions application (predictive tiers, incl. odd questions from live artifacts in both CLOSED and OPEN classes); /portal = posting \u2192 email/password wall \u2192 form (posting advance + portalAuth account creation/sign-in). Page hits, fill-plan lines (with model rationale via POST /trace), and received submissions echo to the sandbox terminal + artifacts/sandbox/. Generic URL validation and portal-auth host recognition carry narrow loopback-only allowances so ats:fill --url http://localhost:4599/\u2026 drives it. ats:fill --submit is loopback-only and still requires SUBMIT_ENABLED + confirmation.",
+      "purpose": "A fake employer on the operator's OWN machine (loopback only), driven by the real pipeline with the operator's real presets. /gauntlet = weird-questions application (predictive tiers, incl. odd questions from live artifacts in both CLOSED and OPEN classes); /portal = posting \u2192 email/password wall \u2192 form (posting advance + portalAuth account creation/sign-in). Page hits, fill-plan lines (with model rationale via POST /trace), and received submissions echo to the sandbox terminal + artifacts/sandbox/. Generic URL validation and portal-auth host recognition carry narrow loopback-only allowances so ats:fill --url http://localhost:4599/\u2026 drives it. ats:fill --submit is loopback-only and still requires SUBMIT_ENABLED + confirmation. 2026-08-16: /portal gained an emailed-code wall (random 6-digit per issue, newest wins) so the Gmail mailbox-scan recovery rehearses end to end; /navhard and /fillhard re-create the exact obstacles live artifacts show the nav and fill systems struggling with.",
       "paths": [
         "src/sandbox"
       ],
       "key_files": {
         "src/sandbox/server.ts": "startEmployerSandbox \u2014 zero-dependency HTTP server, binds 127.0.0.1 only",
         "src/sandbox/trace.ts": "postSandboxTrace \u2014 ats:fill posts plan/rationale to the sandbox terminal (loopback only)",
-        "src/cli/sandboxCli.ts": "npm run sandbox \u2014 start + print the drive-it recipes"
+        "src/cli/sandboxCli.ts": "npm run sandbox \u2014 start + print the drive-it recipes",
+        "src/sandbox/hardPages.ts": "HARD courses: /navhard (cookie banner, decoys, late-settling popup, Paycom-shape lead-capture modal) and /fillhard (iframe wizard, virtualized combobox, pre-filled wrong value, error banner)",
+        "src/sandbox/email.ts": "deliverVerificationCode \u2014 Resend-backed verification-code mail to the OPERATOR's own inbox (RESEND_API_KEY + SANDBOX_VERIFY_TO/PORTAL_LOGIN_EMAIL; console fallback); codes only, never outreach"
       },
       "key_exports": {
         "src/sandbox/server.ts": [
@@ -619,6 +621,19 @@
           "postSandboxTrace",
           "sandboxOriginFromUrl",
           "llmTraceEvent"
+        ],
+        "src/sandbox/hardPages.ts": [
+          "navHardPostingPage",
+          "navHardLeadCapturePage",
+          "navHardFormPage",
+          "fillHardOuterPage",
+          "fillHardEmbedPage",
+          "portalVerifyPage",
+          "HARD_CSS"
+        ],
+        "src/sandbox/email.ts": [
+          "deliverVerificationCode",
+          "generateVerificationCode"
         ]
       }
     }
