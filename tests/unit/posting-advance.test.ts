@@ -68,6 +68,20 @@ describe("posting vs form discrimination (UNIT_CONFIRMED)", () => {
     );
   });
 
+  it("an emailed-code wall is auth, not a form to fill", () => {
+    const html = `<html><body>
+      <h1>Verify your email</h1>
+      <p>We've emailed a 6-digit verification code. Check your inbox and enter the code.</p>
+      <label>Verification code
+        <input name="code" autocomplete="one-time-code" />
+      </label>
+      <button data-automation-id="verifyButton">Verify</button>
+    </body></html>`;
+    expect(classifyPage({ html, url: "https://x.example/verify" }).page_class).toBe(
+      "auth",
+    );
+  });
+
   it("first + last without a resume is still a form — resume is not required", () => {
     const html = `<html><body><form>
       <label>First Name<input name="first_name"/></label>

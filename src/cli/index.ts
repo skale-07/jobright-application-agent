@@ -158,7 +158,7 @@ Commands:
   review
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
-  sandbox [--port N]   — local employer sandbox (gauntlet + email/password portal); drive with ats:fill --url http://localhost:4599/…
+  sandbox [--port N]   — local employer sandbox (gauntlet / portal / navhard / fillhard); drive with ats:fill --url http://localhost:4599/…
   retry
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   email:generate --application <uuid> [--contact <id>] [--persona <id>]

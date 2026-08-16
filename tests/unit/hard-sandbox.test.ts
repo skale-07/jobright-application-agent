@@ -159,6 +159,9 @@ describe("portal email verification wall (FIXTURE_CONFIRMED)", () => {
     expect(wallHtml).toMatch(/autocomplete="one-time-code"/);
     expect(wallHtml).toMatch(/data-automation-id="verifyButton"/);
     expect(verificationEvidencePresent(wallHtml)).toBe(true);
+    expect(
+      classifyPage({ html: wallHtml, url: `${sandbox.url}/portal/verify` }).page_class,
+    ).toBe("auth");
 
     // The form is unreachable while unverified.
     const blocked = await fetch(`${sandbox.url}/portal/form`, {
@@ -247,11 +250,17 @@ describe("verification code delivery (UNIT_CONFIRMED)", () => {
     });
     expect(d.sent).toBe(true);
     expect(captured!.url).toBe("https://api.resend.com/emails");
-    const body = JSON.parse(captured!.body) as { to: string[]; text: string };
+    const body = JSON.parse(captured!.body) as {
+      to: string[];
+      text: string;
+      html: string;
+    };
     expect(body.to).toEqual(["operator@fixture.test"]);
     // The mail must read like a real tenant's so the scanner's patterns hit.
     expect(verificationEvidencePresent(body.text)).toBe(true);
     expect(body.text).toContain("042042");
+    expect(body.html).toContain("042042");
+    expect(body.html).not.toContain("x@fixture.test");
 
     const failFetch = (async () =>
       new Response("nope", { status: 401 })) as unknown as typeof fetch;

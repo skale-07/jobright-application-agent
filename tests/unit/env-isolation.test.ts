@@ -4,6 +4,7 @@ import {
   assertSubmitAllowed,
 } from "../../src/applications/formFillGuards.js";
 import { getConfig, resetConfigCache } from "../../src/config/index.js";
+import { DOTENV_PATH } from "../../src/config/env.js";
 import {
   applyFixtureFillEnv,
   applySafeFillEnv,
@@ -14,6 +15,10 @@ import {
 
 describe("UNIT_CONFIRMED fill env isolation", () => {
   useIsolatedFillEnv("safe");
+
+  it("loads flags from the repo-root .env path", () => {
+    expect(DOTENV_PATH.replace(/\\/g, "/")).toMatch(/\/\.env$/);
+  });
 
   it("safe defaults without relying on .env", () => {
     delete process.env.FORM_FILL_ENABLED;

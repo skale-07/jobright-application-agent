@@ -66,11 +66,9 @@ never at the repo root. The pre-commit hook blocks commits containing
 resumes, `.env` copies, editor Local History snapshots, or non-example
 profile JSON.
 
-Safe env for everything read-only (set this in each new shell):
-
-```powershell
-$env:FORM_FILL_ENABLED="false"; $env:DRY_RUN="true"; $env:SUBMIT_ENABLED="false"
-```
+Put flags in `.env` (copy `.env.example`). Every `npm run` command loads
+that file; you do not need `$env:` in PowerShell. Defaults are fail-closed
+until you flip a key in `.env`.
 
 Candidate data:
 
@@ -452,7 +450,7 @@ contract rather than trusted.
 | `OUTLOOK_VERIFICATION_ENABLED` | `false` | Read-only Outlook mailbox scan for submit verification codes (§17) |
 
 Console-only (not capability flags): `CONSOLE_HOST` (`127.0.0.1`,
-validated) and `CONSOLE_PORT` (`8899`). The console's own shell is the
+validated) and `CONSOLE_PORT` (`8899`). The console process `.env` is the
 ceiling for every flag above — see §16.
 
 The banned send-style APIs have no flag — they are impossible, enforced by
@@ -1372,15 +1370,26 @@ Drive it (second terminal, with your usual flags in the shell):
 npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
 npm run ats:fill -- --url http://localhost:4599/gauntlet --execute --submit --yes --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
 npm run ats:fill -- --url http://localhost:4599/portal   --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+npm run ats:fill -- --url http://localhost:4599/navhard  --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
+npm run ats:fill -- --url http://localhost:4599/fillhard --execute --headed --resume "C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Citadel_NeurIPS_Resume.pdf"
 ```
 
-The portal command also needs `NAVIGATION_ENABLED=true` and
-`PORTAL_LOGIN_EMAIL` / `PORTAL_LOGIN_PASSWORD` in that same shell.
-Without them, Apply lands on the account wall and the run refuses
-`LOGIN_WALL` instead of filling the auth form. The wall shows Create
-Account and Sign In on one page: standing credentials sign in first, and
-if that miss means there is no account yet, the same run creates it.
-Sandbox accounts reset when you restart `npm run sandbox`.
+The portal command also needs `NAVIGATION_ENABLED=true`,
+`GMAIL_VERIFICATION_ENABLED=true`, and `PORTAL_LOGIN_EMAIL` /
+`PORTAL_LOGIN_PASSWORD` in `.env`. Without navigation + standing
+credentials, Apply lands on the account wall and the run refuses
+`LOGIN_WALL` instead of filling the auth form. Without the Gmail flag,
+account creation still happens but the emailed-code wall parks —
+Dispatch will not open your inbox. The wall shows Create Account and Sign
+In on one page: standing credentials sign in first, and if that miss means
+there is no account yet, the same run creates it. Sandbox accounts reset
+when you restart `npm run sandbox`.
+
+`/navhard` is also a posting: `--execute` clicks Apply through the cookie
+banner, decoys, and late-settling popup, then fill answers the lead-capture
+identity modal from your profile. `/fillhard` is a form whose fields live
+in an iframe — `--execute` is what hops in. Neither needs `PORTAL_LOGIN_*`.
+Details of what each course is testing are in §20.1.
 
 `--resume` is the upload path. The planner always SKIPs `type=file`; the
 adapter attaches the PDF after field fill. On loopback, omitting the flag

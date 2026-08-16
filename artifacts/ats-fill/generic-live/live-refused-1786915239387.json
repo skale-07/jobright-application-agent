@@ -1,0 +1,26 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal",
+  "requested_url": "http://localhost:4599/portal",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "NO_APPLICATION_FORM",
+    "reason": "application form markers not found on the final page",
+    "final_url": "http://localhost:4599/portal",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 1 field(s) ask who you are — page furniture, not an application)",
+    "refused before any mutation — page is a posting, not a form"
+  ],
+  "written_at": "2026-08-16T21:20:39.387Z"
+}

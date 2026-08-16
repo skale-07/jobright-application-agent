@@ -1,0 +1,10 @@
+{
+  "kind": "plan",
+  "lines": [
+    "4 fill / 0 skip / 0 review",
+    "FILL             First Name → Shubham  [Mapped from public profile]",
+    "FILL             Last Name → Kale  [Mapped from public profile]",
+    "FILL             Phone → 4805897636  [Mapped from public profile]",
+    "FILL             Are you able to work on-site in Strongsville, OH → Yes  [Screener bank answer (synonym_option)]"
+  ]
+}

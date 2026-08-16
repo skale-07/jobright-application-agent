@@ -61,6 +61,22 @@ export function detectLoginWall(input: {
     // Header "Log in" links still do not count — they add no password input.
     return { detected: true, confidence: "HIGH", signals };
   }
+
+  // Emailed-code wall (sandbox /portal/verify, Workday tenants): a
+  // one-time-code input plus "we sent a code / check your email" copy.
+  // No password, so the check above misses it; classifyPage then called
+  // it a form and the fill planner asked the LLM for "Verification code".
+  const otpInput = /<input[^>]+autocomplete=["']one-time-code["'][^>]*>/i.test(
+    html,
+  );
+  const verifyCopy =
+    /verif(y|ied|ication)|we('ve| have)? (sent|emailed)|enter the code|check your (email|inbox|mail)|one[- ]time (code|passcode)/i.test(
+      html,
+    );
+  if (otpInput && verifyCopy) {
+    signals.push("emailed_code_wall");
+    return { detected: true, confidence: "HIGH", signals };
+  }
   if (AUTH_HEADING.test(html) || /\b(sign in|log in)\b/i.test(title)) {
     score += 2;
     signals.push("sign_in_heading_or_title");

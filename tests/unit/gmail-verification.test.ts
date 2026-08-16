@@ -62,6 +62,38 @@ describe("gmail verification parsers (N4, UNIT_CONFIRMED)", () => {
     expect(extractOtpCode("Big news!", fixture("marketing-decoy.txt"))).toBeNull();
   });
 
+  it("does not treat digit runs in an email address as the OTP", () => {
+    // Live 2026-08-16: Gmail inbox preview of the sandbox mail showed
+    // "verification code" + skale072007@gmail.com and portal auth typed
+    // 072007. The real code was 389820 in the body, unread.
+    expect(
+      extractOtpCode(
+        "Your Frobnicator Industries verification code",
+        "Thanks for creating your account (skale072007@gmail.com).",
+      ),
+    ).toBeNull();
+    expect(
+      extractOtpCode(
+        "Your Frobnicator Industries verification code",
+        "Thanks for creating your account (skale072007@gmail.com).\nYour verification code is: 389820",
+      ),
+    ).toBe("389820");
+  });
+
+  it("picks the LAST code in a Gmail thread, not the oldest (UNIT_CONFIRMED)", () => {
+    // Live 2026-08-16: Gmail grouped every sandbox resend into one
+    // conversation, oldest at top. .first() / first-match typed 389820
+    // while 560516 was the current code at the bottom.
+    const thread = [
+      "Thanks for creating your Frobnicator Industries account (skale072007@gmail.com). Your verification code is: 389820.",
+      "Your verification code is: 392556.",
+      "Your verification code is: 560516.",
+    ].join("\n");
+    expect(
+      extractOtpCode("Your Frobnicator Industries verification code", thread),
+    ).toBe("560516");
+  });
+
   it("extracts the sender-domain magic link, never the unsubscribe link", () => {
     const link = extractMagicLink(fixture("magic-link.txt"), {
       senderAddress: "no-reply@ashbyhq.com",

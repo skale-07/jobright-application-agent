@@ -76,10 +76,12 @@ export async function deliverVerificationCode(input: {
         // The phrasing matters: the mailbox scanner keys on real tenants'
         // language ("verification code", "enter the code"), so the sandbox
         // mail must read like the mail it stands in for.
-        html: `<p>Thanks for creating your Frobnicator Industries account (${input.accountEmail}).</p>
-<p>Your verification code is: <strong>${input.code}</strong></p>
+        // Lead with the code. Do not put the account email in the body:
+        // Gmail inbox previews show the first paragraph, and a local-part
+        // with 6 digits (skale072007@…) was extracted as the OTP.
+        html: `<p>Your verification code is: <strong>${input.code}</strong></p>
 <p>Enter the code to continue your application. It expires when the sandbox restarts.</p>`,
-        text: `Your Frobnicator Industries verification code is ${input.code}. Enter the code to continue your application.`,
+        text: `Your verification code is ${input.code}. Enter the code to continue your application.`,
       }),
     });
     if (!res.ok) {

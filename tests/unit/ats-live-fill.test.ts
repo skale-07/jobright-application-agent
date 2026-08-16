@@ -422,4 +422,37 @@ describe("runAtsLiveFill (W5)", () => {
     },
     45_000,
   );
+
+  it(
+    "a resume on disk is not an upload miss when the form has no file input (FIXTURE_CONFIRMED)",
+    async () => {
+      applyFixtureFillEnv();
+      const report = await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal",
+        execute: true,
+        profile: PROFILE,
+        resumePath: path.join(
+          FIXTURE_DIR,
+          "greenhouse",
+          "sample-resume.pdf",
+        ),
+        fixtureHtml: `<!doctype html><html><body>
+          <form>
+            <label for="first_name">First Name</label>
+            <input id="first_name" name="first_name" />
+            <button type="submit">Submit application</button>
+          </form>
+        </body></html>`,
+      });
+      expect(report.mode).toBe("executed");
+      expect(report.verify?.passed).toBe(true);
+      expect(report.uploads).toBeNull();
+      expect(report.notes.join(" ")).toMatch(/no file input — not an upload miss/);
+      expect(report.operator_brief?.items.some((i) => i.kind === "upload_failed")).not.toBe(
+        true,
+      );
+    },
+    45_000,
+  );
 });

@@ -48,8 +48,9 @@ capability flags — flag-dependent tests use the helpers in
 
 Abbreviated — `CLAUDE.md` is canonical:
 
-- Every mutation capability sits behind a fail-closed env flag; flags are
-  never hardcoded, defaulted on, or enabled inside tests.
+- Every mutation capability sits behind a fail-closed env flag in `.env`;
+  flags are never hardcoded, defaulted on, or enabled inside tests. Do not
+  require per-shell `$env:` exports.
 - No Outlook send-style APIs ever (`scripts/check-forbidden.ts` bans the
   identifiers; do not extend its allowlist to make code compile).
 - Never weaken `assertExecutableApprovedEntry` or the submit gating.

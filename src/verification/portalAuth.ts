@@ -210,17 +210,6 @@ export async function authenticateAtsPortal(
     await openWorkdayApplyChooser(page, notes, settle);
     fields = await locateAuthFields(page);
   }
-  if (!fields.email || !fields.password) {
-    notes.push("portal auth: no sign-in form on this page");
-    return {
-      status: "not_an_auth_wall",
-      verification_used: false,
-      escalated_to_create: false,
-      diagnosis: await diagnoseLoginWall(page),
-      notes,
-      secrets,
-    };
-  }
 
   const creds = prepareCredentialsForHost({
     host,
@@ -241,6 +230,128 @@ export async function authenticateAtsPortal(
     notes,
     secrets,
   });
+
+  const settleEmailedCodeWall = async (input: {
+    username: string;
+    escalated: boolean;
+  }): Promise<PortalAuthOutcome | null> => {
+    const codeInput =
+      (await firstVisible(page, sel.verificationCodeInput)) ??
+      (await firstVisible(page, "input[autocomplete='one-time-code']"));
+    const pageText = await page
+      .innerText("body", { timeout: 3_000 })
+      .then((t) => t.slice(0, 2_000))
+      .catch(() => "");
+    if (!codeInput || !verificationEvidencePresent(pageText)) {
+      if (codeInput) {
+        notes.push(
+          "portal auth: code input present but page shows no verification prompt — mailbox not consulted",
+        );
+      }
+      return null;
+    }
+    const waiter =
+      seams.waiter !== undefined ? seams.waiter : resolveNavVerificationWaiter();
+    if (!waiter) {
+      notes.push(
+        "portal auth: verification requested but no mailbox provider is enabled",
+      );
+      return done("wall_remains", { escalated: input.escalated });
+    }
+    const wait = await waiter(
+      { sent_to: input.username, requested_at: new Date().toISOString() },
+      [host],
+    );
+    let verificationUsed = false;
+    if (wait.kind === "code") {
+      secrets.push(wait.code);
+      await codeInput.fill(wait.code, { timeout: 5_000 }).catch(() => undefined);
+      const verifySubmit = await firstVisible(page, sel.verificationSubmit);
+      if (verifySubmit) {
+        await verifySubmit.click({ timeout: 5_000 }).catch(() => undefined);
+      }
+      await settlePage(page, settle, 1_000);
+      verificationUsed = true;
+      notes.push("portal auth: emailed code entered");
+    } else if (wait.kind === "link") {
+      secrets.push(wait.url);
+      await page
+        .goto(wait.url, { waitUntil: "domcontentloaded", timeout: 20_000 })
+        .catch(() => undefined);
+      await settlePage(page, settle, 1_000);
+      verificationUsed = true;
+      notes.push("portal auth: emailed verification link opened");
+    } else {
+      notes.push(
+        "portal auth: verification email not found within the poll budget",
+      );
+      return done("wall_remains", { escalated: input.escalated });
+    }
+    const stillCode =
+      ((await firstVisible(page, sel.verificationCodeInput)) ??
+        (await firstVisible(page, "input[autocomplete='one-time-code']"))) !==
+        null &&
+      verificationEvidencePresent(
+        await page
+          .innerText("body", { timeout: 3_000 })
+          .then((t) => t.slice(0, 2_000))
+          .catch(() => ""),
+      );
+    if (stillCode) {
+      notes.push("portal auth: emailed-code wall remains");
+      return done("wall_remains", {
+        verification: verificationUsed,
+        escalated: input.escalated,
+        diag: await diagnoseLoginWall(page),
+      });
+    }
+    return done(input.escalated ? "account_created" : "signed_in", {
+      verification: verificationUsed,
+      escalated: input.escalated,
+      diag: await diagnoseLoginWall(page),
+    });
+  };
+
+  if (!fields.email || !fields.password) {
+    // Already on the emailed-code wall (create redirected here, or a retry
+    // landed on /portal/verify). Scan the mailbox; do not plan this page
+    // as an application form.
+    if (!creds.credentials.available) {
+      const codeInput =
+        (await firstVisible(page, sel.verificationCodeInput)) ??
+        (await firstVisible(page, "input[autocomplete='one-time-code']"));
+      if (codeInput) {
+        notes.push(
+          "portal auth: emailed-code wall but no credentials (set PORTAL_LOGIN_EMAIL/PASSWORD)",
+        );
+        return done("wall_remains");
+      }
+      notes.push("portal auth: no sign-in form on this page");
+      return {
+        status: "not_an_auth_wall",
+        verification_used: false,
+        escalated_to_create: false,
+        diagnosis: await diagnoseLoginWall(page),
+        notes,
+        secrets,
+      };
+    }
+    const codeOnly = await settleEmailedCodeWall({
+      username: creds.credentials.username,
+      escalated: false,
+    });
+    if (codeOnly) return codeOnly;
+    notes.push("portal auth: no sign-in form on this page");
+    return {
+      status: "not_an_auth_wall",
+      verification_used: false,
+      escalated_to_create: false,
+      diagnosis: await diagnoseLoginWall(page),
+      notes,
+      secrets,
+    };
+  }
+
   if (!creds.credentials.available) {
     notes.push("portal auth: no credentials available (set PORTAL_LOGIN_EMAIL/PASSWORD)");
     return done("wall_remains");
@@ -364,61 +475,18 @@ export async function authenticateAtsPortal(
     }
   }
 
-  let verificationUsed = false;
-  const codeInput =
-    (await firstVisible(page, sel.verificationCodeInput)) ??
-    (await firstVisible(page, "input[autocomplete='one-time-code']"));
-  const pageText = await page
-    .innerText("body", { timeout: 3_000 })
-    .then((t) => t.slice(0, 2_000))
-    .catch(() => "");
-  if (codeInput && verificationEvidencePresent(pageText)) {
-    const waiter =
-      seams.waiter !== undefined ? seams.waiter : resolveNavVerificationWaiter();
-    if (!waiter) {
-      notes.push("portal auth: verification requested but no mailbox provider is enabled");
-      return done("wall_remains", { escalated, diag: state.diag });
-    }
-    const wait = await waiter(
-      { sent_to: username, requested_at: new Date().toISOString() },
-      [host],
-    );
-    if (wait.kind === "code") {
-      secrets.push(wait.code);
-      await codeInput.fill(wait.code, { timeout: 5_000 }).catch(() => undefined);
-      const verifySubmit = await firstVisible(page, sel.verificationSubmit);
-      if (verifySubmit) await verifySubmit.click({ timeout: 5_000 }).catch(() => undefined);
-      await settlePage(page, settle, 1_000);
-      verificationUsed = true;
-      notes.push("portal auth: emailed code entered");
-    } else if (wait.kind === "link") {
-      secrets.push(wait.url);
-      await page
-        .goto(wait.url, { waitUntil: "domcontentloaded", timeout: 20_000 })
-        .catch(() => undefined);
-      await settlePage(page, settle, 1_000);
-      verificationUsed = true;
-      notes.push("portal auth: emailed verification link opened");
-    } else {
-      notes.push("portal auth: verification email not found within the poll budget");
-      return done("wall_remains", { escalated, diag: state.diag });
-    }
-  } else if (codeInput) {
-    notes.push(
-      "portal auth: code input present but page shows no verification prompt — mailbox not consulted",
-    );
-  }
+  const codeResult = await settleEmailedCodeWall({ username, escalated });
+  if (codeResult) return codeResult;
 
   const finalDiag = await diagnoseLoginWall(page);
   if (!finalDiag.fields.password || finalDiag.classification === "no_form_found") {
     return done(escalated ? "account_created" : "signed_in", {
-      verification: verificationUsed,
       escalated,
       diag: finalDiag,
     });
   }
   notes.push(`portal auth: wall remains (${finalDiag.classification})`);
-  return done("wall_remains", { verification: verificationUsed, escalated, diag: finalDiag });
+  return done("wall_remains", { escalated, diag: finalDiag });
 }
 
 function safeHost(url: string): string {

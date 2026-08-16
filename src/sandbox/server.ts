@@ -571,6 +571,8 @@ export function startEmployerSandbox(
       log(`employer sandbox listening on http://localhost:${port}`);
       log(`  gauntlet: http://localhost:${port}/gauntlet`);
       log(`  portal:   http://localhost:${port}/portal`);
+      log(`  navhard:  http://localhost:${port}/navhard`);
+      log(`  fillhard: http://localhost:${port}/fillhard`);
       resolve({
         port,
         url: `http://localhost:${port}`,

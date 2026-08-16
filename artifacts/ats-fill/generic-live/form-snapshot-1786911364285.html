@@ -1,0 +1,34 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Verify your email</title><style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #17202a; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; }
+  label { display: block; margin: 1rem 0 0.25rem; font-weight: 600; }
+  input, select, textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; }
+  button { margin-top: 1.25rem; padding: 0.6rem 1.4rem; font-size: 1rem; cursor: pointer; }
+  .error { color: #b00020; font-weight: 600; }
+  .muted { color: #667; font-size: 0.9rem; }
+  .req::after { content: " *"; color: #b00020; }
+  .combo { position: relative; }
+  .combo-list { border: 1px solid #aab; max-height: 180px; overflow: auto; position: absolute; background: #fff; width: 100%; z-index: 5; }
+  .combo-list [role=option] { padding: 0.4rem 0.6rem; cursor: pointer; }
+  .combo-list [role=option]:hover { background: #eef; }
+
+  .overlay { position: fixed; left: 0; right: 0; bottom: 0; background: #232946; color: #fff; padding: 1rem; z-index: 50; }
+  .overlay button { margin: 0 0 0 1rem; }
+  .modal-back { position: fixed; inset: 0; background: rgba(20,20,40,0.55); z-index: 40; }
+  .modal { position: fixed; top: 8%; left: 50%; transform: translateX(-50%); width: min(560px, 92vw);
+           background: #fff; padding: 1rem 1.5rem 1.5rem; z-index: 45; max-height: 84vh; overflow: auto; }
+  .chips label { display: inline-block; margin: 0.25rem 0.5rem 0.25rem 0; font-weight: 400; }
+  .chips input { width: auto; margin-right: 0.3rem; }
+  .banner-error { background: #fde8e8; color: #b00020; padding: 0.6rem 1rem; font-weight: 600; display: none; }
+</style></head><body>
+  <h1>Verify your email</h1>
+  <p class="error">That code is incorrect. Check your email for the most recent code.</p>
+  <p>We've sent a 6-digit verification code to <strong>skale072007@gmail.com</strong>.
+     Check your email and enter the code below to continue your application.</p>
+  <form method="POST" action="/portal/verify">
+    <label class="req" for="code">Verification code</label>
+    <input id="code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" required="">
+    <button type="submit" data-automation-id="verifyButton">Verify</button>
+  </form>
+  <p class="muted">Didn't get it? The sandbox terminal always shows the code; with
+     RESEND_API_KEY set it is also emailed for the full mailbox-scan rehearsal.</p></body></html>

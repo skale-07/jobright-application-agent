@@ -1,0 +1,36 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal",
+  "requested_url": "http://localhost:4599/portal",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "AUTH_REQUIRED",
+    "reason": "portal auth did not clear the wall (wall_remains)",
+    "final_url": "http://localhost:4599/portal/auth",
+    "page_class": "auth"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application)",
+    "landed on a posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application); clicking Apply via text \"Apply\"",
+    "Apply landed on: auth (login wall: final_url_auth_path,password_input_visible_in_dom,email_and_password_inputs)",
+    "login wall on localhost: create_account_form; fields[email=true password=true confirm=true]; submit=[Create Account | Sign In]; create-route=\"Create Account\"",
+    "standing portal login used for localhost",
+    "portal auth: Sign In form already on this page — using standing credentials",
+    "portal auth sign_in: credentials_rejected — \"ve your application and track your status with an account. Invalid email or password. Create Account\"",
+    "portal auth: sign-in rejected — creating the account on this page",
+    "portal auth create: credentials_rejected — \"Verify your email We've emailed a 6-digit verification code to the address you signed up with. Check\"",
+    "portal auth: emailed code entered",
+    "portal auth: emailed-code wall remains",
+    "parked: account wall not cleared"
+  ],
+  "written_at": "2026-08-16T20:31:17.014Z"
+}

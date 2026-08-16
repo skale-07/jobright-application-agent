@@ -21,7 +21,7 @@ export async function runSandboxCommand(args: string[]): Promise<void> {
   const resume = fs.existsSync(OPERATOR_RESUME) ? OPERATOR_RESUME : configured;
   const resumeFlag = `--resume "${resume}"`;
   console.log("");
-  console.log("Drive it with your real presets (flags come from YOUR shell):");
+  console.log("Drive it with your real presets (flags come from `.env`):");
   console.log(
     `  npm run ats:fill -- --url ${handle.url}/gauntlet --execute --headed ${resumeFlag}`,
   );
@@ -32,7 +32,19 @@ export async function runSandboxCommand(args: string[]): Promise<void> {
     `  npm run ats:fill -- --url ${handle.url}/portal --execute --headed ${resumeFlag}`,
   );
   console.log(
-    "  (/portal needs NAVIGATION_ENABLED=true and PORTAL_LOGIN_EMAIL/PASSWORD in this shell — it is a posting, then an account wall)",
+    "  (/portal needs NAVIGATION_ENABLED, GMAIL_VERIFICATION_ENABLED, and PORTAL_LOGIN_EMAIL/PASSWORD in `.env` — posting, then account wall, then the mailbox scan types the emailed code)",
+  );
+  console.log(
+    `  npm run ats:fill -- --url ${handle.url}/navhard --execute --headed ${resumeFlag}`,
+  );
+  console.log(
+    "  (/navhard is a posting: cookie banner + decoys + late popup → lead-capture form. --execute clicks Apply.)",
+  );
+  console.log(
+    `  npm run ats:fill -- --url ${handle.url}/fillhard --execute --headed ${resumeFlag}`,
+  );
+  console.log(
+    "  (/fillhard form lives in an iframe; --execute hops in and fills.)",
   );
   if (!fs.existsSync(resume)) {
     console.log(

@@ -22,6 +22,7 @@ import {
   fillOtherSpecify,
   type OtherSpecifyOutcome,
 } from "../shared/otherSpecify.js";
+import { inventoryFileInputs } from "../shared/uploadResolve.js";
 import { fetchGreenhouseQuestions } from "./questionsApi.js";
 import { assertFormFillAllowed } from "../../applications/formFillGuards.js";
 import { redactFillReportForArtifact } from "../../applications/fillReportRedaction.js";
@@ -578,11 +579,18 @@ export async function runGreenhouseLiveFill(input: {
       // Upload only after comboboxes are settled — no further field mutation.
       const uploads = [];
       if (input.resumePath) {
-        logger.info("live fill: uploading resume", {
-          service: "greenhouse",
-          action: "upload",
-        });
-        uploads.push(await adapter.uploadResume(page, input.resumePath));
+        const fileInputs = await inventoryFileInputs(page);
+        if (fileInputs.length === 0) {
+          base.notes.push(
+            "resume on disk but this page has no file input — not an upload miss",
+          );
+        } else {
+          logger.info("live fill: uploading resume", {
+            service: "greenhouse",
+            action: "upload",
+          });
+          uploads.push(await adapter.uploadResume(page, input.resumePath));
+        }
       }
       if (input.coverLetterPath && adapter.uploadCoverLetter) {
         logger.info("live fill: uploading cover letter", {

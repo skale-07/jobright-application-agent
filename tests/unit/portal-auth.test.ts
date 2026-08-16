@@ -234,24 +234,75 @@ describe("workday portal auth (FIXTURE_CONFIRMED)", () => {
     }
   }, 30_000);
 
-  it("scans the mailbox ONLY when a code field + verification prompt are present", async () => {
+  it("scans the mailbox when the landing is already the emailed-code wall", async () => {
     const VERIFY_HTML = `<!DOCTYPE html><html><body>
+      <p>We sent a verification code to your email — enter the code to continue.</p>
       <input data-automation-id="verificationCode" autocomplete="one-time-code" />
       <button data-automation-id="verifyButton" type="button">Verify</button>
-      <p>We sent a verification code to your email — enter the code to continue.</p>
+      <script>
+        document.querySelector('[data-automation-id=verifyButton]')
+          .addEventListener('click', () => {
+            document.body.innerHTML = '<p>My Information</p>';
+          });
+      </script>
     </body></html>`;
     applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
     resetConfigCache();
     try {
       await onWorkdayPage(VERIFY_HTML, async (page) => {
-        // No email/password inputs here ⇒ not_an_auth_wall short-circuits
-        // BEFORE any mailbox logic, proving the flow needs the sign-in form.
+        let waiterCalls = 0;
         const r = await authenticateAtsPortal(page, {
           emailOverride: "candidate@fixture.test",
           settleMs: 0,
-          waiter: async () => ({ kind: "code", code: "482193", messageId: "m", pollsUsed: 1 }),
+          waiter: async () => {
+            waiterCalls += 1;
+            return { kind: "code", code: "482193", messageId: "m", pollsUsed: 1 };
+          },
         });
-        expect(r.status).toBe("not_an_auth_wall");
+        expect(waiterCalls).toBe(1);
+        expect(r.verification_used).toBe(true);
+        expect(r.status).toBe("signed_in");
+        expect(r.secrets).toContain("482193");
+        expect(r.notes.join(" ")).toMatch(/emailed code entered/);
+      });
+    } finally {
+      applySafeFillEnv();
+    }
+  }, 30_000);
+
+  it("a wrong code that leaves the wall is wall_remains, not a cleared form", async () => {
+    const OTP_HTML = `<!DOCTYPE html><html><body>
+      <div id="wall">
+        <input data-automation-id="email" type="email" />
+        <input data-automation-id="password" type="password" />
+        <button data-automation-id="signInSubmitButton" type="button">Sign In</button>
+      </div>
+      <script>
+        document.querySelector('[data-automation-id=signInSubmitButton]')
+          .addEventListener('click', () => {
+            document.getElementById('wall').innerHTML =
+              '<p>We sent a verification code to your email — enter the code to continue.</p>' +
+              '<input data-automation-id="verificationCode" autocomplete="one-time-code" />' +
+              '<button data-automation-id="verifyButton" type="button">Verify</button>';
+          });
+      </script></body></html>`;
+    applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
+    resetConfigCache();
+    try {
+      await onWorkdayPage(OTP_HTML, async (page) => {
+        const r = await authenticateAtsPortal(page, {
+          emailOverride: "candidate@fixture.test",
+          settleMs: 0,
+          waiter: async () => ({
+            kind: "code",
+            code: "000000",
+            messageId: "m",
+            pollsUsed: 1,
+          }),
+        });
+        expect(r.verification_used).toBe(true);
+        expect(r.status).toBe("wall_remains");
+        expect(r.notes.join(" ")).toMatch(/emailed-code wall remains/);
       });
     } finally {
       applySafeFillEnv();

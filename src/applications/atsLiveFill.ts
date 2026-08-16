@@ -28,6 +28,7 @@ import { postSandboxTrace } from "../sandbox/trace.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
+import { inventoryFileInputs } from "../ats/shared/uploadResolve.js";
 import { advancePastPosting } from "../ats/shared/postingAdvance.js";
 import { classifyPage } from "../ats/shared/pageClassify.js";
 import { fetchGreenhouseQuestions } from "../ats/greenhouse/questionsApi.js";
@@ -827,8 +828,18 @@ export async function runAtsLiveFill(input: {
         ],
       });
       // Uploads after field mutation is settled, matching the greenhouse order.
+      // A resume on disk is not a miss when the form has no file input
+      // (sandbox /portal). Recording a failed upload demoted a passing
+      // verify to UNVERIFIED and opened a bogus operator brief.
       if (input.resumePath) {
-        report.uploads = [await adapter.uploadResume(page, input.resumePath)];
+        const fileInputs = await inventoryFileInputs(page);
+        if (fileInputs.length === 0) {
+          report.notes.push(
+            "resume on disk but this page has no file input — not an upload miss",
+          );
+        } else {
+          report.uploads = [await adapter.uploadResume(page, input.resumePath)];
+        }
       }
 
       // Workday is a MULTI-PAGE wizard (Crowe live: 7 steps). Filling only

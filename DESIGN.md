@@ -285,8 +285,8 @@ evidence** — report path, inventory, screenshot — or says why none exists.
 
 How Dispatch behaves as an agent product — these shape every new feature:
 
-1. **The operator commands; the agent executes.** Capability comes only
-   from the operator's shell (the flag ceiling); the UI can narrow, never
+1. **The operator commands; the agent executes.** Capability comes from
+   the operator's `.env` (the flag ceiling); the UI can narrow, never
    widen. Any surface that asks for trust must show its bounds (duration,
    caps, countdown) at the moment of asking — the arm card is the template.
 2. **Visible when it matters, quiet when it doesn't.** Autonomous work runs

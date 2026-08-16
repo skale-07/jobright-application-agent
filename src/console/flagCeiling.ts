@@ -1,7 +1,7 @@
 /**
- * The flag-ceiling rule: capability comes ONLY from the operator's shell
- * that started the console. A gated flag reaches a child run iff the
- * shell had it enabled AND the UI opted in for that specific run — the
+ * The flag-ceiling rule: capability comes from the `.env` of the process
+ * that started the console. A gated flag reaches a child run iff that
+ * process had it enabled AND the UI opted in for that specific run — the
  * UI can narrow, never widen. Every gated key is explicitly set on the
  * child so its environment is fully determined, never ambient. Two keys
  * are always forced so a console-launched run can never take the
@@ -47,7 +47,7 @@ export type GatedFlagKey = (typeof GATED_FLAG_KEYS)[number];
 
 export type FlagCeiling = {
   flags: Record<GatedFlagKey, boolean>;
-  /** True only when the shell explicitly ran with DRY_RUN=false. */
+  /** True only when the process env has DRY_RUN=false (from `.env`). */
   live_mode_available: boolean;
 };
 
@@ -67,8 +67,8 @@ export function readCeiling(env: NodeJS.ProcessEnv = process.env): FlagCeiling {
   const flags = Object.fromEntries(
     GATED_FLAG_KEYS.map((key) => [key, parseBool(env[key])]),
   ) as Record<GatedFlagKey, boolean>;
-  // DRY_RUN defaults true; live mode exists only when the shell explicitly
-  // set a falsy value ("false"/"0"/"no" — anything not truthy, but present).
+  // DRY_RUN defaults true; live mode exists only when the process env
+  // explicitly has a falsy value ("false"/"0"/"no" — present, not truthy).
   const dryRun = env["DRY_RUN"];
   return {
     flags,

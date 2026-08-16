@@ -820,6 +820,21 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     expect(wall.signals).toContain("password_input_visible_in_dom");
   });
 
+  it("emailed-code wall (one-time-code + verify copy) is HIGH confidence", () => {
+    const wall = detectLoginWall({
+      finalUrl: "https://example.myworkdayjobs.com/verify",
+      html: `<html><body>
+        <p>We've emailed a 6-digit verification code. Check your inbox and enter the code.</p>
+        <input name="code" autocomplete="one-time-code" />
+        <button>Verify</button>
+      </body></html>`,
+      title: "Verify your email",
+    });
+    expect(wall.detected).toBe(true);
+    expect(wall.confidence).toBe("HIGH");
+    expect(wall.signals).toContain("emailed_code_wall");
+  });
+
   it("password + sign-in form is HIGH confidence login wall", () => {
     const html = fs.readFileSync(loginWallFixture, "utf8");
     const wall = detectLoginWall({

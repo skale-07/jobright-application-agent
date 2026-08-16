@@ -37,8 +37,8 @@ import { BodyError } from "./body.js";
  * the console exposes guarded mutation routes — every one requires the
  * per-boot bearer token, and every request (GET included) passes a
  * Host-header check so a DNS-rebound page can never reach the API.
- * Capability still comes only from the operator's shell: the server itself
- * starts with no flags and read endpoints work regardless.
+ * Capability still comes from the process `.env`: the server itself
+ * starts with no extra flags, and read endpoints work regardless.
  */
 
 const ARTIFACT_EXTENSIONS = new Set([".json", ".png", ".jpg", ".jpeg", ".txt", ".html", ".md"]);

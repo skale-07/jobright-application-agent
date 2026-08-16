@@ -78,6 +78,49 @@ describe("gmail web verification", () => {
     45_000,
   );
 
+  it(
+    "picks the LAST message in a Gmail verification thread (FIXTURE_CONFIRMED)",
+    async () => {
+      const now = new Date().toISOString();
+      // Live 2026-08-16: inbox still had 389820 (previous sandbox run);
+      // 392556 had just been mailed. First-match + `.last()` title (a
+      // "Starred" tooltip, not a datetime) treated the old row as fresh.
+      // One Gmail conversation, oldest message first — the live shape.
+      const inbox = `<html><body><div role="main"><table>
+        <tr class="zA"><td>
+          <span title="${now}">now</span>
+          <span title="Starred">star</span>
+          Frobnicator — Your verification code
+        </td></tr>
+      </table>
+      <div class="a3s">Thanks for creating your account (skale072007@gmail.com). Your verification code is: 389820.</div>
+      <div class="a3s">Your verification code is: 392556.</div>
+      <div class="a3s">Your verification code is: 560516.</div>
+      </div></body></html>`;
+      await withFixtureHtmlPage(inbox, async (page) => {
+        expect(
+          await readCodeFromGmailInboxPage(page, { requestedAt: now }),
+        ).toBe("560516");
+      });
+
+      const undated = `<html><body><div role="main"><table>
+        <tr class="zA"><td>Acme Careers — Your verification code is 389820</td></tr>
+      </table></div></body></html>`;
+      const { scanGmailInboxForVerification } = await import(
+        "../../src/verification/gmailWebProvider.js"
+      );
+      await withFixtureHtmlPage(undated, async (page) => {
+        expect(
+          await scanGmailInboxForVerification(page, {
+            requestedAt: now,
+            requireProvenFresh: true,
+          }),
+        ).toBeNull();
+      });
+    },
+    45_000,
+  );
+
   it("provider chain: first code wins, later fetchers never run; all-dry is null (UNIT_CONFIRMED)", async () => {
     const calls: string[] = [];
     const chain = chainVerificationCodeProviders([

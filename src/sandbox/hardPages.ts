@@ -226,8 +226,9 @@ export function portalVerifyPage(email: string, error?: string): string {
   return `
   <h1>Verify your email</h1>
   ${error ? `<p class="error">${error}</p>` : ""}
-  <p>We've sent a 6-digit verification code to <strong>${email}</strong>.
-     Check your email and enter the code below to continue your application.</p>
+  <p>We've emailed a 6-digit verification code to the address you signed up with.
+     Check your inbox and enter the code below to continue your application.</p>
+  <p class="muted">Sent to ${email}</p>
   <form method="POST" action="/portal/verify">
     <label class="req" for="code">Verification code</label>
     <input id="code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" required />

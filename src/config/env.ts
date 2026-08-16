@@ -1,12 +1,26 @@
 import { z } from "zod";
 import dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   parseBrowserChannel,
   type BrowserChannel,
 } from "../browser/launchOptions.js";
 
-dotenv.config();
+/**
+ * Repo-root `.env` is the operator switchboard. `override: true` so a
+ * leftover PowerShell `$env:NAVIGATION_ENABLED=false` cannot mask the
+ * file. Flags still default off when the key is absent. Tests wipe the
+ * gated keys after this load (fillEnvIsolation).
+ */
+export const DOTENV_PATH = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+  "..",
+  ".env",
+);
+
+dotenv.config({ path: DOTENV_PATH, override: true });
 
 const boolFromEnv = z
   .union([z.boolean(), z.string()])

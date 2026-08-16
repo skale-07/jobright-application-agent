@@ -82,12 +82,12 @@ log line the parent forwards with a sequence number. The report is a frame
 
 ### The flag ceiling
 
-`src/console/flagCeiling.ts` implements the rule that the operator's shell
+`src/console/flagCeiling.ts` implements the rule that the process `.env`
 is the upper bound on capability. `composeChildEnv` sets **every** gated
 key explicitly — `"true"` only when the ceiling allows it *and* the UI
 opted in for that run — so a child's environment is fully determined rather
 than inherited. `DRY_RUN` is inverted (live mode requires an explicit
-`DRY_RUN=false` in the shell plus opt-in), and
+`DRY_RUN=false` in `.env` plus opt-in), and
 `SUBMIT_REQUIRES_LOCAL_CONFIRMATION=true` /
 `MAX_UNATTENDED_SUBMISSIONS_PER_RUN=0` are forced, making the unattended
 submit branch unreachable from the console.

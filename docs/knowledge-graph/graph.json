@@ -11,7 +11,7 @@
         "src/config"
       ],
       "key_files": {
-        "src/config/env.ts": "zod-style env schema; flag defaults (all false)",
+        "src/config/env.ts": "zod-style env schema; loads repo `.env` as source of truth (override leftover shell vars); flag defaults (all false)",
         "src/config/index.ts": "getConfig() cache + resetConfigCache()"
       },
       "key_exports": {
@@ -275,7 +275,7 @@
         "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
         "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
         "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
-        "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password \u2192 auth, identity fields \u2192 form, Apply without identity \u2192 posting, else unknown. Fill recovers from page_class, not the collapsed gate code.",
+        "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password or emailed-code wall \u2192 auth, identity fields \u2192 form, Apply without identity \u2192 posting, else unknown. Fill recovers from page_class, not the collapsed gate code.",
         "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
         "src/ats/ashby/discovery.ts": "ashbyDiscoverFields \u2014 generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs \u2192 ONE field with options[]; per-option fields suppressed)"
       },
@@ -548,7 +548,7 @@
       "id": "console",
       "label": "Operator console",
       "layer": "surface",
-      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING \u2014 a child can never hold a flag the operator's shell lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
+      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING \u2014 a child can never hold a flag the process `.env` lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
       "paths": [
         "src/console"
       ],
@@ -845,7 +845,7 @@
     }
   ],
   "flags": {
-    "$comment": "Capability flags. ALL default false (fail-closed); enabled only in the operator's shell for a guarded run. The console ceiling (src/console/flagCeiling.ts) can only narrow, never widen.",
+    "$comment": "Capability flags. ALL default false (fail-closed); enabled in the operator's `.env` for a guarded run. The console ceiling (src/console/flagCeiling.ts) can only narrow, never widen.",
     "FORM_FILL_ENABLED": "type into live third-party pages",
     "DRY_RUN": "true = describe, never mutate (must be false to fill live)",
     "SUBMIT_ENABLED": "the submit click (plus approved plan entry + confirmation/arm)",

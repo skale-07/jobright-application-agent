@@ -14,8 +14,10 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
   `ESSAY_AUTOFILL_ENABLED`,
   `ARTIFACT_AUTOPUSH_ENABLED`, `CDP_AUTOLAUNCH_ENABLED`,
   `OUTLOOK_VERIFICATION_ENABLED`, `AUTOMATION_ENABLED`.
-  Flags are enabled only in an operator's shell for a
-  specific guarded run — never hardcoded, never defaulted on, never enabled inside tests.
+  Flags are enabled in the operator's `.env` (copy `.env.example`) for a
+  guarded run — never hardcoded, never defaulted on, never enabled inside
+  tests. The process loads that file as the source of truth; do not require
+  per-shell `$env:` exports.
 - Never write Outlook send-style APIs. `scripts/check-forbidden.ts` bans the identifiers
   (source list: `src/outlook/sendGuards.ts`); do not extend its allowlist to make code compile.
 - Never weaken `assertExecutableApprovedEntry` or the submit gating (submit requires an

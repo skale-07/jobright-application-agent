@@ -15,13 +15,18 @@ const CODE_KEYWORDS =
  */
 export function extractOtpCode(subject: string, body: string): string | null {
   const text = `${subject}\n${body}`;
-  const candidates: Array<{ code: string; score: number }> = [];
+  const candidates: Array<{ code: string; score: number; index: number }> = [];
   // Guards target decimals/longer runs ("1.2345", "12345678901") without
   // rejecting a code at sentence end ("...code is 482193.").
   const re = /(?<![\d.])(\d{4,8})(?!\d)(?!\.\d)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
     const code = m[1]!;
+    // Live sandbox 2026-08-16: Gmail inbox preview of
+    // "verification code … (skale072007@gmail.com)" scored 072007 as the
+    // OTP and portal auth typed it. Digit runs that are an email local
+    // part are never a code.
+    if (isEmailLocalPartDigits(text, m.index, code.length)) continue;
     const windowStart = Math.max(0, m.index - 80);
     const windowEnd = Math.min(text.length, m.index + code.length + 80);
     const context = text.slice(windowStart, windowEnd);
@@ -33,11 +38,30 @@ export function extractOtpCode(subject: string, body: string): string | null {
       keywordScore += 1;
     }
     if (keywordScore === 0) continue;
+    // "code is 482193" / "code: 482193" beats mere proximity, so a
+    // leftover address digit in the same thread cannot tie and win.
+    if (/\bcode\s*(is|:)\s*$/i.test(text.slice(Math.max(0, m.index - 24), m.index))) {
+      keywordScore += 3;
+    }
     const score = keywordScore + (code.length === 6 ? 1 : 0);
-    candidates.push({ code, score });
+    candidates.push({ code, score, index: m.index });
   }
-  candidates.sort((a, b) => b.score - a.score);
+  // Equal scores: last in the document wins. Gmail threads sandbox
+  // resends into one conversation (oldest at top); live 2026-08-16 the
+  // scanner typed 389820 from the first message while 560516 sat at the
+  // bottom.
+  candidates.sort((a, b) => b.score - a.score || b.index - a.index);
   return candidates[0]?.code ?? null;
+}
+
+/** True when this digit run is the local-part (or a tail of it) of an email. */
+function isEmailLocalPartDigits(
+  text: string,
+  index: number,
+  length: number,
+): boolean {
+  const after = text.slice(index + length, index + length + 1);
+  return after === "@";
 }
 
 /** Registrable-ish domain: last two labels (co.uk-style TLDs out of scope). */

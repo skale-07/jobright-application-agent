@@ -1,0 +1,92 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal",
+  "requested_url": "http://localhost:4599/portal",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/portal/verify",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 0,
+    "skipped_count": 1,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "code",
+      "label": "Verification code",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Predict produced no usable answer"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786911364285.html",
+  "fill": {
+    "filled": [],
+    "skipped": [],
+    "errors": [],
+    "field_meta": []
+  },
+  "verify": {
+    "passed": false,
+    "fields": [],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": [
+    {
+      "field": "resume",
+      "path": "[REDACTED_PATH]",
+      "filename": "[REDACTED_PATH]",
+      "size_bytes": 76462,
+      "verified": false,
+      "evidence": "no file input resolved: primary resume selector not attached within 3s; retrying resolve after 1500ms; primary resume selector not attached within 3s; no resume file input; 0 file inputs on page"
+    }
+  ],
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application)",
+    "landed on a posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application); clicking Apply via text \"Apply\"",
+    "Apply landed on: auth (login wall: final_url_auth_path,password_input_visible_in_dom,email_and_password_inputs)",
+    "login wall on localhost: create_account_form; fields[email=true password=true confirm=true]; submit=[Create Account | Sign In]; create-route=\"Create Account\"",
+    "standing portal login used for localhost",
+    "portal auth: Sign In form already on this page — using standing credentials",
+    "portal auth sign_in: credentials_rejected — \"ve your application and track your status with an account. Invalid email or password. Create Account\"",
+    "portal auth: sign-in rejected — creating the account on this page",
+    "portal auth create: credentials_rejected — \"Verify your email We've sent a 6-digit verification code to skale072007@gmail.com. Check your email \"",
+    "portal auth: emailed code entered",
+    "post-auth path differs from posting URL — planning the landed page",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [],
+  "operator_brief": {
+    "title": "Live fill — generic http://localhost:4599/portal/auth",
+    "summary": "1 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "upload:resume",
+        "question": "Upload: resume",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "upload_failed",
+        "problem": "no file input resolved: primary resume selector not attached within 3s; retrying resolve after 1500ms; primary resume selector not attached within 3s; no resume file input; 0 file inputs on page",
+        "expected": "Shubham_Kale_Citadel_NeurIPS_Resume.pdf",
+        "observed": null,
+        "how_to_answer": [
+          "Resume is system-owned: materials:register + adapter.uploadResume on submit/fill — not a free-text profile field.",
+          "If this is ats:fill without --resume, pass --resume <pdf> or use application submit (uses registered material).",
+          "Evidence: no file input resolved: primary resume selector not attached within 3s; retrying resolve after 1500ms; primary resume selector not attached within 3s; no resume file input; 0 file inputs on page"
+        ]
+      }
+    ],
+    "ok_count": 0,
+    "fail_count": 1
+  },
+  "written_at": "2026-08-16T20:16:11.965Z"
+}
