@@ -1,5 +1,7 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { planApplicationFill } from "../../src/applications/applicationFiller.js";
 import { ashbyDiscoverFields, discoverAshbyFieldsetGroups } from "../../src/ats/ashby/discovery.js";
@@ -65,15 +67,34 @@ function scriptedClient(
 describe("predictive gauntlet (FIXTURE_CONFIRMED)", () => {
   useIsolatedFillEnv("safe");
 
+  let privDir: string;
+  let priorPrivate: string | undefined;
   beforeEach(() => {
     // The predict tier is flag-gated; the gauntlet enables it with a MOCK
     // client — no key, no network, restored by the isolated-env helper.
     process.env.SCREENER_PREDICT_LLM_ENABLED = "true";
+    // The tuned predict path PERSISTS accepted answers into the bank
+    // (learned answers). Point the bank at a throwaway dir so the gauntlet
+    // measures the tiers, not what a previous test taught them — the full
+    // suite leaked "Other" into the appliance question without this.
+    priorPrivate = process.env.PRIVATE_DIR;
+    privDir = path.join(os.tmpdir(), `gauntlet-priv-${randomUUID()}`);
+    fs.mkdirSync(path.join(privDir, "candidate"), { recursive: true });
+    // The planner needs a profile; use the repo's example (which is also
+    // where the university test's "true answer" comes from).
+    fs.copyFileSync(
+      path.join(process.cwd(), "private", "candidate", "public-profile.example.json"),
+      path.join(privDir, "candidate", "public-profile.json"),
+    );
+    process.env.PRIVATE_DIR = privDir;
     resetConfigCache();
   });
   afterEach(() => {
     delete process.env.SCREENER_PREDICT_LLM_ENABLED;
+    if (priorPrivate === undefined) delete process.env.PRIVATE_DIR;
+    else process.env.PRIVATE_DIR = priorPrivate;
     resetConfigCache();
+    fs.rmSync(privDir, { recursive: true, force: true });
   });
 
   it("weird CLOSED questions fill from the model's verbatim option choice", async () => {

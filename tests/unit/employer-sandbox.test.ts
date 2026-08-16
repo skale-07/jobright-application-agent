@@ -73,7 +73,7 @@ describe("employer sandbox (FIXTURE_CONFIRMED)", () => {
     expect(bounced.status).toBe(302);
   });
 
-  it("create account → session cookie → form; wrong password refused", async () => {
+  it("create account → CODE WALL → form; wrong password refused", async () => {
     const create = await fetch(`${sandbox.url}/portal/create-account`, {
       method: "POST",
       redirect: "manual",
@@ -89,8 +89,26 @@ describe("employer sandbox (FIXTURE_CONFIRMED)", () => {
     expect(cookie).toMatch(/sandbox_sid=/);
     expect(sandbox.accountEmails()).toContain("candidate@fixture.test");
 
+    // The portal now emails a verification code first (2026-08-16): the
+    // form is gated until the code round-trips through the wall.
+    const sid = cookie.split(";")[0]!;
+    const blocked = await fetch(`${sandbox.url}/portal/form`, {
+      redirect: "manual",
+      headers: { cookie: sid },
+    });
+    expect(blocked.status).toBe(302);
+    expect(blocked.headers.get("location")).toBe("/portal/verify");
+    const code = sandbox.pendingCodeFor("candidate@fixture.test");
+    expect(code).toMatch(/^\d{6}$/);
+    const verify = await fetch(`${sandbox.url}/portal/verify`, {
+      method: "POST",
+      redirect: "manual",
+      headers: { "content-type": "application/x-www-form-urlencoded", cookie: sid },
+      body: new URLSearchParams({ code: code! }),
+    });
+    expect(verify.status).toBe(302);
     const form = await fetch(`${sandbox.url}/portal/form`, {
-      headers: { cookie: cookie.split(";")[0]! },
+      headers: { cookie: sid },
     });
     expect(await form.text()).toMatch(/Application — AI Engineer Intern/);
 

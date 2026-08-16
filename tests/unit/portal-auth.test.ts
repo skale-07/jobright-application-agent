@@ -554,7 +554,10 @@ describe("employer-sandbox portal auth (FIXTURE_CONFIRMED)", () => {
 
   it("clears /portal/auth with standing credentials when no account exists yet", async () => {
     const outDir = path.join(os.tmpdir(), `jaa-portal-sb-${Date.now()}`);
-    const sandbox = await startEmployerSandbox({ port: 0, quiet: true, outDir });
+    // verificationWall off: this test proves the PASSWORD wall clears with
+    // standing credentials; the emailed-code wall has its own coverage
+    // (hard-sandbox tests) and needs a mailbox this test does not have.
+    const sandbox = await startEmployerSandbox({ port: 0, quiet: true, outDir, verificationWall: false });
     applyControlledFillEnv({ NAVIGATION_ENABLED: "true" });
     process.env.PORTAL_LOGIN_EMAIL = "candidate@fixture.test";
     process.env.PORTAL_LOGIN_PASSWORD = "StandingPass1!";

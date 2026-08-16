@@ -66,19 +66,19 @@ async function setSelectByValueOrLabel(
     (o) => o.trim().toLowerCase() === text.toLowerCase(),
   );
   if (match) {
-    await locator.selectOption({ label: match, timeout: 2_000 });
+    await locator.selectOption({ label: match }, { timeout: 2_000 });
     return;
   }
   const partial = options.find((o) =>
     o.toLowerCase().includes(text.toLowerCase()),
   );
   if (partial) {
-    await locator.selectOption({ label: partial, timeout: 2_000 });
+    await locator.selectOption({ label: partial }, { timeout: 2_000 });
     return;
   }
   const pick = pickOptionLabel(options, text);
   if (pick.ok) {
-    await locator.selectOption({ label: pick.label, timeout: 2_000 });
+    await locator.selectOption({ label: pick.label }, { timeout: 2_000 });
     return;
   }
   throw new Error(

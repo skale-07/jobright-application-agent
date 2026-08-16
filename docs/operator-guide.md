@@ -1418,3 +1418,41 @@ any other machine. The generic adapter and portal auth accept loopback
 URLs precisely because a loopback page can only be your own sandbox; every
 non-loopback URL keeps the https-only rule unchanged, and every fill/
 submit flag behaves exactly as it does against a real employer.
+
+### 20.1 The HARD courses and the emailed-code wall (2026-08-16)
+
+Three additions for tuning against the failures the artifacts actually
+show, all under `npm run sandbox`:
+
+- **`/navhard`** — navigation on hard mode. A cookie banner overlays the
+  page, "Apply filters" and "How to apply" decoys sit next to the one real
+  "Apply now", the real Apply opens a popup that stays `about:blank` for a
+  beat before settling, and the popup lands on a Paycom-style "Getting You
+  Started" modal asking legal name, email, phone and an SMS-consent radio.
+  That modal is intentionally a FORM: the fill machinery answers it from
+  your profile — navigation does not carry its own copy of your identity.
+  Behind it, the real application, then a confirmation.
+- **`/fillhard`** — fill on hard mode. The outer page has zero fields (the
+  form lives in an iframe, forcing the frame hop); inside is a two-step
+  wizard whose Next throws an error banner on missing required fields, an
+  email PRE-FILLED with the wrong value that must be replaced, a combobox
+  that renders only 8 of its 22 options until filtered, a multi-select
+  chips control, and an Other→specify reveal.
+- **`/portal` now has an emailed-code wall.** Creating an account (or
+  signing in unverified) generates a random 6-digit code. It always prints
+  in the sandbox terminal; set `RESEND_API_KEY` (and optionally
+  `SANDBOX_VERIFY_TO` — defaults to your `PORTAL_LOGIN_EMAIL`) and the
+  code is ALSO emailed to your real inbox via Resend. That closes the last
+  loop: the system must notice the wall, open your mailbox, find the most
+  recent verification email, read the code, and type it back — exactly
+  like a real Workday/Paycom tenant. Re-issuing always invalidates the old
+  code, so only the NEWEST email works, which is precisely the
+  most-recent-email discipline the scanner must have.
+
+Drive them the same way as everything else:
+
+```
+npm run ats:fill -- --url http://localhost:4599/navhard  --execute --headed
+npm run ats:fill -- --url http://localhost:4599/fillhard --execute --headed
+npm run ats:fill -- --url http://localhost:4599/portal   --execute --headed
+```
