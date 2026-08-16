@@ -27,11 +27,11 @@
     "SUBMIT_ENABLED"
   ],
   "denied_flags": [],
-  "status": "running",
+  "status": "succeeded",
   "created_at": "2026-08-15T18:41:45.160Z",
   "started_at": "2026-08-15T18:41:45.198Z",
-  "ended_at": null,
-  "exit_code": null,
+  "ended_at": "2026-08-15T18:44:34.446Z",
+  "exit_code": 0,
   "error": null,
   "gates": {
     "FORM_FILL_ENABLED": true,
@@ -58,6 +58,85 @@
     "DRY_RUN": false
   },
   "pending_confirmation": null,
-  "report": null,
-  "log_seq": 0
+  "report": {
+    "arm_run_id": "9e1be71f-081c-46e7-8bb9-098b5ce352b7",
+    "apps_started": 5,
+    "submits_used": 0,
+    "stopped_reason": "queue_drained",
+    "discover_runs": 3,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 3,
+    "notes": [
+      "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 5 parked for review",
+      "unsupported-ATS revival: 3 app(s) re-opened — an adapter now claims their URL",
+      "discover: 8 inspected, 1 eligible, 7 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+      "prediction rejected \"Search by job title, ID, or keyword\": no answer",
+      "prediction rejected \"Why are you interested in this specific role at Ap\": no answer",
+      "prediction rejected \"Any other relevant information?\": no answer",
+      "prediction rejected \"Our employees are from all parts of the world. We \": no answer",
+      "prediction rejected \"Tell us something about yourself that we can't fin\": no answer",
+      "prediction rejected \"Preferred&nbsp; Name\": no answer",
+      "prediction rejected \"communicationConsent\": no answer",
+      "prediction rejected \"Start typing...\": no answer",
+      "prediction rejected \"Under 30\": no answer",
+      "artifact autopush: 10 file(s) pushed to master as edb0133"
+    ],
+    "per_app": [
+      {
+        "application_id": "b3e645ce-78af-4acf-af27-e57f563a8c1c",
+        "end_state": "NATIVE_AUTOFILL_RUNNING",
+        "stopped": "gate",
+        "stop_reason": "fill refused: stored URL is for \"view\", not Neuralink",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "7d6c2811-5b58-4364-bff0-655e26e9d28c",
+        "end_state": "NATIVE_AUTOFILL_RUNNING",
+        "stopped": "gate",
+        "stop_reason": "generic live fill refused: UNTRUSTED_FINAL_HOST",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "0082b074-0687-4d90-9788-3675f1c42165",
+        "end_state": "NATIVE_AUTOFILL_RUNNING",
+        "stopped": "gate",
+        "stop_reason": "generic live fill refused: NO_APPLICATION_FORM",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "71ab785a-2ac8-414b-89d1-057ee65b2359",
+        "end_state": "NATIVE_AUTOFILL_RUNNING",
+        "stopped": "gate",
+        "stop_reason": "employer URL missing at fill stage — parked for review",
+        "submitted": false,
+        "outreach": null
+      },
+      {
+        "application_id": "9a30b836-b571-4d65-a416-731da7efe6bf",
+        "end_state": "NATIVE_AUTOFILL_RUNNING",
+        "stopped": "gate",
+        "stop_reason": "generic live fill refused: NO_APPLICATION_FORM",
+        "submitted": false,
+        "outreach": null
+      }
+    ],
+    "nav_audit": {
+      "checked": 41,
+      "repaired": 0,
+      "parked": 5
+    },
+    "artifact_autopush": {
+      "pushed": true,
+      "commit": "edb0133",
+      "files_staged": 10
+    }
+  },
+  "log_seq": 98
 }

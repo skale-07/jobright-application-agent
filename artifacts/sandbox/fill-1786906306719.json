@@ -1,0 +1,7 @@
+{
+  "kind": "fill",
+  "lines": [
+    "filled: legal_name.first, legal_name.last, phone, screener:remote_or_onsite",
+    "verify: passed"
+  ]
+}

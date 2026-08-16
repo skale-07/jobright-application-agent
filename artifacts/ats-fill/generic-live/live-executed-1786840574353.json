@@ -1,0 +1,621 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/gauntlet",
+  "requested_url": "http://localhost:4599/gauntlet",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/gauntlet"
+  },
+  "plan_summary": {
+    "fillable_count": 16,
+    "skipped_count": 4,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "resume",
+      "label": "Resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "q_appliance",
+      "label": "If you were a kitchen appliance, which would you be?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_appliance",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "q_cobol",
+      "label": "Have you ever maintained a COBOL system in production?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_cobol",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "type": "select",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile; value \"Johns Hopkins University\" not on the control's list — using the form's own \"Other\""
+    },
+    {
+      "field_id": "q_uni_specify",
+      "label": "If other, please specify your university",
+      "type": "text",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_tz",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "q_spirit",
+      "label": "Describe your debugging spirit animal in one word.",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "w_orgs",
+      "label": "Are you currently a member of any university organizations, such as clubs or fraternities/sororities?",
+      "type": "select",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_major",
+      "label": "Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?",
+      "type": "select",
+      "canonical_field": "major",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_leadership",
+      "label": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+      "type": "select",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_gpa",
+      "label": "What is your current cumulative GPA on a 4.0 scale?",
+      "type": "select",
+      "canonical_field": "gpa",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_grad",
+      "label": "Please select your expected graduation month and year for your current studies.",
+      "type": "select",
+      "canonical_field": "graduation_year",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_season",
+      "label": "Please choose the season that most accurately reflects your availability.",
+      "type": "select",
+      "canonical_field": "screener:internship_term",
+      "action": "FILL",
+      "reason": "Screener bank answer (exact_option)"
+    },
+    {
+      "field_id": "w_hometown",
+      "label": "Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:w_hometown",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "w_about",
+      "label": "Tell us something about yourself that we can't find on your resume.",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "w_start",
+      "label": "Ideal start date in office",
+      "type": "text",
+      "canonical_field": "screener:start_availability",
+      "action": "FILL",
+      "reason": "Screener bank answer (free_text)"
+    },
+    {
+      "field_id": "w_ai",
+      "label": "What are some AI specific technologies you are comfortable with?",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786840264136.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "screener:custom:predicted:q_appliance",
+      "screener:custom:predicted:q_cobol",
+      "school",
+      "school",
+      "gpa",
+      "screener:internship_term",
+      "screener:custom:predicted:w_hometown",
+      "screener:start_availability"
+    ],
+    "skipped": [],
+    "errors": [
+      "q_tz: combobox option not committed: opened via control click; filter \"Eastern (US)\" → 1 option(s); match; picked \"Eastern (US)\" (exact); commit not confirmed: display shows placeholder",
+      "w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+      "w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Yes, No)",
+      "w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+      "w_grad: No select option matching \"2029\" (options: Select..., Prior to December 2025, Spring 2026, Fall 2026, Spring 2027, Fall 2027, Spring 2028)"
+    ],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_appliance",
+        "canonical_field": "screener:custom:predicted:q_appliance",
+        "control_kind": "native_select",
+        "selected_option": "Rice cooker",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_cobol",
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "control_kind": "native_select",
+        "selected_option": "No",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni",
+        "canonical_field": "school",
+        "control_kind": "native_select",
+        "selected_option": "Other",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni_specify",
+        "canonical_field": "school",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_tz",
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "control_kind": "combobox",
+        "selected_option": null,
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Eastern (US)\" → 1 option(s); match",
+          "picked \"Eastern (US)\" (exact)",
+          "commit not confirmed: display shows placeholder"
+        ],
+        "options_sample": [
+          "Eastern (US)"
+        ]
+      },
+      {
+        "field_id": "w_gpa",
+        "canonical_field": "gpa",
+        "control_kind": "native_select",
+        "selected_option": "3.7",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_season",
+        "canonical_field": "screener:internship_term",
+        "control_kind": "native_select",
+        "selected_option": "Summer 2026",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_hometown",
+        "canonical_field": "screener:custom:predicted:w_hometown",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "w_start",
+        "canonical_field": "screener:start_availability",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_appliance",
+        "expected": "Rice cooker",
+        "observed": {
+          "value": "Rice cooker",
+          "label": "Rice cooker"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Other",
+        "observed": {
+          "value": "Other",
+          "label": "Other"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": "Johns Hopkins University",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "expected": "Eastern (US)",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "major",
+        "expected": "Applied Math & Stats",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "gpa",
+        "expected": 3.7,
+        "observed": {
+          "value": "3.7 or Higher",
+          "label": "3.7 or Higher"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "screener:internship_term",
+        "expected": "Summer 2026",
+        "observed": {
+          "value": "Summer 2026",
+          "label": "Summer 2026"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_hometown",
+        "expected": "Baltimore, Maryland, United States",
+        "observed": "Baltimore, Maryland, United States",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:start_availability",
+        "expected": "Flexible — aligned to the posted term",
+        "observed": "Flexible — aligned to the posted term",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "option harvest: scraped real options for 1/9 control(s) before planning",
+    "other-specify: chose \"Other\" and no text box appeared — nothing further to answer",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "answer_space": "closed",
+      "option_count": 4,
+      "options": [
+        "Eastern (US)",
+        "Central (US)",
+        "Mountain (US)",
+        "Pacific (US)"
+      ],
+      "other_option": null
+    }
+  ],
+  "other_specify": [
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "revealed_field_id": null,
+      "filled": false,
+      "note": "chose \"Other\" and no text box appeared — nothing further to answer"
+    }
+  ],
+  "operator_brief": {
+    "title": "Live fill — generic http://localhost:4599/gauntlet",
+    "summary": "10 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:screener:custom:predicted:q_tz",
+        "question": "Which time zone will you primarily frobnicate from?",
+        "field_id": "q_tz",
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Eastern (US)\"; page shows \"(empty)\"",
+        "expected": "Eastern (US)",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Eastern (US)). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Eastern (US)\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:q_tz)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:q_tz\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:current_company",
+        "question": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+        "field_id": "w_leadership",
+        "canonical_field": "current_company",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Summer Atlantic Capital\"; page shows \"Select...\"",
+        "expected": "Summer Atlantic Capital",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"Summer Atlantic Capital\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json → current_company",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"current_company\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:major",
+        "question": "Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?",
+        "field_id": "w_major",
+        "canonical_field": "major",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Applied Math & Stats\"; page shows \"Select...\"",
+        "expected": "Applied Math & Stats",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"Applied Math & Stats\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: major)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"major\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:current_company",
+        "question": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+        "field_id": "w_leadership",
+        "canonical_field": "current_company",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Summer Atlantic Capital\"; page shows \"Select...\"",
+        "expected": "Summer Atlantic Capital",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"Summer Atlantic Capital\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json → current_company",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"current_company\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:graduation_year",
+        "question": "Please select your expected graduation month and year for your current studies.",
+        "field_id": "w_grad",
+        "canonical_field": "graduation_year",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"2029\"; page shows \"Select...\"",
+        "expected": "2029",
+        "observed": {
+          "value": "",
+          "label": "Select..."
+        },
+        "how_to_answer": [
+          "DOM shows \"Select...\" but plan expected \"2029\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: graduation_year)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"graduation_year\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:q_tz: combobox option not committed: opened via control click; filter \"Eastern (",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "q_tz: combobox option not committed: opened via control click; filter \"Eastern (US)\" → 1 option(s); match; picked \"Eastern (US)\" (exact); commit not confirmed: display shows placeholder",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select...,",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Y",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Sele",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_grad: No select option matching \"2029\" (options: Select..., Prior to December ",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_grad: No select option matching \"2029\" (options: Select..., Prior to December 2025, Spring 2026, Fall 2026, Spring 2027, Fall 2027, Spring 2028)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 11,
+    "fail_count": 10
+  },
+  "written_at": "2026-08-16T00:36:19.914Z"
+}

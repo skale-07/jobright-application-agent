@@ -1,0 +1,26 @@
+{
+  "kind": "plan",
+  "lines": [
+    "19 fill / 1 skip / 0 review",
+    "FILL             First Name → Shubham  [Mapped from public profile]",
+    "FILL             Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email → skale1@jh.edu  [Mapped from public profile]",
+    "SKIP             Resume  [File uploads handled via uploadResume/uploadCoverLetter]",
+    "FILL             If you were a kitchen appliance, which would you → Rice cooker  [Predicted from operator context (llm_predict): A deterministic, reliable appliance matches the candidate's stated preference for predictable, operator-controlled systems.]",
+    "FILL             Have you ever maintained a COBOL system in produ → No  [Predicted from operator context (llm_predict): Candidate's stack is TypeScript, Python, Swift, and ML tooling with no mainframe or COBOL experience.]",
+    "FILL             Which university do you attend? Select \"Other\" i → Other  [Mapped from public profile; value \"Johns Hopkins University\" not on the control's list — using the form's own \"Other\"]",
+    "FILL             If other, please specify your university → Johns Hopkins University  [Mapped from public profile]",
+    "FILL             Which time zone will you primarily frobnicate fr → Eastern (US)  [Predicted from operator context (llm_predict): Candidate is based in Baltimore, Maryland, which is US Eastern time.]",
+    "FILL             Describe your debugging spirit animal in one wor → Bloodhound  [Predicted from operator context (llm_predict): One-word prompt answered with a single word reflecting his methodical tracing of failure modes.]",
+    "FILL             Are you currently a member of any university org → Yes  [Predicted from operator context (llm_predict): He is active in Hopkins programs including the Pava Spark Accelerator and co-founded a venture with student teammates.]",
+    "FILL             Are you currently pursuing a Major in one of the → No  [Predicted from operator context (llm_predict): Profile lists Applied Mathematics & Statistics and Economics, not CS or Computer Engineering.]",
+    "FILL             Have you ever held, or do you currently hold, an → Yes  [Predicted from operator context (llm_predict): He co-founded Open Health Intelligence as technical lead, founded SnapSort and led a cross-functional team, and was lead model developer on a Gates Foundation project.]",
+    "FILL             What is your current cumulative GPA on a 4.0 sca → 3.7  [Mapped from public profile]",
+    "FILL             Please select your expected graduation month and → 2029  [Mapped from public profile]",
+    "FILL             Please choose the season that most accurately re → Summer 2026  [Screener bank answer (exact_option)]",
+    "FILL             Our employees are from all parts of the world. W → Baltimore, Maryland, United States  [Predicted from operator context (llm_predict): Profile facts list Baltimore, Maryland as his city and state; no other hometown is stated.]",
+    "FILL             Tell us something about yourself that we can't f → Something that doesn't show up as a line item: during Hopkins' Lightin  [Essay generated from the operator's about-me context]",
+    "FILL             Ideal start date in office → Flexible — aligned to the posted term  [Screener bank answer (free_text)]",
+    "FILL             What are some AI specific technologies you are c → I work most with PyTorch and XGBoost on the modeling side, plus SHAP f  [Predicted from operator context (llm_predict): Draws directly on the ML, LLM evaluation, RAG, and agent tooling described across his SAC Nexus, Intelehealth, tSearch, and Gates Foundation work.]"
+  ]
+}

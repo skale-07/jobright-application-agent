@@ -1,0 +1,26 @@
+{
+  "kind": "gauntlet",
+  "received_at": "2026-08-16T18:33:03.716Z",
+  "data": {
+    "first_name": "Shubham",
+    "last_name": "Kale",
+    "email": "skale1@jh.edu",
+    "resume": "<file: Shubham_Kale_Citadel_NeurIPS_Resume.pdf, 76462 bytes>",
+    "q_appliance": "Rice cooker",
+    "q_cobol": "No",
+    "q_uni": "Other",
+    "q_uni_specify": "Johns Hopkins University",
+    "q_tz": "Eastern (US)",
+    "q_spirit": "Bloodhound",
+    "w_orgs": "Yes",
+    "w_major": "No",
+    "w_leadership": "Yes",
+    "w_gpa": "3.7 or Higher",
+    "w_grad": "2029 or later",
+    "w_season": "Summer 2026",
+    "w_hometown": "Baltimore, Maryland, United States",
+    "w_about": "Something that doesn't show up as a line item: during Hopkins' Lighting of the Quads, my cofounders and I realized President Ron Daniels was nearby. We walked to Garland Hall, saw him through the locked doors, and knocked until someone let us in long enough to pitch ClarityAtlas. That thirty-second conversation eventually turned into a formal meeting months later with him and leadership from the Data Science and AI Institute. I bring it up because it changed how I think about building things. I used to assume the technical work was the hard part, and for a while I optimized entirely for that: I built the passive sleep-estimation system on phone motion and interaction signals because I thought a good enough model would speak for itself. It didn't. Recruiting the first 30 pilot users, explaining repeatedly why the product should exist, and getting institutional buy-in mattered just as much as the code. The other thing you can't see on a resume is how often I change my mind. My whole view of why research funding fails shifted after I actually talked to researchers instead of just reading papers about them.",
+    "w_start": "Flexible — aligned to the posted term",
+    "w_ai": "I work most with PyTorch and XGBoost on the modeling side, plus SHAP for interpretation and G-formula causal simulations from a Gates Foundation health-equity project on roughly 10 million survey records. At Summer Atlantic Capital I build the ML core of an anomaly-detection system: temporal sequence modeling over event streams with RNN and Transformer-style architectures, anomaly scoring, a learning-to-rank layer for alert prioritization, and a retrieval-augmented LLM explanation layer served through a versioned FastAPI microservice. On the LLM side I am comfortable with the OpenAI APIs, embeddings, Pinecone vector search, Neo4j-backed retrieval, and rubric-driven LLM-as-judge evaluation pipelines, which I used in tSearch for parallel per-dimension judging and evidence-cited synthesis. I also designed an evaluation framework at Intelehealth comparing LLM-generated clinical outputs against a 4,169-case standard using stratified sampling to surface systematic failure modes. For agents, I built a Playwright-based browser automation system in TypeScript where OpenAI is called only at narrow, validated call sites behind fail-closed flags, because I care as much about where model autonomy should stop as about what it can do."
+  }
+}

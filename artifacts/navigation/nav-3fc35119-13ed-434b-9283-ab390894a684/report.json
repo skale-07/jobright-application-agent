@@ -1,0 +1,48 @@
+{
+  "run_id": "nav-3fc35119-13ed-434b-9283-ab390894a684",
+  "application_id": "277bd1b3-1882-4ce4-8f65-2dee73fd9d97",
+  "jobright_job_id": "6a0f762c80bf0430c7633e63",
+  "method": "apply_click_popup",
+  "resolved_url": "https://job-boards.greenhouse.io/neuralink/jobs/6594261003",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (10 external links)",
+      "evidence": "x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: anchor reads as \"greenhouse\" (URL names \"greenhouse\" (host), which shares nothing with company \"Neuralink\") — not preferred, deferring to the Apply click",
+    "phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org, boards.greenhouse.io",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup settled off about:blank after the interstitial",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "neuralink",
+    "detail": "token \"neuralink\" ~ slug \"neuralink\"",
+    "expected_company": "Neuralink",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=neuralink&jr_id=6a0f762c80bf0430c7633e63&token=6594261003&utm_source=jobright"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-16T19:06:03.856Z"
+}

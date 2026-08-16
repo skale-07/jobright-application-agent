@@ -1,0 +1,115 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Frobnicator Industries — Apply</title><style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #17202a; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; }
+  label { display: block; margin: 1rem 0 0.25rem; font-weight: 600; }
+  input, select, textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; }
+  button { margin-top: 1.25rem; padding: 0.6rem 1.4rem; font-size: 1rem; cursor: pointer; }
+  .error { color: #b00020; font-weight: 600; }
+  .muted { color: #667; font-size: 0.9rem; }
+  .req::after { content: " *"; color: #b00020; }
+  .combo { position: relative; }
+  .combo-list { border: 1px solid #aab; max-height: 180px; overflow: auto; position: absolute; background: #fff; width: 100%; z-index: 5; }
+  .combo-list [role=option] { padding: 0.4rem 0.6rem; cursor: pointer; }
+  .combo-list [role=option]:hover { background: #eef; }
+</style></head><body>
+  <h1>Frobnicator Industries — Software Frobnicator, Intern</h1>
+  <p class="muted">The weird-questions gauntlet: the deterministic system cannot answer these.</p>
+  <form method="POST" action="/gauntlet/submit" enctype="multipart/form-data">
+    <label class="req" for="first_name">First Name</label>
+    <input id="first_name" name="first_name" required="">
+    <label class="req" for="last_name">Last Name</label>
+    <input id="last_name" name="last_name" required="">
+    <label class="req" for="email">Email</label>
+    <input id="email" name="email" type="email" required="">
+    <label for="resume">Resume</label>
+    <input id="resume" name="resume" type="file">
+
+    <h2>Screeners no registry has seen</h2>
+
+    <label class="req" for="q_appliance">If you were a kitchen appliance, which would you be?</label>
+    <select id="q_appliance" name="q_appliance" required="">
+      <option value="[SCRUBBED]">Select...</option>
+      <option>Toaster</option><option>Blender</option><option>Rice cooker</option><option>Other</option>
+    </select>
+
+    <label class="req" for="q_cobol">Have you ever maintained a COBOL system in production?</label>
+    <select id="q_cobol" name="q_cobol" required="">
+      <option value="[SCRUBBED]">Select...</option><option>Yes</option><option>No</option>
+    </select>
+
+    <label class="req" for="q_uni">Which university do you attend? Select "Other" if not listed.</label>
+    <select id="q_uni" name="q_uni" required="">
+      <option value="[SCRUBBED]">Select...</option>
+      <option>Miskatonic University</option><option>Unseen University</option><option>Other</option>
+    </select>
+    <div id="q_uni_specify_wrap" style="display:none">
+      <label for="q_uni_specify">If other, please specify your university</label>
+      <input id="q_uni_specify" name="q_uni_specify">
+    </div>
+
+    <label class="req" for="q_tz">Which time zone will you primarily frobnicate from?</label>
+    <div class="combo">
+      <input id="q_tz" name="q_tz" role="combobox" aria-autocomplete="list" autocomplete="off" placeholder="Select...">
+      <div id="q_tz_list" class="combo-list" style="display:none" role="listbox"></div>
+    </div>
+    <p class="muted">This one renders its options only after the control opens — like a real board.</p>
+
+    <label for="q_spirit">Describe your debugging spirit animal in one word.</label>
+    <input id="q_spirit" name="q_spirit">
+
+    <h2>From the wild</h2>
+    <p class="muted">Questions real boards asked in the operator's own runs
+    (Appian, Neuralink, TransMarket, Abridge, Notion artifacts) — the exact
+    shapes that parked or mis-filled live. Both classes: CLOSED (the answer
+    must be one of the options) and OPEN (type anything).</p>
+
+    <label class="req" for="w_orgs">Are you currently a member of any university organizations, such as clubs or fraternities/sororities?</label>
+    <select id="w_orgs" name="w_orgs" required="">
+      <option value="[SCRUBBED]">Select...</option><option>Yes</option><option>No</option>
+    </select>
+
+    <label class="req" for="w_major">Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?</label>
+    <select id="w_major" name="w_major" required="">
+      <option value="[SCRUBBED]">Select...</option><option>Yes</option><option>No</option>
+    </select>
+
+    <label class="req" for="w_leadership">Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?</label>
+    <select id="w_leadership" name="w_leadership" required="">
+      <option value="[SCRUBBED]">Select...</option><option>Yes</option><option>No</option>
+    </select>
+
+    <label class="req" for="w_gpa">What is your current cumulative GPA on a 4.0 scale?</label>
+    <select id="w_gpa" name="w_gpa" required="">
+      <option value="[SCRUBBED]">Select...</option>
+      <option>3.7 or Higher</option><option>3.5 - 3.6</option><option>3.0 - 3.4</option>
+      <option>2.5 - 2.9</option><option>2.4 or Below</option>
+    </select>
+
+    <label class="req" for="w_grad">Please select your expected graduation month and year for your current studies.</label>
+    <select id="w_grad" name="w_grad" required="">
+      <option value="[SCRUBBED]">Select...</option>
+      <option>Prior to December 2025</option><option>Spring 2026</option><option>Fall 2026</option>
+      <option>Spring 2027</option><option>Fall 2027</option><option>Spring 2028</option>
+    </select>
+
+    <label class="req" for="w_season">Please choose the season that most accurately reflects your availability.</label>
+    <select id="w_season" name="w_season" required="">
+      <option value="[SCRUBBED]">Select...</option>
+      <option>Summer 2026</option><option>Fall 2026</option><option>Spring 2027</option>
+    </select>
+
+    <label class="req" for="w_hometown">Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown?</label>
+    <input id="w_hometown" name="w_hometown" required="">
+
+    <label for="w_about">Tell us something about yourself that we can't find on your resume.</label>
+    <textarea id="w_about" name="w_about" rows="3">[SCRUBBED]</textarea>
+
+    <label class="req" for="w_start">Ideal start date in office</label>
+    <input id="w_start" name="w_start" required="">
+
+    <label for="w_ai">What are some AI specific technologies you are comfortable with?</label>
+    <input id="w_ai" name="w_ai">
+
+    <button type="submit">Submit application</button>
+  </form>
+  </body></html>

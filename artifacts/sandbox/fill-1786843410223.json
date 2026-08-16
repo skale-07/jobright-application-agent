@@ -1,0 +1,9 @@
+{
+  "kind": "fill",
+  "lines": [
+    "filled: legal_name.first, legal_name.last, email, screener:custom:predicted:q_appliance, screener:custom:predicted:q_cobol, school, school, screener:custom:predicted:q_spirit, screener:custom:predicted:w_orgs, screener:custom:predicted:w_major, screener:custom:predicted:w_leadership, gpa, screener:internship_term, screener:custom:predicted:w_hometown, essay:generated:w_about, screener:start_availability, screener:custom:predicted:w_ai",
+    "ERROR q_tz: combobox option not committed: opened via control click; filter \"Eastern (US)\" → 1 option(s); match; picked \"Eastern (US)\" (exact); commit not confirmed: display shows placeholder",
+    "verify: failed",
+    "other-specify: chose \"Other\" and no text box appeared — nothing further to answer"
+  ]
+}

@@ -1,0 +1,44 @@
+{
+  "run_id": "nav-0b9048c8-3724-4e84-8e72-43397953162e",
+  "application_id": "34ce66e7-6c6b-4274-934a-3fbc2d41250c",
+  "jobright_job_id": "6a7f804619ce4e6e9d938a4c",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "duplicate_url",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "ibmglobal.avature.net"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "employer URL already held by 1 other application(s): 7d6c2811 (IBM — Intern Application Developer – Strategy & Transformation 2027, NATIVE_AUTOFILL_RUNNING)"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "ibmglobal",
+    "detail": "token \"ibm\" ~ slug \"ibmglobal\" (from URL host)",
+    "expected_company": "IBM",
+    "url": "https://ibmglobal.avature.net/en_US/careers/JobDetail?jobId=128824&src=jobright&jr_id=6a7f804619ce4e6e9d938a4c"
+  },
+  "duplicates": [
+    {
+      "application_id": "7d6c2811-5b58-4364-bff0-655e26e9d28c",
+      "state": "NATIVE_AUTOFILL_RUNNING",
+      "company": "IBM",
+      "role": "Intern Application Developer – Strategy & Transformation 2027"
+    }
+  ],
+  "login_wall": null,
+  "written_at": "2026-08-16T19:15:04.581Z"
+}

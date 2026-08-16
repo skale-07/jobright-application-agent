@@ -1,0 +1,24 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal",
+  "requested_url": "http://localhost:4599/portal",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "LOGIN_WALL",
+    "reason": "login wall detected: password_input_visible_in_dom,email_and_password_inputs,sign_in_heading_or_title,auth_form_action",
+    "final_url": "http://localhost:4599/portal"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "refused before any mutation — page gate failed"
+  ],
+  "written_at": "2026-08-16T18:41:55.142Z"
+}

@@ -1,0 +1,716 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/gauntlet",
+  "requested_url": "http://localhost:4599/gauntlet",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/gauntlet"
+  },
+  "plan_summary": {
+    "fillable_count": 14,
+    "skipped_count": 6,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "resume",
+      "label": "Resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "q_appliance",
+      "label": "If you were a kitchen appliance, which would you be?",
+      "type": "select",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "q_cobol",
+      "label": "Have you ever maintained a COBOL system in production?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_cobol",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "type": "select",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile; value \"Johns Hopkins University\" not on the control's list — using the form's own \"Other\""
+    },
+    {
+      "field_id": "q_uni_specify",
+      "label": "If other, please specify your university",
+      "type": "text",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_tz",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict)"
+    },
+    {
+      "field_id": "q_spirit",
+      "label": "Describe your debugging spirit animal in one word.",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "w_orgs",
+      "label": "Are you currently a member of any university organizations, such as clubs or fraternities/sororities?",
+      "type": "select",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_major",
+      "label": "Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?",
+      "type": "select",
+      "canonical_field": "major",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_leadership",
+      "label": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+      "type": "select",
+      "canonical_field": "current_company",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_gpa",
+      "label": "What is your current cumulative GPA on a 4.0 scale?",
+      "type": "select",
+      "canonical_field": "gpa",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_grad",
+      "label": "Please select your expected graduation month and year for your current studies.",
+      "type": "select",
+      "canonical_field": "graduation_year",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_season",
+      "label": "Please choose the season that most accurately reflects your availability.",
+      "type": "select",
+      "canonical_field": "screener:internship_term",
+      "action": "FILL",
+      "reason": "Screener bank answer (exact_option)"
+    },
+    {
+      "field_id": "w_hometown",
+      "label": "Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown?",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "w_about",
+      "label": "Tell us something about yourself that we can't find on your resume.",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Essays are never auto-filled"
+    },
+    {
+      "field_id": "w_start",
+      "label": "Ideal start date in office",
+      "type": "text",
+      "canonical_field": "screener:start_availability",
+      "action": "FILL",
+      "reason": "Screener bank answer (free_text)"
+    },
+    {
+      "field_id": "w_ai",
+      "label": "What are some AI specific technologies you are comfortable with?",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786836319559.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "screener:custom:predicted:q_cobol",
+      "school",
+      "school",
+      "gpa"
+    ],
+    "skipped": [],
+    "errors": [
+      "q_tz: combobox option not committed: opened via control click; filter \"Eastern (US)\" → 1 option(s); match; picked \"Eastern (US)\" (exact); commit not confirmed: display shows placeholder",
+      "w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+      "w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Yes, No)",
+      "w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+      "w_grad: locator.allTextContents: Target page, context or browser has been closed",
+      "w_season: locator.evaluate: Target page, context or browser has been closed",
+      "w_start: locator.evaluate: Target page, context or browser has been closed"
+    ],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_cobol",
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "control_kind": "native_select",
+        "selected_option": "No",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni",
+        "canonical_field": "school",
+        "control_kind": "native_select",
+        "selected_option": "Other",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni_specify",
+        "canonical_field": "school",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_tz",
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "control_kind": "combobox",
+        "selected_option": null,
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Eastern (US)\" → 1 option(s); match",
+          "picked \"Eastern (US)\" (exact)",
+          "commit not confirmed: display shows placeholder"
+        ],
+        "options_sample": [
+          "Eastern (US)"
+        ]
+      },
+      {
+        "field_id": "w_gpa",
+        "canonical_field": "gpa",
+        "control_kind": "native_select",
+        "selected_option": "3.7",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "expected": "No",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Other",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "expected": "Eastern (US)",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "major",
+        "expected": "Applied Math & Stats",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "current_company",
+        "expected": "Summer Atlantic Capital",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "gpa",
+        "expected": 3.7,
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:internship_term",
+        "expected": "Summer 2026",
+        "observed": null,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:start_availability",
+        "expected": "Flexible — aligned to the posted term",
+        "observed": null,
+        "match": false
+      }
+    ],
+    "uploads": [],
+    "warnings": [
+      "verify legal_name.first: locator.evaluate: Target page, context or browser has been closed",
+      "verify legal_name.last: locator.evaluate: Target page, context or browser has been closed",
+      "verify email: locator.evaluate: Target page, context or browser has been closed",
+      "verify screener:custom:predicted:q_cobol: locator.evaluate: Target page, context or browser has been closed",
+      "verify school: locator.evaluate: Target page, context or browser has been closed",
+      "verify school: locator.evaluate: Target page, context or browser has been closed",
+      "verify screener:custom:predicted:q_tz: locator.evaluate: Target page, context or browser has been closed",
+      "verify current_company: locator.evaluate: Target page, context or browser has been closed",
+      "verify major: locator.evaluate: Target page, context or browser has been closed",
+      "verify current_company: locator.evaluate: Target page, context or browser has been closed",
+      "verify gpa: locator.evaluate: Target page, context or browser has been closed",
+      "verify graduation_year: locator.evaluate: Target page, context or browser has been closed",
+      "verify screener:internship_term: locator.evaluate: Target page, context or browser has been closed",
+      "verify screener:start_availability: locator.evaluate: Target page, context or browser has been closed"
+    ]
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "option harvest: scraped real options for 1/9 control(s) before planning",
+    "other-specify: could not re-read the page after fill",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "answer_space": "closed",
+      "option_count": 4,
+      "options": [
+        "Eastern (US)",
+        "Central (US)",
+        "Mountain (US)",
+        "Pacific (US)"
+      ],
+      "other_option": null
+    }
+  ],
+  "other_specify": [
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "revealed_field_id": null,
+      "filled": false,
+      "note": "could not re-read the page after fill"
+    }
+  ],
+  "operator_brief": {
+    "title": "Live fill — generic http://localhost:4599/gauntlet",
+    "summary": "21 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:legal_name.first",
+        "question": "First Name",
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Shubham\"; page shows \"(empty)\"",
+        "expected": "Shubham",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Shubham\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → legal_name.first",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"legal_name.first\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:legal_name.last",
+        "question": "Last Name",
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Kale\"; page shows \"(empty)\"",
+        "expected": "Kale",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Kale\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → legal_name.last",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"legal_name.last\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:email",
+        "question": "Email",
+        "field_id": "email",
+        "canonical_field": "email",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"skale1@jh.edu\"; page shows \"(empty)\"",
+        "expected": "s***@jh.edu",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"skale1@jh.edu\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → email",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"email\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:custom:predicted:q_cobol",
+        "question": "Have you ever maintained a COBOL system in production?",
+        "field_id": "q_cobol",
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"No\"; page shows \"(empty)\"",
+        "expected": "No",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"No\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:q_cobol)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:q_cobol\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:school",
+        "question": "If other, please specify your university",
+        "field_id": "q_uni_specify",
+        "canonical_field": "school",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Other\"; page shows \"(empty)\"",
+        "expected": "Other",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Other\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: school)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"school\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:school",
+        "question": "If other, please specify your university",
+        "field_id": "q_uni_specify",
+        "canonical_field": "school",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Johns Hopkins University\"; page shows \"(empty)\"",
+        "expected": "Johns Hopkins University",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Johns Hopkins University\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: school)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"school\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:custom:predicted:q_tz",
+        "question": "Which time zone will you primarily frobnicate from?",
+        "field_id": "q_tz",
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Eastern (US)\"; page shows \"(empty)\"",
+        "expected": "Eastern (US)",
+        "observed": null,
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Eastern (US)). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Eastern (US)\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:predicted:q_tz)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:predicted:q_tz\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:current_company",
+        "question": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+        "field_id": "w_leadership",
+        "canonical_field": "current_company",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Summer Atlantic Capital\"; page shows \"(empty)\"",
+        "expected": "Summer Atlantic Capital",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Summer Atlantic Capital\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → current_company",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"current_company\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:major",
+        "question": "Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?",
+        "field_id": "w_major",
+        "canonical_field": "major",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Applied Math & Stats\"; page shows \"(empty)\"",
+        "expected": "Applied Math & Stats",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Applied Math & Stats\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: major)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"major\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:current_company",
+        "question": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+        "field_id": "w_leadership",
+        "canonical_field": "current_company",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Summer Atlantic Capital\"; page shows \"(empty)\"",
+        "expected": "Summer Atlantic Capital",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Summer Atlantic Capital\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → current_company",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"current_company\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:gpa",
+        "question": "What is your current cumulative GPA on a 4.0 scale?",
+        "field_id": "w_gpa",
+        "canonical_field": "gpa",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"3.7\"; page shows \"(empty)\"",
+        "expected": 3.7,
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"3.7\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: gpa)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"gpa\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:graduation_year",
+        "question": "Please select your expected graduation month and year for your current studies.",
+        "field_id": "w_grad",
+        "canonical_field": "graduation_year",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"2029\"; page shows \"(empty)\"",
+        "expected": "2029",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"2029\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: graduation_year)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"graduation_year\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:internship_term",
+        "question": "Please choose the season that most accurately reflects your availability.",
+        "field_id": "w_season",
+        "canonical_field": "screener:internship_term",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Summer 2026\"; page shows \"(empty)\"",
+        "expected": "Summer 2026",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Summer 2026\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:internship_term)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:internship_term\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:start_availability",
+        "question": "Ideal start date in office",
+        "field_id": "w_start",
+        "canonical_field": "screener:start_availability",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Flexible — aligned to the posted term\"; page shows \"(empty)\"",
+        "expected": "Flexible — aligned to the posted term",
+        "observed": null,
+        "how_to_answer": [
+          "System expected \"Flexible — aligned to the posted term\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:start_availability)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:start_availability\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:q_tz: combobox option not committed: opened via control click; filter \"Eastern (",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "q_tz: combobox option not committed: opened via control click; filter \"Eastern (US)\" → 1 option(s); match; picked \"Eastern (US)\" (exact); commit not confirmed: display shows placeholder",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select...,",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_orgs: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Y",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_major: No select option matching \"Applied Math & Stats\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Sele",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_leadership: No select option matching \"Summer Atlantic Capital\" (options: Select..., Yes, No)",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_grad: locator.allTextContents: Target page, context or browser has been closed",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_grad: locator.allTextContents: Target page, context or browser has been closed",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_season: locator.evaluate: Target page, context or browser has been closed",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_season: locator.evaluate: Target page, context or browser has been closed",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:w_start: locator.evaluate: Target page, context or browser has been closed",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "w_start: locator.evaluate: Target page, context or browser has been closed",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 0,
+    "fail_count": 21
+  },
+  "written_at": "2026-08-15T23:29:52.277Z"
+}

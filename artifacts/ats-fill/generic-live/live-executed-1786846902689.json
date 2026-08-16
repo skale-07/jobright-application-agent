@@ -1,0 +1,531 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/gauntlet",
+  "requested_url": "http://localhost:4599/gauntlet",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/gauntlet"
+  },
+  "plan_summary": {
+    "fillable_count": 19,
+    "skipped_count": 1,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "resume",
+      "label": "Resume",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "q_appliance",
+      "label": "If you were a kitchen appliance, which would you be?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_appliance",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Whimsical culture question; a rice cooker matches his stated preference for deterministic systems that do one job reliably."
+    },
+    {
+      "field_id": "q_cobol",
+      "label": "Have you ever maintained a COBOL system in production?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_cobol",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): His stack is TypeScript, Python, Swift, and ML tooling with no mainframe or COBOL experience."
+    },
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "type": "select",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile; value \"Johns Hopkins University\" not on the control's list — using the form's own \"Other\""
+    },
+    {
+      "field_id": "q_uni_specify",
+      "label": "If other, please specify your university",
+      "type": "text",
+      "canonical_field": "school",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_tz",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): He is based in Baltimore, Maryland, which is US Eastern time."
+    },
+    {
+      "field_id": "q_spirit",
+      "label": "Describe your debugging spirit animal in one word.",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_spirit",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): One-word prompt answered with a single word reflecting his trace-the-evidence debugging style."
+    },
+    {
+      "field_id": "w_orgs",
+      "label": "Are you currently a member of any university organizations, such as clubs or fraternities/sororities?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:w_orgs",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): He participates in Hopkins programs including the Pava Spark Accelerator and NSF I-Corps and co-founded a student venture."
+    },
+    {
+      "field_id": "w_major",
+      "label": "Are you currently pursuing a Major in one of the following disciplines: Computer Science, Computer Engineering?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:w_major",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): His majors are Applied Mathematics & Statistics and Economics, not CS or CE."
+    },
+    {
+      "field_id": "w_leadership",
+      "label": "Have you ever held, or do you currently hold, any leadership roles through work, school clubs, or organizations?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:w_leadership",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): He co-founded Open Health Intelligence as technical lead, founded SnapSort and led a cross-functional team, and was lead model developer on a Gates Foundation project."
+    },
+    {
+      "field_id": "w_gpa",
+      "label": "What is your current cumulative GPA on a 4.0 scale?",
+      "type": "select",
+      "canonical_field": "gpa",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_grad",
+      "label": "Please select your expected graduation month and year for your current studies.",
+      "type": "select",
+      "canonical_field": "graduation_year",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_season",
+      "label": "Please choose the season that most accurately reflects your availability.",
+      "type": "select",
+      "canonical_field": "screener:internship_term",
+      "action": "FILL",
+      "reason": "Screener bank answer (exact_option)"
+    },
+    {
+      "field_id": "w_hometown",
+      "label": "Our employees are from all parts of the world. We love to know where our applicants are from too. Where is your hometown?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:w_hometown",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Profile facts list his city and state as Baltimore, Maryland, in the United States."
+    },
+    {
+      "field_id": "w_about",
+      "label": "Tell us something about yourself that we can't find on your resume.",
+      "type": "textarea",
+      "canonical_field": "essay:generated:w_about",
+      "action": "FILL",
+      "reason": "Essay generated from the operator's about-me context"
+    },
+    {
+      "field_id": "w_start",
+      "label": "Ideal start date in office",
+      "type": "text",
+      "canonical_field": "screener:start_availability",
+      "action": "FILL",
+      "reason": "Screener bank answer (free_text)"
+    },
+    {
+      "field_id": "w_ai",
+      "label": "What are some AI specific technologies you are comfortable with?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:w_ai",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Summarizes the AI/ML tooling named across his SAC Nexus, Intelehealth, Gates Foundation, tSearch, and Gloria projects."
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786846899140.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "screener:custom:predicted:q_appliance",
+      "screener:custom:predicted:q_cobol",
+      "school",
+      "school",
+      "screener:custom:predicted:q_tz",
+      "screener:custom:predicted:q_spirit",
+      "screener:custom:predicted:w_orgs",
+      "screener:custom:predicted:w_major",
+      "screener:custom:predicted:w_leadership",
+      "gpa",
+      "graduation_year",
+      "screener:internship_term",
+      "screener:custom:predicted:w_hometown",
+      "essay:generated:w_about",
+      "screener:start_availability",
+      "screener:custom:predicted:w_ai"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_appliance",
+        "canonical_field": "screener:custom:predicted:q_appliance",
+        "control_kind": "native_select",
+        "selected_option": "Rice cooker",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_cobol",
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "control_kind": "native_select",
+        "selected_option": "No",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni",
+        "canonical_field": "school",
+        "control_kind": "native_select",
+        "selected_option": "Other",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_uni_specify",
+        "canonical_field": "school",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_tz",
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "control_kind": "combobox",
+        "selected_option": "Eastern (US)",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Eastern (US)\" → 1 option(s); match",
+          "picked \"Eastern (US)\" (exact)"
+        ],
+        "options_sample": [
+          "Eastern (US)"
+        ]
+      },
+      {
+        "field_id": "q_spirit",
+        "canonical_field": "screener:custom:predicted:q_spirit",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "w_orgs",
+        "canonical_field": "screener:custom:predicted:w_orgs",
+        "control_kind": "native_select",
+        "selected_option": "Yes",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_major",
+        "canonical_field": "screener:custom:predicted:w_major",
+        "control_kind": "native_select",
+        "selected_option": "No",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_leadership",
+        "canonical_field": "screener:custom:predicted:w_leadership",
+        "control_kind": "native_select",
+        "selected_option": "Yes",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_gpa",
+        "canonical_field": "gpa",
+        "control_kind": "native_select",
+        "selected_option": "3.7",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_grad",
+        "canonical_field": "graduation_year",
+        "control_kind": "native_select",
+        "selected_option": "2029",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_season",
+        "canonical_field": "screener:internship_term",
+        "control_kind": "native_select",
+        "selected_option": "Summer 2026",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "w_hometown",
+        "canonical_field": "screener:custom:predicted:w_hometown",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "w_about",
+        "canonical_field": "essay:generated:w_about",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "w_start",
+        "canonical_field": "screener:start_availability",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "w_ai",
+        "canonical_field": "screener:custom:predicted:w_ai",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_appliance",
+        "expected": "Rice cooker",
+        "observed": {
+          "value": "Rice cooker",
+          "label": "Rice cooker"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_cobol",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Other",
+        "observed": {
+          "value": "Other",
+          "label": "Other"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": "Johns Hopkins University",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_tz",
+        "expected": "Eastern (US)",
+        "observed": {
+          "value": "Eastern (US)",
+          "label": "Eastern (US)"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_spirit",
+        "expected": "Bloodhound",
+        "observed": "Bloodhound",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_orgs",
+        "expected": "Yes",
+        "observed": {
+          "value": "Yes",
+          "label": "Yes"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_major",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_leadership",
+        "expected": "Yes",
+        "observed": {
+          "value": "Yes",
+          "label": "Yes"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "gpa",
+        "expected": 3.7,
+        "observed": {
+          "value": "3.7 or Higher",
+          "label": "3.7 or Higher"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "graduation_year",
+        "expected": "2029",
+        "observed": {
+          "value": "2029 or later",
+          "label": "2029 or later"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:internship_term",
+        "expected": "Summer 2026",
+        "observed": {
+          "value": "Summer 2026",
+          "label": "Summer 2026"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_hometown",
+        "expected": "Baltimore, Maryland, United States",
+        "observed": "Baltimore, Maryland, United States",
+        "match": true
+      },
+      {
+        "canonical_field": "essay:generated:w_about",
+        "expected": "Something that doesn't show up anywhere on my resume: I got a meeting with the president of Johns Hopkins by knocking on a locked door. During Lighting of the Quads, my cofounders and I realized President Daniels was nearby. We walked over to Garland Hall, saw him through the glass, and knocked until someone let us pitch ClarityAtlas. That conversation eventually turned into a formal meeting months later with him and leadership from the Data Science and AI Institute.\n\nThe other thing you won't find listed is how much time I spend on a question that has no deliverable attached. Over the past year I've been reading about how research gets funded and evaluated, from patronage to Bell Labs to the NIH project-grant model to newer structures like DARPA and Focused Research Organizations, and interviewing researchers, administrators, and science-policy people. I started out convinced grant-writing time was the main constraint on science. Talking to actual researchers changed that. I now think the bigger effect is selection: people learn which ideas are legible enough to get funded and quietly stop attempting the ones that aren't.",
+        "observed": "Something that doesn't show up anywhere on my resume: I got a meeting with the president of Johns Hopkins by knocking on a locked door. During Lighting of the Quads, my cofounders and I realized President Daniels was nearby. We walked over to Garland Hall, saw him through the glass, and knocked until someone let us pitch ClarityAtlas. That conversation eventually turned into a formal meeting months later with him and leadership from the Data Science and AI Institute.\n\nThe other thing you won't find listed is how much time I spend on a question that has no deliverable attached. Over the past year I've been reading about how research gets funded and evaluated, from patronage to Bell Labs to the NIH project-grant model to newer structures like DARPA and Focused Research Organizations, and interviewing researchers, administrators, and science-policy people. I started out convinced grant-writing time was the main constraint on science. Talking to actual researchers changed that. I now think the bigger effect is selection: people learn which ideas are legible enough to get funded and quietly stop attempting the ones that aren't.",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:start_availability",
+        "expected": "Flexible — aligned to the posted term",
+        "observed": "Flexible — aligned to the posted term",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:w_ai",
+        "expected": "I work most with Python and PyTorch for modeling, plus XGBoost and SHAP for gradient-boosted models and interpretation on large survey data. On the LLM side I have built retrieval-augmented generation pipelines using OpenAI models and embeddings with Pinecone vector search and a Neo4j graph, rubric-driven LLM judging systems where separate judges score dimensions in parallel and then synthesize a cited assessment, and evaluation frameworks for AI-generated clinical outputs benchmarked against a 4,169-case clinical standard using stratified sampling. I have also done temporal sequence modeling over event streams with RNN and Transformer-style architectures for anomaly scoring, a learning-to-rank layer for alert prioritization, and CNN training in PyTorch for facial-landmark prediction. Around the models, I serve things with FastAPI, and for agent work I use TypeScript, Node, and Playwright with explicit state machines, Zod validation, and fail-closed flags so LLM calls stay at narrow, reviewable call sites.",
+        "observed": "I work most with Python and PyTorch for modeling, plus XGBoost and SHAP for gradient-boosted models and interpretation on large survey data. On the LLM side I have built retrieval-augmented generation pipelines using OpenAI models and embeddings with Pinecone vector search and a Neo4j graph, rubric-driven LLM judging systems where separate judges score dimensions in parallel and then synthesize a cited assessment, and evaluation frameworks for AI-generated clinical outputs benchmarked against a 4,169-case clinical standard using stratified sampling. I have also done temporal sequence modeling over event streams with RNN and Transformer-style architectures for anomaly scoring, a learning-to-rank layer for alert prioritization, and CNN training in PyTorch for facial-landmark prediction. Around the models, I serve things with FastAPI, and for agent work I use TypeScript, Node, and Playwright with explicit state machines, Zod validation, and fail-closed flags so LLM calls stay at narrow, reviewable call sites.",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": [
+    {
+      "field": "resume",
+      "path": "[REDACTED_PATH]",
+      "filename": "[REDACTED_PATH]",
+      "size_bytes": 76462,
+      "verified": true,
+      "evidence": "input files: [{\"name\":\"Shubham_Kale_Citadel_NeurIPS_Resume.pdf\",\"size\":76462}]; stillAttached=true; chip=false"
+    }
+  ],
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "submit_attempted": false,
+  "notes": [
+    "option harvest: scraped real options for 1/9 control(s) before planning",
+    "other-specify: chose \"Other\" and no text box appeared — nothing further to answer",
+    "submit withheld — unattended sandbox submit requires --yes"
+  ],
+  "harvested_options": [
+    {
+      "field_id": "q_tz",
+      "label": "Which time zone will you primarily frobnicate from?",
+      "answer_space": "closed",
+      "option_count": 4,
+      "options": [
+        "Eastern (US)",
+        "Central (US)",
+        "Mountain (US)",
+        "Pacific (US)"
+      ],
+      "other_option": null
+    }
+  ],
+  "other_specify": [
+    {
+      "field_id": "q_uni",
+      "label": "Which university do you attend? Select \"Other\" if not listed.",
+      "revealed_field_id": null,
+      "filled": false,
+      "note": "chose \"Other\" and no text box appeared — nothing further to answer"
+    }
+  ],
+  "submit": {
+    "outcome": "refused",
+    "clicked": false,
+    "receipt": null,
+    "notes": [
+      "submit withheld — unattended sandbox submit requires --yes"
+    ]
+  },
+  "written_at": "2026-08-16T02:21:42.732Z"
+}

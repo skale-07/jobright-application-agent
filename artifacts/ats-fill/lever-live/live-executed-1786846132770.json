@@ -1,0 +1,251 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "requested_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply"
+  },
+  "plan_summary": {
+    "fillable_count": 6,
+    "skipped_count": 7,
+    "review_required_count": 1
+  },
+  "plan_fields": [
+    {
+      "field_id": "resume-upload-input",
+      "label": "Resume/CV",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "name",
+      "label": "Full name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Single full-name field: composed legal_name.first + legal_name.last (both safe factual canonicals)"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "Phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "org",
+      "label": "Current company",
+      "type": "text",
+      "canonical_field": "current_company",
+      "action": "SKIP",
+      "reason": "Profile value empty for current_company"
+    },
+    {
+      "field_id": "urls-linkedin",
+      "label": "LinkedIn URL",
+      "type": "text",
+      "canonical_field": "linkedin_url",
+      "action": "SKIP",
+      "reason": "Profile value empty for linkedin_url"
+    },
+    {
+      "field_id": "urls-github",
+      "label": "GitHub URL",
+      "type": "text",
+      "canonical_field": "github_url",
+      "action": "SKIP",
+      "reason": "Profile value empty for github_url"
+    },
+    {
+      "field_id": "urls-portfolio",
+      "label": "Portfolio URL",
+      "type": "text",
+      "canonical_field": "personal_website",
+      "action": "SKIP",
+      "reason": "Profile value empty for personal_website"
+    },
+    {
+      "field_id": "card-hearabout",
+      "label": "How did you hear about us?",
+      "type": "text",
+      "canonical_field": "how_heard",
+      "action": "SKIP",
+      "reason": "Profile value empty for how_heard"
+    },
+    {
+      "field_id": "card-workauth",
+      "label": "Are you legally authorized to work in the United States?",
+      "type": "select",
+      "canonical_field": "work_authorization",
+      "action": "REVIEW_REQUIRED",
+      "reason": "Required work_authorization missing from profile — human review"
+    },
+    {
+      "field_id": "comments",
+      "label": "Additional information",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "essay autofill skipped: ESSAY_AUTOFILL_ENABLED and SCREENER_PREDICT_LLM_ENABLED are both off"
+    },
+    {
+      "field_id": "eeo-gender",
+      "label": "Gender",
+      "type": "select",
+      "canonical_field": "gender",
+      "action": "FILL",
+      "reason": "Mapped from sensitive profile (operator-supplied)"
+    },
+    {
+      "field_id": "eeo-race",
+      "label": "Race",
+      "type": "select",
+      "canonical_field": "race_ethnicity",
+      "action": "FILL",
+      "reason": "Mapped from sensitive profile (operator-supplied)"
+    },
+    {
+      "field_id": "eeo-veteran",
+      "label": "Veteran status",
+      "type": "select",
+      "canonical_field": "veteran_status",
+      "action": "FILL",
+      "reason": "Mapped from sensitive profile (operator-supplied)"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\lever-live\\form-snapshot-1786846132460.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "email",
+      "phone",
+      "gender",
+      "race_ethnicity",
+      "veteran_status"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "eeo-gender",
+        "canonical_field": "gender",
+        "control_kind": "native_select",
+        "selected_option": "Male",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "eeo-race",
+        "canonical_field": "race_ethnicity",
+        "control_kind": "native_select",
+        "selected_option": "Asian",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "eeo-veteran",
+        "canonical_field": "veteran_status",
+        "control_kind": "native_select",
+        "selected_option": "I am not a veteran",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Ada Lovelace",
+        "observed": "Ada Lovelace",
+        "match": true
+      },
+      {
+        "canonical_field": "email",
+        "expected": "a***@example.com",
+        "observed": "a***@example.com",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-0100",
+        "observed": "***-***-0100",
+        "match": true
+      },
+      {
+        "canonical_field": "gender",
+        "expected": "Male",
+        "observed": {
+          "value": "Male",
+          "label": "Male"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "race_ethnicity",
+        "expected": "Asian",
+        "observed": {
+          "value": "Asian",
+          "label": "Asian"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "veteran_status",
+        "expected": "I am not a veteran",
+        "observed": {
+          "value": "I am not a veteran",
+          "label": "I am not a veteran"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "submit refused — ats:fill --submit is sandbox/loopback only; use `submit --application` for an employer",
+    "fixture-served page (test seam) — validation level demoted, not live evidence"
+  ],
+  "harvested_options": [],
+  "submit": {
+    "outcome": "refused",
+    "clicked": false,
+    "receipt": null,
+    "notes": [
+      "submit refused — ats:fill --submit is sandbox/loopback only; use `submit --application` for an employer"
+    ]
+  },
+  "written_at": "2026-08-16T02:08:52.796Z"
+}

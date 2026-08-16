@@ -1,0 +1,8 @@
+{
+  "kind": "plan",
+  "lines": [
+    "2 fill / 0 skip / 0 review",
+    "FILL             First Name → Ada  [Mapped from public profile]",
+    "FILL             Email → ada@example.com  [Mapped from public profile]"
+  ]
+}

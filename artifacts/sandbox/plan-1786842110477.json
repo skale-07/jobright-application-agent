@@ -1,0 +1,26 @@
+{
+  "kind": "plan",
+  "lines": [
+    "18 fill / 2 skip / 0 review",
+    "FILL             First Name → Shubham  [Mapped from public profile]",
+    "FILL             Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email → skale1@jh.edu  [Mapped from public profile]",
+    "SKIP             Resume  [File uploads handled via uploadResume/uploadCoverLetter]",
+    "FILL             If you were a kitchen appliance, which would you → Rice cooker  [Predicted from operator context (llm_predict): Playful question; rice cooker fits a candidate who values deterministic, reliable systems that do one job well.]",
+    "FILL             Have you ever maintained a COBOL system in produ → No  [Predicted from operator context (llm_predict): Candidate's stack is Python, TypeScript, Swift, and ML tooling with no mainframe or COBOL work.]",
+    "FILL             Which university do you attend? Select \"Other\" i → Other  [Mapped from public profile; value \"Johns Hopkins University\" not on the control's list — using the form's own \"Other\"]",
+    "FILL             If other, please specify your university → Johns Hopkins University  [Mapped from public profile]",
+    "FILL             Which time zone will you primarily frobnicate fr → Eastern (US)  [Predicted from operator context (llm_predict): Candidate is based in Baltimore, Maryland, which is in the US Eastern time zone.]",
+    "FILL             Describe your debugging spirit animal in one wor → Bloodhound  [Predicted from operator context (llm_predict): One-word prompt answered in one word, reflecting his habit of tracing failures to their root through evidence.]",
+    "FILL             Are you currently a member of any university org → Summer Atlantic Capital  [Mapped from public profile]",
+    "FILL             Are you currently pursuing a Major in one of the → Applied Math & Stats  [Mapped from public profile]",
+    "FILL             Have you ever held, or do you currently hold, an → Summer Atlantic Capital  [Mapped from public profile]",
+    "FILL             What is your current cumulative GPA on a 4.0 sca → 3.7  [Mapped from public profile]",
+    "FILL             Please select your expected graduation month and → 2029  [Mapped from public profile]",
+    "FILL             Please choose the season that most accurately re → Summer 2026  [Screener bank answer (exact_option)]",
+    "FILL             Our employees are from all parts of the world. W → Baltimore, Maryland, United States  [Predicted from operator context (llm_predict): Profile facts list Baltimore, Maryland, United States as his location.]",
+    "SKIP             Tell us something about yourself that we can't f  [Essay/textarea never approved for auto-fill]",
+    "FILL             Ideal start date in office → Flexible — aligned to the posted term  [Screener bank answer (free_text)]",
+    "FILL             What are some AI specific technologies you are c → I work most with Python and PyTorch for modeling, plus XGBoost and SHA  [Predicted from operator context (llm_predict): Summarizes the AI/ML tooling named across his SAC Nexus, Intelehealth, Gates Foundation, SnapSort, Gloria, and tSearch work.]"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/gauntlet",
+  "requested_url": "http://localhost:4599/gauntlet",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/gauntlet"
+  },
+  "plan_summary": {
+    "fillable_count": 1,
+    "skipped_count": 1,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "w_grad",
+      "label": "Expected graduation",
+      "type": "select",
+      "canonical_field": "graduation_year",
+      "action": "SKIP",
+      "reason": "Profile value empty for graduation_year"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1786845706483.html",
+  "fill": {
+    "filled": [
+      "legal_name.first"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Ada",
+        "observed": "Ada",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "submit withheld — 1 required question(s) unanswered: Expected graduation [select]",
+    "fixture-served page (test seam) — validation level demoted, not live evidence"
+  ],
+  "harvested_options": [],
+  "submit": {
+    "outcome": "failed_before_click",
+    "clicked": false,
+    "receipt": null,
+    "notes": [
+      "submit withheld — 1 required question(s) unanswered: Expected graduation [select]"
+    ]
+  },
+  "written_at": "2026-08-16T02:01:46.584Z"
+}
