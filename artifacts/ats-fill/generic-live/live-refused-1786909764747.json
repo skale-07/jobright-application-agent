@@ -1,0 +1,32 @@
+{
+  "ats": "generic",
+  "url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881",
+  "requested_url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "FORM_NOT_REACHED",
+    "reason": "still on the job posting after trying Apply — no application form to fill",
+    "final_url": "https://www.paycomonline.net/v4/ats/web.php/portal/56CA827D488C9EDCE842370F906D69ED/jobs/327881",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "page class at gate: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via text \"Apply\"",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via text \"Apply\"",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "still on a posting after 2 Apply click(s) — giving up rather than filling the listing page",
+    "parked: refused to fill a listing page's own search widgets"
+  ],
+  "written_at": "2026-08-16T19:49:24.747Z"
+}

@@ -1,0 +1,32 @@
+{
+  "ats": "generic",
+  "url": "https://joinbytedance.com/search/7668212952030841093",
+  "requested_url": "https://joinbytedance.com/search/7668212952030841093",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "FORM_NOT_REACHED",
+    "reason": "still on the job posting after trying Apply — no application form to fill",
+    "final_url": "https://joinbytedance.com/search/7668212952030841093",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "page class at gate: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via a[href*=\"apply\" i]:not([href*=\"filter\" i])",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via a[href*=\"apply\" i]:not([href*=\"filter\" i])",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "still on a posting after 2 Apply click(s) — giving up rather than filling the listing page",
+    "parked: refused to fill a listing page's own search widgets"
+  ],
+  "written_at": "2026-08-16T19:49:31.648Z"
+}

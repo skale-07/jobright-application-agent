@@ -1,0 +1,103 @@
+{
+  "arm_run_id": "e7870345-d4cc-43f6-b273-49fa91185076",
+  "apps_started": 9,
+  "submits_used": 0,
+  "stopped_reason": "queue_drained",
+  "discover_runs": 3,
+  "emails_generated": 0,
+  "drafts_saved": 0,
+  "essay_drafts_generated": 0,
+  "screener_predictions_generated": 0,
+  "notes": [
+    "nav audit: 0 wrong-employer URL(s) cleared for re-navigation, 5 parked for review",
+    "discover: 8 inspected, 6 eligible, 2 already known, 0 filtered out, 0 already submitted",
+    "discover: 8 inspected, 1 eligible, 8 already known, 0 filtered out, 0 already submitted",
+    "shared nav session dropped after error on 7d6c2811-5b58-4364-bff0-655e26e9d28c: page.content: Unable to retrieve content because the page is navigating and changing the content.",
+    "discover: 8 inspected, 0 eligible, 8 already known, 0 filtered out, 0 already submitted",
+    "artifact autopush: 201 file(s) pushed to master as f005c4d"
+  ],
+  "per_app": [
+    {
+      "application_id": "277bd1b3-1882-4ce4-8f65-2dee73fd9d97",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "5b5a55c7-ff46-44ab-9c1a-342885665ed1",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "d1974007-3504-4be7-87b7-dd2a430b990c",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "c004cde7-c6e2-4d1e-8e5b-c5187a2f586a",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation refused: duplicate employer URL",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "15449252-fda0-4ab4-a5ba-47f6402d035c",
+      "end_state": "AMBIGUOUS_FIELD",
+      "stopped": "review",
+      "stop_reason": "verification failed",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "34ce66e7-6c6b-4274-934a-3fbc2d41250c",
+      "end_state": "FAILED_RETRYABLE",
+      "stopped": "review",
+      "stop_reason": "navigation refused: duplicate employer URL",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "7d6c2811-5b58-4364-bff0-655e26e9d28c",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "generic live fill refused: UNTRUSTED_FINAL_HOST",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "0082b074-0687-4d90-9788-3675f1c42165",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "generic live fill refused: NO_APPLICATION_FORM",
+      "submitted": false,
+      "outreach": null
+    },
+    {
+      "application_id": "9a30b836-b571-4d65-a416-731da7efe6bf",
+      "end_state": "NATIVE_AUTOFILL_RUNNING",
+      "stopped": "gate",
+      "stop_reason": "generic live fill refused: NO_APPLICATION_FORM",
+      "submitted": false,
+      "outreach": null
+    }
+  ],
+  "nav_audit": {
+    "checked": 40,
+    "repaired": 0,
+    "parked": 5
+  },
+  "artifact_autopush": {
+    "pushed": true,
+    "commit": "f005c4d",
+    "files_staged": 201
+  }
+}

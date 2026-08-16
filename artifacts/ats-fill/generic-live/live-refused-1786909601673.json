@@ -1,0 +1,26 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal/auth",
+  "requested_url": "http://localhost:4599/portal/auth",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "LOGIN_WALL",
+    "reason": "login wall detected: final_url_auth_path,password_input_visible_in_dom,email_and_password_inputs",
+    "final_url": "http://localhost:4599/portal/auth",
+    "page_class": "auth"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: auth (login wall: final_url_auth_path,password_input_visible_in_dom,email_and_password_inputs)",
+    "refused — login wall; set NAVIGATION_ENABLED=true and PORTAL_LOGIN_EMAIL/PASSWORD to sign in"
+  ],
+  "written_at": "2026-08-16T19:46:41.673Z"
+}
