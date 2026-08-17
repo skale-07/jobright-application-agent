@@ -53,6 +53,7 @@ import { tryLoadAboutMe } from "./essayDraft.js";
 import { isApplicationConsentField } from "./consentFields.js";
 import { isDemographicsField } from "./essayDetector.js";
 import { findOtherOption } from "../ats/shared/optionHarvest.js";
+import { pruneSavedAnswersForQuestions } from "./predictionContext.js";
 import { llmTraceEvent, postSandboxTrace } from "../sandbox/trace.js";
 import {
   resolveReviewItem,
@@ -374,9 +375,21 @@ export async function predictAnswersForQuestions(
   if (!about && !bank && !profileFacts) return out;
   try {
     const llm = client ?? makeLlmClient();
+    const prunedBank = pruneSavedAnswersForQuestions(
+      bank?.answers ?? {},
+      askable.map((q) => q.label),
+    );
+    if (prunedBank.dropped > 0 && traceUrl) {
+      await postSandboxTrace(traceUrl, {
+        kind: "context prune",
+        lines: [
+          `saved_answers: kept ${prunedBank.total - prunedBank.dropped}/${prunedBank.total} bank entries relevant to this batch`,
+        ],
+      });
+    }
     const userPayload = {
       candidate_context: about ?? "",
-      saved_answers: bank?.answers ?? {},
+      saved_answers: prunedBank.kept,
       learned_answers: learnedAnswersForPrompt(
         bank,
         askable.map((q) => q.label),
@@ -615,13 +628,22 @@ export async function generateScreenerPredictions(input: {
   for (const r of askable) bump.run(now, r.id);
 
   const client = input.client ?? makeLlmClient();
+  const batchPrune = pruneSavedAnswersForQuestions(
+    bank?.answers ?? {},
+    askable.map((r) => r.raw_label),
+  );
+  if (batchPrune.dropped > 0) {
+    report.notes.push(
+      `context prune: kept ${batchPrune.total - batchPrune.dropped}/${batchPrune.total} saved answers relevant to this batch`,
+    );
+  }
   let parsed: { predictions?: Array<Record<string, unknown>> };
   try {
     const { text } = await client.generateJson({
       system: SYSTEM_PROMPT,
       user: JSON.stringify({
         candidate_context: about ?? "",
-        saved_answers: bank?.answers ?? {},
+        saved_answers: batchPrune.kept,
         learned_answers: learnedAnswersForPrompt(
           bank,
           askable.map((r) => r.raw_label),
