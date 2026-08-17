@@ -984,20 +984,6 @@ placeholders (`field_12`), UUID labels, and terms/privacy checkboxes are
 not queued as questions — terms auto-check; majors check only when they
 match your profile. Pronouns / EEO stay on the sensitive-profile path.
 
-**Cost/latency tuning (optional).** The predictor payload is partitioned:
-your about-me rides in a prompt-cache-marked stable block (repeat calls
-in a session read it at ~10% input price), and only bank entries
-lexically relevant to the batch's questions are sent once the bank grows
-past 20 entries (a `context prune` line in `/trace` shows what was kept).
-With `SCREENER_PREDICT_FAST_FIRST=true` (Anthropic key required) the
-whole batch is asked of `ANTHROPIC_FAST_MODEL` (default Haiku) first;
-only questions whose answers fail the verbatim validator are re-asked on
-your main model — the validator is the difficulty detector, so no second
-"judge" model ever runs, and nothing new becomes fillable: the same
-`SCREENER_PREDICT_LLM_ENABLED` gate and validation rules apply to both
-tiers. `/trace` shows a `predict escalate` line when the strong model is
-consulted.
-
 Long-form essays fill from `private/candidate/about-me.md` when
 `ESSAY_AUTOFILL_ENABLED` or `SCREENER_PREDICT_LLM_ENABLED` is on.
 
