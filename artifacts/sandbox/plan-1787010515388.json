@@ -1,0 +1,11 @@
+{
+  "kind": "plan",
+  "lines": [
+    "5 fill / 0 skip / 0 review",
+    "FILL             Legal First Name → Shubham  [Mapped from public profile]",
+    "FILL             Legal Last Name → Kale  [Mapped from public profile]",
+    "FILL             Email Address → skale1@jh.edu  [Mapped from public profile]",
+    "FILL             Primary Phone Number → 4805897636  [Mapped from public profile]",
+    "FILL             Do you consent to receiving text communications  → Yes  [Predicted from operator context (llm_predict): Standard application consent question; affirmative consent keeps the application process moving and matches the candidate's active job-search posture.]"
+  ]
+}

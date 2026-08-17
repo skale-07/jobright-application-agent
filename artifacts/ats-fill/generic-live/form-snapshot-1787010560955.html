@@ -1,0 +1,73 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Application</title><style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #17202a; }
+  h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; }
+  label { display: block; margin: 1rem 0 0.25rem; font-weight: 600; }
+  input, select, textarea { width: 100%; padding: 0.5rem; font-size: 1rem; box-sizing: border-box; }
+  button { margin-top: 1.25rem; padding: 0.6rem 1.4rem; font-size: 1rem; cursor: pointer; }
+  .error { color: #b00020; font-weight: 600; }
+  .muted { color: #667; font-size: 0.9rem; }
+  .req::after { content: " *"; color: #b00020; }
+  .combo { position: relative; }
+  .combo-list { border: 1px solid #aab; max-height: 180px; overflow: auto; position: absolute; background: #fff; width: 100%; z-index: 5; }
+  .combo-list [role=option] { padding: 0.4rem 0.6rem; cursor: pointer; }
+  .combo-list [role=option]:hover { background: #eef; }
+
+  .overlay { position: fixed; left: 0; right: 0; bottom: 0; background: #232946; color: #fff; padding: 1rem; z-index: 50; }
+  .overlay button { margin: 0 0 0 1rem; }
+  .modal-back { position: fixed; inset: 0; background: rgba(20,20,40,0.55); z-index: 40; }
+  .modal { position: fixed; top: 8%; left: 50%; transform: translateX(-50%); width: min(560px, 92vw);
+           background: #fff; padding: 1rem 1.5rem 1.5rem; z-index: 45; max-height: 84vh; overflow: auto; }
+  .chips label { display: inline-block; margin: 0.25rem 0.5rem 0.25rem 0; font-weight: 400; }
+  .chips input { width: auto; margin-right: 0.3rem; }
+  .banner-error { background: #fde8e8; color: #b00020; padding: 0.6rem 1rem; font-weight: 600; display: none; }
+</style></head><body>
+  <h1>Application</h1>
+  <div id="err" class="banner-error">Please fix the errors below — required fields are missing.</div>
+  <form method="POST" action="/fillhard/submit" id="wizard">
+    <div id="page1">
+      <h2>Step 1 of 2 — About you</h2>
+      <label class="req" for="first_name">First Name</label>
+      <input id="first_name" name="first_name" required="">
+      <label class="req" for="last_name">Last Name</label>
+      <input id="last_name" name="last_name" required="">
+      <label class="req" for="email">Email</label>
+      <input id="email" name="email" type="email" value="[SCRUBBED]" required="">
+      <p class="muted">This email arrives PRE-FILLED with the wrong value — replacing beats appending.</p>
+
+      <label class="req" for="q_skill">Which technology are you strongest in?</label>
+      <div class="combo">
+        <input id="q_skill" name="q_skill" role="combobox" aria-autocomplete="list" autocomplete="off" placeholder="Select...">
+        <div id="q_skill_list" class="combo-list" style="display:none" role="listbox"></div>
+      </div>
+      <p class="muted">22 options; only 8 render until you filter — like a virtualized menu.</p>
+
+      <label>Which areas interest you? (choose all that apply)</label>
+      <div class="chips">
+        <label><input type="checkbox" name="area" value="[SCRUBBED]">Machine Learning</label>
+        <label><input type="checkbox" name="area" value="[SCRUBBED]">Infrastructure</label>
+        <label><input type="checkbox" name="area" value="[SCRUBBED]">Product</label>
+        <label><input type="checkbox" name="area" value="[SCRUBBED]">Security</label>
+      </div>
+      <button type="button" id="next">Next</button>
+    </div>
+    <div id="page2" style="display:none">
+      <h2>Step 2 of 2 — Screeners</h2>
+      <label class="req" for="q_env">Which development environment feels most like home?</label>
+      <select id="q_env" name="q_env" required="">
+        <option value="[SCRUBBED]">Select...</option>
+        <option>Terminal + Vim</option><option>VS Code</option><option>JetBrains</option><option>Other</option>
+      </select>
+      <div id="q_env_specify_wrap" style="display:none">
+        <label for="q_env_specify">If other, please specify</label>
+        <input id="q_env_specify" name="q_env_specify">
+      </div>
+      <label class="req" for="q_commit">Have you ever committed directly to main on a Friday?</label>
+      <select id="q_commit" name="q_commit" required="">
+        <option value="[SCRUBBED]">Select...</option><option>Yes</option><option>No</option><option>Only with a green CI</option>
+      </select>
+      <label for="q_why">Why Frobnicator?</label>
+      <textarea id="q_why" name="q_why" rows="3">[SCRUBBED]</textarea>
+      <button type="submit">Submit application</button>
+    </div>
+  </form>
+  </body></html>

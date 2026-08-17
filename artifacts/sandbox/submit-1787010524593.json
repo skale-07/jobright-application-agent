@@ -1,0 +1,9 @@
+{
+  "kind": "submit",
+  "lines": [
+    "submit: confirmed",
+    "  resolved via role-name: \"Submit application\"",
+    "  pre-click field fingerprint: 3 field(s)",
+    "  submit control clicked"
+  ]
+}

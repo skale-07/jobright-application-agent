@@ -1,0 +1,215 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/navhard",
+  "requested_url": "http://localhost:4599/navhard",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/navhard/started",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 5,
+    "skipped_count": 0,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "Legal First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Legal Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email Address",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "Primary Phone Number",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "sms_consent",
+      "label": "Do you consent to receiving text communications related to your job application?",
+      "type": "radio",
+      "canonical_field": "screener:custom:predicted:sms_consent",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Standard application consent question; affirmative consent keeps the application process moving and matches the candidate's active job-search posture."
+    },
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_hybrid",
+      "label": "This role is hybrid (3 days on-site). Can you commit to that schedule?",
+      "type": "select",
+      "canonical_field": "screener:willing_to_relocate",
+      "action": "FILL",
+      "reason": "Screener bank answer (synonym_option)"
+    }
+  ],
+  "form_snapshot_path": null,
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "phone",
+      "screener:custom:predicted:sms_consent",
+      "legal_name.first",
+      "legal_name.last",
+      "screener:willing_to_relocate"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "sms_consent",
+        "canonical_field": "screener:custom:predicted:sms_consent",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_hybrid",
+        "canonical_field": "screener:willing_to_relocate",
+        "control_kind": "native_select",
+        "selected_option": "Yes",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "legal_name.first",
+        "expected": "Shubham",
+        "observed": "Shubham",
+        "match": true
+      },
+      {
+        "canonical_field": "legal_name.last",
+        "expected": "Kale",
+        "observed": "Kale",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:willing_to_relocate",
+        "expected": "Yes",
+        "observed": {
+          "value": "Yes",
+          "label": "Yes"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "submit_attempted": true,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application)",
+    "popups dismissed: Accept Cookies",
+    "landed on a posting (Apply CTA present and none of the 2 field(s) ask who you are — page furniture, not an application); clicking Apply via button[id*=\"apply\" i]",
+    "Apply landed on: form (5 fillable field(s))",
+    "Apply opened a new tab — the flow continues there",
+    "resume on disk but this page has no file input — not an upload miss",
+    "resolved advance: \"Continue To Application\"",
+    "form-advance: visible submit after page 2 — leaving it for the gated submit path",
+    "form-advance: filled 1 additional page(s) — form:3/3",
+    "submit confirmed: Application received (http://localhost:4599/navhard/submit)"
+  ],
+  "harvested_options": [],
+  "wizard_pages": [
+    {
+      "page": 2,
+      "url": "http://localhost:4599/navhard/form",
+      "kind": "form",
+      "fillable": 3,
+      "filled": 3,
+      "verify_passed": true
+    }
+  ],
+  "submit": {
+    "outcome": "confirmed",
+    "clicked": true,
+    "receipt": {
+      "submitted": true,
+      "submitted_at": "2026-08-17T23:48:44.593Z",
+      "confirmation_url": "http://localhost:4599/navhard/submit",
+      "confirmation_text": "Application received",
+      "application_identifier": null,
+      "screenshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-submit\\generic\\sandbox-receipt-1787010518158.png"
+    },
+    "notes": [
+      "resolved via role-name: \"Submit application\"",
+      "pre-click field fingerprint: 3 field(s)",
+      "submit control clicked"
+    ]
+  },
+  "written_at": "2026-08-17T23:48:44.628Z"
+}

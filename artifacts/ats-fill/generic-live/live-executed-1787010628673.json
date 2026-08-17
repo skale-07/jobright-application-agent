@@ -1,0 +1,252 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/fillhard",
+  "requested_url": "http://localhost:4599/fillhard",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/fillhard/embed",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 4,
+    "skipped_count": 4,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "first_name",
+      "label": "First Name",
+      "type": "text",
+      "canonical_field": "legal_name.first",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "last_name",
+      "label": "Last Name",
+      "type": "text",
+      "canonical_field": "legal_name.last",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "q_skill",
+      "label": "Which technology are you strongest in?",
+      "type": "text",
+      "canonical_field": "screener:custom:predicted:q_skill",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Candidate's ML, research, and data work (XGBoost, PyTorch, Flask, FastAPI, SHAP, epidemiological modeling) is predominantly Python, making it the strongest listed language."
+    },
+    {
+      "field_id": "area",
+      "label": "Machine Learning",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Infrastructure",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Product",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "area",
+      "label": "Security",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "q_env",
+      "label": "Which development environment feels most like home?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_env",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Candidate builds full-stack TypeScript/Node, Python, and Swift projects, and VS Code is the standard editor for that mixed stack."
+    },
+    {
+      "field_id": "q_commit",
+      "label": "Have you ever committed directly to main on a Friday?",
+      "type": "select",
+      "canonical_field": "screener:custom:predicted:q_commit",
+      "action": "FILL",
+      "reason": "Predicted from operator context (llm_predict): Candidate built repo CI scaffolds and a validation ladder with fail-closed gates, so gated-on-passing-CI is the fitting answer."
+    },
+    {
+      "field_id": "q_why",
+      "label": "Why Frobnicator?",
+      "type": "textarea",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "essay not answered (model abstained): Why Frobnicator?"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1787010626453.html",
+  "fill": {
+    "filled": [
+      "legal_name.first",
+      "legal_name.last",
+      "email",
+      "screener:custom:predicted:q_skill",
+      "screener:custom:predicted:q_env",
+      "screener:custom:predicted:q_commit"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "first_name",
+        "canonical_field": "legal_name.first",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "last_name",
+        "canonical_field": "legal_name.last",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "email",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "q_skill",
+        "canonical_field": "screener:custom:predicted:q_skill",
+        "control_kind": "combobox",
+        "selected_option": "Python",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Python\" → 1 option(s); match",
+          "picked \"Python\" (exact)"
+        ],
+        "options_sample": [
+          "Python"
+        ]
+      },
+      {
+        "field_id": "q_env",
+        "canonical_field": "screener:custom:predicted:q_env",
+        "control_kind": "native_select",
+        "selected_option": "VS Code",
+        "match_via": "exact"
+      },
+      {
+        "field_id": "q_commit",
+        "canonical_field": "screener:custom:predicted:q_commit",
+        "control_kind": "native_select",
+        "selected_option": "Only with a green CI",
+        "match_via": "exact"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "screener:custom:predicted:q_env",
+        "expected": "VS Code",
+        "observed": {
+          "value": "VS Code",
+          "label": "VS Code"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:predicted:q_commit",
+        "expected": "Only with a green CI",
+        "observed": {
+          "value": "Only with a green CI",
+          "label": "Only with a green CI"
+        },
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "submit_attempted": true,
+  "notes": [
+    "application form found in an iframe (8 fields) — hopping to http://localhost:4599/fillhard/embed",
+    "page class at gate: form (8 fillable field(s))",
+    "option harvest: scraped real options for 1/4 control(s) before planning",
+    "resume on disk but this page has no file input — not an upload miss",
+    "resolved advance: \"Next\"",
+    "form-advance: visible submit after page 2 — leaving it for the gated submit path",
+    "form-advance: filled 1 additional page(s) — posting:2/2",
+    "submit confirmed: Application received (http://localhost:4599/fillhard/submit)"
+  ],
+  "harvested_options": [
+    {
+      "field_id": "q_skill",
+      "label": "Which technology are you strongest in?",
+      "answer_space": "closed",
+      "option_count": 8,
+      "options": [
+        "TypeScript",
+        "Python",
+        "Rust",
+        "Go",
+        "Java",
+        "Kotlin",
+        "Swift",
+        "C++"
+      ],
+      "other_option": null
+    }
+  ],
+  "wizard_pages": [
+    {
+      "page": 2,
+      "url": "http://localhost:4599/fillhard/embed",
+      "kind": "posting",
+      "fillable": 2,
+      "filled": 2,
+      "verify_passed": true
+    }
+  ],
+  "submit": {
+    "outcome": "confirmed",
+    "clicked": true,
+    "receipt": {
+      "submitted": true,
+      "submitted_at": "2026-08-17T23:50:28.669Z",
+      "confirmation_url": "http://localhost:4599/fillhard/submit",
+      "confirmation_text": "Application received",
+      "application_identifier": null,
+      "screenshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-submit\\generic\\sandbox-receipt-1787010628599.png"
+    },
+    "notes": [
+      "resolved via role-name: \"Submit application\"",
+      "pre-click field fingerprint: 3 field(s)",
+      "submit control clicked"
+    ]
+  },
+  "written_at": "2026-08-17T23:50:28.687Z"
+}

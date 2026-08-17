@@ -1,0 +1,14 @@
+{
+  "kind": "fillhard",
+  "received_at": "2026-08-17T23:49:29.013Z",
+  "data": {
+    "first_name": "Shubham",
+    "last_name": "Kale",
+    "email": "skale1@jh.edu",
+    "q_skill": "Python",
+    "q_env": "VS Code",
+    "q_env_specify": "",
+    "q_commit": "Only with a green CI",
+    "q_why": ""
+  }
+}
