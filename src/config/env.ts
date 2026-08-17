@@ -77,6 +77,18 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   /** Anthropic model id used when the Anthropic provider is active. */
   ANTHROPIC_LLM_MODEL: z.string().default("claude-opus-5"),
+  /** Cheap tier for fast-first screener prediction (see SCREENER_PREDICT_FAST_FIRST). */
+  ANTHROPIC_FAST_MODEL: z.string().default("claude-haiku-4-5"),
+  /**
+   * Cheap-first screener prediction: try ANTHROPIC_FAST_MODEL first, then
+   * re-ask ONLY the questions whose answers failed deterministic
+   * validation on the main model. validatePrediction is the free
+   * difficulty detector — a failed cheap attempt IS the hard-question
+   * signal, no judge LLM involved. Off ⇒ single-call behavior unchanged.
+   * Anthropic-only (needs ANTHROPIC_API_KEY); never widens what may be
+   * filled — SCREENER_PREDICT_LLM_ENABLED still gates the capability.
+   */
+  SCREENER_PREDICT_FAST_FIRST: boolFromEnv.default(false),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
@@ -166,6 +178,8 @@ export type AppConfig = {
   /** Present only when the operator configured it; consumers must not log it. */
   anthropicApiKey: string | undefined;
   anthropicLlmModel: string;
+  anthropicFastModel: string;
+  screenerPredictFastFirst: boolean;
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
   screenerPredictLlmEnabled: boolean;
@@ -246,6 +260,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     anthropicApiKey: parsed.ANTHROPIC_API_KEY,
     anthropicLlmModel: parsed.ANTHROPIC_LLM_MODEL,
+    anthropicFastModel: parsed.ANTHROPIC_FAST_MODEL,
+    screenerPredictFastFirst: parsed.SCREENER_PREDICT_FAST_FIRST,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,
