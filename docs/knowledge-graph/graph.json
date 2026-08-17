@@ -871,7 +871,6 @@
     "LINKEDIN_ENRICHMENT_ENABLED": "contact enrichment",
     "SCREENER_LLM_MATCH_ENABLED": "LLM places a HELD answer onto the page's own option list (verbatim-validated)",
     "SCREENER_PREDICT_LLM_ENABLED": "plan-time screener prediction (fills + remembers custom bank entries; EEO excluded)",
-    "SCREENER_PREDICT_FAST_FIRST": "cheap-first predict: fast model answers the batch, validation failures re-ask the main model (no judge LLM; Anthropic-only)",
     "ESSAY_DRAFT_ENABLED": "essay SUGGESTION into review (human approves)",
     "ESSAY_AUTOFILL_ENABLED": "essays generated from about-me.md fill directly (also unlocked by SCREENER_PREDICT_LLM_ENABLED; validateDraft-checked, recorded on the plan)",
     "ARTIFACT_AUTOPUSH_ENABLED": "git-push run artifacts for the improvement loop",
