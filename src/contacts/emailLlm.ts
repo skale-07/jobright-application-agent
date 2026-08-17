@@ -17,8 +17,22 @@ import { getConfig, type AppConfig } from "../config/index.js";
  * preference can never drift per-surface.
  */
 export interface EmailLlmClient {
-  /** Returns the raw model output string (expected to be JSON). */
-  generateJson(input: { system: string; user: string }): Promise<{
+  /**
+   * Returns the raw model output string (expected to be JSON).
+   *
+   * `stableContext`, when present, is content that is byte-identical
+   * across calls within a session (e.g. the operator's about-me.md).
+   * The Anthropic client places it in a prompt-cache breakpoint so
+   * repeat calls read it at ~0.1x price; the OpenAI client simply sends
+   * it first (OpenAI's automatic prefix caching needs stable-first
+   * ordering). Either way the model sees system + stableContext + user
+   * in that order — providing it never changes semantics, only cost.
+   */
+  generateJson(input: {
+    system: string;
+    user: string;
+    stableContext?: string;
+  }): Promise<{
     text: string;
     model: string;
   }>;
@@ -42,13 +56,20 @@ export class OpenAiEmailClient implements EmailLlmClient {
   async generateJson(input: {
     system: string;
     user: string;
+    stableContext?: string;
   }): Promise<{ text: string; model: string }> {
     const response = await this.client.chat.completions.create({
       model: this.model,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: input.system },
-        { role: "user", content: input.user },
+        {
+          role: "user",
+          // Stable-first so OpenAI's automatic prefix caching can hit.
+          content: input.stableContext
+            ? `${input.stableContext}\n\n${input.user}`
+            : input.user,
+        },
       ],
     });
     const text = response.choices[0]?.message?.content ?? "";
@@ -74,16 +95,11 @@ export class AnthropicLlmClient implements EmailLlmClient {
   async generateJson(input: {
     system: string;
     user: string;
+    stableContext?: string;
   }): Promise<{ text: string; model: string }> {
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 4096,
-      // Every consumer's system prompt already demands a JSON object and
-      // deterministically re-validates the output; the reinforcement here
-      // covers models that would otherwise preface JSON with prose.
-      system: `${input.system}\n\nRespond with ONLY the JSON object — no prose, no code fences.`,
-      messages: [{ role: "user", content: input.user }],
-    });
+    const response = await this.client.messages.create(
+      buildAnthropicJsonRequest(this.model, input),
+    );
     const text = response.content
       .filter(
         (block): block is Extract<typeof block, { type: "text" }> =>
@@ -93,6 +109,51 @@ export class AnthropicLlmClient implements EmailLlmClient {
       .join("");
     return { text: stripJsonFences(text), model: response.model ?? this.model };
   }
+}
+
+/**
+ * Pure request builder — exported so the caching shape is testable
+ * without intercepting the SDK. Without a stable block the request is
+ * byte-identical to the pre-caching one. With one, the stable prefix
+ * (system + stableContext) ends in a `cache_control` breakpoint: repeat
+ * calls within the TTL read it at ~0.1x input price instead of re-paying
+ * per form. Below the model's minimum cacheable size the marker is
+ * silently ignored — fail-open, never an error.
+ */
+export function buildAnthropicJsonRequest(
+  model: string,
+  input: { system: string; user: string; stableContext?: string },
+): Anthropic.Messages.MessageCreateParamsNonStreaming {
+  // Every consumer's system prompt already demands a JSON object and
+  // deterministically re-validates the output; the reinforcement here
+  // covers models that would otherwise preface JSON with prose.
+  const systemText = `${input.system}\n\nRespond with ONLY the JSON object — no prose, no code fences.`;
+  if (!input.stableContext) {
+    return {
+      model,
+      max_tokens: 4096,
+      system: systemText,
+      messages: [{ role: "user", content: input.user }],
+    };
+  }
+  return {
+    model,
+    max_tokens: 4096,
+    system: systemText,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: input.stableContext,
+            cache_control: { type: "ephemeral" },
+          },
+          { type: "text", text: input.user },
+        ],
+      },
+    ],
+  };
 }
 
 /** Models sometimes fence JSON despite instructions; unwrap deterministically. */

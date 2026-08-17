@@ -387,8 +387,11 @@ export async function predictAnswersForQuestions(
         ],
       });
     }
+    // about-me is the STABLE half of the payload — byte-identical across
+    // every predict call until the operator edits the file — so it rides
+    // in the cached prefix block; the per-batch half varies and follows.
+    const stableContext = JSON.stringify({ candidate_context: about ?? "" });
     const userPayload = {
-      candidate_context: about ?? "",
       saved_answers: prunedBank.kept,
       learned_answers: learnedAnswersForPrompt(
         bank,
@@ -402,6 +405,7 @@ export async function predictAnswersForQuestions(
     };
     const { text } = await llm.generateJson({
       system: SYSTEM_PROMPT,
+      stableContext,
       user: JSON.stringify(userPayload),
     });
     if (traceUrl) {
@@ -410,7 +414,7 @@ export async function predictAnswersForQuestions(
         llmTraceEvent({
           surface: "predict",
           system: SYSTEM_PROMPT,
-          user: userPayload,
+          user: { candidate_context: about ?? "", ...userPayload },
           response: text,
         }),
       );
@@ -641,8 +645,8 @@ export async function generateScreenerPredictions(input: {
   try {
     const { text } = await client.generateJson({
       system: SYSTEM_PROMPT,
+      stableContext: JSON.stringify({ candidate_context: about ?? "" }),
       user: JSON.stringify({
-        candidate_context: about ?? "",
         saved_answers: batchPrune.kept,
         learned_answers: learnedAnswersForPrompt(
           bank,
