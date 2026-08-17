@@ -35,6 +35,7 @@ import { logger } from "../logging/logger.js";
 import {
   hasLlmKey,
   LLM_KEY_HINT,
+  makeFastLlmClient,
   makeLlmClient,
   type EmailLlmClient,
 } from "../contacts/emailLlm.js";
@@ -346,6 +347,14 @@ function persistPrediction(label: string, answer: string, key: unknown): void {
  * Plan-time fill from operator context. Option answers must match the
  * page verbatim (or the form's Other). Free-text the model returns is
  * filled and remembered so a later verbatim question is deterministic.
+ *
+ * Cheap-first escalation (SCREENER_PREDICT_FAST_FIRST): when a fast tier
+ * is available, the whole batch goes to it first; questions whose answers
+ * fail deterministic validation — no Other-hatch rescue either — are
+ * re-asked ONCE on the strong model. validatePrediction is the free
+ * difficulty detector: a failed cheap attempt IS the hard-question
+ * signal, no judge LLM anywhere. Injected `client` (tests, callers)
+ * keeps single-tier behavior unless `fastClient` is also injected.
  */
 export async function predictAnswersForQuestions(
   questions: Array<{
@@ -355,6 +364,7 @@ export async function predictAnswersForQuestions(
   }>,
   client?: EmailLlmClient,
   traceUrl?: string,
+  fastClient?: EmailLlmClient,
 ): Promise<
   Map<string, { value: string; basis: string; intended?: string | null }>
 > {
@@ -374,7 +384,8 @@ export async function predictAnswersForQuestions(
   const profileFacts = tryLoadProfileFacts();
   if (!about && !bank && !profileFacts) return out;
   try {
-    const llm = client ?? makeLlmClient();
+    const strong = client ?? makeLlmClient();
+    const fast = fastClient ?? (client ? null : makeFastLlmClient());
     const prunedBank = pruneSavedAnswersForQuestions(
       bank?.answers ?? {},
       askable.map((q) => q.label),
@@ -391,81 +402,120 @@ export async function predictAnswersForQuestions(
     // every predict call until the operator edits the file — so it rides
     // in the cached prefix block; the per-batch half varies and follows.
     const stableContext = JSON.stringify({ candidate_context: about ?? "" });
-    const userPayload = {
-      saved_answers: prunedBank.kept,
-      learned_answers: learnedAnswersForPrompt(
-        bank,
-        askable.map((q) => q.label),
-      ),
-      profile_facts: profileFacts ?? {},
-      questions: askable.map((q) => ({
-        label: q.label,
-        options: q.options,
-      })),
-    };
-    const { text } = await llm.generateJson({
-      system: SYSTEM_PROMPT,
-      stableContext,
-      user: JSON.stringify(userPayload),
-    });
-    if (traceUrl) {
-      await postSandboxTrace(
-        traceUrl,
-        llmTraceEvent({
-          surface: "predict",
-          system: SYSTEM_PROMPT,
-          user: { candidate_context: about ?? "", ...userPayload },
-          response: text,
-        }),
-      );
-    }
-    const parsed = JSON.parse(text) as {
-      predictions?: Array<Record<string, unknown>>;
-    };
-    const byLabel = new Map<string, Record<string, unknown>>();
-    for (const p of parsed.predictions ?? []) {
-      if (typeof p["label"] === "string") {
-        byLabel.set(normalizeScreenerLabel(p["label"]), p);
+
+    const askTier = async (
+      llm: EmailLlmClient,
+      tierQuestions: typeof askable,
+    ): Promise<Map<string, Record<string, unknown>>> => {
+      const userPayload = {
+        saved_answers: prunedBank.kept,
+        learned_answers: learnedAnswersForPrompt(
+          bank,
+          tierQuestions.map((q) => q.label),
+        ),
+        profile_facts: profileFacts ?? {},
+        questions: tierQuestions.map((q) => ({
+          label: q.label,
+          options: q.options,
+        })),
+      };
+      const { text } = await llm.generateJson({
+        system: SYSTEM_PROMPT,
+        stableContext,
+        user: JSON.stringify(userPayload),
+      });
+      if (traceUrl) {
+        await postSandboxTrace(
+          traceUrl,
+          llmTraceEvent({
+            surface: "predict",
+            system: SYSTEM_PROMPT,
+            user: { candidate_context: about ?? "", ...userPayload },
+            response: text,
+          }),
+        );
       }
-    }
-    for (const q of askable) {
-      const p = byLabel.get(normalizeScreenerLabel(q.label));
-      const options = q.options && q.options.length > 0 ? q.options : null;
-      const check = validatePrediction(p?.["answer"] ?? null, options);
-      const basis =
-        typeof p?.["basis"] === "string" ? p["basis"].slice(0, 200) : "predicted";
-      if (!check.ok) {
-        // The model answered a CLOSED question with something the list does
-        // not contain. That is usually not a bad answer — it is the true
-        // answer, and the list simply does not carry it. When the form
-        // offers its own not-listed escape hatch, take it and carry the
-        // real answer forward for the specify box (operator directive
-        // 2026-08-14). Everything else still parks.
-        if (check.reason === "answer matches no page option" && options) {
-          const other = findOtherOption(options);
-          if (other) {
-            out.set(q.id, {
-              value: other,
-              basis: `${basis} — not on the form's list, chose "${other}"`,
-              intended: check.value,
-            });
-            persistPrediction(q.label, check.value, p?.["key"]);
+      const parsed = JSON.parse(text) as {
+        predictions?: Array<Record<string, unknown>>;
+      };
+      const byLabel = new Map<string, Record<string, unknown>>();
+      for (const p of parsed.predictions ?? []) {
+        if (typeof p["label"] === "string") {
+          byLabel.set(normalizeScreenerLabel(p["label"]), p);
+        }
+      }
+      return byLabel;
+    };
+
+    /** Validate a tier's answers; returns the questions still unresolved. */
+    const applyTier = async (
+      byLabel: Map<string, Record<string, unknown>>,
+      tierQuestions: typeof askable,
+      isFinalTier: boolean,
+    ): Promise<typeof askable> => {
+      const unresolved: typeof askable = [];
+      for (const q of tierQuestions) {
+        const p = byLabel.get(normalizeScreenerLabel(q.label));
+        const options = q.options && q.options.length > 0 ? q.options : null;
+        const check = validatePrediction(p?.["answer"] ?? null, options);
+        const basis =
+          typeof p?.["basis"] === "string" ? p["basis"].slice(0, 200) : "predicted";
+        if (!check.ok) {
+          // The model answered a CLOSED question with something the list
+          // does not contain. That is usually not a bad answer — it is the
+          // true answer, and the list simply does not carry it. When the
+          // form offers its own not-listed escape hatch, take it and carry
+          // the real answer forward for the specify box (operator
+          // directive 2026-08-14). Everything else escalates, then parks.
+          if (check.reason === "answer matches no page option" && options) {
+            const other = findOtherOption(options);
+            if (other) {
+              out.set(q.id, {
+                value: other,
+                basis: `${basis} — not on the form's list, chose "${other}"`,
+                intended: check.value,
+              });
+              persistPrediction(q.label, check.value, p?.["key"]);
+              continue;
+            }
+          }
+          if (!isFinalTier) {
+            unresolved.push(q);
             continue;
           }
+          if (traceUrl) {
+            await postSandboxTrace(traceUrl, {
+              kind: "predict reject",
+              lines: [
+                `${q.label.slice(0, 80)}: ${check.reason}`,
+                check.value.slice(0, 200),
+              ],
+            });
+          }
+          continue;
         }
+        out.set(q.id, { value: check.value, basis });
+        persistPrediction(q.label, check.value, p?.["key"]);
+      }
+      return unresolved;
+    };
+
+    if (fast) {
+      const unresolved = await applyTier(await askTier(fast, askable), askable, false);
+      if (unresolved.length > 0) {
         if (traceUrl) {
           await postSandboxTrace(traceUrl, {
-            kind: "predict reject",
+            kind: "predict escalate",
             lines: [
-              `${q.label.slice(0, 80)}: ${check.reason}`,
-              check.value.slice(0, 200),
+              `${unresolved.length}/${askable.length} question(s) failed validation on the fast tier — re-asking the main model`,
+              ...unresolved.map((q) => q.label.slice(0, 80)),
             ],
           });
         }
-        continue;
+        await applyTier(await askTier(strong, unresolved), unresolved, true);
       }
-      out.set(q.id, { value: check.value, basis });
-      persistPrediction(q.label, check.value, p?.["key"]);
+    } else {
+      await applyTier(await askTier(strong, askable), askable, true);
     }
   } catch {
     return out;

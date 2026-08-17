@@ -81,7 +81,8 @@ export class AnthropicLlmClient implements EmailLlmClient {
   private readonly client: Anthropic;
   private readonly model: string;
 
-  constructor() {
+  /** `model` overrides ANTHROPIC_LLM_MODEL (fast-first tier uses this). */
+  constructor(model?: string) {
     const cfg = getConfig();
     if (!cfg.anthropicApiKey) {
       throw new Error(
@@ -89,7 +90,7 @@ export class AnthropicLlmClient implements EmailLlmClient {
       );
     }
     this.client = new Anthropic({ apiKey: cfg.anthropicApiKey });
-    this.model = cfg.anthropicLlmModel;
+    this.model = model ?? cfg.anthropicLlmModel;
   }
 
   async generateJson(input: {
@@ -186,4 +187,18 @@ export function makeLlmClient(): EmailLlmClient {
   throw new Error(
     `no LLM provider key configured — set ${LLM_KEY_HINT} in .env`,
   );
+}
+
+/**
+ * Cheap first-pass tier for screener prediction (SCREENER_PREDICT_FAST_FIRST).
+ * Null unless the operator opted in AND the Anthropic key is present —
+ * the fast tier is Anthropic-only (ANTHROPIC_FAST_MODEL, default Haiku);
+ * with only an OpenAI key there is no second tier to escalate to, so the
+ * caller falls back to today's single-call behavior.
+ */
+export function makeFastLlmClient(): EmailLlmClient | null {
+  const cfg = getConfig();
+  if (!cfg.screenerPredictFastFirst) return null;
+  if (!cfg.anthropicApiKey) return null;
+  return new AnthropicLlmClient(cfg.anthropicFastModel);
 }
