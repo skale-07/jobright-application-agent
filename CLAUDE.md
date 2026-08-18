@@ -5,7 +5,7 @@ Mirror of `.cursor/rules/house-rules.mdc` — keep both files identical when edi
 ## Safety invariants (never negotiable)
 
 - Every mutation capability is behind a fail-closed env flag (see `.env.example`):
-  `FORM_FILL_ENABLED`, `SUBMIT_ENABLED`, `DRY_RUN`, `OUTLOOK_DRAFTS_ENABLED`,
+  `FORM_FILL_ENABLED`, `SUBMIT_ENABLED`, `DRY_RUN`, `OUTLOOK_DRAFTS_ENABLED`, `GMAIL_DRAFTS_ENABLED`,
   `EMAIL_GENERATION_ENABLED`, `AGENT_AUTHORING_ENABLED`, `AGENT_FALLBACK_ENABLED`,
   `NATIVE_AUTOFILL_ENABLED`, `JOBRIGHT_AUTOFILL_ENABLED`,
   `MATERIALS_DOWNLOAD_ENABLED`,

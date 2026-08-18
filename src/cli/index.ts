@@ -57,6 +57,7 @@ import {
 } from "../pipeline/runPipeline.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
 import { runInsiderTriage } from "../contacts/insiderTriage.js";
+import { createGmailDraft } from "../outreach/gmailDrafts.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { startDashboard } from "../dashboard/server.js";
 import { startConsole } from "../console/server.js";
@@ -163,6 +164,7 @@ Commands:
   retry [--app <uuid>]                  FAILED_RETRYABLE → QUEUED (all, or one; --app requeues even at cap 3)
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   contacts:insider --application <uuid> [--headed]   — Insider Connection email triage (school + beyond panels only; needs LINKEDIN_ENRICHMENT_ENABLED)
+  gmail:draft --application <uuid> --contact <contact_id> [--headed]   — save the generated email as a Gmail DRAFT (never sends; needs GMAIL_DRAFTS_ENABLED)
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
   draft:verify --draft <draft_id> [--headed]
@@ -1809,6 +1811,30 @@ async function main(): Promise<void> {
     case "contacts:insider":
       await cmdContactsInsider(flags);
       return;
+    case "gmail:draft": {
+      const application = flags["application"];
+      const contact = flags["contact"];
+      if (typeof application !== "string" || typeof contact !== "string") {
+        console.error("Usage: gmail:draft --application <uuid> --contact <contact_id> [--headed]");
+        console.error("Requires GMAIL_DRAFTS_ENABLED=true and a VALIDATED generated email.");
+        process.exit(2);
+        return;
+      }
+      const db = openDatabase();
+      try {
+        migrate(db);
+        const result = await createGmailDraft({
+          db,
+          applicationId: application,
+          contactId: contact,
+          headless: flags["headed"] !== true,
+        });
+        console.log(JSON.stringify(result, null, 2));
+      } finally {
+        closeDatabase(db);
+      }
+      return;
+    }
     case "email:generate":
       await cmdEmailGenerate(flags);
       return;

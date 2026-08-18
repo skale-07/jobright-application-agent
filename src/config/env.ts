@@ -65,6 +65,13 @@ const envSchema = z.object({
   ESSAY_REQUIRED_GATE_ENABLED: boolFromEnv.default(false),
   /** Outreach email generation calls the OpenAI API (spend). Fail closed. */
   EMAIL_GENERATION_ENABLED: boolFromEnv.default(false),
+  /**
+   * Create Gmail DRAFTS via the operator's signed-in web session (drafts
+   * only, exactly like OUTLOOK_DRAFTS_ENABLED: the Send control is a
+   * forbidden selector, never a click target — Gmail autosaves on
+   * Save & close). Mailbox mutation ⇒ fail closed.
+   */
+  GMAIL_DRAFTS_ENABLED: boolFromEnv.default(false),
   /** OpenAI key for outreach generation only. Never logged or artifacted. */
   OPENAI_API_KEY: z.string().optional(),
   /** Operator-confirmed OpenAI model id for outreach generation. */
@@ -151,6 +158,7 @@ export type AppConfig = {
   submitRequiresLocalConfirmation: boolean;
   maxUnattendedSubmissionsPerRun: number;
   outlookDraftsEnabled: boolean;
+  gmailDraftsEnabled: boolean;
   linkedinEnrichmentEnabled: boolean;
   jobrightAutofillEnabled: boolean;
   nativeAutofillEnabled: boolean;
@@ -233,6 +241,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     submitRequiresLocalConfirmation: parsed.SUBMIT_REQUIRES_LOCAL_CONFIRMATION,
     maxUnattendedSubmissionsPerRun: parsed.MAX_UNATTENDED_SUBMISSIONS_PER_RUN,
     outlookDraftsEnabled: parsed.OUTLOOK_DRAFTS_ENABLED,
+    gmailDraftsEnabled: parsed.GMAIL_DRAFTS_ENABLED,
     linkedinEnrichmentEnabled: parsed.LINKEDIN_ENRICHMENT_ENABLED,
     jobrightAutofillEnabled: parsed.JOBRIGHT_AUTOFILL_ENABLED,
     nativeAutofillEnabled: parsed.NATIVE_AUTOFILL_ENABLED,

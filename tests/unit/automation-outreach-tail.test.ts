@@ -80,6 +80,7 @@ function validOutput(): GeneratedEmail {
       "",
       "Best,",
       "Shubham Kale",
+      "github.com/skale-07",
     ].join("\n"),
   };
 }
