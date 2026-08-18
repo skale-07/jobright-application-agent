@@ -295,6 +295,17 @@ export type CongruenceVerdict = {
 };
 
 /**
+ * Manual enqueue writes this sentinel when the operator did not supply a
+ * company name. Comparing it to an ATS slug always "mismatches" and is
+ * meaningless — Datadog Greenhouse vs "Unknown company (manual enqueue)".
+ */
+const PLACEHOLDER_COMPANY_RE = /^unknown company(?:\s*\(.*\))?$/i;
+
+function isPlaceholderCompany(company: string): boolean {
+  return PLACEHOLDER_COMPANY_RE.test(company.trim());
+}
+
+/**
  * Does this URL plausibly belong to this company? "unknown" means the URL
  * carries no decodable org identity (unsupported host) — the caller must
  * treat that as "human decides", never as a pass.
@@ -305,6 +316,13 @@ export function checkUrlCongruence(
 ): CongruenceVerdict {
   const candidates = extractOrgCandidates(url);
   const atsSlug = candidates.find((c) => c.source === "ats_slug")?.value ?? null;
+  if (isPlaceholderCompany(company)) {
+    return {
+      verdict: "unknown",
+      slug: atsSlug ?? candidates[0]?.value ?? null,
+      detail: "company name is a placeholder — identity not checkable",
+    };
+  }
   if (candidates.length === 0) {
     return {
       verdict: "unknown",

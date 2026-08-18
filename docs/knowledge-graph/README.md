@@ -99,7 +99,8 @@ Armed sessions run sweeps that un-park what has become fillable
 | Symptom / task | Start here |
 |---|---|
 | App stuck, why? | `application_events` table (reasons) + `review_items`; `npm run report` |
-| Navigation didn't resolve a URL | `artifacts/navigation/nav-*/report.json` — `phase_trace` + `notes` tell the whole story |
+| Fill parked "employer URL missing" | Fill with no stored URL + `NAVIGATION_ENABLED` returns to `APPLICATION_OPENING` (`runPipeline` NATIVE_AUTOFILL case). Leftover missing-URL reviews do not halt that recovery. |
+| Fill refused URL vs `Unknown company (manual enqueue)` | Placeholder company names are uncheckable (`checkUrlCongruence` → `unknown`, not `mismatch`). Pipeline start clears leftover "URL belongs to" reviews when identity is no longer a mismatch. |
 | `wall: agent_unavailable` | CDP Chrome not on :9222 — start it or grant `CDP_AUTOLAUNCH_ENABLED` |
 | Fill planned 0 fields | `artifacts/ats-fill/**` report: `gate` (NO_APPLICATION_FORM = posting page, not form), `plan_fields`, `form_snapshot_path` |
 | Workday weirdness | `classifyWorkdayPage` notes in the fill report ("page kind at gate/after auth"); portal auth walk notes |

@@ -130,6 +130,9 @@ const ALLOWED: Partial<Record<ApplicationState, readonly ApplicationState[]>> = 
     "FIELD_VERIFICATION",
     "ESSAY_REQUIRED",
     "AMBIGUOUS_FIELD",
+    // Fill reached without a stored employer URL (enqueue reused a mid-fill
+    // row, or upsert wiped the nav-owned URL). Navigation lives at opening.
+    "APPLICATION_OPENING",
     "FAILED_RETRYABLE",
     "FAILED_FINAL",
   ],

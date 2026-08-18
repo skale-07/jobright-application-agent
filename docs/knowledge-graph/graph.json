@@ -509,7 +509,7 @@
       "id": "pipeline",
       "label": "Pipeline driver",
       "layer": "orchestration",
-      "purpose": "runPipeline steps ONE application through the state machine: materials -> navigation -> ATS detection -> inspection -> fill -> submit, stopping on review/terminal/gate. Every stop writes a review item or a state reason. Halt check ignores advisory review items.",
+      "purpose": "runPipeline steps ONE application through the state machine: materials -> navigation -> ATS detection -> inspection -> fill -> submit, stopping on review/terminal/gate. Every stop writes a review item or a state reason. Halt check ignores advisory review items. Fill with no stored employer URL and NAVIGATION_ENABLED returns to APPLICATION_OPENING instead of parking.",
       "paths": [
         "src/pipeline"
       ],
@@ -708,7 +708,7 @@
       "from": "pipeline",
       "to": "navigation",
       "kind": "calls",
-      "why": "APPLICATION_OPENING resolves the employer URL"
+      "why": "APPLICATION_OPENING resolves the employer URL; fill with a missing URL returns here when NAVIGATION_ENABLED"
     },
     {
       "from": "pipeline",

@@ -161,6 +161,7 @@ import {
   getEmployerApplicationUrl,
   setEmployerApplicationUrl,
   resolveMissingEmployerUrlReviews,
+  isMissingEmployerUrlReview,
   MISSING_EMPLOYER_URL_REVIEW_TITLE,
 } from "../applications/employerUrl.js";
 
@@ -172,6 +173,25 @@ type StepContext = {
   /** Same-run fill page held for `--submit` so the click is on that DOM. */
   heldSubmitSession: { current: PublicUrlSession | null };
 };
+
+const URL_MISMATCH_REVIEW_RE = /URL belongs to/;
+
+function resolveStaleUrlMismatchReviews(db: Db, applicationId: string): void {
+  for (const item of listOpenReviewItems(db)) {
+    if (
+      item.application_id === applicationId &&
+      item.kind === "MANUAL" &&
+      URL_MISMATCH_REVIEW_RE.test(item.title)
+    ) {
+      resolveReviewItem(
+        db,
+        item.id,
+        { reason: "company identity is no longer a mismatch" },
+        "RESOLVED",
+      );
+    }
+  }
+}
 
 /**
  * Route a navigation run that ended on a wall into the state machine.
@@ -520,8 +540,16 @@ async function runOneApplication(input: {
     },
   });
 
-  if (getEmployerApplicationUrl(db, applicationId)) {
+  const storedUrl = getEmployerApplicationUrl(db, applicationId);
+  if (storedUrl) {
     resolveMissingEmployerUrlReviews(db, applicationId);
+    const identity = getJobIdentity(db, applicationId);
+    if (
+      identity &&
+      checkUrlCongruence(identity.company, storedUrl).verdict !== "mismatch"
+    ) {
+      resolveStaleUrlMismatchReviews(db, applicationId);
+    }
   }
 
   acquireLease(db, {
@@ -563,12 +591,17 @@ async function runOneApplication(input: {
       // scan already refuses anything genuinely incomplete before the
       // click. Halting on them froze applications whose remaining fields
       // were fillable — 20 such notes on one live Lever form.
-      const standingPortalPassword = getConfig().portalLoginPassword;
+      const cfg = getConfig();
+      const standingPortalPassword = cfg.portalLoginPassword;
       const openItems = listOpenReviewItems(db).filter(
         (it) =>
           it.application_id === applicationId &&
           !isAdvisoryReviewItem(it) &&
-          !isRetryablePortalAuthWall(it, standingPortalPassword),
+          !isRetryablePortalAuthWall(it, standingPortalPassword) &&
+          // Fill wrote this when the URL was missing. With navigation on,
+          // the fill step returns to APPLICATION_OPENING — a leftover
+          // item must not halt that recovery (Datadog 2026-08-17).
+          !(cfg.navigationEnabled && isMissingEmployerUrlReview(it)),
       );
       if (openItems.length > 0) {
         appReport.stopped = "review";
@@ -985,6 +1018,26 @@ async function step(
       } else {
         const url = getEmployerApplicationUrl(db, app.id);
         if (!url) {
+          if (cfg.navigationEnabled) {
+            // Enqueue reuses a mid-fill row; upsert used to wipe the
+            // nav-owned URL. Navigation only runs at APPLICATION_OPENING.
+            resolveMissingEmployerUrlReviews(
+              db,
+              app.id,
+              "returning to navigation — employer URL missing at fill",
+            );
+            transitionApplication(db, {
+              applicationId: app.id,
+              nextState: "APPLICATION_OPENING",
+              reason:
+                "pipeline: employer URL missing at fill — returning to navigation",
+              runId,
+            });
+            return {
+              to: "APPLICATION_OPENING",
+              note: "employer URL missing — returning to navigation",
+            };
+          }
           // Without a review item this app is a zombie: no URL, no progress,
           // re-picked every armed session (the two post-merge sessions each
           // burned their pick on one). Park it visibly instead.

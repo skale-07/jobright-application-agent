@@ -99,6 +99,18 @@ describe("URL congruence (UNIT_CONFIRMED)", () => {
     expect(v.detail).toMatch(/no employer name decodable/);
   });
 
+  it("placeholder company names are uncheckable, not a Datadog-vs-Unknown mismatch", () => {
+    const datadog =
+      "https://job-boards.greenhouse.io/datadog/jobs/8052095";
+    expect(
+      checkUrlCongruence("Unknown company (manual enqueue)", datadog).verdict,
+    ).toBe("unknown");
+    expect(checkUrlCongruence("Unknown company", datadog).verdict).toBe(
+      "unknown",
+    );
+    expect(checkUrlCongruence("Datadog", datadog).verdict).toBe("match");
+  });
+
   it("UKG SaaShr shard hosts are unverifiable, not a wrong-employer mismatch", () => {
     // Live 2026-08-14: TRG Apply captured secure7.saashr.com and congruence
     // accused "secure7" of being a different company. Shard labels and the

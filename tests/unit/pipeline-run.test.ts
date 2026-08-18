@@ -183,6 +183,75 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     // With an OPEN review item the worker's picker now skips this app.
   });
 
+  it("missing URL at fill with navigation on returns to APPLICATION_OPENING instead of parking", async () => {
+    const jobNo = Math.floor(Math.random() * 1_000_000);
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobright.ai/jobs/info/${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      company: `Acme${jobNo}`,
+      role: "SWE Intern",
+    });
+    const appId = createApplication(db, { jobId: job.id }).id;
+    db.prepare(
+      `UPDATE applications SET state = 'NATIVE_AUTOFILL_RUNNING' WHERE id = ?`,
+    ).run(appId);
+    upsertOpenReviewItem(db, {
+      applicationId: appId,
+      kind: "MANUAL",
+      title:
+        "Employer application URL missing — resolve navigation or re-enqueue with --url",
+    });
+
+    applyControlledFillEnv({
+      FORM_FILL_ENABLED: "true",
+      DRY_RUN: "false",
+      SUBMIT_ENABLED: "false",
+      NAVIGATION_ENABLED: "true",
+    });
+
+    let navCalls = 0;
+    const report = await runPipeline({
+      db,
+      applicationId: appId,
+      navigationRunner: async ({ applicationId }) => {
+        navCalls += 1;
+        return {
+          run_id: "nav-stub",
+          application_id: applicationId,
+          jobright_job_id: null,
+          method: null,
+          resolved_url: null,
+          resolved_ats: null,
+          wall: "captcha",
+          phase_trace: [],
+          agent: null,
+          gmail: null,
+          need: null,
+          session: "ephemeral",
+          notes: [],
+          congruence: null,
+          duplicates: null,
+          login_wall: null,
+        };
+      },
+    });
+
+    expect(navCalls).toBe(1);
+    expect(report.applications[0]!.steps.map((s) => s.note)).toEqual(
+      expect.arrayContaining([
+        "employer URL missing — returning to navigation",
+        "navigation captcha",
+      ]),
+    );
+    expect(getApplication(db, appId)?.state).toBe("CAPTCHA_REQUIRED");
+    const leftover = listOpenReviewItems(db).filter(
+      (i) =>
+        i.application_id === appId &&
+        i.title.startsWith("Employer application URL missing"),
+    );
+    expect(leftover).toHaveLength(0);
+  });
+
   it("a restored employer URL clears a stale missing-URL review instead of halting", async () => {
     const jobNo = Math.floor(Math.random() * 1_000_000);
     const job = upsertJobByFingerprint(db, {
@@ -218,6 +287,41 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
       ),
     ).toHaveLength(0);
     expect(appReport.stop_reason ?? "").toMatch(/fill gate closed/);
+  });
+
+  it("placeholder company does not halt fill on a leftover URL-mismatch review", async () => {
+    const jobNo = Math.floor(Math.random() * 1_000_000);
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobright.ai/jobs/info/${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      company: "Unknown company (manual enqueue)",
+      role: "Unknown role (manual enqueue)",
+    });
+    const appId = createApplication(db, { jobId: job.id }).id;
+    db.prepare(
+      `UPDATE applications SET state = 'NATIVE_AUTOFILL_RUNNING' WHERE id = ?`,
+    ).run(appId);
+    setEmployerApplicationUrl(
+      db,
+      appId,
+      `https://job-boards.greenhouse.io/datadog/jobs/${jobNo}`,
+    );
+    upsertOpenReviewItem(db, {
+      applicationId: appId,
+      kind: "MANUAL",
+      title: `Stored application URL belongs to "datadog", not Unknown company (manual enqueue)`,
+    });
+
+    const report = await runPipeline({ db, applicationId: appId });
+    expect(report.applications[0]?.stop_reason ?? "").not.toMatch(
+      /belongs to|Unknown company/,
+    );
+    expect(report.applications[0]?.stop_reason ?? "").toMatch(/fill gate closed/);
+    expect(
+      listOpenReviewItems(db).filter((i) =>
+        /URL belongs to/.test(i.title),
+      ),
+    ).toHaveLength(0);
   });
 
   it("stops at materials with a MANUAL review item when no resume registered", async () => {

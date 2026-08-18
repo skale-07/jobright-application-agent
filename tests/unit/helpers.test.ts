@@ -97,6 +97,9 @@ describe("state helpers", () => {
   it("allows known transitions", () => {
     expect(canTransition("DISCOVERED", "DUPLICATE_CHECK")).toBe(true);
     expect(canTransition("READY_TO_SUBMIT", "SUBMITTING")).toBe(true);
+    expect(canTransition("NATIVE_AUTOFILL_RUNNING", "APPLICATION_OPENING")).toBe(
+      true,
+    );
     expect(canTransition("SUBMITTED", "DISCOVERED")).toBe(false);
   });
 });

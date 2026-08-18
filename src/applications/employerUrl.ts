@@ -8,23 +8,28 @@ import {
 export const MISSING_EMPLOYER_URL_REVIEW_TITLE =
   "Employer application URL missing — resolve navigation or re-enqueue with --url";
 
-/** Close the self-block the fill stage writes when the URL later comes back. */
+export function isMissingEmployerUrlReview(item: {
+  kind: string;
+  title: string;
+}): boolean {
+  return (
+    item.kind === "MANUAL" &&
+    item.title.startsWith("Employer application URL missing")
+  );
+}
+
+/** Close the fill-stage missing-URL self-block. */
 export function resolveMissingEmployerUrlReviews(
   db: Db,
   applicationId: string,
+  reason = "employer URL is present",
 ): void {
   for (const item of listOpenReviewItems(db)) {
     if (
       item.application_id === applicationId &&
-      item.kind === "MANUAL" &&
-      item.title.startsWith("Employer application URL missing")
+      isMissingEmployerUrlReview(item)
     ) {
-      resolveReviewItem(
-        db,
-        item.id,
-        { reason: "employer URL is present" },
-        "RESOLVED",
-      );
+      resolveReviewItem(db, item.id, { reason }, "RESOLVED");
     }
   }
 }

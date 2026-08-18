@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { isAdvisoryReviewItem, isRetryablePortalAuthWall, PORTAL_AUTH_WALL_TITLE } from "../../src/queue/reviewItems.js";
+import {
+  isMissingEmployerUrlReview,
+  MISSING_EMPLOYER_URL_REVIEW_TITLE,
+} from "../../src/applications/employerUrl.js";
 import { ATS_BINDINGS } from "../../src/applications/atsBindings.js";
 import {
   heldAnswerFromReason,
@@ -82,6 +86,21 @@ describe("advisory review items no longer freeze an application (UNIT_CONFIRMED)
         { kind: "MANUAL", title: "Resume material not registered" },
         "standing-secret",
       ),
+    ).toBe(false);
+  });
+
+  it("missing-employer-URL reviews are walls, not advisory notes", () => {
+    expect(
+      isMissingEmployerUrlReview({
+        kind: "MANUAL",
+        title: MISSING_EMPLOYER_URL_REVIEW_TITLE,
+      }),
+    ).toBe(true);
+    expect(
+      isAdvisoryReviewItem({
+        kind: "MANUAL",
+        title: MISSING_EMPLOYER_URL_REVIEW_TITLE,
+      }),
     ).toBe(false);
   });
 });

@@ -605,7 +605,14 @@ else changes.
 ## 15. Navigation (autonomous employer-URL resolution)
 
 `APPLICATION_OPENING` can resolve the employer application URL itself
-instead of dead-ending on a MANUAL review item. Three phases, each gated:
+instead of dead-ending on a MANUAL review item. If an application is
+already at fill (`NATIVE_AUTOFILL_RUNNING`) with no stored employer URL
+— enqueue reused a mid-fill row, or the URL was wiped — and
+`NAVIGATION_ENABLED` is on, the pipeline returns it to
+`APPLICATION_OPENING` rather than parking. A leftover "Employer
+application URL missing" review does not halt that recovery.
+
+Three phases, each gated:
 
 1. **Deterministic (`NAVIGATION_ENABLED=true`)** — open the JobRight job
    page, read external apply hrefs (zero mutation), else click the
@@ -656,6 +663,10 @@ unrelated jobs — host-only acceptance let it through. Armed sessions also
 run an **employer-URL audit** at start: pre-submit apps holding a
 wrong-company URL are repaired automatically (URL cleared, app
 re-navigates); anything past submit parks for you.
+
+A placeholder company name from manual enqueue
+(`Unknown company (manual enqueue)`) is uncheckable — it cannot produce a
+mismatch, and fill will not refuse a nav-resolved URL on that basis.
 
 Walls route to existing states: employer login/phone → MANUAL review;
 captcha → `CAPTCHA_REQUIRED`; budget → `FAILED_RETRYABLE`; wrong-employer
