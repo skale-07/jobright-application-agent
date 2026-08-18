@@ -33,8 +33,9 @@ import { tryLoadAboutMe, validateDraft } from "./essayDraft.js";
 const SYSTEM_PROMPT = `You write a job applicant's answer to an application essay question, in their voice, using ONLY the context they provide.
 
 Rules:
-- Use ONLY facts present in candidate_context. Never invent an employer, a school, a metric, a date, or a project.
-- If the context does not support an answer, return null. A missing answer is far better than an invented one.
+- Facts about the CANDIDATE come ONLY from candidate_context. Never invent an employer, a school, a metric, a date, or a project.
+- posting_context (when present) is text taken from the employer's own posting and application pages — the company name, the role, what the team does. Use it to know who the employer is and to connect the candidate's real background to the role ("why us" reasoning). Never invent employer facts beyond it.
+- If neither context supports an answer, return null. A missing answer is far better than an invented one.
 - Write first person, plain and specific. No preamble, no sign-off, no headings.
 - 90-200 words unless the question asks for less.
 - Do not mention being an AI, and do not use bracketed placeholders.
@@ -45,6 +46,85 @@ export type EssayAutofillItem = {
   fieldId: string;
   question: string;
 };
+
+/** Bounded: posting context is a grounding aid, not a document dump. */
+export const MAX_POSTING_CONTEXT_CHARS = 900;
+
+/**
+ * Deterministically harvest "who is this employer / what is this role" text
+ * from a page the flow has already seen: title, headings, meta description,
+ * and short paragraphs. No LLM, no network — string extraction only. Form
+ * chrome (labels, options, buttons) is excluded so the result reads like a
+ * posting, not like the questionnaire we are about to answer.
+ *
+ * Live artifact 1787010568814/1787010626392: "Why Frobnicator?" was asked
+ * with company=null, role=null and no posting text — the model (correctly,
+ * per its grounding rules) abstained, and the essay went to the employer
+ * BLANK even though the pages the flow walked named the company, the role,
+ * and the location. This function is that missing channel.
+ */
+export function extractPostingContext(html: string): string {
+  const stripTags = (s: string): string =>
+    s
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+  // Drop scripts/styles first, then form internals — a <p> INSIDE the form
+  // is fill-machinery commentary, not posting copy.
+  const page = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<form[\s\S]*?<\/form>/gi, " ");
+  const parts: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string | undefined): void => {
+    const text = stripTags(raw ?? "");
+    if (text.length < 3) return;
+    const key = text.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    parts.push(text);
+  };
+  push(/<title[^>]*>([\s\S]*?)<\/title>/i.exec(page)?.[1]);
+  push(
+    /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i.exec(
+      page,
+    )?.[1],
+  );
+  for (const m of page.matchAll(/<h[123][^>]*>([\s\S]*?)<\/h[123]>/gi)) {
+    push(m[1]);
+  }
+  for (const m of page.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)) {
+    push(m[1]);
+  }
+  return parts.join("\n").slice(0, MAX_POSTING_CONTEXT_CHARS);
+}
+
+/** Merge page extracts gathered along the flow (posting → outer → form). */
+export function mergePostingContext(
+  ...extracts: Array<string | null | undefined>
+): string {
+  const seen = new Set<string>();
+  const lines: string[] = [];
+  for (const e of extracts) {
+    for (const line of (e ?? "").split("\n")) {
+      const t = line.trim();
+      if (t.length < 3) continue;
+      const key = t.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      lines.push(t);
+    }
+  }
+  return lines.join("\n").slice(0, MAX_POSTING_CONTEXT_CHARS);
+}
 
 export type EssayAutofillResult = {
   fieldId: string;
@@ -80,6 +160,8 @@ export function essayAutofillAvailable(): { ok: boolean; reason: string } {
 export async function generateEssayAnswers(input: {
   items: EssayAutofillItem[];
   job?: { company: string; role: string } | null;
+  /** Page-derived employer/role text (extractPostingContext / merge). */
+  postingContext?: string;
   client?: EmailLlmClient;
   traceUrl?: string;
 }): Promise<{ answers: EssayAutofillResult[]; notes: string[] }> {
@@ -106,6 +188,7 @@ export async function generateEssayAnswers(input: {
         question: item.question,
         company: input.job?.company ?? null,
         role: input.job?.role ?? null,
+        posting_context: input.postingContext?.trim() || null,
         candidate_context: about,
       };
       const { text } = await client.generateJson({
