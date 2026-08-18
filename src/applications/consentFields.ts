@@ -25,7 +25,7 @@ const MARKETING_RE =
   /market(ing)?|newsletter|job alerts?|sms|text message|promotional|future opportunit/;
 
 const CONSENT_RE =
-  /privacy( policy)?|terms\s*((of\s+(service|use|condition))|(&|and)?\s*conditions)|i agree|i acknowledge|i certify|i confirm|true and complete|information (is|provided) (true|accurate)|data processing|gdpr/;
+  /privacy( policy)?|terms\s*((of\s+(service|use|condition))|(&|and)?\s*conditions)|i agree|i acknowledge|i certify|i confirm|acknowledge|notice at collection|personal data|true and complete|information (is|provided) (true|accurate)|data processing|gdpr/;
 
 export function isApplicationConsentField(field: {
   type: string;

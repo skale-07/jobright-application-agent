@@ -238,7 +238,7 @@ async function runInspectionFromHtml(input: {
     report,
   } = input;
 
-  // 1–5: final URL precedence — stop before semantic classification
+  // Record the landing. Host is not a gate — page-state checks decide.
   const nav = verifyFinalNavigation({
     requestedUrl: report.normalized_url ?? requestedUrl,
     finalUrl,
@@ -256,7 +256,7 @@ async function runInspectionFromHtml(input: {
     return;
   }
 
-  // Trusted Greenhouse host — Greenhouse-specific page checks
+  // Page-state checks (captcha / login / closed / form). Host is not a gate.
   const loginWall = detectLoginWall({ finalUrl, html, title });
   const closedJobDetected = detectClosedJobSignals(html, title);
   const errorPageDetected = detectErrorPageSignals(html, title);

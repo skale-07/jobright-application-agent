@@ -16,6 +16,10 @@
  *     that way, and the first scan sailed past them. The failure mode of
  *     this heuristic is a visible refusal + review item, never a wrong
  *     submit, so the asymmetry favors including it;
+ *   - Greenhouse React-select comboboxes keep the filter <input> empty
+ *     after a pick; the committed answer is `.select__single-value`. Those
+ *     inputs are not unanswered text fields (Jump Trading 2026-08-17:
+ *     18 filled, verify passed, then 14 false "unanswered" as text+combobox);
  *   - fail-open on scan errors — a broken scan must not strand a
  *     completed form (post-click verification still guards the outcome).
  *
@@ -70,9 +74,59 @@ const SCAN_EXPRESSION = `(() => {
   const isRequired = (el) =>
     el.required === true || el.getAttribute("aria-required") === "true";
 
+  const isComboboxControl = (el) => {
+    const role = (el.getAttribute("role") || "").toLowerCase();
+    const haspopup = (el.getAttribute("aria-haspopup") || "").toLowerCase();
+    const ac = (el.getAttribute("aria-autocomplete") || "").toLowerCase();
+    if (
+      role === "combobox" ||
+      haspopup === "listbox" ||
+      haspopup === "true" ||
+      ac === "list" ||
+      ac === "both"
+    ) {
+      return true;
+    }
+    return Boolean(
+      el.closest('[class*="select__control"], [class*="select-shell"], [class*="select2"], [role="combobox"]'),
+    );
+  };
+
+  const placeholderish = (t) => /^(start typing|select|choose)/i.test(t || "");
+
+  const committedComboboxValue = (el) => {
+    const shell =
+      el.closest('[class*="select-shell"]') ||
+      el.closest('[class*="select__control"]') ||
+      el.closest('[class*="select_"]');
+    if (shell) {
+      const single = shell.querySelector('[class*="single-value"], [class*="singleValue"]');
+      if (single) {
+        const t = clean(single.textContent);
+        if (t && !placeholderish(t)) return t;
+        const title = clean(single.getAttribute("title"));
+        if (title && !placeholderish(title)) return title;
+      }
+      const multi = shell.querySelectorAll('[class*="multi-value__label"], [class*="multiValue__label"]');
+      const chips = [];
+      for (let i = 0; i < multi.length; i++) {
+        const t = clean(multi[i].textContent);
+        if (t && t !== "×" && t !== "x" && t.length > 1) chips.push(t);
+      }
+      if (chips.length > 0) return chips.join(", ");
+      return "";
+    }
+    const value = ((el.value || "") + "").trim();
+    if (value && !placeholderish(value)) return value;
+    const aria = clean(el.getAttribute("aria-valuetext"));
+    if (aria && !placeholderish(aria)) return aria;
+    return "";
+  };
+
   for (const el of Array.from(document.querySelectorAll("input, textarea, select"))) {
     const type = (el.type || "").toLowerCase();
     if (type === "hidden" || type === "file" || type === "submit" || type === "button") continue;
+    if (isComboboxControl(el)) continue;
     if (!isRequired(el)) continue;
 
     if (type === "radio") {
@@ -153,10 +207,8 @@ const SCAN_EXPRESSION = `(() => {
         }
       }
     } else {
-      const value = el.value || el.getAttribute("aria-valuetext") || el.textContent || "";
-      const trimmed = clean(value);
-      const placeholderish = /^(start typing|select|choose)/i.test(trimmed);
-      if (trimmed === "" || placeholderish) {
+      const trimmed = committedComboboxValue(el);
+      if (trimmed === "" || placeholderish(trimmed)) {
         out.push({ label: label, control: "combobox" });
       }
     }
@@ -174,8 +226,12 @@ export async function scanRequiredCompleteness(
     }>;
     const seen = new Set<string>();
     const deduped = unanswered.filter((u) => {
-      const k = `${u.label}::${u.control}`;
-      if (seen.has(k)) return false;
+      const k = u.label
+        .replace(/[*✱]\s*$/u, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+      if (!k || seen.has(k)) return false;
       seen.add(k);
       return true;
     });

@@ -1,0 +1,64 @@
+{
+  "run_id": "nav-51a8a083-389e-4700-a9d0-344493e3725d",
+  "application_id": "a3c720c4-b4e8-44b2-a0a2-6841dbaf74e2",
+  "jobright_job_id": "6a603f28d34c954589999aa8",
+  "method": "agent",
+  "resolved_url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application",
+  "resolved_ats": "ashby",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "D_gmail",
+      "outcome": "verification code retrieved"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 2, employer match)",
+      "evidence": "jobs.ashbyhq.com"
+    }
+  ],
+  "agent": {
+    "turns_used": 2,
+    "steps_used": 6,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": {
+    "polls_used": 2,
+    "matched_message_id": "msg-9"
+  },
+  "need": {
+    "kind": "verification_email",
+    "sent_to": "candidate@fixture.test",
+    "requested_at": "2026-08-07T00:00:00Z",
+    "evidence": "EMAIL_VERIFICATION_REQUIRED: We sent a verification code to candidate@fixture.test — enter the code to continue."
+  },
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent[2]: continuation ok"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "acme",
+    "detail": "token \"acme\" ~ slug \"acme\"",
+    "expected_company": "Acme",
+    "url": "https://jobs.ashbyhq.com/acme/9b1e0c2a-1234-4abc-8def-1234567890ab/application"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:47:15.532Z"
+}

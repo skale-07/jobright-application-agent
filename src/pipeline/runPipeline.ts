@@ -11,8 +11,10 @@ import {
 import { acquireLease, releaseLease } from "../queue/leases.js";
 import {
   isAdvisoryReviewItem,
+  isCompletenessUnansweredReview,
   isRetryablePortalAuthWall,
   listOpenReviewItems,
+  resolveReviewItem,
   upsertOpenReviewItem,
 } from "../queue/reviewItems.js";
 import { createAutomationRun, completeAutomationRun } from "../queue/automationRuns.js";
@@ -22,7 +24,10 @@ import { essayFieldsOnly } from "../applications/essayDetector.js";
 import { runAtsFixtureFill } from "../applications/applicationFiller.js";
 import { runAtsSubmission } from "../applications/submitRun.js";
 import type { ConfirmSubmission } from "../applications/submitConfirmation.js";
-import { runGreenhouseLiveFill } from "../ats/greenhouse/liveFill.js";
+import {
+  GreenhouseLiveFillError,
+  runGreenhouseLiveFill,
+} from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
 import {
   probeCdpEndpoint,
@@ -42,7 +47,11 @@ import {
   ensureResumeForApplication,
   getRegisteredResume,
 } from "../jobright/materialsRegister.js";
-import { withPublicUrlPage } from "../browser/fixtureSession.js";
+import {
+  openPublicUrlSession,
+  withPublicUrlPage,
+  type PublicUrlSession,
+} from "../browser/fixtureSession.js";
 import { hasLlmKey } from "../contacts/emailLlm.js";
 import { describeSessionReadiness } from "../auth/serviceSession.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
@@ -151,6 +160,8 @@ export {
 import {
   getEmployerApplicationUrl,
   setEmployerApplicationUrl,
+  resolveMissingEmployerUrlReviews,
+  MISSING_EMPLOYER_URL_REVIEW_TITLE,
 } from "../applications/employerUrl.js";
 
 type StepContext = {
@@ -158,6 +169,8 @@ type StepContext = {
   app: ApplicationRow;
   runId: string;
   options: PipelineOptions;
+  /** Same-run fill page held for `--submit` so the click is on that DOM. */
+  heldSubmitSession: { current: PublicUrlSession | null };
 };
 
 /**
@@ -507,12 +520,20 @@ async function runOneApplication(input: {
     },
   });
 
+  if (getEmployerApplicationUrl(db, applicationId)) {
+    resolveMissingEmployerUrlReviews(db, applicationId);
+  }
+
   acquireLease(db, {
     resourceType: "application",
     resourceId: `${applicationId}:pipeline`,
     holderRunId: runId,
     ttlMs: 600_000,
   });
+
+  const heldSubmitSession: { current: PublicUrlSession | null } = {
+    current: null,
+  };
 
   try {
     // Bounded loop: every iteration must transition or stop.
@@ -592,7 +613,10 @@ async function runOneApplication(input: {
 
       let outcome: StepOutcome;
       try {
-        outcome = await step({ db, app, runId, options }, input.automationRunId);
+        outcome = await step(
+          { db, app, runId, options, heldSubmitSession },
+          input.automationRunId,
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const stack = err instanceof Error ? err.stack : undefined;
@@ -649,6 +673,8 @@ async function runOneApplication(input: {
       }
     }
   } finally {
+    await heldSubmitSession.current?.close().catch(() => undefined);
+    heldSubmitSession.current = null;
     releaseLease(db, {
       resourceType: "application",
       resourceId: `${applicationId}:pipeline`,
@@ -965,8 +991,12 @@ async function step(
           upsertOpenReviewItem(db, {
             applicationId: app.id,
             kind: "MANUAL",
-            title: "Employer application URL missing — resolve navigation or re-enqueue with --employer-url",
-            payload: { stage: "fill", state: app.state },
+            title: MISSING_EMPLOYER_URL_REVIEW_TITLE,
+            payload: {
+              stage: "fill",
+              state: app.state,
+              hint: `npm run run -- --pipeline --app ${app.id} --url <ATS_APPLICATION_URL> --headed`,
+            },
           });
           return {
             to: null,
@@ -1008,7 +1038,10 @@ async function step(
             stop: "gate",
           };
         }
-        const filled = await withNavHandoffPage(ctx, async (handoff) => {
+        const runLiveFill = async (
+          existingPage: Page | undefined,
+          sessionNote: string,
+        ) => {
           if (detected.ats !== "greenhouse") {
             const liveReport = await runAtsLiveFill({
               binding: ATS_BINDINGS[detected.ats],
@@ -1016,7 +1049,7 @@ async function step(
               execute: true,
               headless: ctx.options.headless ?? false,
               capture: { db, applicationId: app.id },
-              ...(handoff ? { existingPage: handoff } : {}),
+              ...(existingPage ? { existingPage } : {}),
             });
             if (!liveReport.gate.ok) {
               return {
@@ -1029,24 +1062,64 @@ async function step(
             return {
               gateFailure: null,
               verifyPassed: liveReport.verify?.passed === true,
-              detail: `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
+              detail: `${detected.ats} live fill: ${liveReport.fill?.filled.length ?? 0} filled${sessionNote}`,
               operatorBrief: liveReport.operator_brief,
             };
           }
-          const liveReport = await runGreenhouseLiveFill({
-            url,
-            execute: true,
+          try {
+            const liveReport = await runGreenhouseLiveFill({
+              url,
+              execute: true,
+              headless: ctx.options.headless ?? false,
+              capture: { db, applicationId: app.id },
+              ...(existingPage ? { existingPage } : {}),
+            });
+            return {
+              gateFailure: null,
+              verifyPassed: liveReport.verify?.passed === true,
+              detail: `live fill: ${liveReport.fill?.filled.length ?? 0} filled${sessionNote}`,
+              operatorBrief: liveReport.operator_brief,
+            };
+          } catch (err) {
+            if (err instanceof GreenhouseLiveFillError) {
+              return {
+                gateFailure: `greenhouse live fill refused: ${err.report.failure_code ?? "unknown"}`,
+                verifyPassed: false,
+                detail: "",
+                operatorBrief: undefined as OperatorFieldBrief | undefined,
+              };
+            }
+            throw err;
+          }
+        };
+
+        let filled;
+        if (ctx.options.submit) {
+          ctx.heldSubmitSession.current = await openPublicUrlSession({
             headless: ctx.options.headless ?? false,
-            capture: { db, applicationId: app.id },
-            ...(handoff ? { existingPage: handoff } : {}),
           });
-          return {
-            gateFailure: null,
-            verifyPassed: liveReport.verify?.passed === true,
-            detail: `live fill: ${liveReport.fill?.filled.length ?? 0} filled${handoff ? " (cdp session)" : ""}`,
-            operatorBrief: liveReport.operator_brief,
-          };
-        });
+          try {
+            filled = await runLiveFill(
+              ctx.heldSubmitSession.current.page,
+              " (held for submit)",
+            );
+          } catch (err) {
+            await ctx.heldSubmitSession.current.close().catch(() => undefined);
+            ctx.heldSubmitSession.current = null;
+            throw err;
+          }
+        } else {
+          filled = await withNavHandoffPage(ctx, async (handoff) =>
+            runLiveFill(
+              handoff ?? undefined,
+              handoff ? " (cdp session)" : "",
+            ),
+          );
+        }
+        if (filled.gateFailure || !filled.verifyPassed) {
+          await ctx.heldSubmitSession.current?.close().catch(() => undefined);
+          ctx.heldSubmitSession.current = null;
+        }
         if (filled.gateFailure) {
           return { to: null, note: filled.gateFailure, stop: "gate" };
         }
@@ -1115,6 +1188,7 @@ async function step(
           stop: "submit_boundary",
         };
       }
+      const held = ctx.heldSubmitSession.current;
       const result = await runAtsSubmission({
         db,
         applicationId: app.id,
@@ -1123,6 +1197,9 @@ async function step(
         automationRunId,
         ...(ctx.options.confirmSubmission
           ? { confirmSubmission: ctx.options.confirmSubmission }
+          : {}),
+        ...(held
+          ? { existingPage: held.page, reuseFilledPage: true }
           : {}),
       });
       if (result.outcome !== "SUBMITTED_VERIFIED") {
@@ -1260,16 +1337,29 @@ async function step(
 
 /**
  * Re-queue FAILED_RETRYABLE applications with an attempt cap. Beyond the cap
- * the application is finalized rather than silently retried forever.
+ * a herd retry finalizes rather than looping forever. A named application
+ * (`--app`) is an operator override: requeue even at the cap. Attempt still
+ * increments so the override is visible in the event log.
  */
 export function retryFailedApplications(
   db: Db,
-  options: { maxAttempts?: number } = {},
+  options: { maxAttempts?: number; applicationId?: string } = {},
 ): Array<{ application_id: string; action: "requeued" | "finalized"; attempt: number }> {
   const maxAttempts = options.maxAttempts ?? MAX_ATTEMPTS;
-  const rows = db
-    .prepare(`SELECT id, attempt FROM applications WHERE state = 'FAILED_RETRYABLE'`)
-    .all() as Array<{ id: string; attempt: number }>;
+  const named = Boolean(options.applicationId);
+  const rows = (
+    options.applicationId
+      ? db
+          .prepare(
+            `SELECT id, attempt FROM applications WHERE id = ? AND state = 'FAILED_RETRYABLE'`,
+          )
+          .all(options.applicationId)
+      : db
+          .prepare(
+            `SELECT id, attempt FROM applications WHERE state = 'FAILED_RETRYABLE'`,
+          )
+          .all()
+  ) as Array<{ id: string; attempt: number }>;
 
   const results: Array<{
     application_id: string;
@@ -1277,7 +1367,7 @@ export function retryFailedApplications(
     attempt: number;
   }> = [];
   for (const row of rows) {
-    if (row.attempt >= maxAttempts) {
+    if (row.attempt >= maxAttempts && !named) {
       transitionApplication(db, {
         applicationId: row.id,
         nextState: "FAILED_FINAL",
@@ -1293,7 +1383,10 @@ export function retryFailedApplications(
     transitionApplication(db, {
       applicationId: row.id,
       nextState: "QUEUED",
-      reason: `retry ${row.attempt + 1}/${maxAttempts}`,
+      reason:
+        row.attempt >= maxAttempts
+          ? `operator retry ${row.attempt + 1} (cap ${maxAttempts} overridden for named app)`
+          : `retry ${row.attempt + 1}/${maxAttempts}`,
       attempt: row.attempt + 1,
     });
     results.push({
@@ -1301,6 +1394,19 @@ export function retryFailedApplications(
       action: "requeued",
       attempt: row.attempt + 1,
     });
+    for (const item of listOpenReviewItems(db)) {
+      if (
+        item.application_id === row.id &&
+        isCompletenessUnansweredReview(item)
+      ) {
+        resolveReviewItem(
+          db,
+          item.id,
+          { action: "dismissed", by: "retry" },
+          "DISMISSED",
+        );
+      }
+    }
   }
   return results;
 }

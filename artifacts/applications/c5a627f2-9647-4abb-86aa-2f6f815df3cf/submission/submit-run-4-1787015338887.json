@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "submission_id": "ecd297f2-5a81-4fa1-92b1-b761fbc6be8d",
+  "attempt": 4,
+  "receipt": null,
+  "review_item_id": "4ad84dcd-9220-481b-9c16-83e01c3c26f6",
+  "reason": "Refusing to click submit: 14 required question(s) unanswered — Country* [text]; Location (City)* [text]; Will you require sponsorship for work authorization in the future?* [text]; Please select your current school from the list below:* [text]; What degree are you currently pursuing?* [text]; What is your expected graduation date?* [text]; Do you currently have any offers from other firms or deadlines we should be aware of?* [text]; Country* [combobox]; Location (City)* [combobox]; Will you require sponsorship for work authorization in the future?* [combobox]; Please select your current school from the list below:* [combobox]; What degree are you currently pursuing?* [combobox]; What is your expected graduation date?* [combobox]; Do you currently have any offers from other firms or deadlines we should be aware of?* [combobox]",
+  "artifact_path": null
+}

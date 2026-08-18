@@ -1,0 +1,55 @@
+{
+  "run_id": "nav-df09da90-29d5-4aef-8227-885c31bf8b7b",
+  "application_id": "1d8c22c3-64be-4f70-bdf7-f3c89407b176",
+  "jobright_job_id": "6ae728a4d39513404f94dbcd",
+  "method": "agent",
+  "resolved_url": "https://jobs.lever.co/othercorp/9b1e0c2a-1234-4abc-8def-1234567890ab/apply",
+  "resolved_ats": "lever",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "resolved (turn 1, employer unverified)",
+      "evidence": "jobs.lever.co"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 5,
+    "domains_visited": [
+      "jobright.ai",
+      "jobs.lever.co"
+    ]
+  },
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "agent[1]: reached form",
+    "agent[1]: URL reads as \"othercorp\" (slug \"othercorp\" shares nothing with company \"Acme\") — kept",
+    "congruence: URL names \"othercorp\", not \"Acme\" (slug \"othercorp\" shares nothing with company \"Acme\") — recorded, not refused"
+  ],
+  "congruence": {
+    "verdict": "mismatch",
+    "slug": "othercorp",
+    "detail": "slug \"othercorp\" shares nothing with company \"Acme\"",
+    "expected_company": "Acme",
+    "url": "https://jobs.lever.co/othercorp/9b1e0c2a-1234-4abc-8def-1234567890ab/apply"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:46:38.321Z"
+}

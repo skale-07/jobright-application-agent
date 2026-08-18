@@ -97,7 +97,8 @@
           "upsertOpenReviewItem",
           "listOpenReviewItems",
           "resolveReviewItem",
-          "isAdvisoryReviewItem"
+          "isAdvisoryReviewItem",
+          "isCompletenessUnansweredReview"
         ],
         "src/queue/automationRuns.ts": [
           "createAutomationRun",
@@ -138,7 +139,7 @@
       "key_files": {
         "src/auth/serviceSession.ts": "PlaywrightServiceSession \u2014 storage-state / CDP / persistent modes",
         "src/auth/loginFlow.ts": "interactive login capture",
-        "src/browser/fixtureSession.ts": "withFixtureHtmlPage / withPublicUrlPage (tests + read-only)",
+        "src/browser/fixtureSession.ts": "withFixtureHtmlPage / withPublicUrlPage / openPublicUrlSession (pipeline --submit holds the fill browser for the click)",
         "src/browser/obstructions.ts": "cookie/promo popup dismisser (never-click screened)",
         "src/accounts/vault.ts": "per-host ATS account vault (operator-seeded)"
       },
@@ -148,7 +149,8 @@
         ],
         "src/browser/fixtureSession.ts": [
           "withFixtureHtmlPage",
-          "withPublicUrlPage"
+          "withPublicUrlPage",
+          "openPublicUrlSession"
         ],
         "src/browser/obstructions.ts": [
           "dismissPageObstructions"
@@ -266,16 +268,16 @@
       "key_files": {
         "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl \u2014 the single URL-to-adapter decision",
         "src/ats/shared/preMutationGate.ts": "verifyPageBeforeMutationGeneric (host/captcha/mismatch terminal; login wall and zero-field pages still fail the mutation lock)",
-        "src/ats/shared/requiredCompleteness.ts": "refuse submit with unanswered required questions",
+        "src/ats/shared/requiredCompleteness.ts": "refuse submit with unanswered required questions. Greenhouse React-select: skip empty filter inputs; committed value is .select__single-value, same as comboboxFill readback.",
         "src/ats/shared/submitControl.ts": "submit control resolve cascade; resolveAdvanceControl is Next/Continue (never the gated submit)",
         "src/ats/registry.ts": "adapter registry + HTML-based detection",
-        "src/ats/greenhouse/liveFill.ts": "shared guarded live fill core (all vendors call it)",
+        "src/ats/greenhouse/liveFill.ts": "shared guarded live fill core; reachGreenhouseApplicationForm is the landing recovery submit reuses (SPA settle, iframe hop, Apply on a posting)",
         "src/ats/workday/pageKind.ts": "classifyWorkdayPage: auth checked BEFORE wizard (Create Account is step 1 of the wizard)",
         "src/ats/generic/urlValidation.ts": "https-only, never jobright, vendor-owned hosts rejected",
         "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
         "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
         "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
-        "src/ats/shared/frameHop.ts": "findApplicationFrameUrl \u2014 hop into an iframe whose document has fillable fields (https, or loopback http for the operator sandbox)",
+        "src/ats/shared/frameHop.ts": "findApplicationFrameUrl \u2014 hop into an iframe whose document has fillable fields (https, or loopback http for the operator sandbox). Greenhouse embed/job_app URLs hop even when the child document is still empty/unreadable.",
         "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password or emailed-code wall \u2192 auth, identity fields \u2192 form, Apply without identity \u2192 posting, else unknown. Fill recovers from page_class, not the collapsed gate code.",
         "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
         "src/ats/ashby/discovery.ts": "ashbyDiscoverFields \u2014 generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs \u2192 ONE field with options[]; per-option fields suppressed)"
@@ -307,10 +309,12 @@
           "pickSpecifyField"
         ],
         "src/ats/shared/postingAdvance.ts": [
-          "advancePastPosting"
+          "advancePastPosting",
+          "findApplyControl"
         ],
         "src/ats/shared/frameHop.ts": [
-          "findApplicationFrameUrl"
+          "findApplicationFrameUrl",
+          "isGreenhouseEmbedUrl"
         ],
         "src/ats/shared/pageClassify.ts": [
           "classifyPage",
@@ -327,6 +331,11 @@
           "discoverAshbyButtonGroups",
           "discoverAshbyFieldsetGroups",
           "looksLikeUnrenderedShell"
+        ],
+        "src/ats/greenhouse/liveFill.ts": [
+          "reachGreenhouseApplicationForm",
+          "verifyPageBeforeMutation",
+          "failedApprovedEntries"
         ]
       }
     },
@@ -343,7 +352,7 @@
         "src/applications/applicationFiller.ts": "planApplicationFill \u2014 adapter dispatch + plan build",
         "src/applications/resolveAnswers.ts": "buildFillPlan: profile, screeners, consent checkboxes, demographics-from-sensitive-profile",
         "src/applications/approvedFillPlan.ts": "assertExecutableApprovedEntry \u2014 the never-weaken gate",
-        "src/applications/submitRun.ts": "runAtsSubmission \u2014 click gate + unattended budget consumption",
+        "src/applications/submitRun.ts": "runAtsSubmission \u2014 greenhouse landing recovery then identity gate; same-run --submit reuses the filled page (no cold re-fill); click gate + unattended budget consumption",
         "src/applications/fieldDiscovery.ts": "discoverFieldsFromHtml (also the pre-mutation gate's field count)",
         "src/applications/atsBindings.ts": "ATS_BINDINGS: per-vendor gate/fill/submit fns",
         "src/applications/genericFormAdvance.ts": "walkGenericFormPages \u2014 after a passing generic fill, click Next/Continue (never Submit), re-plan, fill; bounded",

@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { Page } from "playwright";
 import type { Db } from "../storage/db/client.js";
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
@@ -40,6 +41,7 @@ import {
 } from "./submissionGuards.js";
 import { assertSubmitAllowed } from "./formFillGuards.js";
 import { planApplicationFill } from "./applicationFiller.js";
+import { approvedFillEntries } from "./approvedFillPlan.js";
 import { buildHumanEssayEntries } from "./essayFill.js";
 import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
 import type { FieldMeta } from "../ats/greenhouse/fill.js";
@@ -48,7 +50,11 @@ import {
   checkUrlCongruence,
   getJobIdentity,
 } from "../navigation/congruence.js";
-import { failedApprovedEntries } from "../ats/greenhouse/liveFill.js";
+import {
+  failedApprovedEntries,
+  reachGreenhouseApplicationForm,
+  verifyPageBeforeMutation,
+} from "../ats/greenhouse/liveFill.js";
 import { healFailedFillEntries } from "../ats/greenhouse/fillHealer.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { ATS_BINDINGS } from "./atsBindings.js";
@@ -120,8 +126,9 @@ export function isEmailedCodeWallOnly(gate: {
  * Layered defenses, in firing order:
  *   env gate (assertSubmitAllowed) → state check → lease →
  *   assertSubmissionAllowed → idempotency claim → per-ATS page gate
- *   (greenhouse: full identity verification; lever/ashby: the weaker
- *   trusted-host/login-wall/captcha/form gate — see preMutationGate.ts) →
+ *   (greenhouse: SPA settle + Apply recovery, then identity verification;
+ *   lever/ashby: the weaker trusted-host/login-wall/captcha/form gate —
+ *   see preMutationGate.ts) →
  *   fill verify must pass → per-submission human confirmation (or persisted
  *   unattended cap) → single click → deterministic receipt verification.
  * Essays present on an ATS without a wired essay path fail closed BEFORE
@@ -149,6 +156,14 @@ export async function runAtsSubmission(input: {
    * injectable for tests.
    */
   fetchVerificationCode?: FetchVerificationCode;
+  /**
+   * Caller-owned page from the same pipeline fill. Do not goto, do not
+   * close. `reuseFilledPage` skips adapter.fill when verify still passes
+   * (Jump Trading 2026-08-17: cold re-fill could not open comboboxes
+   * after a verified 18-field fill was thrown away).
+   */
+  existingPage?: Page;
+  reuseFilledPage?: boolean;
 }): Promise<SubmissionRunReport> {
   const { db, applicationId } = input;
   const cfg = getConfig();
@@ -280,10 +295,67 @@ export async function runAtsSubmission(input: {
       `receipt-attempt-${pending.submission_attempt_number}.png`,
     );
 
-    return await withPublicUrlPage(
-      detected.normalizedUrl,
-      async (page) => {
-        const gate = await binding.gate(page, employerUrl, detected.normalizedUrl);
+    const runOnPage = async (startPage: Page) => {
+        let page = startPage;
+        let landingNotes: string[] = [];
+        // Greenhouse identity gate is FORM_NOT_FOUND on a posting/SPA shell.
+        // Fill already recovers (settle → hop → Apply). Submit used to gate
+        // the first paint and fail before re-fill. Same recovery, same page.
+        let gate;
+        if (binding.id === "greenhouse") {
+          if (input.reuseFilledPage) {
+            gate = await verifyPageBeforeMutation(
+              page,
+              employerUrl,
+              detected.normalizedUrl ?? null,
+            );
+            if (
+              !gate.ok &&
+              (gate.failureCode === "FORM_NOT_FOUND" ||
+                gate.failureCode === "ZERO_FIELDS")
+            ) {
+              const reached = await reachGreenhouseApplicationForm(
+                page,
+                employerUrl,
+                detected.normalizedUrl ?? null,
+                { dismissObstructions: true },
+              );
+              page = reached.page;
+              gate = reached.gate;
+              landingNotes = [
+                "reuseFilledPage: form gone — landing recovery",
+                ...reached.notes,
+              ];
+            } else {
+              landingNotes = ["reusing filled page — skipped landing recovery"];
+            }
+          } else {
+            const reached = await reachGreenhouseApplicationForm(
+              page,
+              employerUrl,
+              detected.normalizedUrl ?? null,
+              { dismissObstructions: true },
+            );
+            page = reached.page;
+            gate = reached.gate;
+            landingNotes = reached.notes;
+          }
+          if (landingNotes.length > 0) {
+            logger.info("greenhouse submit landing recovery", {
+              service: "submit",
+              action: "landing_recovery",
+              application_id: applicationId,
+              metadata: {
+                notes: landingNotes,
+                ok: gate.ok,
+                failure_code: gate.failureCode,
+                reuse_filled_page: Boolean(input.reuseFilledPage),
+              },
+            });
+          }
+        } else {
+          gate = await binding.gate(page, employerUrl, detected.normalizedUrl);
+        }
         const emailedCodeWallOnly = isEmailedCodeWallOnly(gate);
         if (emailedCodeWallOnly) {
           logger.info(
@@ -301,7 +373,9 @@ export async function runAtsSubmission(input: {
             runId,
           });
           report.outcome = "FAILED_BEFORE_CLICK";
-          report.reason = `Page failed identity gate (${gate.failureCode}): ${gate.reason}`;
+          report.reason = `Page failed identity gate (${gate.failureCode}): ${gate.reason}${
+            landingNotes.length > 0 ? ` — ${landingNotes.join("; ")}` : ""
+          }`;
           return persist(report);
         }
 
@@ -428,7 +502,23 @@ export async function runAtsSubmission(input: {
 
         try {
           // Fill + essays + upload + verify on the gated page.
-          const fill = await adapter.fill(page, approvedPlan.answers);
+          // A same-run pipeline fill already mutated this DOM; re-fill
+          // empties Greenhouse comboboxes (listbox never opens).
+          let fill = input.reuseFilledPage
+            ? {
+                filled: approvedFillEntries(approvedPlan).map((e) => e.field_id),
+                skipped: [] as string[],
+                errors: [] as string[],
+              }
+            : await adapter.fill(page, approvedPlan.answers);
+          if (input.reuseFilledPage) {
+            logger.info("submit reusing filled page — skipped re-fill", {
+              service: "submit",
+              action: "reuse_filled_page",
+              application_id: applicationId,
+              metadata: { filled_count: fill.filled.length },
+            });
+          }
           if (essayEntries.length > 0 && binding.supportsEssayFill) {
             const fieldMeta = new Map<string, FieldMeta>(
               fields.map((f) => {
@@ -442,6 +532,18 @@ export async function runAtsSubmission(input: {
           }
           const upload = await adapter.uploadResume(page, resume.path);
           let verify = await adapter.verify(page, approvedPlan.answers);
+          if (
+            input.reuseFilledPage &&
+            (!verify.passed || fill.errors.length > 0)
+          ) {
+            logger.warn("reused fill did not verify — filling this page once", {
+              service: "submit",
+              action: "reuse_filled_page_fallback",
+              application_id: applicationId,
+            });
+            fill = await adapter.fill(page, approvedPlan.answers);
+            verify = await adapter.verify(page, approvedPlan.answers);
+          }
           // Phase 6a′: one heal pass before giving up on the click
           // (greenhouse-only until the healer is proven on other ATSes).
           if (!verify.passed && binding.supportsHealing) {
@@ -682,7 +784,13 @@ export async function runAtsSubmission(input: {
           report.reason = err instanceof Error ? err.message : String(err);
           return persist(report);
         }
-      },
+    };
+    if (input.existingPage) {
+      return await runOnPage(input.existingPage);
+    }
+    return await withPublicUrlPage(
+      detected.normalizedUrl,
+      runOnPage,
       { headless: input.headless ?? false },
     );
   } finally {

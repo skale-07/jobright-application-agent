@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-1f980afd-b9fb-4819-9f0d-f100a9d071e2",
+  "application_id": "d0d57599-6897-4563-a48f-a877d9bc3e50",
+  "jobright_job_id": "6a831bffb5a0ac0e84a237d5",
+  "method": "apply_click_popup",
+  "resolved_url": "https://job-boards.greenhouse.io/datadog/jobs/8052095",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (9 external links)",
+      "evidence": "x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: anchor reads as \"greenhouse\" (URL names \"greenhouse\" (host), which shares nothing with company \"Datadog\") — not preferred, deferring to the Apply click",
+    "phase A: 9 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk, www.techtimes.com, techstartups.com, boards.greenhouse.io",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "datadog",
+    "detail": "token \"datadog\" ~ slug \"datadog\"",
+    "expected_company": "Datadog",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=datadog&jr_id=6a831bffb5a0ac0e84a237d5&token=8052095&utm_source=jobright"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-17T23:59:28.760Z"
+}

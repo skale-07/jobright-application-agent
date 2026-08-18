@@ -13,6 +13,11 @@ export type EssayClassification = {
 const ESSAY_LABEL_HINTS =
   /why (do )?you (want|are)|cover letter|tell us about|describe|essay|statement of|motivation|what interests you|additional information|anything else/i;
 
+/** "If you said yes above, tell us about X" is a follow-up, not a cover letter. */
+export function isConditionalYesFollowUp(label: string): boolean {
+  return /^if you (said|answered|selected) yes\b/i.test(label.trim());
+}
+
 /**
  * Hard-stop gate for inspection → ESSAY_REQUIRED. Off by default (see
  * ESSAY_REQUIRED_GATE_ENABLED): heuristics false-positive too often on
@@ -76,6 +81,10 @@ export function classifyEssayFields(fields: DiscoveredField[]): EssayClassificat
     // A one-line <input> is a screener, even if the label says "describe".
     // "Describe your debugging spirit animal in one word" is not a cover letter.
     if (f.type === "text" && !f.minLength && (!f.maxLength || f.maxLength < 200)) {
+      isEssay = false;
+      reasons.length = 0;
+    }
+    if (isConditionalYesFollowUp(f.label)) {
       isEssay = false;
       reasons.length = 0;
     }

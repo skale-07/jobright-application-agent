@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-7540fe45-4c11-46aa-9a33-eceeaa926285",
+  "application_id": "4a03b318-e984-47bf-97d3-872c9df0ed82",
+  "jobright_job_id": "6a8377d7b5a0ac0e84a2623f",
+  "method": "anchor_href",
+  "resolved_url": "https://intel.wd1.myworkdayjobs.com/external/job/US-California-Folsom/Software-Development-Graduate-Intern_JR0285451-1",
+  "resolved_ats": "workday",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "intel.wd1.myworkdayjobs.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "intel",
+    "detail": "token \"intel\" ~ slug \"intel\"",
+    "expected_company": "Intel",
+    "url": "https://intel.wd1.myworkdayjobs.com/external/job/US-California-Folsom/Software-Development-Graduate-Intern_JR0285451-1?jr_id=6a8377d7b5a0ac0e84a2623f"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:01:07.854Z"
+}

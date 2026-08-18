@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "submission_id": "25b4aabb-2c35-4e80-b43c-49d59f26afb9",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Page failed identity gate (FORM_NOT_FOUND): No Greenhouse application form was found on the page.",
+  "artifact_path": null
+}

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { findApplicationFrameUrl } from "../../src/ats/shared/frameHop.js";
+import {
+  findApplicationFrameUrl,
+  isGreenhouseEmbedUrl,
+} from "../../src/ats/shared/frameHop.js";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
 import { useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
 
@@ -10,6 +13,25 @@ import { useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
  * form. findApplicationFrameUrl names the frame worth hopping to; the
  * live-fill runner then navigates there and re-runs the full gate.
  */
+describe("isGreenhouseEmbedUrl (UNIT_CONFIRMED)", () => {
+  it("matches embed/job_app, not the board posting", () => {
+    expect(
+      isGreenhouseEmbedUrl(
+        "https://job-boards.greenhouse.io/embed/job_app?for=jumptrading&token=8003019",
+      ),
+    ).toBe(true);
+    expect(
+      isGreenhouseEmbedUrl("https://boards.greenhouse.io/embed/job_app?for=x"),
+    ).toBe(true);
+    expect(
+      isGreenhouseEmbedUrl(
+        "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+      ),
+    ).toBe(false);
+    expect(isGreenhouseEmbedUrl("https://media.example.com/video")).toBe(false);
+  });
+});
+
 describe("iframe application-form hop (FIXTURE_CONFIRMED)", () => {
   useIsolatedFillEnv("safe");
 
@@ -61,6 +83,56 @@ describe("iframe application-form hop (FIXTURE_CONFIRMED)", () => {
         }),
       );
       await page.goto("https://careers.example-employer.com/about", {
+        waitUntil: "domcontentloaded",
+      });
+      await page.waitForTimeout(500);
+      expect(await findApplicationFrameUrl(page)).toBeNull();
+    });
+  }, 45_000);
+
+  it("hops a Greenhouse embed URL even when the child document has no fields yet", async () => {
+    const embedUrl =
+      "https://job-boards.greenhouse.io/embed/job_app?for=test&token=1";
+    const outer = `<!DOCTYPE html><html><body>
+      <h1>Careers</h1>
+      <iframe src="${embedUrl}"></iframe>
+    </body></html>`;
+    await withFixtureHtmlPage("<html><body></body></html>", async (page) => {
+      await page.context().route("**/*", (route) =>
+        route.fulfill({
+          body: route.request().url().includes("/embed/job_app")
+            ? "<html><body><p>loading</p></body></html>"
+            : outer,
+          contentType: "text/html",
+        }),
+      );
+      await page.goto("https://www.jumptrading.com/hr/job?gh_jid=1", {
+        waitUntil: "domcontentloaded",
+      });
+      await page.waitForTimeout(500);
+      const hit = await findApplicationFrameUrl(page);
+      expect(hit).not.toBeNull();
+      expect(hit!.url).toBe(embedUrl);
+      expect(hit!.fieldCount).toBe(0);
+    });
+  }, 45_000);
+
+  it("does not hop a Greenhouse posting URL in an iframe", async () => {
+    const posting =
+      "https://job-boards.greenhouse.io/jumptrading/jobs/8003019";
+    const outer = `<!DOCTYPE html><html><body>
+      <iframe src="${posting}"></iframe>
+    </body></html>`;
+    await withFixtureHtmlPage("<html><body></body></html>", async (page) => {
+      await page.context().route("**/*", (route) =>
+        route.fulfill({
+          body: route.request().url().includes("/jobs/8003019")
+            ? "<html><body><p>job description</p></body></html>"
+            : outer,
+          contentType: "text/html",
+        }),
+      );
+      await page.goto("https://www.jumptrading.com/hr/job?gh_jid=8003019", {
         waitUntil: "domcontentloaded",
       });
       await page.waitForTimeout(500);

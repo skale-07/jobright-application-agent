@@ -1,0 +1,96 @@
+{
+  "ats": "generic",
+  "url": "https://www.ycombinator.com/companies/ergo/jobs/lJi1vsf-software-engineering-intern",
+  "requested_url": "https://www.ycombinator.com/companies/ergo/jobs/lJi1vsf-software-engineering-intern",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://account.ycombinator.com/?continue=https://www.ycombinator.com/apply",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 1,
+    "skipped_count": 0,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "ycid-input",
+      "label": "Username or email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "ycid-input",
+      "label": "Username or email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    }
+  ],
+  "form_snapshot_path": null,
+  "fill": {
+    "filled": [
+      "email",
+      "email"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "ycid-input",
+        "canonical_field": "email",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "ycid-input",
+        "canonical_field": "email",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "email",
+        "expected": "s***@jh.edu",
+        "observed": "s***@jh.edu",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via a[href*=\"apply\" i]:not([href*=\"filter\" i])",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via a[href*=\"apply\" i]:not([href*=\"filter\" i])",
+    "Apply landed on: form (1 fillable field(s))",
+    "resolved advance: \"Continue\"",
+    "form-advance: no Next/Continue after page 2 — stopping",
+    "form-advance: filled 1 additional page(s) — form:1/1",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [],
+  "wizard_pages": [
+    {
+      "page": 2,
+      "url": "https://account.ycombinator.com/?continue=https://www.ycombinator.com/apply",
+      "kind": "form",
+      "fillable": 1,
+      "filled": 1,
+      "verify_passed": true
+    }
+  ],
+  "written_at": "2026-08-17T23:59:15.651Z"
+}

@@ -159,7 +159,7 @@ Commands:
   review:resolve --id <review_item_id> --outcome submitted|not-submitted [--requeue]
   run --pipeline [--app <uuid>] [--url <employer_url>] [--max N] [--submit] [--headed] [--fixture-html <path>]
   sandbox [--port N]   — local employer sandbox (gauntlet / portal / navhard / fillhard); drive with ats:fill --url http://localhost:4599/…
-  retry
+  retry [--app <uuid>]                  FAILED_RETRYABLE → QUEUED (all, or one; --app requeues even at cap 3)
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
@@ -1885,7 +1885,19 @@ async function main(): Promise<void> {
       const db = openDatabase();
       try {
         migrate(db);
-        const results = retryFailedApplications(db);
+        const appId =
+          (typeof flags["app"] === "string" ? flags["app"] : undefined) ??
+          (typeof flags["application"] === "string"
+            ? flags["application"]
+            : undefined);
+        const results = retryFailedApplications(
+          db,
+          appId ? { applicationId: appId } : {},
+        );
+        if (appId && results.length === 0) {
+          console.error(`No FAILED_RETRYABLE application ${appId}`);
+          process.exit(1);
+        }
         console.log(JSON.stringify({ retried: results }, null, 2));
       } finally {
         closeDatabase(db);

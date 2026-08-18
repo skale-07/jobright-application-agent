@@ -1,0 +1,30 @@
+{
+  "ats": "generic",
+  "url": "https://myjobs.adp.com/plymouthrock/cx/job-details?reqId=5001176135806",
+  "requested_url": "https://myjobs.adp.com/plymouthrock/cx/job-details?reqId=5001176135806",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "FORM_NOT_REACHED",
+    "reason": "still on the job posting after trying Apply — no application form to fill",
+    "final_url": "https://myjobs.adp.com/plymouthrock/auth",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: posting (Apply CTA present and none of the 8 field(s) ask who you are — page furniture, not an application)",
+    "popups dismissed: close (aria-label), close (aria-label)",
+    "landed on a posting (Apply CTA present and none of the 8 field(s) ask who you are — page furniture, not an application); clicking Apply via text \"Apply\"",
+    "Apply landed on: posting (no fields, Apply CTA present)",
+    "posting page (no fields, Apply CTA present) but no Apply control found — not filling the posting",
+    "parked: refused to fill a listing page's own search widgets"
+  ],
+  "written_at": "2026-08-18T00:02:02.685Z"
+}

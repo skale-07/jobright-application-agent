@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-47b5c102-e3b6-4c24-a917-1f04f84d2ba1",
+  "application_id": "d59e4a75-c3de-4a70-a2ab-c1a1e1927e60",
+  "jobright_job_id": "6a5de48895356634d79e2862",
+  "method": "anchor_href",
+  "resolved_url": "https://myjobs.adp.com/plymouthrock/cx/job-details?reqId=5001176135806",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (12 candidates, employer match)",
+      "evidence": "myjobs.adp.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "plymouthrock",
+    "detail": "token \"plymouth\" ~ slug \"plymouthrock\" (from URL path)",
+    "expected_company": "Plymouth Rock Assurance",
+    "url": "https://myjobs.adp.com/plymouthrock/cx/job-details?reqId=5001176135806&jr_id=6a5de48895356634d79e2862"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:01:33.239Z"
+}

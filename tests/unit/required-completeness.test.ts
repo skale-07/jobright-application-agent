@@ -153,6 +153,54 @@ describe("required-completeness scan (FIXTURE_CONFIRMED)", () => {
       expect(labels).not.toContain("Answered group");
     });
   }, 30_000);
+
+  it("Greenhouse React-select: a picked option is answered even when the filter input is empty", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <form>
+        <label for="country">Country*</label>
+        <div class="select__control">
+          <span class="select__placeholder">Select...</span>
+          <input id="country" name="country" type="text" required
+                 role="combobox" aria-required="true" aria-haspopup="listbox"
+                 aria-autocomplete="list" value="" />
+        </div>
+        <label for="city">Location (City)*</label>
+        <div class="select__control">
+          <span class="select__placeholder">Select...</span>
+          <input id="city" name="city" type="text" required
+                 role="combobox" aria-required="true" aria-haspopup="listbox"
+                 aria-autocomplete="list" value="" />
+        </div>
+      </form>
+      <script>
+        document.querySelectorAll(".select__control").forEach((control) => {
+          const input = control.querySelector("input");
+          control.addEventListener("click", () => {
+            let single = control.querySelector(".select__single-value");
+            if (!single) {
+              single = document.createElement("span");
+              single.className = "select__single-value";
+              control.insertBefore(single, input);
+            }
+            single.textContent = input.id === "country" ? "United States" : "Baltimore";
+            control.querySelector(".select__placeholder").hidden = true;
+            input.value = "";
+          });
+        });
+      </script>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const before = await scanRequiredCompleteness(page);
+      expect(before.unanswered.map((u) => u.control)).toEqual(["combobox", "combobox"]);
+      expect(before.unanswered.map((u) => u.label).join(" ")).toMatch(/Country/);
+      expect(before.unanswered.some((u) => u.control === "text")).toBe(false);
+
+      await page.locator("#country").click();
+      await page.locator("#city").click();
+      const after = await scanRequiredCompleteness(page);
+      expect(after.unanswered).toEqual([]);
+    });
+  }, 30_000);
 });
 
 describe("redaction word-guard (UNIT_CONFIRMED)", () => {

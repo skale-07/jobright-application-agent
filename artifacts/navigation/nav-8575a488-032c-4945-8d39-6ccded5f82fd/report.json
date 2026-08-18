@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-8575a488-032c-4945-8d39-6ccded5f82fd",
+  "application_id": "88ece651-a5a6-4805-9f1b-9be16965f986",
+  "jobright_job_id": "6a834f54b5a0ac0e84a24f4d",
+  "method": "anchor_href",
+  "resolved_url": "https://www.amazon.jobs/jobs/3134271/software-dev-engineer-internship--embedded-development?cmpid=SPLICX0248M&ss=paid",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (10 candidates, employer match)",
+      "evidence": "www.amazon.jobs"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "amazon",
+    "detail": "token \"amazon\" ~ slug \"amazon\" (from URL host)",
+    "expected_company": "Amazon Web Services (AWS)",
+    "url": "https://www.amazon.jobs/jobs/3134271/software-dev-engineer-internship--embedded-development?cmpid=SPLICX0248M&utm_source=jobright&utm_campaign=cxro&utm_medium=social_media&utm_content=job_posting&ss=paid&jr_id=6a834f54b5a0ac0e84a24f4d"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:00:11.538Z"
+}

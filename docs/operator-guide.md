@@ -155,8 +155,9 @@ normalized):
 npm run run -- --pipeline --app <application_uuid> --url <ATS_APPLICATION_URL>
 ```
 
-**Failure modes:** `GREENHOUSE_APPLICATION_UNAVAILABLE` = employer redirect
-off Greenhouse (posting gone); `LOGIN_WALL`/`CAPTCHA` = park it, human
+**Failure modes:** landing on the employer's own careers host is not a
+refuse — Greenhouse boards do that (`?gh_jid=` on `*.com`). `FORM_NOT_FOUND`
+= the page has no application form; `LOGIN_WALL`/`CAPTCHA` = park it, human
 gate; unsafe flags error = your shell has fill flags on — this step wants
 the safe env.
 
@@ -244,14 +245,31 @@ npm run submit -- --application <uuid> --headed
 ```
 
 What happens, in order: prior-submission guard → registered-resume check →
-lease → PENDING submissions row → per-ATS page gate (greenhouse: full
-identity verification incl. job-id match; lever/ashby: trusted host +
-login wall + CAPTCHA + form-present — deliberately weaker, see
-`docs/ats-adapters-lever-ashby.md`) → fill + essays + upload + read-back
-verification (**must** pass or it refuses to click) → the confirmation
-prompt naming company, role, URL, attempt, resume sha256, and plan counts →
-one click → deterministic receipt verification (explicit confirmation text
-+ screenshot).
+lease → PENDING submissions row → per-ATS page gate (greenhouse: wait for
+the SPA/Apply shell, then full identity verification incl. job-id match;
+lever/ashby: trusted host + login wall + CAPTCHA + form-present —
+deliberately weaker, see `docs/ats-adapters-lever-ashby.md`) → fill +
+essays + upload + read-back verification (**must** pass or it refuses to
+click) → the confirmation prompt naming company, role, URL, attempt,
+resume sha256, and plan counts → one click → deterministic receipt
+verification (explicit confirmation text + screenshot).
+
+Submit always opens a **new** browser on the stored employer URL **unless**
+this pipeline run just filled the same app with `--submit`. Then the click
+is on that filled page: resume upload, completeness, confirmation. A
+successful fill without `--submit` still does not leave the form sitting
+there for a later `submit` command.
+Greenhouse company-domain boards (Jump Trading, Datadog, …) first-paint as
+a posting or an empty shell with the real form in a Greenhouse `embed/job_app`
+iframe. Fill and submit share the same recovery before the identity gate:
+wait for a form / Apply / iframe, hop the embed even if its document is
+not readable yet, then click Apply. Listing-page search chrome does not
+block that hop. The pre-click completeness scan treats Greenhouse
+React-select comboboxes as answered when `.select__single-value` is set —
+the filter input stays empty after a pick and is not an unanswered text
+field. Without `--yes` when
+`SUBMIT_REQUIRES_LOCAL_CONFIRMATION=false`, the click is still refused
+after that gate.
 
 Lever/Ashby differences: essay answers on file for those ATSes fail closed
 BEFORE any page mutation (`FAILED_BEFORE_CLICK` + MANUAL review item — the
@@ -387,7 +405,8 @@ The sequential driver that chains §3–§7 with all the same gates:
 ```powershell
 npm run run -- --pipeline --app <uuid> --headed              # advances until a gate/review
 npm run run -- --pipeline --app <uuid> --headed --submit     # includes gated submission
-npm run retry                                                # FAILED_RETRYABLE → QUEUED (cap 3)
+npm run retry -- --app <uuid>                                # one FAILED_RETRYABLE → QUEUED (requeues even at cap 3)
+npm run retry                                                # every FAILED_RETRYABLE app (finalizes at cap 3)
 ```
 
 It stops — with a review item where human input is what unblocks — on:
@@ -1001,10 +1020,11 @@ degrades to a named note in the session report, never a failure.
 
 **Pre-click completeness.** Immediately before any submit click, the page
 is scanned for required-but-unanswered controls (native and ARIA widgets).
-Any hit refuses BEFORE the click — no unattended budget spent — parks the
-app `FAILED_RETRYABLE`, and the review item names every unanswered
-question. Answer them via `screeners.json` / the essay workflow, then
-requeue.
+Any hit refuses BEFORE the click — no unattended budget spent — and names
+every unanswered question. The review item is advisory: retry/`--pipeline`
+is not frozen by it (the next click re-scans). A leftover false miss from
+a prior attempt is dismissed on `npm run retry`. Real gaps still block
+the click.
 
 **Bulk review triage.** `npm run review:bulk -- --action dismiss|requeue-wall
 [--kind KIND] [--limit N] [--apply]` — dry-run by default; `requeue-wall`
@@ -1291,10 +1311,13 @@ seconds timing out on it while a plain "Apply now" button sat unclicked.
 
 The discriminator is now what the fields ARE: every real application asks
 who you are (name, email, phone, resume). An Apply button plus no identity
-field means you are on the posting, so the system clicks Apply and looks
-again — up to twice, for any ATS. If it is still on a posting after that,
-the application parks with `FORM_NOT_REACHED` rather than filling a
-listing page's search widgets.
+field means you are on the posting, so fill **and submit** click Apply and
+look again — up to twice, for any ATS on fill, and for Greenhouse on
+submit. Greenhouse also hops a late `embed/job_app` iframe after an Apply
+miss (submit used to skip that hop when no Apply control was visible). If
+it is still on a posting after that, the application parks with
+`FORM_NOT_REACHED` / `FORM_NOT_FOUND` rather than filling a listing page's
+search widgets.
 
 ### Skip a job the agent is stuck on
 

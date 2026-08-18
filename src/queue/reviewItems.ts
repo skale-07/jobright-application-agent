@@ -43,12 +43,28 @@ export type ReviewItem = {
  *
  * Advisory items still appear in the queue and still want an answer — they
  * just stop being a full stop.
+ *
+ * Completeness-gate items ("N required question(s) unanswered… then requeue")
+ * are advisory too. The click-side scan already refuses a genuinely empty
+ * form. Halting the pipeline on the leftover item deadlocks retry: Jump
+ * 2026-08-17 requeued, then stopped at QUEUED on the prior false miss.
  */
 const ADVISORY_TITLE_PREFIXES = [
   "Answer needed:",
   "New question learned:",
   "Submit selector proposal",
 ];
+
+const COMPLETENESS_UNANSWERED_RE =
+  /^\d+ required question\(s\) unanswered\b/;
+
+/** Last submit's completeness refusal — not a wall on the next attempt. */
+export function isCompletenessUnansweredReview(item: {
+  kind: ReviewKind;
+  title: string;
+}): boolean {
+  return item.kind === "MANUAL" && COMPLETENESS_UNANSWERED_RE.test(item.title);
+}
 
 /** Nav parked on an employer sign-in page. Not congruence; not a human captcha. */
 export const PORTAL_AUTH_WALL_TITLE =
@@ -60,6 +76,7 @@ export function isAdvisoryReviewItem(item: {
 }): boolean {
   // Only MANUAL can be advisory. Every other kind names a wall.
   if (item.kind !== "MANUAL") return false;
+  if (isCompletenessUnansweredReview(item)) return true;
   return ADVISORY_TITLE_PREFIXES.some((p) => item.title.startsWith(p));
 }
 

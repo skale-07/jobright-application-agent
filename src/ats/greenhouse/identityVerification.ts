@@ -29,8 +29,9 @@ export type GreenhouseIdentityVerification = {
 };
 
 /**
- * Identity checks AFTER final navigation has already confirmed a trusted
- * Greenhouse host. Precedence (within this function):
+ * Identity checks on the page in hand. Host is not a precondition —
+ * company-domain Greenhouse boards are the same application.
+ * Precedence (within this function):
  * CAPTCHA → HIGH-confidence login wall → closed → error → id mismatch →
  * missing form → zero fields → pass
  */
@@ -129,7 +130,7 @@ export function verifyGreenhousePageIdentity(input: {
       formDetected: false,
       failureCode: "FORM_NOT_FOUND",
       failureReason:
-        "No Greenhouse application form was found on the trusted host.",
+        "No Greenhouse application form was found on the page.",
     };
   }
 

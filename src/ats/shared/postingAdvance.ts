@@ -42,7 +42,8 @@ const APPLY_SELECTORS = [
   '[class*="apply-button" i]',
 ] as const;
 
-const APPLY_TEXT_RE = /^\s*apply(\s+now|\s+here|\s+for this job)?\s*$/i;
+const APPLY_TEXT_RE =
+  /^\s*apply(\s+now|\s+here|\s+for this (job|role|position)|\s+to .{1,32})?\s*$/i;
 
 export type PostingAdvanceResult = {
   /** The page the flow should continue on (a popup, if the click opened one). */
@@ -71,8 +72,33 @@ async function preferHrefAncestor(loc: Locator): Promise<Locator> {
   return loc;
 }
 
-/** Every clickable whose accessible text reads exactly "Apply". */
-async function findApplyControl(page: Page) {
+function isApplyCtaLabel(raw: string): boolean {
+  const t = raw.replace(/\s+/g, " ").trim();
+  if (!t || t.length > 48) return false;
+  if (/\b(filter|search|alert|cookie|privacy)\b/i.test(t)) return false;
+  return APPLY_TEXT_RE.test(t);
+}
+
+/** Visible Apply control a human would click. Exported so fill can wait on it. */
+export async function findApplyControl(page: Page) {
+  for (const role of ["button", "link"] as const) {
+    const named = page.getByRole(role, { name: /^apply\b/i });
+    const n = Math.min(await named.count().catch(() => 0), 8);
+    for (let i = 0; i < n; i++) {
+      const candidate = named.nth(i);
+      if (!(await candidate.isVisible().catch(() => false))) continue;
+      const label =
+        ((await candidate.innerText().catch(() => "")) ?? "") ||
+        ((await candidate.getAttribute("aria-label").catch(() => "")) ?? "");
+      if (!isApplyCtaLabel(label) && !isApplyCtaLabel(label.split("\n")[0] ?? "")) {
+        continue;
+      }
+      return {
+        loc: await preferHrefAncestor(candidate),
+        how: `role=${role} "${label.replace(/\s+/g, " ").trim().slice(0, 24)}"`,
+      };
+    }
+  }
   for (const selector of APPLY_SELECTORS) {
     const loc = page.locator(selector).filter({ visible: true }).first();
     if ((await loc.count().catch(() => 0)) > 0) {
@@ -81,19 +107,43 @@ async function findApplyControl(page: Page) {
   }
   // Text-based last: scan candidates and require the WHOLE label to be
   // Apply-ish, so "Apply filters" and "How to apply" never match.
-  const clickables = page.locator("a, button, [role=button]").filter({ visible: true });
+  const clickables = page
+    .locator("a, button, [role=button]")
+    .filter({ visible: true });
   const total = Math.min(await clickables.count().catch(() => 0), 60);
   for (let i = 0; i < total; i++) {
     const candidate = clickables.nth(i);
     const text = (await candidate.textContent().catch(() => "")) ?? "";
-    if (APPLY_TEXT_RE.test(text.replace(/\s+/g, " "))) {
+    if (isApplyCtaLabel(text)) {
       return {
         loc: await preferHrefAncestor(candidate),
-        how: `text "${text.trim().slice(0, 20)}"`,
+        how: `text "${text.replace(/\s+/g, " ").trim().slice(0, 24)}"`,
       };
     }
   }
   return null;
+}
+
+async function inventoryApplyish(page: Page): Promise<string[]> {
+  const clickables = page
+    .locator("a, button, [role=button], [class*='apply' i]")
+    .filter({ visible: true });
+  const n = Math.min(await clickables.count().catch(() => 0), 20);
+  const out: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const el = clickables.nth(i);
+    const text = ((await el.innerText().catch(() => "")) ?? "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 40);
+    const cls = (await el.getAttribute("class").catch(() => "")) ?? "";
+    if (!/apply/i.test(`${text} ${cls}`)) continue;
+    const tag = await el
+      .evaluate((node: { tagName: string }) => node.tagName.toLowerCase())
+      .catch(() => "?");
+    out.push(`${tag} "${text}"`);
+  }
+  return out;
 }
 
 /**
@@ -115,22 +165,40 @@ export async function advancePastPosting(input: {
 
   let classification = classifyPage({ html, url });
   if (classification.page_class !== "posting") {
-    return {
-      page,
-      advanced: false,
-      html,
-      url,
-      page_class: classification.page_class,
-      hops: 0,
-      notes,
+    const applyAnyway =
+      classification.page_class === "unknown"
+        ? await findApplyControl(page).catch(() => null)
+        : null;
+    if (!applyAnyway) {
+      return {
+        page,
+        advanced: false,
+        html,
+        url,
+        page_class: classification.page_class,
+        hops: 0,
+        notes,
+      };
+    }
+    notes.push(
+      `unknown landing with a visible Apply control (${applyAnyway.how}) — treating as a posting`,
+    );
+    classification = {
+      page_class: "posting",
+      field_count: classification.field_count,
+      evidence: `Apply via ${applyAnyway.how} on unknown landing`,
     };
   }
 
   while (classification.page_class === "posting" && hops < ADVANCE_CAP) {
     const control = await findApplyControl(page).catch(() => null);
     if (!control) {
+      const seen = await inventoryApplyish(page).catch(() => []);
       notes.push(
-        `posting page (${classification.evidence}) but no Apply control found — not filling the posting`,
+        `posting page (${classification.evidence}) but no Apply control found — not filling the posting` +
+          (seen.length > 0
+            ? `; visible apply-ish: ${seen.join("; ")}`
+            : "; no visible apply-ish controls"),
       );
       break;
     }

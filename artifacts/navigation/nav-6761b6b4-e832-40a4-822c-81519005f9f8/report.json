@@ -1,0 +1,35 @@
+{
+  "run_id": "nav-6761b6b4-e832-40a4-822c-81519005f9f8",
+  "application_id": "19e6dfca-9d4f-4799-8a27-0cb305b19a3b",
+  "jobright_job_id": "6a830aae1081a745e970c76d",
+  "method": "anchor_href",
+  "resolved_url": "https://www.ycombinator.com/companies/ergo/jobs/lJi1vsf-software-engineering-intern",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "resolved (9 candidates, employer match)",
+      "evidence": "www.ycombinator.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [],
+  "congruence": {
+    "verdict": "match",
+    "slug": "ergo",
+    "detail": "token \"ergo\" ~ slug \"ergo\" (from URL path)",
+    "expected_company": "Ergo",
+    "url": "https://www.ycombinator.com/companies/ergo/jobs/lJi1vsf-software-engineering-intern?utm_source=syn_li&jr_id=6a830aae1081a745e970c76d"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-17T23:59:08.058Z"
+}

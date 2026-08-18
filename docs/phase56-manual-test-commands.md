@@ -229,7 +229,7 @@ $GREENHOUSE_URL="https://job-boards.greenhouse.io/simplifyjobsintegrationsandbox
 
 Live Greenhouse-hosted integration sandbox. Useful for validating current Greenhouse DOM discovery without inspecting a personally targeted employer application.
 
-**Known unavailable redirect example** (must fail as `GREENHOUSE_APPLICATION_UNAVAILABLE`, not login wall):
+**Known no-form redirect example** (must fail as `FORM_NOT_FOUND`, not login wall and not a host refuse):
 
 ```powershell
 $GREENHOUSE_URL="https://boards.greenhouse.io/okta/jobs/7617090"
@@ -259,9 +259,9 @@ Headed (recommended for first live sandbox run):
 $env:FORM_FILL_ENABLED="false"; $env:DRY_RUN="true"; $env:SUBMIT_ENABLED="false"; npm run ats:inspect -- --url $GREENHOUSE_URL --headed
 ```
 
-- Does: validates Greenhouse URL, opens ephemeral Chromium (no JobRight auth), checks **final host** before page-text classification, discovers/classifies fields, writes proposed fill plan + artifact under `artifacts\inspection\greenhouse-inspect-*.json`.
+- Does: validates Greenhouse URL, opens ephemeral Chromium (no JobRight auth), records the final host (host is not a refuse), discovers/classifies fields, writes proposed fill plan + artifact under `artifacts\inspection\greenhouse-inspect-*.json`.
 - Success: `Greenhouse inspection: LIVE_READ_ONLY_CONFIRMED`, `Identity verified: true`, `Mutation attempted: false`.
-- Redirect off Greenhouse: `GREENHOUSE_APPLICATION_UNAVAILABLE` (not “Login wall”).
+- Careers homepage with no form: `FORM_NOT_FOUND` (not “Login wall”, not a host refuse).
 - Must not: fill, upload, click Submit, invent sponsorship, answer essays.
 - Level: `LIVE_READ_ONLY_CONFIRMED` only on a real live form.
 

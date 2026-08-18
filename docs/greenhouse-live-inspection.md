@@ -30,25 +30,19 @@ Initial URL validation checks the *requested* URL only.
 
 ## Initial URL vs final URL
 
-1. **Initial validation** — reject unsafe schemes, non-Greenhouse hosts, marketing paths.
-2. **Navigate** — open only the normalized Greenhouse URL.
-3. **Final URL validation** — after navigation, require the final origin to remain on a trusted Greenhouse application host.
-4. **Only then** — CAPTCHA, high-confidence login wall, closed-job, form, and field checks.
+1. **Initial validation** — reject unsafe schemes, non-Greenhouse *requested* hosts, marketing paths. This is the URL we open, not a lock on where the employer may send the browser.
+2. **Navigate** — open the normalized Greenhouse URL.
+3. **Final URL** — record host and redirect. A company-domain landing (`jumptrading.com/hr/job?gh_jid=…`, `careers.datadoghq.com/…?gh_jid=…`) is not a refuse. Host is never a gate.
+4. **Then** — CAPTCHA, high-confidence login wall, closed-job, form, and field checks. If the form lives in an iframe, hop into that frame and re-check.
 
-A redirect from `boards.greenhouse.io` to an employer careers homepage (e.g. Okta → `www.okta.com`) is **not** a Greenhouse application. Classification:
+A redirect from `boards.greenhouse.io` to an employer **careers homepage with no form** fails as `FORM_NOT_FOUND`. A redirect onto the employer's apply page (same `gh_jid`, or an embedded Greenhouse frame) proceeds. Do not claim the role is “closed” unless Greenhouse itself shows an explicit closed-job signal.
 
-```text
-GREENHOUSE_APPLICATION_UNAVAILABLE
-```
-
-Neutral wording: the posting is no longer available at that URL / redirected outside supported Greenhouse hosts. Do not claim the role is “closed” unless Greenhouse itself shows an explicit closed-job signal.
-
-### Sanitized regression case (Okta)
+### Sanitized regression case (Okta careers homepage — no form)
 
 ```text
 Requested: https://boards.greenhouse.io/okta/jobs/7617090
 Final:     https://www.okta.com/company/careers/
-Expected:  GREENHOUSE_APPLICATION_UNAVAILABLE
+Expected:  FORM_NOT_FOUND
 Login wall: false  (nav "Login" link is insufficient)
 ```
 
@@ -57,17 +51,16 @@ Login wall: false  (nav "Login" link is insufficient)
 ```text
 1. Navigation failure
 2. Unsafe / malformed final URL
-3. Untrusted final-host redirect → GREENHOUSE_APPLICATION_UNAVAILABLE
-4. CAPTCHA
-5. High-confidence login wall → LOGIN_WALL
-6. Closed / unavailable application (explicit Greenhouse signal)
-7. Greenhouse error page
-8. Missing application form
-9. Zero visible fields
-10. Successful identity verification
+3. CAPTCHA
+4. High-confidence login wall → LOGIN_WALL
+5. Closed / unavailable application (explicit Greenhouse signal)
+6. Greenhouse error page
+7. Missing application form
+8. Zero visible fields
+9. Successful identity verification
 ```
 
-Structural final-host failures always win over page-text heuristics.
+Host is recorded (`remained_on_trusted_greenhouse_host`) and never overrides page-state checks.
 
 ## Login-wall evidence
 
@@ -75,7 +68,7 @@ A generic nav/footer **Login** link is **not** a login wall.
 
 High-confidence detection requires strong signals (combinations of auth URL path, password input, email+password, Sign in heading, auth form action, known IdP markers).
 
-Medium/low signals may appear as warnings but must not override an untrusted-host failure.
+Medium/low signals may appear as warnings but must not abort inspection.
 
 ## Field classifications
 

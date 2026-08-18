@@ -6,6 +6,8 @@ import {
 import { inspectApplicationHtml } from "../../src/applications/applicationInspector.js";
 import { discoverFieldsFromHtml } from "../../src/applications/fieldDiscovery.js";
 import { classifyEssayFields } from "../../src/applications/essayDetector.js";
+import { buildFillPlan } from "../../src/applications/resolveAnswers.js";
+import { parsePublicProfile } from "../../src/candidate/publicProfile.js";
 import { mapDiscoveredFields } from "../../src/applications/fieldNormalization.js";
 import { loadAnswerAliases } from "../../src/candidate/answerAliases.js";
 import {
@@ -94,6 +96,60 @@ describe("Phase 4 ATS inspection", () => {
     ]);
     expect(essays.find((e) => e.field_id === "q_spirit")?.is_essay).toBe(false);
     expect(essays.find((e) => e.field_id === "w_about")?.is_essay).toBe(true);
+  });
+
+  it("a 'if you said yes above' follow-up is not an essay, and is skipped when the parent is No", () => {
+    const followUp = {
+      id: "offers_detail",
+      label: "If you said yes above, please tell us about your offers and deadlines.",
+      type: "text" as const,
+      required: false,
+      maxLength: 500,
+    };
+    const classified = classifyEssayFields([followUp]);
+    expect(classified[0]?.is_essay).toBe(false);
+
+    const profile = parsePublicProfile({
+      legal_name: { first: "Ada", last: "Lovelace" },
+      email: "ada@example.com",
+    });
+    const plan = buildFillPlan(
+      [
+        {
+          id: "offers_yn",
+          label: "Do you currently have any offers from other firms?",
+          type: "select",
+          required: true,
+          canonical_field: null,
+          mapping_confidence: "none",
+        },
+        {
+          ...followUp,
+          canonical_field: null,
+          mapping_confidence: "none",
+        },
+      ],
+      profile,
+      {
+        screenerResolutions: new Map([
+          [
+            "offers_yn",
+            {
+              key: "competing_offers",
+              status: "fill",
+              value: "No",
+              basis: "exact_option",
+            },
+          ],
+        ]),
+      },
+    );
+    expect(plan.entries.find((e) => e.field_id === "offers_detail")?.action).toBe(
+      "skip_empty",
+    );
+    expect(plan.entries.find((e) => e.field_id === "offers_detail")?.reason).toMatch(
+      /parent answer is No/,
+    );
   });
 
   it("detects demographics fields", async () => {

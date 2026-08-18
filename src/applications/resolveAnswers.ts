@@ -1,6 +1,6 @@
 import type { DiscoveredField, ResolvedApplicationAnswers } from "../ats/adapter.js";
 import type { MappedField } from "./fieldNormalization.js";
-import { essayFieldsOnly } from "./essayDetector.js";
+import { essayFieldsOnly, isConditionalYesFollowUp } from "./essayDetector.js";
 import { isDemographicsField } from "./essayDetector.js";
 import {
   getProfileValue,
@@ -44,6 +44,19 @@ export type ResolvedFillPlan = {
   skipped_count: number;
   review_required_count: number;
 };
+
+function precedingYesNo(entries: FillPlanEntry[]): "yes" | "no" | null {
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const e = entries[i]!;
+    if (String(e.action).toLowerCase() !== "fill") continue;
+    const v = String(e.value ?? "")
+      .trim()
+      .toLowerCase();
+    if (v === "yes" || v === "y" || v === "true") return "yes";
+    if (v === "no" || v === "n" || v === "false") return "no";
+  }
+  return null;
+}
 
 function isEmptyValue(v: unknown): boolean {
   if (v === null || v === undefined) return true;
@@ -138,6 +151,22 @@ export function buildFillPlan(
   const entries: FillPlanEntry[] = [];
 
   for (const field of mapped) {
+    if (
+      isConditionalYesFollowUp(field.label) &&
+      precedingYesNo(entries) === "no"
+    ) {
+      entries.push({
+        field_id: field.id,
+        label: field.label,
+        type: field.type,
+        canonical_field: field.canonical_field,
+        action: "skip_empty",
+        value: null,
+        reason: "conditional follow-up skipped — parent answer is No",
+      });
+      continue;
+    }
+
     if (essayIds.has(field.id) || field.type === "textarea") {
       const generated = opts.essayAnswers?.get(field.id);
       if (generated) {
@@ -322,6 +351,18 @@ export function buildFillPlan(
       value != null
     ) {
       value = String(value);
+      // Year-only text boxes stay a year. Seasonal comboboxes (Jump:
+      // Winter/Spring/Fall 2029) need the profile month to pick one option.
+      if (
+        field.canonical_field === "graduation_year" &&
+        (field.type === "select" || field.type === "radio")
+      ) {
+        const month = (profile.graduation_month ?? "").trim();
+        const year = String(value);
+        if (month && !/\d{4}/.test(month) && /^(20\d{2}|19\d{2})$/.test(year)) {
+          value = `${month} ${year}`;
+        }
+      }
     }
 
     if (isEmptyValue(value)) {

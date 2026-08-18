@@ -39,6 +39,16 @@ describe("advisory review items no longer freeze an application (UNIT_CONFIRMED)
     }
   });
 
+  it("does not freeze retry on a leftover completeness refusal", () => {
+    expect(
+      isAdvisoryReviewItem({
+        kind: "MANUAL",
+        title:
+          "14 required question(s) unanswered — answer via screeners.json/essay workflow, then requeue",
+      }),
+    ).toBe(true);
+  });
+
   it("still halts on every real wall", () => {
     // MANUAL items that name a wall keep blocking.
     for (const title of [

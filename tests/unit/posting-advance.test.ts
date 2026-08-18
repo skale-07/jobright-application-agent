@@ -30,6 +30,18 @@ describe("posting vs form discrimination (UNIT_CONFIRMED)", () => {
     <button>Apply now</button>
   </body></html>`;
 
+  it("JSON in a script tag is not an Apply CTA", () => {
+    const html = `<html><body>
+      <h1>Open Position</h1>
+      <script>window.__cfg = {"apply":true,"applyUrl":"/x"}</script>
+      <p>Beware of scams.</p>
+    </body></html>`;
+    expect(
+      classifyPage({ html, url: "https://www.jumptrading.com/hr/job?gh_jid=1" })
+        .page_class,
+    ).toBe("unknown");
+  });
+
   it("a listing page's search chrome is not an application form", () => {
     const c = classifyPage({
       html: LISTING_WITH_SEARCH_CHROME,
@@ -167,6 +179,30 @@ describe("advancePastPosting (FIXTURE_CONFIRMED)", () => {
       expect(r.hops).toBe(1);
       expect(r.html).toContain("first_name");
       expect(r.notes.join(" ")).toMatch(/landed on a posting/);
+    });
+  }, 45_000);
+
+  it("clicks id=apply even when the visible label is not the word Apply", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <h1>Open Position</h1>
+      <button id="apply">Join the team</button>
+      <script>
+        document.getElementById('apply').addEventListener('click', () => {
+          document.body.innerHTML =
+            '<form><label>First Name<input name="first_name"/></label>' +
+            '<label>Email<input type="email" name="email"/></label></form>';
+        });
+      </script></body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const r = await advancePastPosting({
+        page,
+        html,
+        url: page.url(),
+        settleTimeoutMs: 5_000,
+      });
+      expect(r.advanced).toBe(true);
+      expect(r.page_class).toBe("form");
+      expect(r.hops).toBe(1);
     });
   }, 45_000);
 

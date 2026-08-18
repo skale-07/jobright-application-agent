@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "19e6dfca-9d4f-4799-8a27-0cb305b19a3b",
+  "submission_id": "acd89de6-d940-4320-b4eb-c3eb10d77409",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Page failed identity gate (NO_APPLICATION_FORM): application form markers not found on the final page",
+  "artifact_path": null
+}

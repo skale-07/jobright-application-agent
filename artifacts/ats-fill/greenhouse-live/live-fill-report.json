@@ -1,7 +1,7 @@
 {
   "mode": "executed",
   "ats": "greenhouse",
-  "url": "https://job-boards.greenhouse.io/neuralink/jobs/6569018003",
+  "url": "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
   "plan": {
     "answers": {
       "legal_name.first": "Shubham",
@@ -9,18 +9,17 @@
       "email": "s***@jh.edu",
       "address.country": "United States",
       "phone": "***-***-7636",
-      "school": "Johns Hopkins University",
-      "graduation_month": "May",
-      "graduation_year": "2029",
-      "screener:custom:prior_internship_experience": "Yes",
-      "screener:custom:graduation_year": "2029",
+      "address.city": "Baltimore, Maryland, USA",
       "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+      "restrictive_covenants": "No",
       "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
-      "screener:willing_to_relocate": "Yes",
-      "screener:willing_to_relocate:f_28": "Yes",
-      "screener:internship_term": "Summer 2026 (May - August)",
-      "screener:start_availability": "Flexible — aligned to the posted term",
-      "screener:custom:please_specify_details": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029."
+      "application_consent:question_67592966[]_728354500": true,
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor of Science",
+      "screener:custom:expected_graduation_date": "Spring/Summer 2029",
+      "screener:custom:competing_offers": "No",
+      "how_heard": "LinkedIn",
+      "screener:custom:other_specify": "N/A"
     },
     "entries": [
       {
@@ -56,8 +55,8 @@
         "type": "text",
         "canonical_field": "address.country",
         "action": "fill",
-        "value": "United States",
-        "reason": "Mapped from public profile"
+        "value": "United States +1",
+        "reason": "Mapped from public profile; placed onto \"United States +1\""
       },
       {
         "field_id": "f_4",
@@ -70,6 +69,24 @@
       },
       {
         "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "fill",
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "candidate-location",
+        "label": "Location (City)",
+        "type": "text",
+        "canonical_field": "address.city",
+        "action": "fill",
+        "value": "Baltimore, Maryland, USA",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_7",
         "label": "Phone",
         "type": "text",
         "canonical_field": "phone",
@@ -96,115 +113,7 @@
         "reason": "File uploads handled via uploadResume/uploadCoverLetter"
       },
       {
-        "field_id": "school--0",
-        "label": "School",
-        "type": "text",
-        "canonical_field": "school",
-        "action": "fill",
-        "value": "Johns Hopkins University",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_9",
-        "label": "field_9",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "end-month--0",
-        "label": "End date month",
-        "type": "text",
-        "canonical_field": "graduation_month",
-        "action": "fill",
-        "value": "May",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_11",
-        "label": "field_11",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "end-year--0",
-        "label": "End date year",
-        "type": "text",
-        "canonical_field": "graduation_year",
-        "action": "fill",
-        "value": "2029",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "question_21044669003",
-        "label": "We look for evidence of exceptional ability. Please provide us with 3-4 examples highlighting your exceptional ability, using quantitative metrics to display the impact on a product/project related to the requirements of the position you are applying for. Each bullet should be very concise— no longer than 3-4 sentences each and should capture the problem, solution, and result. We recommend starting with an action word (designed, led, built, promoted, launched, created, etc.) and be sure to include technical detail. This is your moment to WOW us! NOTE: Answering this question fully is the most important part of our interview process. First example:",
-        "type": "textarea",
-        "canonical_field": "essay:generated:question_21044669003",
-        "action": "fill",
-        "value": "Built and shipped ClarityAtlas, an iOS health product, end to end in Swift, SwiftUI, and Supabase as co-founder and technical lead of Open Health Intelligence. The hard problem was estimating sleep without requiring a wearable, so I built a passive sleep-estimation system from phone-interaction and motion signals using HealthKit and Core Motion inputs like step count, gait speed, and movement patterns, plus a \"Sleep Twins\" backend that matches users on standardized behavioral features with weighted distance. We ran a live pilot at Johns Hopkins with 30+ users, were selected for the Johns Hopkins Pava Spark Accelerator and NSF I-Corps, and presented to Hopkins President Ron Daniels and leadership from the Data Science and AI Institute. We received a non-binding investment indication of roughly $75,000 for about 7 to 8% equity, which we chose not to pursue immediately because we wanted the right long-term partners and product direction.",
-        "reason": "Essay generated from the operator's about-me context"
-      },
-      {
-        "field_id": "question_21044670003",
-        "label": "Second example:",
-        "type": "textarea",
-        "canonical_field": null,
-        "action": "skip_essay",
-        "value": null,
-        "reason": "Essay generation produced no answer"
-      },
-      {
-        "field_id": "question_21044671003",
-        "label": "Third example:",
-        "type": "textarea",
-        "canonical_field": null,
-        "action": "skip_essay",
-        "value": null,
-        "reason": "Essay generation produced no answer"
-      },
-      {
-        "field_id": "question_21044672003",
-        "label": "Do you have prior internship or co-op experience?",
-        "type": "text",
-        "canonical_field": "screener:custom:prior_internship_experience",
-        "action": "fill",
-        "value": "Yes",
-        "reason": "Screener bank answer (exact_option)"
-      },
-      {
-        "field_id": "f_17",
-        "label": "field_17",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044673003",
-        "label": "What year will you graduate?",
-        "type": "text",
-        "canonical_field": "screener:custom:graduation_year",
-        "action": "fill",
-        "value": "2029",
-        "reason": "Screener bank answer (exact_option)"
-      },
-      {
-        "field_id": "f_19",
-        "label": "field_19",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044674003",
+        "field_id": "question_67592963",
         "label": "LinkedIn Profile",
         "type": "text",
         "canonical_field": "linkedin_url",
@@ -213,35 +122,17 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044675003",
-        "label": "Additional Link",
+        "field_id": "question_67592964",
+        "label": "Non-compete/Notice period comments",
         "type": "text",
-        "canonical_field": "screener:portfolio_url",
-        "action": "skip_empty",
-        "value": null,
-        "reason": "portfolio_url empty in bank — optional, skipped"
+        "canonical_field": "restrictive_covenants",
+        "action": "fill",
+        "value": "No",
+        "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044676003[]_121475565003",
-        "label": "Yes",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044676003[]_121475566003",
-        "label": "No",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044677003",
-        "label": "Will you, at any point, require employer sponsorship to work in the United States?",
+        "field_id": "question_67592965",
+        "label": "Will you require sponsorship for work authorization in the future?",
         "type": "text",
         "canonical_field": "requires_sponsorship",
         "action": "fill",
@@ -249,8 +140,8 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "f_25",
-        "label": "field_25",
+        "field_id": "f_13",
+        "label": "field_13",
         "type": "text",
         "canonical_field": null,
         "action": "skip_unmapped",
@@ -258,210 +149,237 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_21044678003[]_121475567003",
-        "label": "Yes",
+        "field_id": "question_67592966[]_728354500",
+        "label": "Acknowledge/Confirm",
         "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044679003",
-        "label": "At this time we do not offer relocation assistance to interns. If hired, are you able to relocate on your own if you are not based locally?",
-        "type": "text",
-        "canonical_field": "screener:willing_to_relocate",
+        "canonical_field": "application_consent:question_67592966[]_728354500",
         "action": "fill",
-        "value": "Yes",
-        "reason": "Screener bank answer (synonym_option)"
+        "value": true,
+        "reason": "Application terms/confirmation checkbox"
       },
       {
-        "field_id": "f_28",
-        "label": "I understand that this position requires me to work on-site.",
+        "field_id": "question_67595574",
+        "label": "Please select your current school from the list below:",
         "type": "text",
-        "canonical_field": "screener:willing_to_relocate:f_28",
+        "canonical_field": "school",
         "action": "fill",
-        "value": "Yes",
-        "reason": "Screener bank answer (synonym_option)"
-      },
-      {
-        "field_id": "question_21044680003",
-        "label": "What intern season are you interested in?",
-        "type": "text",
-        "canonical_field": "screener:internship_term",
-        "action": "fill",
-        "value": "Summer 2026 (May - August)",
-        "reason": "Screener bank answer (llm_option)"
-      },
-      {
-        "field_id": "f_30",
-        "label": "field_30",
-        "type": "text",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044681003",
-        "label": "Ideal start date in office",
-        "type": "text",
-        "canonical_field": "screener:start_availability",
-        "action": "fill",
-        "value": "Flexible — aligned to the posted term",
-        "reason": "Screener bank answer (free_text)"
-      },
-      {
-        "field_id": "question_21044682003[]_121475573003",
-        "label": "Neuralink Show &amp; Tell",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475574003",
-        "label": "Campus Recruiting (please specify)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475575003",
-        "label": "Company Website",
-        "type": "checkbox",
-        "canonical_field": "personal_website",
-        "action": "skip_empty",
-        "value": null,
-        "reason": "Profile value empty for personal_website"
-      },
-      {
-        "field_id": "question_21044682003[]_121475576003",
-        "label": "Event / Conferences - Industry",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475577003",
-        "label": "Event - Recruiting",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475578003",
-        "label": "Friend or Family (non-employee)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475579003",
-        "label": "LinkedIn",
-        "type": "checkbox",
-        "canonical_field": "linkedin_url",
-        "action": "fill",
-        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "value": "Johns Hopkins University",
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044682003[]_121475580003",
-        "label": "Monkey MindPong",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475581003",
-        "label": "News/Media",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475582003",
-        "label": "Referred by Neuralink employee (name below)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475583003",
-        "label": "YouTube",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475584003",
-        "label": "Other (please specify)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "skip_unmapped",
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044683003",
-        "label": "Please specify",
+        "field_id": "f_16",
+        "label": "field_16",
         "type": "text",
-        "canonical_field": "screener:custom:please_specify_details",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595575[]",
+        "label": "What degree are you currently pursuing?",
+        "type": "text",
+        "canonical_field": "degree",
         "action": "fill",
-        "value": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029.",
-        "reason": "Screener bank answer (free_text)"
+        "value": "Bachelor’s",
+        "reason": "Mapped from public profile; placed onto \"Bachelor’s\""
       },
       {
-        "field_id": "question_21872115003",
-        "label": "Which onsite location would you like to apply to?",
+        "field_id": "f_18",
+        "label": "field_18",
         "type": "text",
-        "canonical_field": "screener:closest_location",
-        "action": "review_required",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "closest_location: bank answer \"United States\" matches none of the 3 page options — review"
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595576",
+        "label": "What is your expected graduation date?",
+        "type": "text",
+        "canonical_field": "screener:custom:expected_graduation_date",
+        "action": "fill",
+        "value": "Spring/Summer 2029",
+        "reason": "Screener bank answer (exact_option)"
+      },
+      {
+        "field_id": "f_20",
+        "label": "field_20",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595577",
+        "label": "Do you currently have any offers from other firms or deadlines we should be aware of?",
+        "type": "text",
+        "canonical_field": "screener:custom:competing_offers",
+        "action": "fill",
+        "value": "No",
+        "reason": "Screener bank answer (exact_option)"
+      },
+      {
+        "field_id": "f_22",
+        "label": "field_22",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595578",
+        "label": "If you said yes above, please tell us about your offers and deadlines.",
+        "type": "text",
+        "canonical_field": null,
+        "action": "skip_empty",
+        "value": null,
+        "reason": "conditional follow-up skipped — parent answer is No"
+      },
+      {
+        "field_id": "question_67595579[]_728374231",
+        "label": "Chicago",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374232",
+        "label": "New York",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374233",
+        "label": "London",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374234",
+        "label": "Bristol",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374235",
+        "label": "Amsterdam",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374236",
+        "label": "Paris",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374237",
+        "label": "Singapore",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374238",
+        "label": "Shanghai",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374239",
+        "label": "Hong Kong",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374240",
+        "label": "Mumbai",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374241",
+        "label": "Sydney",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "skip_unmapped",
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595580",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "canonical_field": "how_heard",
+        "action": "fill",
+        "value": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+        "reason": "Mapped from public profile; placed onto \"Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)\""
+      },
+      {
+        "field_id": "question_67595581",
+        "label": "If you selected \"Other\" above, please specify:",
+        "type": "text",
+        "canonical_field": "screener:custom:other_specify",
+        "action": "fill",
+        "value": "N/A",
+        "reason": "Screener bank answer (free_text)"
       }
     ],
-    "fillable_count": 20,
-    "skipped_count": 25,
-    "review_required_count": 1
+    "fillable_count": 18,
+    "skipped_count": 19,
+    "review_required_count": 0
   },
   "submit_attempted": false,
   "notes": [
     "session: handoff (caller-owned page, not closed here)",
-    "board API declared 22 question(s); matched complete option lists onto 7 field(s)",
-    "option harvest: \"School\" is a combobox but offered no readable options",
-    "option harvest: scraped real options for 2/12 control(s) before planning",
-    "heal pass: recovered 0/3; final verify passed: false (sidecar consulted)",
+    "application form found in an iframe (37 fields) — hopping to https://job-boards.greenhouse.io/embed/job_app?for=jumptrading&validityToken=DWcGCnf1vt67iI_aYdMDsU5-qKKIMwXepKvQQPP1TFWsaJ9EQpRANKvniK0aRWAKmStt9P9l5Vpbr8nqROFf-CxheTCtOeSpi-nkyqbSK0LPXSQMaBXKkwkVXJ68bqtKGeTSR9IdCyxmzifWvTqg46uykV7iIsHIy4o393vLx_-9DwEMIPiY_qOWkwpz-zT6AiTeHdU8yx2hVctrceyAtya_3UBfm2vn96XNUowR3hVdo0hhq0i1hS-91hArj9gnqbUsjZi0tl0jNkl65Z5pZaS5FhLIf_2zMvo2xFF3I_kI6Q1YKgsYwSrfdvS99WUe09-cMcjGAs3ZL1EjMtozZg%3D%3D&token=8003019",
+    "board API declared 18 question(s); matched complete option lists onto 6 field(s)",
+    "option harvest: \"Location (City)\" is a combobox but offered no readable options",
+    "option harvest: scraped real options for 1/10 control(s) before planning",
     "frozen after fill→verify→upload — no further field mutation; submit never called"
   ],
-  "validation_level": "UNVERIFIED",
-  "final_url": "https://job-boards.greenhouse.io/neuralink/jobs/6569018003",
+  "validation_level": "LIVE_MUTATION_CONFIRMED",
+  "final_url": "https://job-boards.greenhouse.io/embed/job_app?for=jumptrading&validityToken=DWcGCnf1vt67iI_aYdMDsU5-qKKIMwXepKvQQPP1TFWsaJ9EQpRANKvniK0aRWAKmStt9P9l5Vpbr8nqROFf-CxheTCtOeSpi-nkyqbSK0LPXSQMaBXKkwkVXJ68bqtKGeTSR9IdCyxmzifWvTqg46uykV7iIsHIy4o393vLx_-9DwEMIPiY_qOWkwpz-zT6AiTeHdU8yx2hVctrceyAtya_3UBfm2vn96XNUowR3hVdo0hhq0i1hS-91hArj9gnqbUsjZi0tl0jNkl65Z5pZaS5FhLIf_2zMvo2xFF3I_kI6Q1YKgsYwSrfdvS99WUe09-cMcjGAs3ZL1EjMtozZg%3D%3D&token=8003019",
   "identity_verification": {
-    "requestedUrl": "https://job-boards.greenhouse.io/neuralink/jobs/6569018003",
-    "finalUrl": "https://job-boards.greenhouse.io/neuralink/jobs/6569018003",
-    "requestedJobId": "6569018003",
-    "observedJobId": "6569018003",
-    "company": "neuralink",
-    "role": "Job Application for Software Engineer Intern, Implant at Neuralink",
+    "requestedUrl": "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+    "finalUrl": "https://job-boards.greenhouse.io/embed/job_app?for=jumptrading&validityToken=DWcGCnf1vt67iI_aYdMDsU5-qKKIMwXepKvQQPP1TFWsaJ9EQpRANKvniK0aRWAKmStt9P9l5Vpbr8nqROFf-CxheTCtOeSpi-nkyqbSK0LPXSQMaBXKkwkVXJ68bqtKGeTSR9IdCyxmzifWvTqg46uykV7iIsHIy4o393vLx_-9DwEMIPiY_qOWkwpz-zT6AiTeHdU8yx2hVctrceyAtya_3UBfm2vn96XNUowR3hVdo0hhq0i1hS-91hArj9gnqbUsjZi0tl0jNkl65Z5pZaS5FhLIf_2zMvo2xFF3I_kI6Q1YKgsYwSrfdvS99WUe09-cMcjGAs3ZL1EjMtozZg%3D%3D&token=8003019",
+    "requestedJobId": "8003019",
+    "observedJobId": "8003019",
+    "company": "jumptrading",
+    "role": "Job Application for Campus UI Software Engineer (Intern) at Jump Trading",
     "formDetected": true,
-    "fieldCount": 46,
+    "fieldCount": 37,
     "warnings": [],
     "passed": true,
     "failureCode": null,
@@ -516,27 +434,6 @@
         "Benin +229"
       ],
       "other_option": null
-    },
-    {
-      "field_id": "end-month--0",
-      "label": "End date month",
-      "answer_space": "closed",
-      "option_count": 12,
-      "options": [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-      ],
-      "other_option": null
     }
   ],
   "approved_plan": {
@@ -578,8 +475,8 @@
         "canonical_field": "address.country",
         "action": "FILL",
         "approved": true,
-        "value": "United States",
-        "reason": "Mapped from public profile"
+        "value": "United States +1",
+        "reason": "Mapped from public profile; placed onto \"United States +1\""
       },
       {
         "field_id": "f_4",
@@ -593,6 +490,26 @@
       },
       {
         "field_id": "phone",
+        "label": "Phone",
+        "type": "text",
+        "canonical_field": "phone",
+        "action": "FILL",
+        "approved": true,
+        "value": "***-***-7636",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "candidate-location",
+        "label": "Location (City)",
+        "type": "text",
+        "canonical_field": "address.city",
+        "action": "FILL",
+        "approved": true,
+        "value": "Baltimore, Maryland, USA",
+        "reason": "Mapped from public profile"
+      },
+      {
+        "field_id": "f_7",
         "label": "Phone",
         "type": "text",
         "canonical_field": "phone",
@@ -622,127 +539,7 @@
         "reason": "File uploads handled via uploadResume/uploadCoverLetter"
       },
       {
-        "field_id": "school--0",
-        "label": "School",
-        "type": "text",
-        "canonical_field": "school",
-        "action": "FILL",
-        "approved": true,
-        "value": "Johns Hopkins University",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_9",
-        "label": "field_9",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "end-month--0",
-        "label": "End date month",
-        "type": "text",
-        "canonical_field": "graduation_month",
-        "action": "FILL",
-        "approved": true,
-        "value": "May",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "f_11",
-        "label": "field_11",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "end-year--0",
-        "label": "End date year",
-        "type": "text",
-        "canonical_field": "graduation_year",
-        "action": "FILL",
-        "approved": true,
-        "value": "2029",
-        "reason": "Mapped from public profile"
-      },
-      {
-        "field_id": "question_21044669003",
-        "label": "We look for evidence of exceptional ability. Please provide us with 3-4 examples highlighting your exceptional ability, using quantitative metrics to display the impact on a product/project related to the requirements of the position you are applying for. Each bullet should be very concise— no longer than 3-4 sentences each and should capture the problem, solution, and result. We recommend starting with an action word (designed, led, built, promoted, launched, created, etc.) and be sure to include technical detail. This is your moment to WOW us! NOTE: Answering this question fully is the most important part of our interview process. First example:",
-        "type": "textarea",
-        "canonical_field": "essay:generated:question_21044669003",
-        "action": "FILL",
-        "approved": true,
-        "value": "Built and shipped ClarityAtlas, an iOS health product, end to end in Swift, SwiftUI, and Supabase as co-founder and technical lead of Open Health Intelligence. The hard problem was estimating sleep without requiring a wearable, so I built a passive sleep-estimation system from phone-interaction and motion signals using HealthKit and Core Motion inputs like step count, gait speed, and movement patterns, plus a \"Sleep Twins\" backend that matches users on standardized behavioral features with weighted distance. We ran a live pilot at Johns Hopkins with 30+ users, were selected for the Johns Hopkins Pava Spark Accelerator and NSF I-Corps, and presented to Hopkins President Ron Daniels and leadership from the Data Science and AI Institute. We received a non-binding investment indication of roughly $75,000 for about 7 to 8% equity, which we chose not to pursue immediately because we wanted the right long-term partners and product direction.",
-        "reason": "Essay generated from the operator's about-me context"
-      },
-      {
-        "field_id": "question_21044670003",
-        "label": "Second example:",
-        "type": "textarea",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "Essay generation produced no answer"
-      },
-      {
-        "field_id": "question_21044671003",
-        "label": "Third example:",
-        "type": "textarea",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "Essay generation produced no answer"
-      },
-      {
-        "field_id": "question_21044672003",
-        "label": "Do you have prior internship or co-op experience?",
-        "type": "text",
-        "canonical_field": "screener:custom:prior_internship_experience",
-        "action": "FILL",
-        "approved": true,
-        "value": "Yes",
-        "reason": "Screener bank answer (exact_option)"
-      },
-      {
-        "field_id": "f_17",
-        "label": "field_17",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044673003",
-        "label": "What year will you graduate?",
-        "type": "text",
-        "canonical_field": "screener:custom:graduation_year",
-        "action": "FILL",
-        "approved": true,
-        "value": "2029",
-        "reason": "Screener bank answer (exact_option)"
-      },
-      {
-        "field_id": "f_19",
-        "label": "field_19",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044674003",
+        "field_id": "question_67592963",
         "label": "LinkedIn Profile",
         "type": "text",
         "canonical_field": "linkedin_url",
@@ -752,38 +549,18 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044675003",
-        "label": "Additional Link",
+        "field_id": "question_67592964",
+        "label": "Non-compete/Notice period comments",
         "type": "text",
-        "canonical_field": "screener:portfolio_url",
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "portfolio_url empty in bank — optional, skipped"
+        "canonical_field": "restrictive_covenants",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044676003[]_121475565003",
-        "label": "Yes",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044676003[]_121475566003",
-        "label": "No",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044677003",
-        "label": "Will you, at any point, require employer sponsorship to work in the United States?",
+        "field_id": "question_67592965",
+        "label": "Will you require sponsorship for work authorization in the future?",
         "type": "text",
         "canonical_field": "requires_sponsorship",
         "action": "FILL",
@@ -792,8 +569,8 @@
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "f_25",
-        "label": "field_25",
+        "field_id": "f_13",
+        "label": "field_13",
         "type": "text",
         "canonical_field": null,
         "action": "SKIP",
@@ -802,229 +579,257 @@
         "reason": "No answer-alias mapping"
       },
       {
-        "field_id": "question_21044678003[]_121475567003",
-        "label": "Yes",
+        "field_id": "question_67592966[]_728354500",
+        "label": "Acknowledge/Confirm",
         "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044679003",
-        "label": "At this time we do not offer relocation assistance to interns. If hired, are you able to relocate on your own if you are not based locally?",
-        "type": "text",
-        "canonical_field": "screener:willing_to_relocate",
+        "canonical_field": "application_consent:question_67592966[]_728354500",
         "action": "FILL",
         "approved": true,
-        "value": "Yes",
-        "reason": "Screener bank answer (synonym_option)"
+        "value": true,
+        "reason": "Application terms/confirmation checkbox"
       },
       {
-        "field_id": "f_28",
-        "label": "I understand that this position requires me to work on-site.",
+        "field_id": "question_67595574",
+        "label": "Please select your current school from the list below:",
         "type": "text",
-        "canonical_field": "screener:willing_to_relocate:f_28",
+        "canonical_field": "school",
         "action": "FILL",
         "approved": true,
-        "value": "Yes",
-        "reason": "Screener bank answer (synonym_option)"
-      },
-      {
-        "field_id": "question_21044680003",
-        "label": "What intern season are you interested in?",
-        "type": "text",
-        "canonical_field": "screener:internship_term",
-        "action": "FILL",
-        "approved": true,
-        "value": "Summer 2026 (May - August)",
-        "reason": "Screener bank answer (llm_option)"
-      },
-      {
-        "field_id": "f_30",
-        "label": "field_30",
-        "type": "text",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044681003",
-        "label": "Ideal start date in office",
-        "type": "text",
-        "canonical_field": "screener:start_availability",
-        "action": "FILL",
-        "approved": true,
-        "value": "Flexible — aligned to the posted term",
-        "reason": "Screener bank answer (free_text)"
-      },
-      {
-        "field_id": "question_21044682003[]_121475573003",
-        "label": "Neuralink Show &amp; Tell",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475574003",
-        "label": "Campus Recruiting (please specify)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475575003",
-        "label": "Company Website",
-        "type": "checkbox",
-        "canonical_field": "personal_website",
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "Profile value empty for personal_website"
-      },
-      {
-        "field_id": "question_21044682003[]_121475576003",
-        "label": "Event / Conferences - Industry",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475577003",
-        "label": "Event - Recruiting",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475578003",
-        "label": "Friend or Family (non-employee)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475579003",
-        "label": "LinkedIn",
-        "type": "checkbox",
-        "canonical_field": "linkedin_url",
-        "action": "FILL",
-        "approved": true,
-        "value": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "value": "Johns Hopkins University",
         "reason": "Mapped from public profile"
       },
       {
-        "field_id": "question_21044682003[]_121475580003",
-        "label": "Monkey MindPong",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475581003",
-        "label": "News/Media",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475582003",
-        "label": "Referred by Neuralink employee (name below)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475583003",
-        "label": "YouTube",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044682003[]_121475584003",
-        "label": "Other (please specify)",
-        "type": "checkbox",
-        "canonical_field": null,
-        "action": "SKIP",
-        "approved": false,
-        "value": null,
-        "reason": "No answer-alias mapping"
-      },
-      {
-        "field_id": "question_21044683003",
-        "label": "Please specify",
+        "field_id": "f_16",
+        "label": "field_16",
         "type": "text",
-        "canonical_field": "screener:custom:please_specify_details",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595575[]",
+        "label": "What degree are you currently pursuing?",
+        "type": "text",
+        "canonical_field": "degree",
         "action": "FILL",
         "approved": true,
-        "value": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029.",
-        "reason": "Screener bank answer (free_text)"
+        "value": "Bachelor’s",
+        "reason": "Mapped from public profile; placed onto \"Bachelor’s\""
       },
       {
-        "field_id": "question_21872115003",
-        "label": "Which onsite location would you like to apply to?",
+        "field_id": "f_18",
+        "label": "field_18",
         "type": "text",
-        "canonical_field": "screener:closest_location",
-        "action": "REVIEW_REQUIRED",
+        "canonical_field": null,
+        "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "closest_location: bank answer \"United States\" matches none of the 3 page options — review"
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595576",
+        "label": "What is your expected graduation date?",
+        "type": "text",
+        "canonical_field": "screener:custom:expected_graduation_date",
+        "action": "FILL",
+        "approved": true,
+        "value": "Spring/Summer 2029",
+        "reason": "Screener bank answer (exact_option)"
+      },
+      {
+        "field_id": "f_20",
+        "label": "field_20",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595577",
+        "label": "Do you currently have any offers from other firms or deadlines we should be aware of?",
+        "type": "text",
+        "canonical_field": "screener:custom:competing_offers",
+        "action": "FILL",
+        "approved": true,
+        "value": "No",
+        "reason": "Screener bank answer (exact_option)"
+      },
+      {
+        "field_id": "f_22",
+        "label": "field_22",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595578",
+        "label": "If you said yes above, please tell us about your offers and deadlines.",
+        "type": "text",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "conditional follow-up skipped — parent answer is No"
+      },
+      {
+        "field_id": "question_67595579[]_728374231",
+        "label": "Chicago",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374232",
+        "label": "New York",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374233",
+        "label": "London",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374234",
+        "label": "Bristol",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374235",
+        "label": "Amsterdam",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374236",
+        "label": "Paris",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374237",
+        "label": "Singapore",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374238",
+        "label": "Shanghai",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374239",
+        "label": "Hong Kong",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374240",
+        "label": "Mumbai",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595579[]_728374241",
+        "label": "Sydney",
+        "type": "checkbox",
+        "canonical_field": null,
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "No answer-alias mapping"
+      },
+      {
+        "field_id": "question_67595580",
+        "label": "How did you hear about us?",
+        "type": "text",
+        "canonical_field": "how_heard",
+        "action": "FILL",
+        "approved": true,
+        "value": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+        "reason": "Mapped from public profile; placed onto \"Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)\""
+      },
+      {
+        "field_id": "question_67595581",
+        "label": "If you selected \"Other\" above, please specify:",
+        "type": "text",
+        "canonical_field": "screener:custom:other_specify",
+        "action": "FILL",
+        "approved": true,
+        "value": "N/A",
+        "reason": "Screener bank answer (free_text)"
       }
     ],
     "answers": {
       "legal_name.first": "Shubham",
       "legal_name.last": "Kale",
       "email": "s***@jh.edu",
-      "address.country": "United States",
+      "address.country": "United States +1",
       "phone": "***-***-7636",
-      "school": "Johns Hopkins University",
-      "graduation_month": "May",
-      "graduation_year": "2029",
-      "essay:generated:question_21044669003": "Built and shipped ClarityAtlas, an iOS health product, end to end in Swift, SwiftUI, and Supabase as co-founder and technical lead of Open Health Intelligence. The hard problem was estimating sleep without requiring a wearable, so I built a passive sleep-estimation system from phone-interaction and motion signals using HealthKit and Core Motion inputs like step count, gait speed, and movement patterns, plus a \"Sleep Twins\" backend that matches users on standardized behavioral features with weighted distance. We ran a live pilot at Johns Hopkins with 30+ users, were selected for the Johns Hopkins Pava Spark Accelerator and NSF I-Corps, and presented to Hopkins President Ron Daniels and leadership from the Data Science and AI Institute. We received a non-binding investment indication of roughly $75,000 for about 7 to 8% equity, which we chose not to pursue immediately because we wanted the right long-term partners and product direction.",
-      "screener:custom:prior_internship_experience": "Yes",
-      "screener:custom:graduation_year": "2029",
+      "address.city": "Baltimore, Maryland, USA",
       "linkedin_url": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+      "restrictive_covenants": "No",
       "requires_sponsorship": "[REDACTED_SPONSORSHIP]",
-      "screener:willing_to_relocate": "Yes",
-      "screener:willing_to_relocate:f_28": "Yes",
-      "screener:internship_term": "Summer 2026 (May - August)",
-      "screener:start_availability": "Flexible — aligned to the posted term",
-      "screener:custom:please_specify_details": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029."
+      "application_consent:question_67592966[]_728354500": true,
+      "school": "Johns Hopkins University",
+      "degree": "Bachelor’s",
+      "screener:custom:expected_graduation_date": "Spring/Summer 2029",
+      "screener:custom:competing_offers": "No",
+      "how_heard": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+      "screener:custom:other_specify": "N/A"
     },
-    "fillable_count": 20,
-    "skipped_count": 25,
-    "review_required_count": 1
+    "fillable_count": 18,
+    "skipped_count": 19,
+    "review_required_count": 0
   },
   "fill": {
     "filled": [
@@ -1034,24 +839,21 @@
       "address.country",
       "phone",
       "phone",
-      "school",
-      "graduation_month",
-      "graduation_year",
-      "essay:generated:question_21044669003",
-      "screener:custom:prior_internship_experience",
-      "screener:custom:graduation_year",
+      "address.city",
+      "phone",
       "linkedin_url",
+      "restrictive_covenants",
       "requires_sponsorship",
-      "screener:willing_to_relocate",
-      "screener:internship_term",
-      "screener:start_availability",
-      "linkedin_url",
-      "screener:custom:please_specify_details"
+      "application_consent:question_67592966[]_728354500",
+      "school",
+      "degree",
+      "screener:custom:expected_graduation_date",
+      "screener:custom:competing_offers",
+      "how_heard",
+      "screener:custom:other_specify"
     ],
     "skipped": [],
-    "errors": [
-      "f_28: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('I understand that this position requires me to work on-site.').first()\u001b[22m\n"
-    ],
+    "errors": [],
     "field_meta": [
       {
         "field_id": "first_name",
@@ -1073,11 +875,11 @@
         "canonical_field": "address.country",
         "control_kind": "combobox",
         "selected_option": "United States",
-        "match_via": "ci_exact",
+        "match_via": "exact",
         "notes": [
           "opened via control click",
-          "filter \"United States\" → 1 option(s); match",
-          "picked \"United States +1\" (ci_exact)",
+          "filter \"United States +1\" → 1 option(s); match",
+          "picked \"United States +1\" (exact)",
           "display collapsed to dial code; recording \"United States\""
         ],
         "options_sample": [
@@ -1095,82 +897,46 @@
         "control_kind": "text"
       },
       {
-        "field_id": "school--0",
-        "canonical_field": "school",
+        "field_id": "candidate-location",
+        "canonical_field": "address.city",
         "control_kind": "combobox",
-        "selected_option": "Johns Hopkins University",
-        "match_via": "exact",
+        "selected_option": "Baltimore, Maryland, United States",
+        "match_via": "synonym",
         "notes": [
           "opened via control click",
-          "filter \"Johns Hopkins University\" → 1 option(s); match",
-          "picked \"Johns Hopkins University\" (exact)"
+          "filter \"Baltimore\" → 10 option(s); match",
+          "picked \"Baltimore, Maryland, United States\" (synonym)"
         ],
         "options_sample": [
-          "Johns Hopkins University"
+          "Baltimore, Maryland, United States",
+          "Baltimore, Maryland, United States",
+          "New Baltimore, Michigan, United States",
+          "New Baltimore, Virginia, United States",
+          "Baltimore Highlands, Maryland, United States",
+          "South Baltimore, Maryland, United States",
+          "North Baltimore, Ohio, United States",
+          "Town of New Baltimore, New York, United States",
+          "Baltimore, Ohio, United States",
+          "New Baltimore, Ohio, United States"
         ]
       },
       {
-        "field_id": "end-month--0",
-        "canonical_field": "graduation_month",
-        "control_kind": "combobox",
-        "selected_option": "May",
-        "match_via": "exact",
-        "notes": [
-          "opened via control click",
-          "filter \"May\" → 1 option(s); match",
-          "picked \"May\" (exact)"
-        ],
-        "options_sample": [
-          "May"
-        ]
-      },
-      {
-        "field_id": "end-year--0",
-        "canonical_field": "graduation_year",
+        "field_id": "f_7",
+        "canonical_field": "phone",
         "control_kind": "text"
       },
       {
-        "field_id": "question_21044669003",
-        "canonical_field": "essay:generated:question_21044669003",
-        "control_kind": "text"
-      },
-      {
-        "field_id": "question_21044672003",
-        "canonical_field": "screener:custom:prior_internship_experience",
-        "control_kind": "combobox",
-        "selected_option": "Yes",
-        "match_via": "exact",
-        "notes": [
-          "opened via control click",
-          "filter \"Yes\" → 1 option(s); match",
-          "picked \"Yes\" (exact)"
-        ],
-        "options_sample": [
-          "Yes"
-        ]
-      },
-      {
-        "field_id": "question_21044673003",
-        "canonical_field": "screener:custom:graduation_year",
-        "control_kind": "combobox",
-        "selected_option": "2029",
-        "match_via": "exact",
-        "notes": [
-          "opened via control click",
-          "filter \"2029\" → 1 option(s); match",
-          "picked \"2029\" (exact)"
-        ],
-        "options_sample": [
-          "2029"
-        ]
-      },
-      {
-        "field_id": "question_21044674003",
+        "field_id": "question_67592963",
         "canonical_field": "linkedin_url",
         "control_kind": "text"
       },
       {
-        "field_id": "question_21044677003",
+        "field_id": "question_67592964",
+        "canonical_field": "restrictive_covenants",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "question_67592965",
         "canonical_field": "requires_sponsorship",
         "control_kind": "combobox",
         "selected_option": "No",
@@ -1185,54 +951,94 @@
         ]
       },
       {
-        "field_id": "question_21044679003",
-        "canonical_field": "screener:willing_to_relocate",
-        "control_kind": "combobox",
-        "selected_option": "Yes",
-        "match_via": "exact",
-        "notes": [
-          "opened via control click",
-          "filter \"Yes\" → 1 option(s); match",
-          "picked \"Yes\" (exact)"
-        ],
-        "options_sample": [
-          "Yes"
-        ]
-      },
-      {
-        "field_id": "question_21044680003",
-        "canonical_field": "screener:internship_term",
-        "control_kind": "combobox",
-        "selected_option": "Summer 2026 (May - August)",
-        "match_via": "exact",
-        "notes": [
-          "opened via control click",
-          "filter \"Summer 2026 (May - August)\" → 1 option(s); match",
-          "picked \"Summer 2026 (May - August)\" (exact)"
-        ],
-        "options_sample": [
-          "Summer 2026 (May - August)"
-        ]
-      },
-      {
-        "field_id": "question_21044681003",
-        "canonical_field": "screener:start_availability",
+        "field_id": "question_67592966[]_728354500",
+        "canonical_field": "application_consent:question_67592966[]_728354500",
         "control_kind": "text"
       },
       {
-        "field_id": "question_21044682003[]_121475579003",
-        "canonical_field": "linkedin_url",
-        "control_kind": "text"
+        "field_id": "question_67595574",
+        "canonical_field": "school",
+        "control_kind": "combobox",
+        "selected_option": "Johns Hopkins University",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Johns Hopkins University\" → 1 option(s); match",
+          "picked \"Johns Hopkins University\" (exact)"
+        ],
+        "options_sample": [
+          "Johns Hopkins University"
+        ]
       },
       {
-        "field_id": "question_21044683003",
-        "canonical_field": "screener:custom:please_specify_details",
+        "field_id": "question_67595575[]",
+        "canonical_field": "degree",
+        "control_kind": "combobox",
+        "selected_option": "Bachelor’s",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Bachelor\" → 1 option(s); match",
+          "picked \"Bachelor’s\" (exact)"
+        ],
+        "options_sample": [
+          "Bachelor’s"
+        ]
+      },
+      {
+        "field_id": "question_67595576",
+        "canonical_field": "screener:custom:expected_graduation_date",
+        "control_kind": "combobox",
+        "selected_option": "Spring/Summer 2029",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Spring/Summer 2029\" → 1 option(s); match",
+          "picked \"Spring/Summer 2029\" (exact)"
+        ],
+        "options_sample": [
+          "Spring/Summer 2029"
+        ]
+      },
+      {
+        "field_id": "question_67595577",
+        "canonical_field": "screener:custom:competing_offers",
+        "control_kind": "combobox",
+        "selected_option": "No",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"No\" → 1 option(s); match",
+          "picked \"No\" (exact)"
+        ],
+        "options_sample": [
+          "No"
+        ]
+      },
+      {
+        "field_id": "question_67595580",
+        "canonical_field": "how_heard",
+        "control_kind": "combobox",
+        "selected_option": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+        "match_via": "exact",
+        "notes": [
+          "opened via control click",
+          "filter \"Social Media (e.g.\" → 1 option(s); match",
+          "picked \"Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)\" (exact)"
+        ],
+        "options_sample": [
+          "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)"
+        ]
+      },
+      {
+        "field_id": "question_67595581",
+        "canonical_field": "screener:custom:other_specify",
         "control_kind": "text"
       }
     ]
   },
   "verify": {
-    "passed": false,
+    "passed": true,
     "fields": [
       {
         "canonical_field": "legal_name.first",
@@ -1254,7 +1060,7 @@
       },
       {
         "canonical_field": "address.country",
-        "expected": "United States",
+        "expected": "United States +1",
         "observed": {
           "value": "+1",
           "label": "+1"
@@ -1274,51 +1080,18 @@
         "match": true
       },
       {
-        "canonical_field": "school",
-        "expected": "Johns Hopkins University",
+        "canonical_field": "address.city",
+        "expected": "Baltimore, Maryland, USA",
         "observed": {
-          "value": "Johns Hopkins University",
-          "label": "Johns Hopkins University"
+          "value": "Baltimore, Maryland, United States",
+          "label": "Baltimore, Maryland, United States"
         },
         "match": true
       },
       {
-        "canonical_field": "graduation_month",
-        "expected": "May",
-        "observed": {
-          "value": "May",
-          "label": "May"
-        },
-        "match": true
-      },
-      {
-        "canonical_field": "graduation_year",
-        "expected": "2029",
-        "observed": "2029",
-        "match": true
-      },
-      {
-        "canonical_field": "essay:generated:question_21044669003",
-        "expected": "Built and shipped ClarityAtlas, an iOS health product, end to end in Swift, SwiftUI, and Supabase as co-founder and technical lead of Open Health Intelligence. The hard problem was estimating sleep without requiring a wearable, so I built a passive sleep-estimation system from phone-interaction and motion signals using HealthKit and Core Motion inputs like step count, gait speed, and movement patterns, plus a \"Sleep Twins\" backend that matches users on standardized behavioral features with weighted distance. We ran a live pilot at Johns Hopkins with 30+ users, were selected for the Johns Hopkins Pava Spark Accelerator and NSF I-Corps, and presented to Hopkins President Ron Daniels and leadership from the Data Science and AI Institute. We received a non-binding investment indication of roughly $75,000 for about 7 to 8% equity, which we chose not to pursue immediately because we wanted the right long-term partners and product direction.",
-        "observed": "Built and shipped ClarityAtlas, an iOS health product, end to end in Swift, SwiftUI, and Supabase as co-founder and technical lead of Open Health Intelligence. The hard problem was estimating sleep without requiring a wearable, so I built a passive sleep-estimation system from phone-interaction and motion signals using HealthKit and Core Motion inputs like step count, gait speed, and movement patterns, plus a \"Sleep Twins\" backend that matches users on standardized behavioral features with weighted distance. We ran a live pilot at Johns Hopkins with 30+ users, were selected for the Johns Hopkins Pava Spark Accelerator and NSF I-Corps, and presented to Hopkins President Ron Daniels and leadership from the Data Science and AI Institute. We received a non-binding investment indication of roughly $75,000 for about 7 to 8% equity, which we chose not to pursue immediately because we wanted the right long-term partners and product direction.",
-        "match": true
-      },
-      {
-        "canonical_field": "screener:custom:prior_internship_experience",
-        "expected": "Yes",
-        "observed": {
-          "value": "Yes",
-          "label": "Yes"
-        },
-        "match": true
-      },
-      {
-        "canonical_field": "screener:custom:graduation_year",
-        "expected": "2029",
-        "observed": {
-          "value": "2029",
-          "label": "2029"
-        },
+        "canonical_field": "phone",
+        "expected": "***-***-7636",
+        "observed": "***-***-7636",
         "match": true
       },
       {
@@ -1328,163 +1101,77 @@
         "match": true
       },
       {
+        "canonical_field": "restrictive_covenants",
+        "expected": "No",
+        "observed": "No",
+        "match": true
+      },
+      {
         "canonical_field": "requires_sponsorship",
         "expected": "[REDACTED_SPONSORSHIP]",
         "observed": "[REDACTED_SPONSORSHIP]",
         "match": true
       },
       {
-        "canonical_field": "screener:willing_to_relocate",
-        "expected": "Yes",
-        "observed": {
-          "value": "Yes",
-          "label": "Yes"
-        },
-        "match": true
-      },
-      {
-        "canonical_field": "screener:willing_to_relocate:f_28",
-        "expected": "Yes",
-        "observed": null,
-        "match": false
-      },
-      {
-        "canonical_field": "screener:internship_term",
-        "expected": "Summer 2026 (May - August)",
-        "observed": {
-          "value": "Summer 2026 (May - August)",
-          "label": "Summer 2026 (May - August)"
-        },
-        "match": true
-      },
-      {
-        "canonical_field": "screener:start_availability",
-        "expected": "Flexible — aligned to the posted term",
-        "observed": "Flexible — aligned to the posted term",
-        "match": true
-      },
-      {
-        "canonical_field": "linkedin_url",
-        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
+        "canonical_field": "application_consent:question_67592966[]_728354500",
+        "expected": true,
         "observed": true,
-        "match": false
+        "match": true
       },
       {
-        "canonical_field": "screener:custom:please_specify_details",
-        "expected": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029.",
-        "observed": "Applied Mathematics & Statistics and Economics, B.S. at Johns Hopkins University, expected May 2029.",
+        "canonical_field": "school",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "Johns Hopkins University",
+          "label": "Johns Hopkins University"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "degree",
+        "expected": "Bachelor’s",
+        "observed": {
+          "value": "Bachelor’s",
+          "label": "Bachelor’s"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:expected_graduation_date",
+        "expected": "Spring/Summer 2029",
+        "observed": {
+          "value": "Spring/Summer 2029",
+          "label": "Spring/Summer 2029"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:competing_offers",
+        "expected": "No",
+        "observed": {
+          "value": "No",
+          "label": "No"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "how_heard",
+        "expected": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+        "observed": {
+          "value": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)",
+          "label": "Social Media (e.g., LinkedIn, Reddit, Discord, Facebook, X, Instagram)"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:other_specify",
+        "expected": "N/A",
+        "observed": "N/A",
         "match": true
       }
     ],
     "uploads": [],
-    "warnings": [
-      "verify screener:willing_to_relocate:f_28: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('I understand that this position requires me to work on-site.').first()\u001b[22m\n"
-    ]
+    "warnings": []
   },
-  "heal": {
-    "attempted": 3,
-    "healed": [
-      "question_21044674003",
-      "f_28"
-    ],
-    "still_failing": [
-      "question_21044682003[]_121475579003"
-    ],
-    "attempts": [
-      {
-        "field_id": "question_21044674003",
-        "layer": "heuristic",
-        "candidate": {
-          "selector": "#question_21044674003",
-          "via": "label_text",
-          "score": 1,
-          "inputId": "question_21044674003"
-        },
-        "healed": true,
-        "notes": []
-      },
-      {
-        "field_id": "f_28",
-        "layer": "sidecar",
-        "candidate": {
-          "selector": "#question_21044679003",
-          "via": "sidecar",
-          "score": 0.45,
-          "inputId": "question_21044679003"
-        },
-        "healed": true,
-        "notes": [
-          "no heuristic candidates scored >= 0.5"
-        ]
-      },
-      {
-        "field_id": "question_21044682003[]_121475579003",
-        "layer": null,
-        "candidate": null,
-        "healed": false,
-        "notes": [
-          "heuristic candidate #question_21044674003 (1) did not verify",
-          "heuristic candidate [id=\"question_21044682003[]_121475579003\"] (1) did not verify",
-          "sidecar candidate #question_21044674003 (1) did not verify",
-          "sidecar candidate [aria-label=\"LinkedIn Profile\"] (1) did not verify",
-          "sidecar candidate #question_21044682003[]_121475579003 (1) did not verify",
-          "sidecar candidate [name=\"question_21044682003[]\"] (1) did not verify"
-        ]
-      }
-    ],
-    "sidecar_used": true
-  },
-  "operator_brief": {
-    "title": "Live fill — greenhouse https://job-boards.greenhouse.io/neuralink/jobs/6569018003",
-    "summary": "3 item(s) need attention (verify failed — submit click blocked)",
-    "items": [
-      {
-        "id": "verify:screener:willing_to_relocate:f_28",
-        "question": "I understand that this position requires me to work on-site.",
-        "field_id": "f_28",
-        "canonical_field": "screener:willing_to_relocate:f_28",
-        "kind": "verify_mismatch",
-        "problem": "Expected \"Yes\"; page shows \"(empty)\"",
-        "expected": "Yes",
-        "observed": null,
-        "how_to_answer": [
-          "System expected \"Yes\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
-          "Profile source: private/candidate/public-profile.json (key: screener:willing_to_relocate:f_28)",
-          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:willing_to_relocate:f_28\" should match the on-form question text."
-        ]
-      },
-      {
-        "id": "verify:linkedin_url",
-        "question": "LinkedIn",
-        "field_id": "question_21044682003[]_121475579003",
-        "canonical_field": "linkedin_url",
-        "kind": "verify_mismatch",
-        "problem": "Expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\"; page shows \"true\"",
-        "expected": "https://www.linkedin.com/in/shubham-kale-8ab044288/",
-        "observed": true,
-        "how_to_answer": [
-          "DOM shows \"true\" but plan expected \"https://www.linkedin.com/in/shubham-kale-8ab044288/\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
-          "Profile source: private/candidate/public-profile.json → linkedin_url",
-          "Alias check: private/candidate/answer-aliases.json phrases for \"linkedin_url\" should match the on-form question text."
-        ]
-      },
-      {
-        "id": "fill_error:f_28: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for ",
-        "question": "(fill error — see problem)",
-        "field_id": null,
-        "canonical_field": null,
-        "kind": "fill_error",
-        "problem": "f_28: locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('I understand that this position requires me to work on-site.').first()\u001b[22m\n",
-        "expected": null,
-        "observed": null,
-        "how_to_answer": [
-          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
-          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
-        ]
-      }
-    ],
-    "ok_count": 18,
-    "fail_count": 3
-  },
-  "written_at": "2026-08-16T19:14:50.228Z"
+  "written_at": "2026-08-18T01:21:04.865Z"
 }

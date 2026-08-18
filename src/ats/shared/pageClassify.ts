@@ -127,7 +127,13 @@ export function classifyPage(input: {
   // asks who you are; a listing page's search chrome never does. So an
   // Apply CTA plus no identity field means posting, however many inputs
   // the page's furniture contributes.
-  const hasCta = APPLY_CTA_RE.test(html);
+  // Script/JSON blobs contain "apply" constantly (`{"apply":true}`). That
+  // is not an Apply button. Jump Trading 2026-08-17: regex said posting,
+  // findApplyControl found nothing, fill refused in 4s.
+  const visibleHtml = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "");
+  const hasCta = APPLY_CTA_RE.test(visibleHtml);
   if (fieldCount > 0) {
     if (hasCta && !hasApplicationIdentityFields(fields)) {
       return {

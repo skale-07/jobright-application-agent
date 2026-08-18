@@ -291,6 +291,32 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     if (!missing.ok) expect(missing.reason).toMatch(/no option matches/);
     expect(pickOptionLabel(options, " ").ok).toBe(false);
   });
+
+  it("a graduation year plus month names one seasonal option; a bare year does not", () => {
+    const terms = ["Winter 2029", "Spring/Summer 2029", "Fall 2029"];
+    const bare = pickOptionLabel(terms, "2029");
+    expect(bare.ok).toBe(false);
+    if (!bare.ok) expect(bare.reason).toMatch(/ambiguous match for "2029"/);
+
+    expect(pickOptionLabel(terms, "May 2029")).toMatchObject({
+      ok: true,
+      label: "Spring/Summer 2029",
+      via: "synonym",
+    });
+    expect(pickOptionLabel(terms, "January 2029")).toMatchObject({
+      ok: true,
+      label: "Winter 2029",
+    });
+    expect(pickOptionLabel(terms, "September 2029")).toMatchObject({
+      ok: true,
+      label: "Fall 2029",
+    });
+    expect(pickOptionLabel(["Fall 2029", "Fall 2030"], "2029")).toMatchObject({
+      ok: true,
+      label: "Fall 2029",
+      via: "unique_substring",
+    });
+  });
 });
 
 describe("labelsCompatible (UNIT_CONFIRMED)", () => {

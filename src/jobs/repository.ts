@@ -24,6 +24,33 @@ export type JobRow = {
   job_fingerprint: string;
 };
 
+/** Navigation writes these onto job.raw_json. Discovery upserts must not wipe them. */
+const NAV_OWNED_RAW_KEYS = [
+  "employer_application_url",
+  "employer_application_ats",
+  "nav_run_id",
+  "nav_session",
+] as const;
+
+function mergeJobRaw(
+  existingRawJson: string | undefined,
+  incoming: Record<string, unknown> | undefined,
+): string {
+  const prev = existingRawJson
+    ? (JSON.parse(existingRawJson) as Record<string, unknown>)
+    : {};
+  const nextIn = incoming ?? {};
+  const merged: Record<string, unknown> = { ...prev, ...nextIn };
+  for (const key of NAV_OWNED_RAW_KEYS) {
+    const kept = prev[key];
+    const want = nextIn[key];
+    const keptOk = typeof kept === "string" && kept.length > 0;
+    const wantOk = typeof want === "string" && want.length > 0;
+    if (keptOk && !wantOk) merged[key] = kept;
+  }
+  return JSON.stringify(merged);
+}
+
 export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
   const fingerprint = computeJobFingerprint(input);
   const now = new Date().toISOString();
@@ -34,16 +61,16 @@ export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
   const existing =
     (db
       .prepare(`SELECT * FROM jobs WHERE job_fingerprint = ?`)
-      .get(fingerprint) as JobRow | undefined) ??
+      .get(fingerprint) as (JobRow & { raw_json: string }) | undefined) ??
     (input.jobrightJobId
       ? (db
           .prepare(`SELECT * FROM jobs WHERE jobright_job_id = ?`)
-          .get(input.jobrightJobId) as JobRow | undefined)
+          .get(input.jobrightJobId) as (JobRow & { raw_json: string }) | undefined)
       : undefined) ??
     (normalizedUrl
       ? (db
           .prepare(`SELECT * FROM jobs WHERE normalized_application_url = ?`)
-          .get(normalizedUrl) as JobRow | undefined)
+          .get(normalizedUrl) as (JobRow & { raw_json: string }) | undefined)
       : undefined);
 
   if (existing) {
@@ -66,7 +93,7 @@ export function upsertJobByFingerprint(db: Db, input: UpsertJobInput): JobRow {
       input.descriptionHash ?? null,
       input.sourceAts ?? null,
       fingerprint,
-      JSON.stringify(input.raw ?? {}),
+      mergeJobRaw(existing.raw_json, input.raw),
       now,
       existing.id,
     );

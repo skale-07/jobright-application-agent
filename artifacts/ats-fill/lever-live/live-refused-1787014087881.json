@@ -1,0 +1,26 @@
+{
+  "ats": "lever",
+  "url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "requested_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "UNKNOWN_LANDING",
+    "reason": "no signals matched",
+    "final_url": "https://jobs.lever.co/acme/a1b2c3d4-e5f6-7890-abcd-ef1234567890/apply",
+    "page_class": "unknown"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: unknown (no signals matched)",
+    "parked: page class unknown (no signals matched) — not a form, posting, or login wall"
+  ],
+  "written_at": "2026-08-18T00:48:07.881Z"
+}

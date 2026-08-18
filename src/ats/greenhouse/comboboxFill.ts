@@ -246,11 +246,107 @@ export function pickLocationOption(
   return { ok: true, label: sorted[0]!, via: "synonym" };
 }
 
+const MONTH_INDEX: Record<string, number> = {
+  january: 1,
+  jan: 1,
+  february: 2,
+  feb: 2,
+  march: 3,
+  mar: 3,
+  april: 4,
+  apr: 4,
+  may: 5,
+  june: 6,
+  jun: 6,
+  july: 7,
+  jul: 7,
+  august: 8,
+  aug: 8,
+  september: 9,
+  sep: 9,
+  sept: 9,
+  october: 10,
+  oct: 10,
+  november: 11,
+  nov: 11,
+  december: 12,
+  dec: 12,
+};
+
+const SEASON_WORD_RE = /\b(winter|spring|summer|fall|autumn)\b/;
+
+function monthNumber(raw: string): number | null {
+  const k = optionKey(raw);
+  if (MONTH_INDEX[k] !== undefined) return MONTH_INDEX[k]!;
+  const n = Number(k);
+  if (Number.isInteger(n) && n >= 1 && n <= 12) return n;
+  return null;
+}
+
+/** Academic-calendar seasons. May → spring; Jump's "Spring/Summer" matches spring. */
+function seasonsForMonth(month: number): string[] {
+  if (month === 12 || month <= 2) return ["winter"];
+  if (month <= 5) return ["spring"];
+  if (month <= 7) return ["summer"];
+  return ["fall", "autumn"];
+}
+
+function parseYearMonthExpected(
+  expected: string,
+): { year: string; month: number | null } | null {
+  const t = expected.trim();
+  const yearOnly = t.match(/^(20\d{2}|19\d{2})$/);
+  if (yearOnly?.[1]) return { year: yearOnly[1], month: null };
+  const monthYear = t.match(/^([A-Za-z]+|\d{1,2})\s+(20\d{2}|19\d{2})$/);
+  if (monthYear?.[1] && monthYear[2]) {
+    return { year: monthYear[2], month: monthNumber(monthYear[1]) };
+  }
+  const yearMonth = t.match(/^(20\d{2}|19\d{2})\s+([A-Za-z]+|\d{1,2})$/);
+  if (yearMonth?.[1] && yearMonth[2]) {
+    return { year: yearMonth[1], month: monthNumber(yearMonth[2]) };
+  }
+  return null;
+}
+
+/**
+ * Profile stores a year (and usually a month). Boards like Jump offer
+ * "Winter 2029 | Spring/Summer 2029 | Fall 2029". A bare year is
+ * ambiguous — refuse. Month + year that uniquely names one season is not.
+ */
+function pickSeasonalYearOption(
+  options: string[],
+  expected: string,
+): OptionPick | null {
+  const parsed = parseYearMonthExpected(expected);
+  if (!parsed) return null;
+  const yearHits = options.filter((o) => {
+    const k = optionKey(o);
+    return (
+      containsAsWord(k, parsed.year) && SEASON_WORD_RE.test(k)
+    );
+  });
+  if (yearHits.length === 0) return null;
+  if (yearHits.length === 1 && yearHits[0] !== undefined) {
+    return { ok: true, label: yearHits[0], via: "unique_substring" };
+  }
+  if (parsed.month === null) return null;
+  const seasons = seasonsForMonth(parsed.month);
+  const seasonHits = yearHits.filter((o) => {
+    const k = optionKey(o);
+    return seasons.some((s) => containsAsWord(k, s));
+  });
+  if (seasonHits.length === 1 && seasonHits[0] !== undefined) {
+    return { ok: true, label: seasonHits[0], via: "synonym" };
+  }
+  return null;
+}
+
 /**
  * Pure option matching: exact → case-insensitive exact → dial-stripped →
  * location parts → degree synonym → yes/no (word-leading) → unique
- * substring (either direction). Values are never invented: multi-hit
- * substring refuses.
+ * substring (either direction) → seasonal year + month. Values are never
+ * invented: multi-hit substring refuses unless a profile month names one
+ * season.
  */
 export function pickOptionLabel(options: string[], expected: string): OptionPick {
   const exp = expected.trim();
@@ -473,6 +569,8 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
   if (sub.length === 1 && sub[0] !== undefined) {
     return { ok: true, label: sub[0], via: "unique_substring" };
   }
+  const seasonal = pickSeasonalYearOption(options, exp);
+  if (seasonal) return seasonal;
   if (sub.length > 1) {
     return {
       ok: false,
@@ -764,6 +862,8 @@ export function buildFilterCandidates(expected: string): string[] {
 
   push(full);
   push(cleaned);
+  const yearToken = cleaned.match(/\b(20\d{2}|19\d{2})\b/);
+  if (yearToken?.[1]) push(yearToken[1]);
   if (words.length >= 3) push(words.slice(0, 3).join(" "));
   if (words.length >= 2) push(words.slice(0, 2).join(" "));
   // Skip leading "Applied" as first token for math majors — already tried Math.

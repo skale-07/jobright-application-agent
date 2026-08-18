@@ -1,0 +1,10 @@
+{
+  "outcome": "REFUSED",
+  "application_id": "b020a59b-fe0a-4dba-9959-77ffaa32c9c1",
+  "submission_id": "92cc0c1c-f6af-4b6f-aab1-893d06d4e949",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Operator declined (or confirmation timed out) — submission refused",
+  "artifact_path": null
+}

@@ -1,0 +1,282 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "submission_id": "14c530c8-12e5-4351-9782-0699a58a8fd0",
+  "attempt": 5,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Refusing to click submit: field verification or upload did not pass",
+  "artifact_path": null,
+  "operator_brief": {
+    "title": "Submit blocked — greenhouse app c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+    "summary": "16 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:address.country",
+        "question": "Country",
+        "field_id": "country",
+        "canonical_field": "address.country",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"United States\"; page shows \"(empty)\"",
+        "expected": "United States",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: United States). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"United States\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.country",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.country\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:address.city",
+        "question": "Location (City)",
+        "field_id": "candidate-location",
+        "canonical_field": "address.city",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Baltimore, Maryland, USA\"; page shows \"(empty)\"",
+        "expected": "Baltimore, Maryland, USA",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Baltimore, Maryland, USA). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Baltimore, Maryland, USA\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.city",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.city\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:requires_sponsorship",
+        "question": "Will you require sponsorship for work authorization in the future?",
+        "field_id": "question_67592965",
+        "canonical_field": "requires_sponsorship",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"No\"; page shows \"(empty)\"",
+        "expected": "No",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: No). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"No\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → requires_sponsorship",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"requires_sponsorship\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:school",
+        "question": "Please select your current school from the list below:",
+        "field_id": "question_67595574",
+        "canonical_field": "school",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Johns Hopkins University\"; page shows \"(empty)\"",
+        "expected": "Johns Hopkins University",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Johns Hopkins University). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Johns Hopkins University\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: school)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"school\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:degree",
+        "question": "What degree are you currently pursuing?",
+        "field_id": "question_67595575[]",
+        "canonical_field": "degree",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Bachelor of Science\"; page shows \"(empty)\"",
+        "expected": "Bachelor of Science",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Bachelor of Science). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Bachelor of Science\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: degree)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"degree\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:graduation_year",
+        "question": "What is your expected graduation date?",
+        "field_id": "question_67595576",
+        "canonical_field": "graduation_year",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"2029\"; page shows \"(empty)\"",
+        "expected": "2029",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: 2029). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"2029\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: graduation_year)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"graduation_year\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:custom:competing_offers",
+        "question": "Do you currently have any offers from other firms or deadlines we should be aware of?",
+        "field_id": "question_67595577",
+        "canonical_field": "screener:custom:competing_offers",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"No\"; page shows \"(empty)\"",
+        "expected": "No",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: No). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"No\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:competing_offers)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:competing_offers\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:how_heard",
+        "question": "How did you hear about us?",
+        "field_id": "question_67595580",
+        "canonical_field": "how_heard",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"LinkedIn\"; page shows \"(empty)\"",
+        "expected": "LinkedIn",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: LinkedIn). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"LinkedIn\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → how_heard",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"how_heard\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:country: combobox option not committed: opened via control click; listbox did no",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "country: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:candidate-location: combobox option not committed: opened via control click; lis",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "candidate-location: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67592965: combobox option not committed: opened via control click; list",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67592965: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595574: combobox option not committed: opened via control click; list",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595574: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595575[]: combobox option not committed: opened via control click; li",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595575[]: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595576: combobox option not committed: opened via control click; list",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595576: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595577: combobox option not committed: opened via control click; list",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595577: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595580: combobox option not committed: opened via control click; list",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595580: combobox option not committed: opened via control click; listbox did not open after click",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 11,
+    "fail_count": 16
+  }
+}

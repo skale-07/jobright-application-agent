@@ -94,6 +94,40 @@ describe("phase1 database core", () => {
     expect(count.n).toBe(1);
   });
 
+  it("job rediscovery does not wipe a stored employer application URL", () => {
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: "jr-keep-url",
+      applicationUrl: "https://jobright.ai/jobs/info/aaaaaaaaaaaaaaaaaaaaaaaa",
+      company: "Jump Trading",
+      role: "Intern",
+      raw: {
+        source: "nav",
+        employer_application_url:
+          "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+        employer_application_ats: "greenhouse",
+      },
+    });
+    upsertJobByFingerprint(db, {
+      jobrightJobId: "jr-keep-url",
+      applicationUrl: "https://jobright.ai/jobs/info/aaaaaaaaaaaaaaaaaaaaaaaa",
+      company: "Jump Trading",
+      role: "Intern",
+      raw: { source: "discovery", company: "Jump Trading" },
+    });
+    const raw = JSON.parse(
+      (
+        db.prepare(`SELECT raw_json FROM jobs WHERE id = ?`).get(job.id) as {
+          raw_json: string;
+        }
+      ).raw_json,
+    ) as Record<string, unknown>;
+    expect(raw["employer_application_url"]).toBe(
+      "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+    );
+    expect(raw["employer_application_ats"]).toBe("greenhouse");
+    expect(raw["source"]).toBe("discovery");
+  });
+
   it("transitions application state transactionally", () => {
     const job = upsertJobByFingerprint(db, {
       company: "Acme",

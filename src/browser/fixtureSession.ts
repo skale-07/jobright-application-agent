@@ -24,6 +24,43 @@ export async function withFixtureHtmlPage<T>(
   }
 }
 
+export type PublicUrlSession = {
+  page: Page;
+  close: () => Promise<void>;
+};
+
+/**
+ * Caller-owned public Chromium (no JobRight/LinkedIn storage). Pipeline
+ * `--submit` holds this across fill → click so a verified form is not
+ * thrown away for a cold re-fill. Caller MUST close.
+ */
+export async function openPublicUrlSession(options?: {
+  headless?: boolean;
+}): Promise<PublicUrlSession> {
+  const browser = await chromium.launch(
+    browserLaunchOptions({
+      headless: options?.headless ?? true,
+      channel: "chromium",
+      slowMoMs: 0,
+    }),
+  );
+  const context = await browser.newContext({
+    acceptDownloads: false,
+  });
+  const page = await context.newPage();
+  let closed = false;
+  return {
+    page,
+    close: async () => {
+      if (closed) return;
+      closed = true;
+      await page.close().catch(() => undefined);
+      await context.close().catch(() => undefined);
+      await browser.close().catch(() => undefined);
+    },
+  };
+}
+
 /**
  * Ephemeral Chromium context for public ATS pages (no JobRight/LinkedIn storage).
  * Used for Greenhouse read-only live inspection.
@@ -33,29 +70,14 @@ export async function withPublicUrlPage<T>(
   fn: (page: Page) => Promise<T>,
   options?: { headless?: boolean },
 ): Promise<T> {
-  const browser = await chromium.launch(
-    browserLaunchOptions({
-      headless: options?.headless ?? true,
-      channel: "chromium",
-      slowMoMs: 0,
-    }),
-  );
+  const session = await openPublicUrlSession(options);
   try {
-    const context = await browser.newContext({
-      acceptDownloads: false,
+    await session.page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: 60_000,
     });
-    const page = await context.newPage();
-    try {
-      await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: 60_000,
-      });
-      return await fn(page);
-    } finally {
-      await page.close().catch(() => undefined);
-      await context.close().catch(() => undefined);
-    }
+    return await fn(session.page);
   } finally {
-    await browser.close();
+    await session.close();
   }
 }

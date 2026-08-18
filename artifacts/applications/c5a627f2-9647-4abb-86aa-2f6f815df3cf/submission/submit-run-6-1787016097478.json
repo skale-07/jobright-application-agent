@@ -1,0 +1,17 @@
+{
+  "outcome": "SUBMITTED_VERIFIED",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "submission_id": "e56a0f34-6955-420f-9d54-fc91558e9011",
+  "attempt": 6,
+  "receipt": {
+    "submitted": true,
+    "submitted_at": "2026-08-18T01:21:37.476Z",
+    "confirmation_url": "https://job-boards.greenhouse.io/embed/job_app/confirmation?for=jumptrading&token=8003019",
+    "confirmation_text": "Thank you for applying",
+    "application_identifier": null,
+    "screenshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\applications\\c5a627f2-9647-4abb-86aa-2f6f815df3cf\\submission\\receipt-attempt-6.png"
+  },
+  "review_item_id": null,
+  "reason": "Thank you for applying",
+  "artifact_path": null
+}

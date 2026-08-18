@@ -25,6 +25,7 @@ import {
 } from "./comboboxFill.js";
 import { logger } from "../../logging/logger.js";
 import { locationsMatch } from "../../applications/locationQuery.js";
+import { loadPublicProfile } from "../../candidate/publicProfileIO.js";
 
 export type FieldMeta = {
   name?: string;
@@ -459,6 +460,23 @@ function isApprovedExecutable(
   );
 }
 
+/** Bare profile year against a seasonal combobox needs the month. */
+function comboboxExpected(
+  canonical: string | null,
+  value: unknown,
+): unknown {
+  if (canonical !== "graduation_year") return value;
+  const raw = String(value ?? "").trim();
+  if (!/^(20\d{2}|19\d{2})$/.test(raw)) return value;
+  try {
+    const month = loadPublicProfile().graduation_month?.trim() ?? "";
+    if (month && !/\d{4}/.test(month)) return `${month} ${raw}`;
+  } catch {
+    return value;
+  }
+  return value;
+}
+
 /**
  * Fill Greenhouse fields from an approved fill plan.
  * Rejects essay/textarea/demographic/unapproved entries even if present.
@@ -549,7 +567,11 @@ export async function greenhouseFillFromPlan(
             match_via: "exact",
           });
         } else {
-          const result = await fillComboboxControl(page, loc, entry.value);
+          const result = await fillComboboxControl(
+            page,
+            loc,
+            comboboxExpected(entry.canonical_field, entry.value),
+          );
           field_meta.push({
             field_id: entry.field_id,
             canonical_field: entry.canonical_field,
@@ -627,7 +649,11 @@ export async function greenhouseFillFromPlan(
         // (discovery saw <input>, the widget is a React-select).
         const kind = await detectControlKind(loc);
         if (kind === "combobox") {
-          const result = await fillComboboxControl(page, loc, entry.value);
+          const result = await fillComboboxControl(
+            page,
+            loc,
+            comboboxExpected(entry.canonical_field, entry.value),
+          );
           field_meta.push({
             field_id: entry.field_id,
             canonical_field: entry.canonical_field,

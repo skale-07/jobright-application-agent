@@ -785,16 +785,27 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     resetConfigCache();
   });
 
-  it("final-host verification rejects employer careers redirect", () => {
+  it("final-host verification records a company-domain redirect and does not refuse", () => {
     const nav = verifyFinalNavigation({
       requestedUrl: "https://boards.greenhouse.io/okta/jobs/7617090",
       finalUrl: "https://www.okta.com/company/careers/",
     });
-    expect(nav.passed).toBe(false);
-    expect(nav.failureCode).toBe("GREENHOUSE_APPLICATION_UNAVAILABLE");
+    expect(nav.passed).toBe(true);
+    expect(nav.failureCode).toBeNull();
     expect(nav.remainedOnTrustedGreenhouseHost).toBe(false);
     expect(nav.redirectObserved).toBe(true);
     expect(nav.finalHost).toBe("www.okta.com");
+  });
+
+  it("company-domain gh_jid landing is not a host gate", () => {
+    const nav = verifyFinalNavigation({
+      requestedUrl: "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+      finalUrl: "https://www.jumptrading.com/hr/job?gh_jid=8003019",
+    });
+    expect(nav.passed).toBe(true);
+    expect(nav.failureCode).toBeNull();
+    expect(nav.remainedOnTrustedGreenhouseHost).toBe(false);
+    expect(nav.finalHost).toBe("www.jumptrading.com");
   });
 
   it("generic Login nav links are not a login wall", () => {
@@ -846,7 +857,7 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     expect(wall.confidence).toBe("HIGH");
   });
 
-  it("Okta-style redirect is GREENHOUSE_APPLICATION_UNAVAILABLE not LOGIN_WALL", async () => {
+  it("Okta-style careers homepage is FORM_NOT_FOUND not a host refuse or LOGIN_WALL", async () => {
     const html = fs.readFileSync(careersFixture, "utf8");
     let report: GreenhouseLiveInspectReport | undefined;
     try {
@@ -861,7 +872,7 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     }
     expect(report).toBeDefined();
     expect(report!.validation_level).toBe("UNVERIFIED");
-    expect(report!.failure_code).toBe("GREENHOUSE_APPLICATION_UNAVAILABLE");
+    expect(report!.failure_code).toBe("FORM_NOT_FOUND");
     expect(report!.login_wall_detection?.detected).toBe(false);
     expect(report!.form_detected).toBe(false);
     expect(report!.field_count).toBe(0);
@@ -870,11 +881,12 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     expect(report!.final_host).toBe("www.okta.com");
     expect(report!.mutation_attempted).toBe(false);
     expect(report!.error).not.toMatch(/Login wall/i);
+    expect(report!.error).not.toMatch(/supported Greenhouse application host/i);
     expect(report!.artifact_path).toBeTruthy();
     const disk = JSON.parse(
       fs.readFileSync(report!.artifact_path!, "utf8"),
     ) as GreenhouseLiveInspectReport;
-    expect(disk.failure_code).toBe("GREENHOUSE_APPLICATION_UNAVAILABLE");
+    expect(disk.failure_code).toBe("FORM_NOT_FOUND");
     expect(disk.login_wall_detection?.detected).toBe(false);
   }, 30_000);
 
@@ -907,7 +919,7 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     expect(report?.login_wall_detection?.confidence).toBe("HIGH");
   }, 30_000);
 
-  it("untrusted final host wins over password fields on employer page", async () => {
+  it("password fields on a company-domain page are LOGIN_WALL, not a host refuse", async () => {
     const html = fs.readFileSync(loginWallFixture, "utf8");
     let report: GreenhouseLiveInspectReport | undefined;
     try {
@@ -919,8 +931,9 @@ describe("Greenhouse redirect + login-wall hotfix (FIXTURE_CONFIRMED)", () => {
     } catch (err) {
       report = (err as GreenhouseLiveInspectError).report;
     }
-    expect(report?.failure_code).toBe("GREENHOUSE_APPLICATION_UNAVAILABLE");
-    expect(report?.login_wall_detection?.detected).toBe(false);
+    expect(report?.failure_code).toBe("LOGIN_WALL");
+    expect(report?.login_wall_detection?.detected).toBe(true);
+    expect(report?.login_wall_detection?.confidence).toBe("HIGH");
   }, 30_000);
 
   it("closed Greenhouse job (still on host) fails APPLICATION_CLOSED", async () => {

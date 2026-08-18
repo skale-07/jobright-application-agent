@@ -109,7 +109,7 @@
         "canonical_field": null,
         "action": "skip_essay",
         "value": null,
-        "reason": "Essays are never auto-filled"
+        "reason": "essay autofill skipped: ESSAY_AUTOFILL_ENABLED and SCREENER_PREDICT_LLM_ENABLED are both off"
       },
       {
         "field_id": "eeo-gender",
@@ -253,7 +253,7 @@
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Essays are never auto-filled"
+        "reason": "essay autofill skipped: ESSAY_AUTOFILL_ENABLED and SCREENER_PREDICT_LLM_ENABLED are both off"
       },
       {
         "field_id": "eeo-gender",
@@ -302,5 +302,5 @@
   "notes": [
     "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
   ],
-  "written_at": "2026-08-14T01:22:11.583Z"
+  "written_at": "2026-08-18T00:48:04.492Z"
 }

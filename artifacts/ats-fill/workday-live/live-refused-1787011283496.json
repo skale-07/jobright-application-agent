@@ -1,0 +1,32 @@
+{
+  "ats": "workday",
+  "url": "https://intel.wd1.myworkdayjobs.com/external/job/US-California-Folsom/Software-Development-Graduate-Intern_JR0285451-1",
+  "requested_url": "https://intel.wd1.myworkdayjobs.com/external/job/US-California-Folsom/Software-Development-Graduate-Intern_JR0285451-1",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "NO_APPLICATION_FORM",
+    "reason": "Workday page classified unknown but has no fillable fields",
+    "final_url": "https://intel.wd1.myworkdayjobs.com/external/job/US-California-Folsom/Software-Development-Graduate-Intern_JR0285451-1",
+    "page_class": "unknown"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: unknown (no signals matched)",
+    "workday page kind at gate: unknown",
+    "login wall on intel.wd1.myworkdayjobs.com: no_form_found; fields[email=false password=false confirm=false]",
+    "portal auth: Apply / Apply Manually not found on attempt 1",
+    "standing portal login used for intel.wd1.myworkdayjobs.com",
+    "portal auth: no sign-in form on this page",
+    "workday page kind after auth: unknown",
+    "parked: reached a Workday page with nothing to fill"
+  ],
+  "written_at": "2026-08-18T00:01:23.496Z"
+}

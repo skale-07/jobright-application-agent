@@ -1,0 +1,49 @@
+{
+  "run_id": "nav-b4604f82-b19c-4925-99e4-0e0630b7c9b0",
+  "application_id": "1ec48f4d-66fc-44d2-b477-8c838edfd214",
+  "jobright_job_id": "6a60f1be3dad4842959d5b5d",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "auth",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no external anchors"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "unresolved by deterministic phases"
+    },
+    {
+      "phase": "C_agent",
+      "outcome": "needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review"
+    }
+  ],
+  "agent": {
+    "turns_used": 1,
+    "steps_used": 8,
+    "domains_visited": [
+      "jobs.ashbyhq.com"
+    ]
+  },
+  "gmail": null,
+  "need": {
+    "kind": "verification_email",
+    "sent_to": "candidate@fixture.test",
+    "requested_at": "2026-08-07T00:00:00Z"
+  },
+  "session": "cdp",
+  "notes": [
+    "no standard Apply control found (exact and broad name tiers both empty)",
+    "verification need rejected: agent's page evidence shows no verification prompt"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:46:42.224Z"
+}

@@ -39,6 +39,15 @@ import { detectLoginWall, type LoginWallDetection } from "./loginWallDetection.j
 import { healFailedFillEntries, type HealReport } from "./fillHealer.js";
 import { verifyResumePdfFile } from "../../jobright/resumeDownload.js";
 import type { ApprovedFillPlanEntry } from "../../applications/approvedFillPlan.js";
+import { findApplicationFrameUrl } from "../shared/frameHop.js";
+import {
+  classifyPage,
+  hasApplicationIdentityFields,
+} from "../shared/pageClassify.js";
+import {
+  advancePastPosting,
+  findApplyControl,
+} from "../shared/postingAdvance.js";
 import { verifyFinalNavigation } from "./finalNavigation.js";
 import {
   detectClosedJobSignals,
@@ -201,6 +210,152 @@ export async function verifyPageBeforeMutation(
     failureCode: identity.failureCode,
     reason: identity.failureReason,
   };
+}
+
+const LANDING_SETTLE_MS = 12_000;
+const LANDING_POLL_MS = 400;
+
+/**
+ * Company-domain Greenhouse boards (Jump Trading, Datadog, …) are SPAs.
+ * First paint is an empty shell; JSON in a <script> can say "apply" and
+ * classify as a posting before any button exists. Wait for a real Apply
+ * control, a form, an auth wall, or a fillable iframe — not a regex hit.
+ */
+async function settleGreenhouseLanding(page: Page): Promise<void> {
+  const deadline = Date.now() + LANDING_SETTLE_MS;
+  while (Date.now() < deadline) {
+    const html = await page.content();
+    const landing = classifyPage({ html, url: page.url() });
+    if (
+      landing.page_class === "form" ||
+      landing.page_class === "auth" ||
+      landing.page_class === "captcha"
+    ) {
+      return;
+    }
+    if (await findApplicationFrameUrl(page)) return;
+    if (await findApplyControl(page).catch(() => null)) return;
+    await page.waitForTimeout(LANDING_POLL_MS);
+  }
+}
+
+async function hopEmbeddedForm(
+  page: Page,
+  notes: string[],
+): Promise<boolean> {
+  const topFields = discoverFieldsFromHtml(await page.content());
+  // Listing chrome (search boxes) used to abort the hop because "fields > 0".
+  // Only a real applicant-identity form is already the destination.
+  if (hasApplicationIdentityFields(topFields)) return false;
+  const frameForm = await findApplicationFrameUrl(page);
+  if (!frameForm) return false;
+  const why =
+    frameForm.fieldCount > 0
+      ? `${frameForm.fieldCount} fields`
+      : "Greenhouse embed URL, document not readable yet";
+  notes.push(
+    `application form found in an iframe (${why}) — hopping to ${frameForm.url}`,
+  );
+  try {
+    await page.goto(frameForm.url, { waitUntil: "domcontentloaded" });
+    return true;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    notes.push(`iframe hop navigation failed: ${message.slice(0, 120)}`);
+    return false;
+  }
+}
+
+function describeFrames(page: Page): string {
+  const parts: string[] = [];
+  for (const frame of page.frames()) {
+    const url = frame.url() || "(empty)";
+    parts.push(frame === page.mainFrame() ? `main ${url}` : url);
+  }
+  return `frames: ${parts.join(" | ")}`.slice(0, 360);
+}
+
+export type GreenhouseMutationGate = Awaited<
+  ReturnType<typeof verifyPageBeforeMutation>
+>;
+
+/**
+ * Same landing recovery fill and submit must share: SPA settle, iframe hop,
+ * then Apply on a posting/unknown shell. Returns the page to continue on
+ * (a popup, if Apply opened one). Does not click Submit.
+ */
+export async function reachGreenhouseApplicationForm(
+  page: Page,
+  requestedUrl: string,
+  normalizedUrl: string | null,
+  options?: { dismissObstructions?: boolean },
+): Promise<{
+  page: Page;
+  gate: GreenhouseMutationGate;
+  notes: string[];
+}> {
+  const notes: string[] = [];
+  let working = page;
+  if (options?.dismissObstructions) {
+    const obstructions = await dismissPageObstructions(working);
+    if (obstructions.dismissed.length > 0) {
+      notes.push(`popups dismissed: ${obstructions.dismissed.join(", ")}`);
+    }
+  }
+  await settleGreenhouseLanding(working);
+  let gate = await verifyPageBeforeMutation(
+    working,
+    requestedUrl,
+    normalizedUrl,
+  );
+  if (await hopEmbeddedForm(working, notes)) {
+    await settleGreenhouseLanding(working);
+    gate = await verifyPageBeforeMutation(working, requestedUrl, normalizedUrl);
+  }
+  if (
+    !gate.ok &&
+    (gate.failureCode === "FORM_NOT_FOUND" ||
+      gate.failureCode === "ZERO_FIELDS")
+  ) {
+    const advance = await advancePastPosting({
+      page: working,
+      html: gate.html,
+      url: gate.finalUrl,
+    });
+    notes.push(...advance.notes);
+    working = advance.page;
+    // Always retry hop after Apply miss. hops===0 used to skip this, so a
+    // late Greenhouse iframe never got a second look.
+    const hopped = await hopEmbeddedForm(working, notes);
+    if (hopped || advance.hops > 0 || advance.page !== page) {
+      if (hopped) await settleGreenhouseLanding(working);
+      gate = await verifyPageBeforeMutation(
+        working,
+        requestedUrl,
+        normalizedUrl,
+      );
+    }
+    if (
+      !gate.ok &&
+      (gate.failureCode === "FORM_NOT_FOUND" ||
+        gate.failureCode === "ZERO_FIELDS")
+    ) {
+      await settleGreenhouseLanding(working);
+      if (await hopEmbeddedForm(working, notes)) {
+        await settleGreenhouseLanding(working);
+        gate = await verifyPageBeforeMutation(
+          working,
+          requestedUrl,
+          normalizedUrl,
+        );
+      } else {
+        notes.push(
+          `no hopable iframe after landing miss — ${describeFrames(working)}`,
+        );
+      }
+    }
+  }
+  return { page: working, gate, notes };
 }
 
 function tryRecordFillOutcomes(
@@ -371,12 +526,16 @@ export async function runGreenhouseLiveFill(input: {
   };
 
   return runInPage(
-    async (page) => {
-      const gate = await verifyPageBeforeMutation(
-        page,
+    async (startPage) => {
+      const reached = await reachGreenhouseApplicationForm(
+        startPage,
         input.url,
         urlValidation.normalizedUrl,
+        { dismissObstructions: input.execute },
       );
+      let page = reached.page;
+      let gate = reached.gate;
+      base.notes.push(...reached.notes);
       base.final_url = gate.finalUrl;
       base.identity_verification = gate.identity;
       base.captcha_detection = gate.captcha;

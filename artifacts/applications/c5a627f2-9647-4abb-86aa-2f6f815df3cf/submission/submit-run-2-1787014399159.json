@@ -1,0 +1,51 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "submission_id": "6fe24fb2-38f5-425b-b505-41d13a9c58ad",
+  "attempt": 2,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "Refusing to click submit: field verification or upload did not pass",
+  "artifact_path": null,
+  "operator_brief": {
+    "title": "Submit blocked — greenhouse app c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+    "summary": "2 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:graduation_year",
+        "question": "What is your expected graduation date?",
+        "field_id": "question_67595576",
+        "canonical_field": "graduation_year",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"2029\"; page shows \"Fall 2025\"",
+        "expected": "2029",
+        "observed": {
+          "value": "Fall 2025",
+          "label": "Fall 2025"
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: 2029). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "DOM shows \"Fall 2025\" but plan expected \"2029\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: graduation_year)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"graduation_year\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:question_67595576: combobox option not committed: opened via control click; filt",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "question_67595576: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); ambiguous match for \"2029\": Winter 2029 | Spring/Summer 2029 | Fall 2029",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 17,
+    "fail_count": 2
+  }
+}

@@ -8,7 +8,7 @@ export type FinalNavigationVerification = {
   finalHost: string | null;
   remainedOnTrustedGreenhouseHost: boolean;
   redirectObserved: boolean;
-  failureCode: "GREENHOUSE_APPLICATION_UNAVAILABLE" | "UNSAFE_FINAL_URL" | null;
+  failureCode: "UNSAFE_FINAL_URL" | null;
   failureReason: string | null;
 };
 
@@ -21,8 +21,11 @@ function hostOf(url: string): string | null {
 }
 
 /**
- * Evaluate the page after navigation. Untrusted final hosts fail closed
- * before any semantic page-text classification.
+ * Record where navigation landed. Host is never a fill/inspect gate.
+ * Greenhouse boards routinely 302 onto the employer's own careers host
+ * (`/hr/job?gh_jid=…`, `?gh_jid=` on careers.example.com). That is still
+ * the same application. Captcha, login wall, closed-job, form, and field
+ * checks decide. Only an unparseable final URL fails here.
  */
 export function verifyFinalNavigation(input: {
   requestedUrl: string;
@@ -54,29 +57,13 @@ export function verifyFinalNavigation(input: {
     input.finalUrl,
   );
 
-  if (!remainedOnTrustedGreenhouseHost) {
-    return {
-      passed: false,
-      requestedUrl: input.requestedUrl,
-      finalUrl: input.finalUrl,
-      requestedHost,
-      finalHost,
-      remainedOnTrustedGreenhouseHost: false,
-      redirectObserved,
-      failureCode: "GREENHOUSE_APPLICATION_UNAVAILABLE",
-      failureReason:
-        "The Greenhouse application is no longer available at the requested URL. " +
-        "The page redirected outside the supported Greenhouse application host.",
-    };
-  }
-
   return {
     passed: true,
     requestedUrl: input.requestedUrl,
     finalUrl: input.finalUrl,
     requestedHost,
     finalHost,
-    remainedOnTrustedGreenhouseHost: true,
+    remainedOnTrustedGreenhouseHost,
     redirectObserved,
     failureCode: null,
     failureReason: null,

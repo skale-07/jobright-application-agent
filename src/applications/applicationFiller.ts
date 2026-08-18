@@ -564,7 +564,13 @@ export async function planApplicationFill(input: {
     if (screenerIsDemographic(field)) continue;
     if (otherFallbacks.some((o) => o.field_id === entry.field_id)) continue;
     const pick = pickOptionLabel(options, String(entry.value));
-    if (pick.ok) continue;
+    if (pick.ok) {
+      if (pick.label !== String(entry.value)) {
+        entry.reason = `${entry.reason}; placed onto "${pick.label}"`;
+        entry.value = pick.label;
+      }
+      continue;
+    }
     const other = findOtherOption(options);
     if (!other) continue; // no escape hatch — fill-time refuses honestly
     const intended = String(entry.value);

@@ -1,0 +1,46 @@
+{
+  "run_id": "nav-66a78e66-cd55-4d97-a089-fb33d6b5dec8",
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "jobright_job_id": "6a4ec9b09469c0662034cabb",
+  "method": "apply_click_popup",
+  "resolved_url": "https://job-boards.greenhouse.io/jumptrading/jobs/8003019",
+  "resolved_ats": "greenhouse",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (8 external links)",
+      "evidence": "x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "job-boards.greenhouse.io"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: anchor reads as \"greenhouse\" (URL names \"greenhouse\" (host), which shares nothing with company \"Jump Trading\") — not preferred, deferring to the Apply click",
+    "phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com, www.finsmes.com, boards.greenhouse.io",
+    "phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)",
+    "Apply control: autofill CTA (tier 0)",
+    "popup captured on attempt 1"
+  ],
+  "congruence": {
+    "verdict": "match",
+    "slug": "jumptrading",
+    "detail": "token \"jump\" ~ slug \"jumptrading\"",
+    "expected_company": "Jump Trading",
+    "url": "https://job-boards.greenhouse.io/embed/job_app?for=jumptrading&jr_id=6a4ec9b09469c0662034cabb&token=8003019&utm_source=jobright"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-17T23:58:43.837Z"
+}

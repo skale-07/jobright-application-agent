@@ -1,5 +1,33 @@
 import type { Db } from "../storage/db/client.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
+import {
+  listOpenReviewItems,
+  resolveReviewItem,
+} from "../queue/reviewItems.js";
+
+export const MISSING_EMPLOYER_URL_REVIEW_TITLE =
+  "Employer application URL missing — resolve navigation or re-enqueue with --url";
+
+/** Close the self-block the fill stage writes when the URL later comes back. */
+export function resolveMissingEmployerUrlReviews(
+  db: Db,
+  applicationId: string,
+): void {
+  for (const item of listOpenReviewItems(db)) {
+    if (
+      item.application_id === applicationId &&
+      item.kind === "MANUAL" &&
+      item.title.startsWith("Employer application URL missing")
+    ) {
+      resolveReviewItem(
+        db,
+        item.id,
+        { reason: "employer URL is present" },
+        "RESOLVED",
+      );
+    }
+  }
+}
 
 /**
  * Employer-URL persistence on the job row. Lives outside runPipeline so
@@ -75,4 +103,5 @@ export function setEmployerApplicationUrl(
     new Date().toISOString(),
     row.id,
   );
+  resolveMissingEmployerUrlReviews(db, applicationId);
 }

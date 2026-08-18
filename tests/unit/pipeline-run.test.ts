@@ -183,6 +183,43 @@ describe("pipeline driver (FIXTURE_CONFIRMED)", () => {
     // With an OPEN review item the worker's picker now skips this app.
   });
 
+  it("a restored employer URL clears a stale missing-URL review instead of halting", async () => {
+    const jobNo = Math.floor(Math.random() * 1_000_000);
+    const job = upsertJobByFingerprint(db, {
+      jobrightJobId: `jr-${randomUUID().slice(0, 8)}`,
+      applicationUrl: `https://jobright.ai/jobs/info/${randomUUID().replace(/-/g, "").slice(0, 24)}`,
+      company: `Acme${jobNo}`,
+      role: "SWE Intern",
+    });
+    const appId = createApplication(db, { jobId: job.id }).id;
+    db.prepare(
+      `UPDATE applications SET state = 'NATIVE_AUTOFILL_RUNNING' WHERE id = ?`,
+    ).run(appId);
+    setEmployerApplicationUrl(
+      db,
+      appId,
+      `https://boards.greenhouse.io/acme/jobs/${jobNo}`,
+    );
+    upsertOpenReviewItem(db, {
+      applicationId: appId,
+      kind: "MANUAL",
+      title:
+        "Employer application URL missing — resolve navigation or re-enqueue with --employer-url",
+    });
+
+    const report = await runPipeline({ db, applicationId: appId });
+    const appReport = report.applications[0]!;
+    expect(appReport.stop_reason ?? "").not.toMatch(
+      /Employer application URL missing/,
+    );
+    expect(
+      listOpenReviewItems(db).filter((i) =>
+        i.title.startsWith("Employer application URL missing"),
+      ),
+    ).toHaveLength(0);
+    expect(appReport.stop_reason ?? "").toMatch(/fill gate closed/);
+  });
+
   it("stops at materials with a MANUAL review item when no resume registered", async () => {
     // Pin the default to a guaranteed-missing path so the auto-attach is a
     // no-op and the sticky-review behavior is what's under test.
@@ -538,5 +575,48 @@ describe("retry driver (UNIT_CONFIRMED)", () => {
     const capResult = results.find((r) => r.application_id === atCap);
     expect(capResult?.action).toBe("finalized");
     expect(getApplication(db, atCap)?.state).toBe("FAILED_FINAL");
+  });
+
+  it("with applicationId, requeues even at the cap (operator override)", () => {
+    const target = seedFailed(MAX_ATTEMPTS);
+    const other = seedFailed(MAX_ATTEMPTS);
+    const results = retryFailedApplications(db, { applicationId: target });
+    expect(results).toEqual([
+      {
+        application_id: target,
+        action: "requeued",
+        attempt: MAX_ATTEMPTS + 1,
+      },
+    ]);
+    expect(getApplication(db, target)?.state).toBe("QUEUED");
+    expect(getApplication(db, other)?.state).toBe("FAILED_RETRYABLE");
+  });
+
+  it("with applicationId, requeues only that FAILED_RETRYABLE app", () => {
+    const target = seedFailed(1);
+    const other = seedFailed(1);
+    const results = retryFailedApplications(db, { applicationId: target });
+    expect(results).toEqual([
+      { application_id: target, action: "requeued", attempt: 2 },
+    ]);
+    expect(getApplication(db, target)?.state).toBe("QUEUED");
+    expect(getApplication(db, other)?.state).toBe("FAILED_RETRYABLE");
+  });
+
+  it("dismisses a leftover completeness review so retry is not deadlocked", () => {
+    const target = seedFailed(1);
+    upsertOpenReviewItem(db, {
+      applicationId: target,
+      kind: "MANUAL",
+      title:
+        "14 required question(s) unanswered — answer via screeners.json/essay workflow, then requeue",
+      payload: { unanswered: [] },
+    });
+    retryFailedApplications(db, { applicationId: target });
+    const open = listOpenReviewItems(db).filter(
+      (i) => i.application_id === target,
+    );
+    expect(open).toEqual([]);
+    expect(getApplication(db, target)?.state).toBe("QUEUED");
   });
 });

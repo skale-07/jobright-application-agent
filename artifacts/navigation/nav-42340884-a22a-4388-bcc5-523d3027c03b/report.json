@@ -1,0 +1,48 @@
+{
+  "run_id": "nav-42340884-a22a-4388-bcc5-523d3027c03b",
+  "application_id": "97449a9e-1379-479a-9a8b-15d708f884a4",
+  "jobright_job_id": "6a8354d32dbaf907b0767fae",
+  "method": "apply_click_popup",
+  "resolved_url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1002/job/210773869",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (12 external links)",
+      "evidence": "jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "jpmc.fa.oraclecloud.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "phase A: anchor reads as \"hcmui\" (URL names \"hcmui\" (path), which shares nothing with company \"Chase\") — not preferred, deferring to the Apply click",
+    "phase A: 9 external host(s) seen: jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com, frontofficesports.com, www.prnewswire.com, www.pymnts.com",
+    "Apply control: autofill CTA (tier 0)",
+    "jobright interstitial: clicked \"Apply Without Customizing\"",
+    "popup captured on attempt 1",
+    "phase B: captured URL reads as \"hcmui\" (URL names \"hcmui\" (path), which shares nothing with company \"Chase\") — kept, provenance is the Apply click",
+    "congruence: URL names \"hcmui\", not \"Chase\" (URL names \"hcmui\" (path), which shares nothing with company \"Chase\") — recorded, not refused"
+  ],
+  "congruence": {
+    "verdict": "mismatch",
+    "slug": "hcmui",
+    "detail": "URL names \"hcmui\" (path), which shares nothing with company \"Chase\"",
+    "expected_company": "Chase",
+    "url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1002/job/210773869?jr_id=6a8354d32dbaf907b0767fae"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-18T00:00:48.796Z"
+}

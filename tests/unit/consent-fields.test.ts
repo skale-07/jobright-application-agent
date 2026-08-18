@@ -51,6 +51,19 @@ describe("application consent checkboxes (UNIT_CONFIRMED)", () => {
     expect(
       isApplicationConsentField({
         type: "checkbox",
+        label: "Acknowledge/Confirm",
+      }),
+    ).toBe(true);
+    expect(
+      isApplicationConsentField({
+        type: "checkbox",
+        label:
+          "Review our Notice at Collection to learn how we will process your personal data.",
+      }),
+    ).toBe(true);
+    expect(
+      isApplicationConsentField({
+        type: "checkbox",
         label: "consent[marketing]",
         name: "consent[marketing]",
       }),
@@ -89,6 +102,22 @@ describe("application consent checkboxes (UNIT_CONFIRMED)", () => {
 
     expect(entry(fields, "mkt")?.action).toBe("skip_unmapped");
     expect(entry(fields, "card")?.action).toBe("skip_unmapped");
+  });
+
+  it("checks Acknowledge/Confirm as application consent", () => {
+    const ack = entry(
+      [
+        mapped({
+          id: "ack",
+          label: "Acknowledge/Confirm",
+          type: "checkbox",
+          required: true,
+        }),
+      ],
+      "ack",
+    );
+    expect(ack?.action).toBe("fill");
+    expect(ack?.value).toBe(true);
   });
 
   it("decodes HTML entities so Terms &amp; Conditions auto-check", () => {
