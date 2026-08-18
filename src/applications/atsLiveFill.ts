@@ -31,6 +31,10 @@ import { ATS_BINDINGS, type AtsBinding } from "./atsBindings.js";
 import { findApplicationFrameUrl } from "../ats/shared/frameHop.js";
 import { inventoryFileInputs } from "../ats/shared/uploadResolve.js";
 import { advancePastPosting } from "../ats/shared/postingAdvance.js";
+import {
+  extractPostingContext,
+  mergePostingContext,
+} from "./essayAutofill.js";
 import { classifyPage } from "../ats/shared/pageClassify.js";
 import { fetchGreenhouseQuestions } from "../ats/greenhouse/questionsApi.js";
 import {
@@ -461,6 +465,11 @@ export async function runAtsLiveFill(input: {
   return runInPage(
     async (page) => {
       let gate = await binding.gate(page, input.url, detected.normalizedUrl);
+      // Employer/role text from every page-level hop, captured BEFORE the
+      // page is navigated away: the iframe outer shell and the posting
+      // page usually name the company; the form page often does not
+      // (fillhard's embed is just "Application"). Essays ground on this.
+      const postingTrail: string[] = [extractPostingContext(gate.html)];
       // Iframe hop: a page whose FORM lives in an iframe discovers zero
       // fields (page.content() excludes frames). Trigger on that fact,
       // not on a collapsed gate code — after page_class recovery a
@@ -526,6 +535,7 @@ export async function runAtsLiveFill(input: {
         const workdayOwnsWalk = binding.id === "workday" && canAuth();
 
         if (!workdayOwnsWalk && landing.page_class === "posting") {
+          postingTrail.push(extractPostingContext(planHtml));
           const advance = await advancePastPosting({
             page,
             html: planHtml,
@@ -743,6 +753,7 @@ export async function runAtsLiveFill(input: {
         await planApplicationFill({
           url: planUrl,
           html: planHtml,
+          postingContext: mergePostingContext(...postingTrail),
           ...(input.profile ? { profile: input.profile } : {}),
           ...(input.capture ? { capture: input.capture } : {}),
           ...(harvest ? { liveOptions: harvest.options } : {}),
@@ -852,6 +863,7 @@ export async function runAtsLiveFill(input: {
           const pagePlan = await planApplicationFill({
             url,
             html,
+            postingContext: mergePostingContext(...postingTrail),
             ...(input.profile ? { profile: input.profile } : {}),
             ...(input.capture ? { capture: input.capture } : {}),
           });
@@ -908,6 +920,7 @@ export async function runAtsLiveFill(input: {
           const pagePlan = await planApplicationFill({
             url,
             html,
+            postingContext: mergePostingContext(...postingTrail),
             ...(input.profile ? { profile: input.profile } : {}),
             ...(input.capture ? { capture: input.capture } : {}),
           });
