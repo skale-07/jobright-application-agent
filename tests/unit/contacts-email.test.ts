@@ -421,8 +421,11 @@ describe("generateEmailForContact with stub client (UNIT_CONFIRMED, no network)"
     process.env.EMAIL_GENERATION_ENABLED = "true";
     delete process.env.OPENAI_API_KEY;
     delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.MOONSHOT_API_KEY;
     resetConfigCache();
-    expect(() => assertEmailGenerationAllowed()).toThrow(/ANTHROPIC_API_KEY or OPENAI_API_KEY/);
+    expect(() => assertEmailGenerationAllowed()).toThrow(
+      /ANTHROPIC_API_KEY, OPENAI_API_KEY, or MOONSHOT_API_KEY/,
+    );
   });
 
   it("VALIDATED path writes the row with the model id and advances state", async () => {

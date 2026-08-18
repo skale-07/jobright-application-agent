@@ -362,12 +362,15 @@ you email most; pick one per generation with `--persona <id>`.
 
 ## 10. Email generation
 
-An LLM boundary (shared client: Anthropic preferred, OpenAI fallback). It
-is a spend surface, so it is fail-closed:
+An LLM boundary (shared client: Anthropic preferred, then OpenAI, then
+Kimi/Moonshot; `LLM_PROVIDER=anthropic|openai|kimi` forces one — a forced
+provider with a missing key refuses loudly instead of silently swapping).
+It is a spend surface, so it is fail-closed:
 
 ```powershell
 # .env:  EMAIL_GENERATION_ENABLED=true, plus an LLM key — ANTHROPIC_API_KEY=sk-ant-… (preferred;
-#         model via ANTHROPIC_LLM_MODEL, default claude-opus-5) or OPENAI_API_KEY=sk-… (EMAIL_LLM_MODEL)
+#         model via ANTHROPIC_LLM_MODEL, default claude-opus-5), OPENAI_API_KEY=sk-… (EMAIL_LLM_MODEL),
+#         or MOONSHOT_API_KEY=sk-… (Kimi K3 via api.moonshot.ai; model via KIMI_LLM_MODEL, default kimi-k3)
 npm run email:generate -- --application <uuid> --persona swe
 ```
 

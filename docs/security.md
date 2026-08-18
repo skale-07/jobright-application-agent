@@ -29,7 +29,7 @@ No production `sendEmail` — ever. Drafts only: `createOutlookDraft` / `verifyO
 
 ## Outreach LLM boundary
 
-Every LLM call goes through one client boundary (`src/contacts/emailLlm.ts` — Anthropic preferred when `ANTHROPIC_API_KEY` is set, OpenAI fallback), and every surface is gated by its own fail-closed flag (e.g. `EMAIL_GENERATION_ENABLED`). The keys live in `.env` (gitignored), are covered by log redaction, and are never written to artifacts. Generated text is deterministically re-validated; rejected output cannot become a draft.
+Every LLM call goes through one client boundary (`src/contacts/emailLlm.ts` — Anthropic preferred when `ANTHROPIC_API_KEY` is set, then OpenAI, then Kimi/Moonshot via `MOONSHOT_API_KEY`; `LLM_PROVIDER` forces one explicitly), and every surface is gated by its own fail-closed flag (e.g. `EMAIL_GENERATION_ENABLED`). The keys live in `.env` (gitignored), are covered by log redaction, and are never written to artifacts. Generated text is deterministically re-validated; rejected output cannot become a draft.
 
 ## Checks
 

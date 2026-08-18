@@ -8,7 +8,7 @@
  *     never runs during a live session — it is an offline CLI step, and a
  *     human applies (or rejects) each patch by hand. A healer's
  *     self-report carries no validation level (UNVERIFIED by definition).
- *   - Gated by AGENT_AUTHORING_ENABLED + an LLM key (Anthropic preferred, OpenAI fallback); fail closed.
+ *   - Gated by AGENT_AUTHORING_ENABLED + an LLM key (Anthropic preferred, then OpenAI, then Kimi/Moonshot); fail closed.
  *   - Input is already PII-safe (tag/type/text/aria of buttons); nothing
  *     else is sent to the model.
  */

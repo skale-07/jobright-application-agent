@@ -8,7 +8,7 @@
  * screenerMatch.ts. Mappings are cached per normalized label, so a label
  * costs at most one call ever — and the cache doubles as training data.
  *
- * Gated by SCREENER_LLM_MATCH_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
+ * Gated by SCREENER_LLM_MATCH_ENABLED (fail closed) + an LLM key (Anthropic preferred, then OpenAI, then Kimi/Moonshot).
  * Fail-open operationally: any error just means "no mapping" and the
  * field parks for review as it would have anyway.
  */

@@ -84,6 +84,20 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   /** Anthropic model id used when the Anthropic provider is active. */
   ANTHROPIC_LLM_MODEL: z.string().default("claude-opus-5"),
+  /**
+   * Moonshot AI key for the Kimi provider (OpenAI-compatible API at
+   * api.moonshot.ai). Third in the default preference order; select it
+   * explicitly with LLM_PROVIDER=kimi. Never logged or artifacted.
+   */
+  MOONSHOT_API_KEY: z.string().optional(),
+  /** Kimi model id used when the Kimi provider is active. */
+  KIMI_LLM_MODEL: z.string().default("kimi-k3"),
+  /**
+   * Explicit provider override. Unset ⇒ key-presence order (anthropic →
+   * openai → kimi). Set ⇒ exactly that provider; a missing key for it is a
+   * loud refusal, never a silent fallback to another provider.
+   */
+  LLM_PROVIDER: z.enum(["anthropic", "openai", "kimi"]).optional(),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
@@ -174,6 +188,10 @@ export type AppConfig = {
   /** Present only when the operator configured it; consumers must not log it. */
   anthropicApiKey: string | undefined;
   anthropicLlmModel: string;
+  /** Present only when the operator configured it; consumers must not log it. */
+  moonshotApiKey: string | undefined;
+  kimiLlmModel: string;
+  llmProvider: "anthropic" | "openai" | "kimi" | undefined;
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
   screenerPredictLlmEnabled: boolean;
@@ -255,6 +273,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     emailLlmModel: parsed.EMAIL_LLM_MODEL,
     anthropicApiKey: parsed.ANTHROPIC_API_KEY,
     anthropicLlmModel: parsed.ANTHROPIC_LLM_MODEL,
+    moonshotApiKey: parsed.MOONSHOT_API_KEY,
+    kimiLlmModel: parsed.KIMI_LLM_MODEL,
+    llmProvider: parsed.LLM_PROVIDER,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,

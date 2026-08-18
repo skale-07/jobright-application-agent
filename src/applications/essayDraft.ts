@@ -8,7 +8,7 @@
  * (via the existing saveHumanEssayAnswer path). Essays are still never
  * auto-filled — this module writes suggestions, never form values.
  *
- * Gated by ESSAY_DRAFT_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
+ * Gated by ESSAY_DRAFT_ENABLED (fail closed) + an LLM key (Anthropic preferred, then OpenAI, then Kimi/Moonshot).
  */
 import fs from "node:fs";
 import path from "node:path";
