@@ -35,6 +35,9 @@ import { writeJsonAtomic } from "../storage/atomicJson.js";
  *     exists to prevent.
  *   - ONLY the email address is scraped from the modal. The drafted
  *     subject/body JobRight pre-writes is never captured or persisted.
+ *     (The person's display NAME comes from their public row card in the
+ *     panel — operator follow-up 2026-08-18 — so outreach can greet them;
+ *     nothing else is taken from the card.)
  *   - Jobs with no insider panels skip cleanly (skipped reason, no error).
  *   - Bounded: at most maxPeople lookups per run; every wait has a
  *     timeout; one pass, no retries per person.
@@ -53,6 +56,12 @@ export type InsiderPersonOutcome = {
 
 export type InsiderTriageReport = {
   emails: string[];
+  /**
+   * Deduped by email; name comes from the person's public row card (null
+   * when the row text did not read unambiguously as a name — the outreach
+   * template then greets "Hi there," instead of guessing).
+   */
+  contacts: Array<{ name: string | null; email: string }>;
   people_checked: number;
   found: number;
   not_found: number;
@@ -64,6 +73,7 @@ export type InsiderTriageReport = {
 
 const PANEL_ATTR = "data-dispatch-insider-panel";
 const EMAIL_BTN_ATTR = "data-dispatch-insider-email";
+const NAME_ATTR = "data-dispatch-insider-name";
 
 /**
  * Tag the target panels and their per-person email-icon buttons with data
@@ -79,11 +89,48 @@ const TAG_PANELS_FN = `(args) => {
   const expandRe = new RegExp(args.expandSrc, "i");
   const results = [];
   for (const el of Array.from(
-    document.querySelectorAll("[" + args.panelAttr + "], [" + args.emailBtnAttr + "]"),
+    document.querySelectorAll("[" + args.panelAttr + "], [" + args.emailBtnAttr + "], [" + args.nameAttr + "]"),
   )) {
     el.removeAttribute(args.panelAttr);
     el.removeAttribute(args.emailBtnAttr);
+    el.removeAttribute(args.nameAttr);
   }
+  // The person's DISPLAY NAME sits on the same row card as the icon pair
+  // (operator screenshots + directive 2026-08-18 follow-up): climb from the
+  // button to its row, then take the first leaf element whose text reads
+  // like a human name once titles/separators are stripped. Anything
+  // ambiguous returns "" — a nameless contact greets "Hi there," which is
+  // safer than a guessed or garbled name in a real email.
+  const nameRe = /^[A-Za-z\\u00C0-\\u024F][A-Za-z\\u00C0-\\u024F.'-]*(?: [A-Za-z\\u00C0-\\u024F][A-Za-z\\u00C0-\\u024F.'-]*){1,4}$/;
+  const titleWords = /\\b(engineer|developer|researcher|analyst|manager|intern|scientist|recruiter|founder|director|lead|head|president|officer|consultant|designer|architect)\\b/i;
+  const controlWords = /^(view|find more connections|connect now|connect on linkedin|cancel|start email|email|linkedin)$/i;
+  const nameOf = (btn, panel) => {
+    let row = btn.parentElement;
+    for (let hops = 0; row && row !== panel && hops < 5; hops += 1) {
+      const t = (row.textContent || "").replace(/\\s+/g, " ").trim();
+      if (t.length >= 3 && t.length <= 200) break;
+      row = row.parentElement;
+    }
+    if (!row || row === panel) return "";
+    const leaves = Array.from(row.querySelectorAll("*"))
+      .filter((el) => el.children.length === 0 || el.querySelector("svg, img"))
+      .concat([row]);
+    for (const el of leaves) {
+      const raw = (el.innerText != null ? el.innerText : el.textContent) || "";
+      const seg = (raw.split(/[\\n\\u2014\\u2013|\\u00b7\\u2022@]/)[0] || "")
+        .replace(/\\s+/g, " ")
+        .trim();
+      if (
+        seg &&
+        nameRe.test(seg) &&
+        !titleWords.test(seg) &&
+        !controlWords.test(seg)
+      ) {
+        return seg;
+      }
+    }
+    return "";
+  };
   const clickables = (root) =>
     Array.from(root.querySelectorAll('button, a, [role="button"]'));
   const hintOf = (el) =>
@@ -125,6 +172,7 @@ const TAG_PANELS_FN = `(args) => {
     const chosen = withHint.length > 0 ? withHint : icons.filter((_, i) => i % 2 === 0);
     chosen.forEach((el, i) => {
       el.setAttribute(args.emailBtnAttr, def.category + ":" + i);
+      el.setAttribute(args.nameAttr, nameOf(el, panel));
     });
     results.push({ category: def.category, buttons: chosen.length });
   }
@@ -148,6 +196,7 @@ async function tagPanelsAndEmailButtons(
     })),
     panelAttr: PANEL_ATTR,
     emailBtnAttr: EMAIL_BTN_ATTR,
+    nameAttr: NAME_ATTR,
     expandSrc: insiderSelectorsV1.expandButton.source,
   };
   return page.evaluate(
@@ -267,6 +316,7 @@ export async function triageInsiderEmails(
   );
   const report: InsiderTriageReport = {
     emails: [],
+    contacts: [],
     people_checked: 0,
     found: 0,
     not_found: 0,
@@ -388,8 +438,24 @@ export async function triageInsiderEmails(
         continue;
       }
       const email = await scrapeModalEmail(page, exclude);
+      // Display name captured at tag time from the person's row card —
+      // never from the modal (its drafted subject/body stay untouched).
+      const rawName = await btn
+        .first()
+        .getAttribute(NAME_ATTR)
+        .catch(() => null);
+      const personName =
+        rawName && rawName.trim().length > 0 && rawName.trim().length <= 80
+          ? rawName.trim()
+          : null;
       if (email && !report.emails.includes(email)) {
         report.emails.push(email);
+        report.contacts.push({ name: personName, email });
+      } else if (email && personName) {
+        // Duplicate address (two cards resolving to one inbox): keep the
+        // first-seen name, but fill a hole if the first card had none.
+        const existing = report.contacts.find((c) => c.email === email);
+        if (existing && existing.name === null) existing.name = personName;
       }
       report.found += email ? 1 : 0;
       report.per_person.push({
@@ -413,10 +479,28 @@ export function redactEmailForArtifact(email: string): string {
 }
 
 /**
+ * Redact a person's name for artifacts: first name + initials survive
+ * ("Alex Yang" → "Alex Y."). Full names live only in the contacts table
+ * (data/, never committed) and stdout.
+ */
+export function redactNameForArtifact(name: string | null): string | null {
+  if (!name) return null;
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0] ?? "";
+  if (!first) return null;
+  const initials = parts
+    .slice(1)
+    .map((p) => `${p[0]}.`)
+    .join(" ");
+  return initials ? `${first} ${initials}` : first;
+}
+
+/**
  * Live orchestrator: navigate the operator's JobRight session to the
  * stored job page for an application, run the triage, persist each email
- * as a contact row (email + source category ONLY — nothing else is
- * scraped), and write a REDACTED artifact. Gated by
+ * as a contact row (email + the display name from the person's public row
+ * card + source category — the modal's drafted subject/body is still
+ * never scraped), and write a REDACTED artifact. Gated by
  * LINKEDIN_ENRICHMENT_ENABLED — each icon click spends a JobRight
  * contact-lookup credit on the operator's account.
  */
@@ -466,10 +550,14 @@ export async function runInsiderTriage(input: {
     await session.close();
   }
 
-  for (const email of report.emails) {
+  for (const contact of report.contacts) {
     upsertContact(input.db, {
       applicationId: input.applicationId,
-      email,
+      email: contact.email,
+      // Row-card display name so outreach greets by first name instead of
+      // "Hi there,". Null when the card text didn't read as a name —
+      // upsertContact COALESCEs, so an existing name is never blanked.
+      name: contact.name,
       sourceCategory: "email",
       context: { source: "insider_triage", registry: report.registry },
     });
@@ -484,9 +572,14 @@ export async function runInsiderTriage(input: {
     found: report.found,
     not_found: report.not_found,
     skipped_reason: report.skipped_reason,
-    // Third-party addresses never land in a pushed artifact un-redacted;
-    // the full list lives in the contacts table (data/, never committed).
+    // Third-party addresses/names never land in a pushed artifact
+    // un-redacted; the full list lives in the contacts table (data/,
+    // never committed).
     emails_redacted: report.emails.map(redactEmailForArtifact),
+    contacts_redacted: report.contacts.map((c) => ({
+      name: redactNameForArtifact(c.name),
+      email: redactEmailForArtifact(c.email),
+    })),
     per_person: report.per_person,
     notes: report.notes,
     registry: report.registry,

@@ -322,6 +322,23 @@ describe("deterministic email validation (UNIT_CONFIRMED)", () => {
     expect(r2.valid).toBe(true);
   });
 
+  it("rejects non-bracket placeholder tokens (live 2026-08-18: REPLACE_PROJECT_ONE was VALIDATED)", () => {
+    const hollow = validOutput("beyond");
+    hollow.body_text = hollow.body_text.replace(
+      "Deterministic Application Pipeline",
+      "REPLACE_PROJECT_ONE",
+    );
+    // Keep persona_projects_used consistent so the ONLY violation under
+    // test is the placeholder token itself.
+    hollow.persona_projects_used = ["Volatility Forecasting Model"];
+    const r = validateGeneratedEmail({
+      output: hollow,
+      context: contextFor("beyond"),
+    });
+    expect(r.valid).toBe(false);
+    expect(r.violations.join(" ")).toMatch(/placeholder token/);
+  });
+
   it("rejects invented projects and unused claimed projects", () => {
     const invented = {
       ...validOutput("beyond"),

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
 import {
   redactEmailForArtifact,
+  redactNameForArtifact,
   triageInsiderEmails,
 } from "../../src/contacts/insiderTriage.js";
 import { useIsolatedFillEnv } from "../helpers/fillEnvIsolation.js";
@@ -36,6 +37,15 @@ describe("insider email triage (FIXTURE_CONFIRMED)", () => {
         expect(report.emails.sort()).toEqual([
           "ayang@jumptrading.com",
           "rtang@jumptrading.com",
+        ]);
+        // Display names come from the row cards (operator follow-up
+        // 2026-08-18) so outreach greets by first name. Dedup keeps the
+        // FIRST-seen card's name for a shared address.
+        expect(
+          [...report.contacts].sort((a, b) => a.email.localeCompare(b.email)),
+        ).toEqual([
+          { name: "Alex Yang", email: "ayang@jumptrading.com" },
+          { name: "Runze Tang", email: "rtang@jumptrading.com" },
         ]);
         // 4 people across the two allowed panels; Rohit had no contact info.
         expect(report.people_checked).toBe(4);
@@ -103,6 +113,11 @@ describe("insider email triage (FIXTURE_CONFIRMED)", () => {
       expect(report.per_person.every((p) => p.outcome === "email_found")).toBe(
         true,
       );
+      expect(report.contacts.map((c) => c.name).sort()).toEqual([
+        "Alex Yang",
+        "Claire Bao",
+        "Runze Tang",
+      ]);
     });
   }, 60_000);
 
@@ -122,5 +137,13 @@ describe("insider email triage (FIXTURE_CONFIRMED)", () => {
       "a***@jumptrading.com",
     );
     expect(redactEmailForArtifact("nonsense")).toBe("***");
+  });
+
+  it("name redaction keeps first name + initials only", () => {
+    expect(redactNameForArtifact("Alex Yang")).toBe("Alex Y.");
+    expect(redactNameForArtifact("Mary Jane van Dyke")).toBe("Mary J. v. D.");
+    expect(redactNameForArtifact("Alex")).toBe("Alex");
+    expect(redactNameForArtifact(null)).toBeNull();
+    expect(redactNameForArtifact("   ")).toBeNull();
   });
 });

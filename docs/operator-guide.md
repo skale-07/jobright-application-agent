@@ -344,9 +344,14 @@ is never captured, and **Start Email is never clicked** (nothing sends).
 "Contact Info Found!" toast after Cancel is dismissed before the next
 lookup — otherwise later people short-circuit on the first popup and
 never open a new modal. Jobs with no insider panels
-skip cleanly. Output: the deduped email list on stdout, contact rows
-(email + source only) for the outreach step, and a REDACTED artifact under
-`artifacts/contacts/` (full addresses never enter the pushed repo).
+skip cleanly. The person's **display name** is also captured — from their
+public row card in the panel (never from the modal) — so generated
+outreach greets "Hi Alex," instead of "Hi there,"; a card whose text does
+not read unambiguously as a name stores null and the email falls back to
+"Hi there,". Output: the deduped email list on stdout, contact rows
+(name + email + source) for the outreach step, and a REDACTED artifact
+under `artifacts/contacts/` (full addresses and full names never enter
+the pushed repo — names redact to "Alex Y.").
 Selector basis is the operator's 2026-08-18 screenshots and stays
 live-`UNVERIFIED` until a real run confirms it.
 
