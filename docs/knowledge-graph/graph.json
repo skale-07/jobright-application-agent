@@ -877,6 +877,7 @@
     "OUTLOOK_VERIFICATION_ENABLED": "Outlook mailbox verification codes",
     "EMAIL_GENERATION_ENABLED": "LLM referral-email text",
     "OUTLOOK_DRAFTS_ENABLED": "create Outlook drafts (send is impossible by construction)",
+    "GMAIL_DRAFTS_ENABLED": "create Gmail drafts via the signed-in web session (Send is a forbidden selector, never clicked)",
     "LINKEDIN_ENRICHMENT_ENABLED": "contact enrichment",
     "SCREENER_LLM_MATCH_ENABLED": "LLM places a HELD answer onto the page's own option list (verbatim-validated)",
     "SCREENER_PREDICT_LLM_ENABLED": "plan-time screener prediction (fills + remembers custom bank entries; EEO excluded)",

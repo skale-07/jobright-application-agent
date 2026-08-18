@@ -74,7 +74,11 @@ function contextFor(sourceCategory: string): EmailContext {
       company: "Acme Robotics",
       source_category: sourceCategory,
     },
-    job: { company: "Acme Robotics", role: "SWE Intern" },
+    job: {
+      company: "Acme Robotics",
+      role: "SWE Intern",
+      description: "Build robot control UIs in TypeScript on the platform team.",
+    },
     persona: testPersona,
   };
 }
@@ -102,6 +106,7 @@ function validOutput(sourceCategory: string): GeneratedEmail {
       "",
       "Best,",
       "Shubham Kale",
+      "github.com/skale-07",
     ].join("\n"),
   };
 }
@@ -209,8 +214,7 @@ describe("contacts persistence + extraction run (UNIT/FIXTURE)", () => {
 describe("outreach template + prompt (UNIT_CONFIRMED)", () => {
   it("loads the real template (placeholder is gone)", () => {
     const t = loadOutreachTemplate();
-    expect(t).toContain("Hopkins student interested in");
-    expect(t).toContain("JHU undergrad interested in");
+    expect(t).toContain("JHU sophomore interested in");
     expect(t).toContain("Shubham Kale");
   });
 
@@ -255,13 +259,67 @@ describe("deterministic email validation (UNIT_CONFIRMED)", () => {
     ).toBe(true);
   });
 
-  it("rejects the wrong subject variant for the contact source", () => {
+  it("v2: subject prefix is uniform; the alum METADATA flag still must match", () => {
+    // The operator's v2 template uses one subject for every contact, so a
+    // school-flavored output against a beyond contact fails only on the
+    // used_alum_subject metadata — not on the (identical) prefix.
     const r = validateGeneratedEmail({
-      output: validOutput("school"), // alum subject…
-      context: contextFor("beyond"), // …for a non-alum contact
+      output: validOutput("school"),
+      context: contextFor("beyond"),
     });
     expect(r.valid).toBe(false);
-    expect(r.violations.join(" ")).toMatch(/subject must start with/);
+    expect(r.violations.join(" ")).toMatch(/used_alum_subject/);
+  });
+
+  it("v2: leftover [bracket] placeholders and a missing github link reject", () => {
+    const unfilled = {
+      ...validOutput("beyond"),
+      body_text: validOutput("beyond").body_text.replace(
+        "Acme Robotics is the robotics platform",
+        "Acme Robotics is [specific product/team observation]",
+      ),
+    };
+    const r1 = validateGeneratedEmail({
+      output: unfilled,
+      context: contextFor("beyond"),
+    });
+    expect(r1.violations.join(" ")).toMatch(/placeholder/);
+
+    const noLink = {
+      ...validOutput("beyond"),
+      body_text: validOutput("beyond").body_text.replace(
+        "\ngithub.com/skale-07",
+        "",
+      ),
+    };
+    const r2 = validateGeneratedEmail({
+      output: noLink,
+      context: contextFor("beyond"),
+    });
+    expect(r2.violations.join(" ")).toMatch(/github\.com\/skale-07/);
+  });
+
+  it("v2: a nameless contact must be greeted 'Hi there,' — no guessed names", () => {
+    const namelessCtx: EmailContext = {
+      ...contextFor("email"),
+      contact: { ...contextFor("email").contact, name: null },
+    };
+    const guessed = {
+      ...validOutput("beyond"),
+      body_text: validOutput("beyond").body_text, // greets "Hi Jordan,"
+    };
+    const r1 = validateGeneratedEmail({ output: guessed, context: namelessCtx });
+    expect(r1.violations.join(" ")).toMatch(/Hi there/);
+
+    const proper = {
+      ...validOutput("beyond"),
+      body_text: validOutput("beyond").body_text.replace(
+        "Hi Jordan,",
+        "Hi there,",
+      ),
+    };
+    const r2 = validateGeneratedEmail({ output: proper, context: namelessCtx });
+    expect(r2.valid).toBe(true);
   });
 
   it("rejects invented projects and unused claimed projects", () => {
@@ -376,7 +434,7 @@ describe("generateEmailForContact with stub client (UNIT_CONFIRMED, no network)"
     });
     expect(result.validation_status).toBe("VALIDATED");
     expect(result.model).toBe("stub-model-1");
-    expect(result.subject).toContain("JHU undergrad interested in");
+    expect(result.subject).toContain("JHU sophomore interested in");
     expect(result.application_state).toBe("EMAIL_GENERATED");
 
     const row = db

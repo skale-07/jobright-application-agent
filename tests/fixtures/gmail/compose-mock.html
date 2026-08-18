@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head><title>Mock Gmail</title>
+<style>
+  #composeWin { display: none; border: 1px solid #888; padding: 12px; width: 480px; }
+  #composeWin.open { display: block; }
+</style></head>
+<body>
+<div gh="cm" role="button" onclick="document.getElementById('composeWin').classList.add('open')">Compose</div>
+
+<div id="composeWin">
+  <b>New Message</b>
+  <img class="Ha" alt="Close" src="" onclick="saveDraft()" style="width:12px;height:12px;cursor:pointer" />
+  <div><input aria-label="To recipients" id="to" /></div>
+  <div><input name="subjectbox" id="subject" /></div>
+  <div aria-label="Message Body" contenteditable="true" id="body" style="min-height:80px;border:1px solid #ccd"></div>
+  <div aria-label="Send" role="button" data-tooltip="Send ‪(Ctrl-Enter)‬" onclick="window.__sendClicked = true">Send</div>
+</div>
+
+<div id="drafts"></div>
+
+<script>
+  window.__sendClicked = false;
+  window.__drafts = [];
+  function saveDraft() {
+    const d = {
+      to: document.getElementById('to').value,
+      subject: document.getElementById('subject').value,
+      body: document.getElementById('body').innerText,
+    };
+    window.__drafts.push(d);
+    document.getElementById('composeWin').classList.remove('open');
+    const row = document.createElement('div');
+    row.className = 'draft-row';
+    row.textContent = 'Draft to ' + d.to + ' — ' + d.subject;
+    document.getElementById('drafts').appendChild(row);
+  }
+</script>
+</body>
+</html>

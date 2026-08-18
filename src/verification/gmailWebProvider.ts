@@ -7,7 +7,7 @@ import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import type { FetchVerificationCode } from "./codeProviders.js";
 
 /** Local CDP probe (duplicated from the nav layer to avoid an import cycle). */
-async function cdpReachable(cdpUrl: string): Promise<boolean> {
+export async function cdpReachable(cdpUrl: string): Promise<boolean> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2_000);

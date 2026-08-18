@@ -38,6 +38,7 @@
     "review:resolve": "tsx src/cli/index.ts review:resolve",
     "contacts:extract": "tsx src/cli/index.ts contacts:extract",
     "contacts:insider": "tsx src/cli/index.ts contacts:insider",
+    "gmail:draft": "tsx src/cli/index.ts gmail:draft",
     "email:generate": "tsx src/cli/index.ts email:generate",
     "draft:create": "tsx src/cli/index.ts draft:create",
     "draft:verify": "tsx src/cli/index.ts draft:verify",

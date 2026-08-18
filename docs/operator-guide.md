@@ -371,13 +371,16 @@ is a spend surface, so it is fail-closed:
 npm run email:generate -- --application <uuid> --persona swe
 ```
 
-What the model gets: your template (`prompts/outreach-email.v1.md`), the
-persona JSON, and the contact/job context. What it cannot do: every rule is
-deterministically re-checked after generation — subject variant must match
-alum status (`Hopkins student…` for school contacts, `JHU undergrad…`
-otherwise), the company must be in the subject, every project bullet must
-name a real persona project that appears in the body, no referral claims,
-no school ties for non-alums, greeting and signature present. Any violation
+What the model gets: your template (`prompts/outreach-email.v2.md` — your
+2026-08-18 version), the persona JSON, the contact, and the job context
+including the posting description (grounds `[team/product/background]`).
+What it cannot do: every rule is deterministically re-checked after
+generation — subject must start `JHU sophomore interested in ` and name the
+company, every project bullet must name a real persona project that appears
+in the body, no referral claims, no school ties for non-alums, no unfilled
+`[bracket]` placeholders, signature + `github.com/skale-07` present, and an
+email-only contact (from `contacts:insider`) must be greeted exactly
+`Hi there,` — a guessed name counts as an invented fact. Any violation
 → `REJECTED`: row recorded, review item opened, **no draft possible**, exit 3.
 
 Expected: `validation_status: "VALIDATED"` with the full email printed for
@@ -387,6 +390,29 @@ your inspection, state `EMAIL_GENERATED`.
 copy the example first; repeated `REJECTED` for the same rule usually means
 the persona projects don't fit the contact — improve the persona, not the
 validator.
+
+### Gmail drafts (the triage → template → draft pipeline)
+
+The full Insider-Connection pipeline, end to end:
+
+```powershell
+# .env: LINKEDIN_ENRICHMENT_ENABLED=true, EMAIL_GENERATION_ENABLED=true,
+#       GMAIL_DRAFTS_ENABLED=true, plus an LLM key
+npm run contacts:insider -- --application <uuid> --headed   # 1. emails
+npm run email:generate  -- --application <uuid> --contact <contact_id>  # 2. filled template
+npm run gmail:draft     -- --application <uuid> --contact <contact_id> --headed  # 3. draft
+```
+
+`gmail:draft` opens your signed-in session (CDP debug Chrome preferred,
+saved storage state otherwise), clicks **Compose**, fills To / Subject /
+Body from the VALIDATED generation, and clicks **Save & close** — Gmail
+autosaves the draft. **Send is a forbidden selector and is never clicked;
+nothing in this repo can dispatch mail.** The run then verifies by opening
+Drafts search (`in:draft to:<address>`) and checking the subject appears;
+the result row lands in `gmail_drafts` (one per application+recipient —
+re-running a verified draft is a no-op). You review and hit Send yourself,
+from your own Gmail. Selector basis is live-`UNVERIFIED` until your first
+headed run.
 
 ## 11. Outlook drafts
 
