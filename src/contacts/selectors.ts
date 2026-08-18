@@ -27,3 +27,42 @@ export const contactsSelectorsV1 = {
 } as const;
 
 export type ContactSourceCategory = "school" | "beyond" | "email" | "unknown";
+
+/**
+ * Insider Connection email-triage registry (operator directive 2026-08-18,
+ * grounded in their annotated screenshots of jobright.ai/jobs/info/*).
+ *
+ * The triage walks ONLY the "From Your School" and "Beyond Your Network"
+ * panels — "From Your Previous Company" is deliberately excluded. All
+ * copy anchors match the screenshots verbatim; DOM-shape guesses are
+ * synthetic and live-UNVERIFIED until the operator promotes a run.
+ */
+export const INSIDER_SELECTOR_REGISTRY_VERSION = "insider-v1";
+
+export const insiderSelectorsV1 = {
+  validation: "UNVERIFIED" as const,
+  /** Panels the triage may open. Previous-company is NOT listed. */
+  panels: [
+    { category: "school" as ContactSourceCategory, heading: /from your school/i },
+    { category: "beyond" as ContactSourceCategory, heading: /beyond your network/i },
+  ],
+  /** The collapsed panel's expander. Both spellings appear in screenshots. */
+  expandButton: /^(view|find more connections)$/i,
+  /** Lookup outcome popups. */
+  foundPopup: /contact info found/i,
+  notFoundPopup: /contact info not found/i,
+  connectNow: /^connect now$/i,
+  /** Present only on the not-found popup — never clicked, used to classify. */
+  connectOnLinkedin: /connect on linkedin/i,
+  /** The email modal. */
+  emailModal: /connect via email/i,
+  cancelButton: /^cancel$/i,
+  /**
+   * FORBIDDEN control: the triage must never send. Kept in the registry so
+   * the guard is data, not prose — the engine asserts it never matches a
+   * click target.
+   */
+  startEmailButton: /^start email$/i,
+  /** Something that looks like a mailbox, nothing else scraped. */
+  emailPattern: /[a-z0-9][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}/gi,
+} as const;
