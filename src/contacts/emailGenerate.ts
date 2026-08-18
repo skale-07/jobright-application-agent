@@ -191,6 +191,15 @@ export function validateGeneratedEmail(input: {
   if (/\[[^\]]{1,60}\]/.test(output.body_text) || /\[[^\]]{1,60}\]/.test(output.subject)) {
     violations.push("unfilled [bracket] placeholder left in the email");
   }
+  // Placeholder tokens without brackets (REPLACE_PROJECT_ONE slid past the
+  // bracket check in a live 2026-08-18 draft and was VALIDATED).
+  const tokenPlaceholder = /REPLACE_[A-Z0-9_]+|\bPLACEHOLDER\b|\bLOREM IPSUM\b/i;
+  if (
+    tokenPlaceholder.test(output.body_text) ||
+    tokenPlaceholder.test(output.subject)
+  ) {
+    violations.push("unfilled placeholder token left in the email");
+  }
 
   return { valid: violations.length === 0, violations };
 }

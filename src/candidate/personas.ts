@@ -50,6 +50,24 @@ export class PersonaNotFoundError extends Error {
   }
 }
 
+/**
+ * Example-file placeholder project names. A persona still carrying one was
+ * copied from default.example.json without being filled in — generating
+ * from it produces a decent-looking email whose bullets literally say
+ * "REPLACE_PROJECT_ONE" (live incident 2026-08-18). Fail loud instead.
+ */
+const PLACEHOLDER_PROJECT_NAME = /^REPLACE_[A-Z0-9_]*$/;
+
+export class PersonaPlaceholderError extends Error {
+  constructor(id: string, projectNames: string[]) {
+    super(
+      `Persona "${id}" still has example placeholder project(s): ${projectNames.join(", ")}. ` +
+        `Edit private/candidate/personas/${id}.json and replace them with your real projects before generating.`,
+    );
+    this.name = "PersonaPlaceholderError";
+  }
+}
+
 export function loadPersona(id = "default"): Persona {
   const dir = personasDir();
   const file = path.join(dir, `${id}.json`);
@@ -65,6 +83,12 @@ export function loadPersona(id = "default"): Persona {
         .map((i) => `${i.path.join(".")}: ${i.message}`)
         .join("; ")}`,
     );
+  }
+  const placeholders = parsed.data.projects
+    .map((p) => p.name)
+    .filter((n) => PLACEHOLDER_PROJECT_NAME.test(n));
+  if (placeholders.length > 0) {
+    throw new PersonaPlaceholderError(id, placeholders);
   }
   return parsed.data;
 }
