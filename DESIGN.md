@@ -15,8 +15,11 @@ with code, the code is wrong or this file must be amended in the same PR.
 - Product name: **Dispatch**. Lowercase in the wordmark, capitalized in prose.
 - Wordmark: `dispatch·console` — monospace, the `·console` segment in the
   accent color. Rendered in text, never as an image asset.
-- The engine underneath keeps its technical name (`jobright-application-agent`)
-  in package metadata and docs; **Dispatch** is what the operator sees.
+- The engine shares the name: package metadata and the GitHub repo are
+  `dispatch` (renamed from `jobright-application-agent`, 2026-08-18 operator
+  directive). "jobright" survives only where it names the external
+  JobRight.ai service (`src/jobright/`, `JOBRIGHT_*` flags, the Python
+  sidecar module) — those are service references, not project branding.
 
 ### 1.2 What the brand is
 

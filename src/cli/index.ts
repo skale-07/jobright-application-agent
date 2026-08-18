@@ -119,7 +119,7 @@ import { resetConfigCache } from "../config/index.js";
 import { promoteFixture } from "../recorder/promoteFixture.js";
 
 function printHelp(): void {
-  console.log(`jobright-application-agent (Phase 5.5)
+  console.log(`Dispatch (Phase 5.5)
 
 Usage:
   npm run cli -- <command> [options]

@@ -19,7 +19,7 @@ const INDEX_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>jobright-application-agent — dashboard (read-only)</title>
+<title>Dispatch — dashboard (read-only)</title>
 <style>
   body { font-family: ui-monospace, monospace; margin: 2rem; max-width: 72rem; }
   h1 { font-size: 1.2rem; } h2 { font-size: 1rem; margin-top: 1.5rem; }
@@ -28,7 +28,7 @@ const INDEX_HTML = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-<h1>jobright-application-agent — read-only dashboard</h1>
+<h1>Dispatch — read-only dashboard</h1>
 <p>Bound to localhost only. No mutation routes exist.</p>
 <nav>
   <a href="/api/summary">summary</a>

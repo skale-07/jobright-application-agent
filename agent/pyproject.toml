@@ -1,7 +1,7 @@
 [project]
 name = "jobright-agent"
 version = "0.1.0"
-description = "browser-use authoring sidecar for jobright-application-agent (Phase 6 J1). Build-time tool only; never part of the application pipeline."
+description = "browser-use authoring sidecar for Dispatch (Phase 6 J1). Build-time tool only; never part of the application pipeline."
 requires-python = ">=3.11"
 dependencies = [
     "browser-use==0.13.7",
