@@ -1,15 +1,19 @@
 <img src="design/logo.svg" alt="dispatch·console" width="232" height="40" />
 
-# jobright-application-agent
+# Dispatch
 
-**Dispatch** — the application operator console. A local, deterministic
-Playwright application processor (JobRight → ATS → Outlook drafts) with an
-operator web console and operator-armed autonomy. Every application
-accounted for.
+The application operator console. A local, deterministic Playwright
+application processor (JobRight → ATS → Outlook drafts) with an operator
+web console and operator-armed autonomy. Every application accounted for.
+(Repo formerly `jobright-application-agent`; GitHub redirects the old
+URLs.)
 
 Design system: [DESIGN.md](DESIGN.md) · Coding-agent context: [AGENTS.md](AGENTS.md)
 
-**Do not** place this repo under OneDrive. Canonical path: `C:\dev\jobright-application-agent`.
+**Do not** place this repo under OneDrive. Canonical path: `C:\dev\jobright-application-agent`
+(the local folder name predates the rename and is fine to keep — if you do
+rename it, update the `DispatchAutoCycle` scheduled task's paths and any
+`.env` absolute paths to match).
 
 ## Phase status
 

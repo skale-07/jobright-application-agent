@@ -1,4 +1,4 @@
-# Product vision & technical direction — jobright-application-agent + tSearch
+# Product vision & technical direction — Dispatch + tSearch
 
 Mirror of `docs/product-vision-and-direction.md` in `skale-07/tSearch` — keep both
 files identical when editing. This is a **living document**, refreshed by a
@@ -12,11 +12,11 @@ lineage, shared operator, shared data-handling posture) don't get missed.
 | --- | --- |
 | Last reviewed | 2026-08-07 |
 | Reviewed by | Scheduled agent review (automated) |
-| Repos covered | `skale-07/jobright-application-agent` (private), `skale-07/tSearch` (**public**) |
+| Repos covered | `skale-07/dispatch` (private; formerly `jobright-application-agent`), `skale-07/tSearch` (**public**) |
 
 ---
 
-## 1. jobright-application-agent
+## 1. Dispatch (engine: the application agent)
 
 ### 1.1 Vision
 
@@ -126,7 +126,7 @@ Deeper detail (in `skale-07/tSearch`, not this repo): `docs/implementation-promp
 
 ## 3. How the two projects relate
 
-jobright-application-agent is a **hardened descendant** of tSearch's session/
+Dispatch is a **hardened descendant** of tSearch's session/
 scraping infrastructure, not an unrelated project. `docs/tsearch-reuse-map.md`
 (this repo) records the original reuse plan: tSearch's `saveSession.ts` /
 `linkedinBrowser.ts` concepts (manual storageState login, lazy session
@@ -168,7 +168,7 @@ Severity reflects blast radius and reversibility, not effort to fix.
 
 ## 5. Amendments worth considering (external scan)
 
-**jobright-application-agent**
+**Dispatch**
 
 - **`storageState({ indexedDB: true })`** (Playwright ≥1.51) — directly targets
   the live-discovery blocker in §1.3/§4: Google OAuth session state for

@@ -1,5 +1,5 @@
 {
-  "name": "jobright-application-agent",
+  "name": "dispatch",
   "version": "0.1.0",
   "description": "Deterministic Playwright job-application processor for JobRight → ATS → Outlook drafts",
   "type": "module",
