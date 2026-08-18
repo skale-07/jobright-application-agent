@@ -11,9 +11,15 @@ import { loadPersona, type Persona } from "../candidate/personas.js";
 import { getContact, type ContactRow } from "./repository.js";
 import { hasLlmKey, LLM_KEY_HINT, type EmailLlmClient } from "./emailLlm.js";
 
-export const OUTREACH_PROMPT_VERSION = "outreach-email.v1";
-export const ALUM_SUBJECT_PREFIX = "Hopkins student interested in ";
-export const NON_ALUM_SUBJECT_PREFIX = "JHU undergrad interested in ";
+export const OUTREACH_PROMPT_VERSION = "outreach-email.v2";
+/**
+ * v2 (operator template 2026-08-18): ONE subject form for every contact —
+ * "JHU sophomore interested in [Company / Role]". The two exports remain
+ * because callers branch on source_category for the metadata flag, but
+ * they now carry the same prefix by design.
+ */
+export const ALUM_SUBJECT_PREFIX = "JHU sophomore interested in ";
+export const NON_ALUM_SUBJECT_PREFIX = "JHU sophomore interested in ";
 
 const TEMPLATE_PLACEHOLDER = "PASTE_USER_APPROVED_EMAIL_TEMPLATE_HERE";
 
@@ -45,7 +51,7 @@ export function assertEmailGenerationAllowed(): void {
 }
 
 export function loadOutreachTemplate(
-  templatePath = path.join(process.cwd(), "prompts", "outreach-email.v1.md"),
+  templatePath = path.join(process.cwd(), "prompts", "outreach-email.v2.md"),
 ): string {
   if (!fs.existsSync(templatePath)) {
     throw new TemplateNotConfiguredError(templatePath);
@@ -68,12 +74,14 @@ export type GeneratedEmail = z.infer<typeof emailOutputSchema>;
 
 export type EmailContext = {
   contact: {
-    name: string;
+    /** Null for email-only contacts (insider triage) — greet "Hi there,". */
+    name: string | null;
     title: string | null;
     company: string | null;
     source_category: string;
   };
-  job: { company: string; role: string };
+  /** description grounds [team/product/background]; null when unknown. */
+  job: { company: string; role: string; description: string | null };
   persona: Persona;
 };
 
@@ -165,12 +173,23 @@ export function validateGeneratedEmail(input: {
   if (!isAlum && ALUM_CLAIMS.test(output.body_text)) {
     violations.push("body claims a school tie for a non-school contact");
   }
-  const firstName = context.contact.name.split(/\s+/)[0] ?? "";
+  const firstName = context.contact.name?.split(/\s+/)[0] ?? "";
   if (firstName && !output.body_text.includes(firstName)) {
     violations.push("body does not greet the contact by first name");
   }
+  if (!firstName && !/^hi there,/im.test(output.body_text)) {
+    violations.push(
+      'nameless contact must be greeted with exactly "Hi there," — a guessed name is an invented fact',
+    );
+  }
   if (!output.body_text.includes("Shubham Kale")) {
     violations.push("body missing signature");
+  }
+  if (!output.body_text.includes("github.com/skale-07")) {
+    violations.push("body missing the github.com/skale-07 signature link");
+  }
+  if (/\[[^\]]{1,60}\]/.test(output.body_text) || /\[[^\]]{1,60}\]/.test(output.subject)) {
+    violations.push("unfilled [bracket] placeholder left in the email");
   }
 
   return { valid: violations.length === 0, violations };
@@ -221,16 +240,19 @@ export async function generateEmailForContact(input: {
   if (!contact || contact.application_id !== applicationId) {
     throw new Error(`Contact ${input.contactId} not found on this application`);
   }
-  if (!contact.name) {
-    throw new Error(`Contact ${input.contactId} has no name — cannot greet`);
-  }
+  // Email-only contacts (insider triage) have no name — the template's
+  // rules greet them "Hi there," rather than guessing from the address.
 
   const job = db
     .prepare(
-      `SELECT j.company, j.role FROM jobs j
+      `SELECT j.company, j.role, j.description_text FROM jobs j
        JOIN applications a ON a.job_id = j.id WHERE a.id = ?`,
     )
-    .get(applicationId) as { company: string; role: string };
+    .get(applicationId) as {
+    company: string;
+    role: string;
+    description_text: string | null;
+  };
 
   const template = loadOutreachTemplate();
   const persona = loadPersona(input.personaId ?? "default");
@@ -241,7 +263,13 @@ export async function generateEmailForContact(input: {
       company: contact.company,
       source_category: contact.source_category ?? "unknown",
     },
-    job,
+    job: {
+      company: job.company,
+      role: job.role,
+      // Grounds [team/product/background]; bounded so one long posting
+      // cannot blow up every generation payload.
+      description: job.description_text?.slice(0, 2_000) ?? null,
+    },
     persona,
   };
 
