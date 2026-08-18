@@ -56,6 +56,7 @@ import {
   setEmployerApplicationUrl,
 } from "../pipeline/runPipeline.js";
 import { runContactsExtraction } from "../contacts/extractContacts.js";
+import { runInsiderTriage } from "../contacts/insiderTriage.js";
 import { createOutlookDraft, verifyOutlookDraft } from "../outlook/draftRun.js";
 import { startDashboard } from "../dashboard/server.js";
 import { startConsole } from "../console/server.js";
@@ -161,6 +162,7 @@ Commands:
   sandbox [--port N]   — local employer sandbox (gauntlet / portal / navhard / fillhard); drive with ats:fill --url http://localhost:4599/…
   retry [--app <uuid>]                  FAILED_RETRYABLE → QUEUED (all, or one; --app requeues even at cap 3)
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
+  contacts:insider --application <uuid> [--headed]   — Insider Connection email triage (school + beyond panels only; needs LINKEDIN_ENRICHMENT_ENABLED)
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
   draft:verify --draft <draft_id> [--headed]
@@ -657,6 +659,45 @@ async function cmdContactsExtract(
       headless: flags["headed"] !== true,
     });
     console.log(JSON.stringify(report, null, 2));
+  } finally {
+    closeDatabase(db);
+  }
+}
+
+/**
+ * Insider Connection email triage: walk the school/beyond panels on the
+ * JobRight job page, look up each person's email, return the email list.
+ * Spends JobRight lookup credits — LINKEDIN_ENRICHMENT_ENABLED gates it.
+ * Never clicks "Start Email"; the drafted mail JobRight writes is never
+ * captured. Full addresses print here and persist as contacts; the pushed
+ * artifact carries redacted ones only.
+ */
+async function cmdContactsInsider(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const application = flags["application"];
+  if (typeof application !== "string") {
+    console.error("Usage: contacts:insider --application <uuid> [--headed]");
+    console.error("Requires LINKEDIN_ENRICHMENT_ENABLED=true in .env.");
+    process.exit(2);
+    return;
+  }
+  const db = openDatabase();
+  try {
+    migrate(db);
+    const report = await runInsiderTriage({
+      db,
+      applicationId: application,
+      headless: flags["headed"] !== true,
+    });
+    if (report.skipped_reason) {
+      console.log(`skipped: ${report.skipped_reason}`);
+    } else {
+      console.log(
+        `checked ${report.people_checked} people — ${report.emails.length} email(s), ${report.not_found} without contact info`,
+      );
+      for (const email of report.emails) console.log(email);
+    }
   } finally {
     closeDatabase(db);
   }
@@ -1764,6 +1805,9 @@ async function main(): Promise<void> {
       return;
     case "contacts:extract":
       await cmdContactsExtract(flags);
+      return;
+    case "contacts:insider":
+      await cmdContactsInsider(flags);
       return;
     case "email:generate":
       await cmdEmailGenerate(flags);

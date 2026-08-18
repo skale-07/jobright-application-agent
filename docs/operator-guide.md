@@ -327,6 +327,26 @@ subject line later). Zero contacts is valid and completes the application.
 live-`UNVERIFIED` — if extraction finds nothing on a page that clearly shows
 contacts, capture it with the recorder and promote real selectors.
 
+**Insider Connection email triage** (needs `LINKEDIN_ENRICHMENT_ENABLED=true`
+— each lookup spends a JobRight contact credit):
+
+```powershell
+npm run contacts:insider -- --application <uuid> --headed
+```
+
+Walks the job page's Insider Connection area, opening ONLY the
+**From Your School** and **Beyond Your Network** panels (never From Your
+Previous Company), clicks each person's email icon, and on
+"Contact Info Found!" clicks **Connect Now** and scrapes the email address
+ONLY out of the Connect Via Email modal — JobRight's drafted subject/body
+is never captured, and **Start Email is never clicked** (nothing sends).
+"Contact Info Not Found!" people are skipped. Jobs with no insider panels
+skip cleanly. Output: the deduped email list on stdout, contact rows
+(email + source only) for the outreach step, and a REDACTED artifact under
+`artifacts/contacts/` (full addresses never enter the pushed repo).
+Selector basis is the operator's 2026-08-18 screenshots and stays
+live-`UNVERIFIED` until a real run confirms it.
+
 Personas — the only legal source of project claims in outreach:
 
 ```powershell
