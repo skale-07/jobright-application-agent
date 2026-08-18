@@ -20,9 +20,10 @@ validates the result shape, rejects off-domain/jobright final URLs, and
 only a deterministic URL store + detectAtsFromUrl verdict counts as nav
 success.
 
-LLM key: environment at spawn time only (ANTHROPIC_API_KEY preferred,
-OPENAI_API_KEY fallback); never stored or echoed. browser-use is pinned in
-pyproject; all browser-use usage stays in this module.
+LLM key: environment at spawn time only (ANTHROPIC_API_KEY preferred, then
+OPENAI_API_KEY, then MOONSHOT_API_KEY for Kimi; LLM_PROVIDER forces one);
+never stored or echoed. browser-use is pinned in pyproject; all browser-use
+usage stays in this module.
 """
 
 from __future__ import annotations
@@ -259,18 +260,44 @@ async def _navigate(task: dict) -> dict:
 
     _progress("imports_ready")
     # Provider preference: Anthropic first (operator has more credit there),
-    # OpenAI as fallback. NAV_AGENT_MODEL, when set, must name a model of
-    # the ACTIVE provider. ChatAnthropic import is defensive — a browser-use
-    # build without it falls back to OpenAI rather than dying.
+    # OpenAI as fallback, Kimi (Moonshot, OpenAI-compatible) last.
+    # LLM_PROVIDER, when set, forces exactly that provider — a missing key
+    # for it is a hard error, never a silent swap. NAV_AGENT_MODEL, when
+    # set, must name a model of the ACTIVE provider. ChatAnthropic import
+    # is defensive — a browser-use build without it falls back to OpenAI
+    # rather than dying.
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
     openai_key = os.environ.get("OPENAI_API_KEY")
-    if not anthropic_key and not openai_key:
+    moonshot_key = os.environ.get("MOONSHOT_API_KEY")
+    forced = os.environ.get("LLM_PROVIDER") or None
+    if not anthropic_key and not openai_key and not moonshot_key:
         raise RuntimeError(
-            "no LLM key in the sidecar environment (set ANTHROPIC_API_KEY or OPENAI_API_KEY)"
+            "no LLM key in the sidecar environment "
+            "(set ANTHROPIC_API_KEY, OPENAI_API_KEY, or MOONSHOT_API_KEY)"
+        )
+
+    def _kimi_llm():
+        if not moonshot_key:
+            raise RuntimeError("LLM_PROVIDER=kimi but MOONSHOT_API_KEY is not set")
+        from browser_use.llm import ChatOpenAI  # type: ignore[import-not-found]
+
+        return ChatOpenAI(
+            model=os.environ.get("NAV_AGENT_MODEL", "kimi-k3"),
+            base_url="https://api.moonshot.ai/v1",
+            api_key=moonshot_key,
         )
 
     llm = None
-    if anthropic_key:
+    if forced == "kimi":
+        llm = _kimi_llm()
+        _progress("llm_provider", provider="kimi")
+    elif forced == "openai":
+        if not openai_key:
+            raise RuntimeError("LLM_PROVIDER=openai but OPENAI_API_KEY is not set")
+        anthropic_key = None  # skip the Anthropic branch below
+    elif forced == "anthropic" and not anthropic_key:
+        raise RuntimeError("LLM_PROVIDER=anthropic but ANTHROPIC_API_KEY is not set")
+    if llm is None and anthropic_key:
         try:
             from browser_use.llm import ChatAnthropic  # type: ignore[import-not-found]
 
@@ -279,15 +306,23 @@ async def _navigate(task: dict) -> dict:
             )
             _progress("llm_provider", provider="anthropic")
         except ImportError:
-            if not openai_key:
+            if forced == "anthropic":
                 raise RuntimeError(
-                    "browser-use build lacks ChatAnthropic and OPENAI_API_KEY is not set"
+                    "LLM_PROVIDER=anthropic but this browser-use build lacks ChatAnthropic"
                 )
-    if llm is None:
+            if not openai_key and not moonshot_key:
+                raise RuntimeError(
+                    "browser-use build lacks ChatAnthropic and no fallback key "
+                    "(OPENAI_API_KEY or MOONSHOT_API_KEY) is set"
+                )
+    if llm is None and openai_key:
         from browser_use.llm import ChatOpenAI  # type: ignore[import-not-found]
 
         llm = ChatOpenAI(model=os.environ.get("NAV_AGENT_MODEL", "gpt-5-mini"))
         _progress("llm_provider", provider="openai")
+    if llm is None:
+        llm = _kimi_llm()
+        _progress("llm_provider", provider="kimi")
     _progress("browser_attaching", cdp_host=_host(task["cdp_url"]) or task["cdp_url"][:40])
     browser = Browser(cdp_url=task["cdp_url"])
     # Start on a BLANK tab of our own. Attaching to the operator's Chrome

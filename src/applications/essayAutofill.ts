@@ -1,6 +1,10 @@
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
-import { makeLlmClient, type EmailLlmClient } from "../contacts/emailLlm.js";
+import {
+  hasLlmKey,
+  makeLlmClient,
+  type EmailLlmClient,
+} from "../contacts/emailLlm.js";
 import { llmTraceEvent, postSandboxTrace } from "../sandbox/trace.js";
 import { tryLoadAboutMe, validateDraft } from "./essayDraft.js";
 
@@ -151,7 +155,7 @@ export function essayAutofillAvailable(): { ok: boolean; reason: string } {
         "private/candidate/about-me.md missing or too short — nothing to write from",
     };
   }
-  if (!cfg.anthropicApiKey && !cfg.openaiApiKey) {
+  if (!hasLlmKey(cfg)) {
     return { ok: false, reason: "no LLM provider key configured" };
   }
   return { ok: true, reason: "ok" };

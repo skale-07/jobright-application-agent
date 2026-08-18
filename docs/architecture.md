@@ -6,7 +6,7 @@ Local Chromium-based application processor: JobRight discovery → materials →
 
 Not a general autonomous browser agent. Deterministic adapters, approved candidate context, human essays, verified submissions.
 
-**The LLM boundary:** one shared client seam (`src/contacts/emailLlm.ts` — Anthropic preferred, OpenAI fallback), consumed by flag-gated surfaces (outreach generation, screener label mapping/prediction, essay draft suggestions, healer proposals, nav agent sidecar), each deterministically re-validated. No LLM ever auto-fills form answers, essays, demographics, or sponsorship.
+**The LLM boundary:** one shared client seam (`src/contacts/emailLlm.ts` — Anthropic preferred, then OpenAI, then Kimi/Moonshot; `LLM_PROVIDER` forces one), consumed by flag-gated surfaces (outreach generation, screener label mapping/prediction, essay draft suggestions, healer proposals, nav agent sidecar), each deterministically re-validated. No LLM ever auto-fills form answers, essays, demographics, or sponsorship.
 
 ## Location
 

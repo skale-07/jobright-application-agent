@@ -1,6 +1,10 @@
 import { getConfig } from "../config/index.js";
 import { logger } from "../logging/logger.js";
-import { makeLlmClient, type EmailLlmClient } from "../contacts/emailLlm.js";
+import {
+  hasLlmKey,
+  makeLlmClient,
+  type EmailLlmClient,
+} from "../contacts/emailLlm.js";
 import {
   isYesNoOptionList,
   type ScreenerResolution,
@@ -84,7 +88,7 @@ export async function selectScreenerOptions(input: {
   const cfg = getConfig();
   const items = input.items.filter(optionSelectable).slice(0, MAX_ITEMS);
   if (!cfg.screenerLlmMatchEnabled || items.length === 0) return [];
-  if (!cfg.anthropicApiKey && !cfg.openaiApiKey && !input.client) return [];
+  if (!hasLlmKey(cfg) && !input.client) return [];
 
   try {
     const client = input.client ?? makeLlmClient();

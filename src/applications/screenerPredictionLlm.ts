@@ -25,7 +25,7 @@
  *   - Demographic questions never reach this module (filtered upstream,
  *     same as the bank path).
  *
- * Gated by SCREENER_PREDICT_LLM_ENABLED (fail closed) + an LLM key (Anthropic preferred, OpenAI fallback).
+ * Gated by SCREENER_PREDICT_LLM_ENABLED (fail closed) + an LLM key (Anthropic preferred, then OpenAI, then Kimi/Moonshot).
  */
 import { randomUUID } from "node:crypto";
 import type { Db } from "../storage/db/client.js";
