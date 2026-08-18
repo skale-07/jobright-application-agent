@@ -22,7 +22,9 @@ import {
 } from "./screenerOptionSelect.js";
 import {
   essayAutofillAvailable,
+  extractPostingContext,
   generateEssayAnswers,
+  mergePostingContext,
 } from "./essayAutofill.js";
 import { essayFieldsOnly } from "./essayDetector.js";
 import { postSandboxTrace } from "../sandbox/trace.js";
@@ -229,6 +231,15 @@ export async function planApplicationFill(input: {
    * the configured key; both tiers stay behind their flags either way.
    */
   llmClient?: EmailLlmClient;
+  /**
+   * Employer/role text harvested from pages the flow ALREADY walked
+   * (posting page, iframe outer shell) — see extractPostingContext. The
+   * form page itself is extracted here and merged in, so callers only
+   * need to pass what this function cannot see. Grounds "why us" essays;
+   * without it "Why <company>?" is unanswerable by construction (live
+   * artifacts 1787010568814/1787010626392 shipped a BLANK essay).
+   */
+  postingContext?: string;
 }): Promise<{
   adapter: FillCapableAdapter;
   plan: ReturnType<typeof buildFillPlan>;
@@ -515,6 +526,10 @@ export async function planApplicationFill(input: {
   if (essayFields.length > 0 && essayAvail.ok) {
     const generated = await generateEssayAnswers({
       items: essayFields.map((f) => ({ fieldId: f.id, question: f.label })),
+      postingContext: mergePostingContext(
+        input.postingContext,
+        extractPostingContext(input.html),
+      ),
       ...(input.llmClient ? { client: input.llmClient } : {}),
       traceUrl: input.url,
     });
