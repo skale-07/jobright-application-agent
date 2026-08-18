@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head><title>Campus UI Software Engineer (Intern) - JobRight</title>
+<style>
+  body { font-family: sans-serif; }
+  .panels { display: flex; gap: 16px; }
+  .panel { border: 1px solid #ccd; padding: 12px; width: 30%; }
+  .rows { display: none; }
+  .panel.open .rows { display: block; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+  .popup, .modal { position: fixed; background: #fff; border: 1px solid #888; padding: 16px; }
+  .popup { right: 24px; bottom: 24px; }
+  .modal { left: 30%; top: 15%; width: 40%; }
+</style></head>
+<body>
+<h1>Campus UI Software Engineer (Intern)</h1>
+<div class="panels">
+  <div class="panel" id="p-beyond">
+    <h3>Beyond Your Network</h3>
+    <button type="button" onclick="document.getElementById('p-beyond').classList.add('open')">View</button>
+    <div class="rows">
+      <div class="row"><span>Alex Yang — Incoming SWE Intern</span>
+        <button type="button" aria-label="email" onclick="lookup('alex')"><svg width="10" height="10"></svg></button>
+        <button type="button" aria-label="linkedin"><svg width="10" height="10"></svg></button></div>
+      <div class="row"><span>Claire Bao — Developer</span>
+        <button type="button" aria-label="email" onclick="lookup('claire')"><svg width="10" height="10"></svg></button>
+        <button type="button" aria-label="linkedin"><svg width="10" height="10"></svg></button></div>
+    </div>
+  </div>
+  <div class="panel" id="p-school">
+    <h3>From Your School</h3>
+    <button type="button" onclick="document.getElementById('p-school').classList.add('open')">Find More Connections</button>
+    <div class="rows">
+      <div class="row"><span>Runze Tang — Quantitative Researcher</span>
+        <button type="button" aria-label="email" onclick="lookup('runze')"><svg width="10" height="10"></svg></button>
+        <button type="button" aria-label="linkedin"><svg width="10" height="10"></svg></button></div>
+    </div>
+  </div>
+</div>
+<script>
+  const BOOK = {
+    alex:  { email: 'ayang@jumptrading.com', name: 'Alex Yang' },
+    claire:{ email: 'cbao@jumptrading.com', name: 'Claire Bao' },
+    runze: { email: 'rtang@jumptrading.com', name: 'Runze Tang' },
+  };
+  window.__startEmailClicked = false;
+  function lookup(id) {
+    // Live JobRight leaves the previous "Contact Info Found!" toast up.
+    // The new lookup is delayed, so a waiter that accepts an already-visible
+    // found popup will click the dead Connect Now and never open a modal.
+    setTimeout(() => {
+      const hit = BOOK[id];
+      const pop = document.createElement('div');
+      pop.className = 'popup';
+      pop.innerHTML = '<button class="close" aria-label="close" onclick="this.parentElement.remove()">x</button>' +
+        '<b>Contact Info Found!</b><div>' + hit.name + '</div>' +
+        '<button type="button" class="connect-now" onclick="openModal(\'' + id + '\')">Connect Now</button>';
+      document.body.appendChild(pop);
+    }, 800);
+  }
+  function openModal(id) {
+    document.querySelectorAll('.connect-now').forEach((b) => { b.onclick = null; });
+    document.querySelectorAll('.modal').forEach((e) => e.remove());
+    const hit = BOOK[id];
+    const m = document.createElement('div');
+    m.className = 'modal';
+    m.innerHTML = '<b>Connect Via Email</b>' +
+      '<input value="' + hit.email + '" />' +
+      '<button type="button" onclick="this.closest(\'.modal\').remove()">Cancel</button>' +
+      '<button type="button" onclick="window.__startEmailClicked = true">Start Email</button>';
+    document.body.appendChild(m);
+  }
+</script>
+</body>
+</html>

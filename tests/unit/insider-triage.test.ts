@@ -79,6 +79,33 @@ describe("insider email triage (FIXTURE_CONFIRMED)", () => {
     );
   }, 45_000);
 
+  it("a leftover Contact Info Found toast does not steal later lookups", async () => {
+    const sticky = fs.readFileSync(
+      path.join(
+        process.cwd(),
+        "tests",
+        "fixtures",
+        "jobright",
+        "insider-connection-sticky-found.html",
+      ),
+      "utf8",
+    );
+    await withFixtureHtmlPage(sticky, async (page) => {
+      const report = await triageInsiderEmails(page, {
+        popupTimeoutMs: 4_000,
+      });
+      expect(report.emails.sort()).toEqual([
+        "ayang@jumptrading.com",
+        "cbao@jumptrading.com",
+        "rtang@jumptrading.com",
+      ]);
+      expect(report.people_checked).toBe(3);
+      expect(report.per_person.every((p) => p.outcome === "email_found")).toBe(
+        true,
+      );
+    });
+  }, 60_000);
+
   it("the people cap bounds lookups", async () => {
     await withFixtureHtmlPage(FIXTURE, async (page) => {
       const report = await triageInsiderEmails(page, {

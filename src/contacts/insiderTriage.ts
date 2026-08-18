@@ -43,7 +43,12 @@ import { writeJsonAtomic } from "../storage/atomicJson.js";
 export type InsiderPersonOutcome = {
   category: ContactSourceCategory;
   index: number;
-  outcome: "email_found" | "not_found" | "popup_timeout" | "modal_timeout";
+  outcome:
+    | "email_found"
+    | "not_found"
+    | "popup_timeout"
+    | "modal_timeout"
+    | "connect_failed";
 };
 
 export type InsiderTriageReport = {
@@ -150,23 +155,59 @@ async function tagPanelsAndEmailButtons(
   ) as Promise<Array<{ category: string; buttons: number }>>;
 }
 
+function visibleText(page: Page, pattern: RegExp) {
+  return page.getByText(pattern).filter({ visible: true });
+}
+
 /** Best-effort close of whichever popup/modal is on top. Never sends. */
 async function closeTopLayer(page: Page): Promise<void> {
-  const cancel = page
-    .getByText(insiderSelectorsV1.cancelButton)
-    .last();
+  const cancel = visibleText(page, insiderSelectorsV1.cancelButton).last();
   if ((await cancel.count().catch(() => 0)) > 0) {
-    await cancel.click({ timeout: 1_500 }).catch(() => undefined);
-    return;
+    const clicked = await cancel
+      .click({ timeout: 1_500 })
+      .then(() => true)
+      .catch(() => false);
+    if (clicked) return;
   }
   const closeBtn = page
     .locator('[aria-label*="close" i], [class*="close" i]')
+    .filter({ visible: true })
     .last();
   if ((await closeBtn.count().catch(() => 0)) > 0) {
-    await closeBtn.click({ timeout: 1_500 }).catch(() => undefined);
-    return;
+    const clicked = await closeBtn
+      .click({ timeout: 1_500 })
+      .then(() => true)
+      .catch(() => false);
+    if (clicked) return;
   }
   await page.keyboard.press("Escape").catch(() => undefined);
+}
+
+async function layerVisible(page: Page): Promise<boolean> {
+  const found =
+    (await visibleText(page, insiderSelectorsV1.foundPopup).count().catch(() => 0)) >
+    0;
+  const missing =
+    (await visibleText(page, insiderSelectorsV1.notFoundPopup)
+      .count()
+      .catch(() => 0)) > 0;
+  const modal =
+    (await visibleText(page, insiderSelectorsV1.emailModal).count().catch(() => 0)) >
+    0;
+  return found || missing || modal;
+}
+
+/**
+ * The live Jump run left "Contact Info Found!" up after Cancel. The next
+ * person's waiter treated that leftover as success, clicked a dead
+ * Connect Now, and every remaining lookup died as modal_timeout.
+ */
+async function dismissAllLayers(page: Page): Promise<void> {
+  for (let i = 0; i < 6; i += 1) {
+    if (!(await layerVisible(page))) return;
+    await closeTopLayer(page);
+    await page.waitForTimeout(200);
+  }
 }
 
 /**
@@ -272,13 +313,15 @@ export async function triageInsiderEmails(
         `[${EMAIL_BTN_ATTR}="${panel.category}:${i}"]`,
       );
       if ((await btn.count().catch(() => 0)) === 0) continue;
+      await dismissAllLayers(page);
       report.people_checked += 1;
       await btn.first().click({ timeout: 3_000 }).catch(() => undefined);
 
-      const found = page.getByText(insiderSelectorsV1.foundPopup).first();
-      const notFound = page
-        .getByText(insiderSelectorsV1.notFoundPopup)
-        .first();
+      const found = visibleText(page, insiderSelectorsV1.foundPopup).first();
+      const notFound = visibleText(
+        page,
+        insiderSelectorsV1.notFoundPopup,
+      ).first();
       // Both branches carry their own catch so the race's loser can never
       // surface an unhandled rejection when its timeout fires later.
       const outcome = await Promise.race([
@@ -298,6 +341,7 @@ export async function triageInsiderEmails(
           index: i,
           outcome: "popup_timeout",
         });
+        await dismissAllLayers(page);
         continue;
       }
       if (outcome === "not_found") {
@@ -307,17 +351,29 @@ export async function triageInsiderEmails(
           index: i,
           outcome: "not_found",
         });
-        await closeTopLayer(page);
+        await dismissAllLayers(page);
         continue;
       }
 
       // Found → Connect Now → modal → scrape email ONLY → Cancel.
-      await page
-        .getByText(insiderSelectorsV1.connectNow)
-        .first()
+      const connectNow = visibleText(page, insiderSelectorsV1.connectNow).last();
+      const connected = await connectNow
         .click({ timeout: 3_000 })
-        .catch(() => undefined);
-      const modal = page.getByText(insiderSelectorsV1.emailModal).first();
+        .then(() => true)
+        .catch(() => false);
+      if (!connected) {
+        report.per_person.push({
+          category: panel.category as ContactSourceCategory,
+          index: i,
+          outcome: "connect_failed",
+        });
+        report.notes.push(
+          `${panel.category}:${i} Connect Now click missed — leftover found-popup?`,
+        );
+        await dismissAllLayers(page);
+        continue;
+      }
+      const modal = visibleText(page, insiderSelectorsV1.emailModal).first();
       const modalUp = await modal
         .waitFor({ state: "visible", timeout: popupTimeout })
         .then(() => true)
@@ -328,7 +384,7 @@ export async function triageInsiderEmails(
           index: i,
           outcome: "modal_timeout",
         });
-        await closeTopLayer(page);
+        await dismissAllLayers(page);
         continue;
       }
       const email = await scrapeModalEmail(page, exclude);
@@ -343,9 +399,7 @@ export async function triageInsiderEmails(
       });
       // Cancel closes the modal. Start Email is never a click target —
       // see insiderSelectorsV1.startEmailButton, kept only as a guard.
-      await closeTopLayer(page);
-      await page.waitForTimeout(250);
-      await closeTopLayer(page);
+      await dismissAllLayers(page);
     }
   }
   return report;

@@ -1,0 +1,51 @@
+{
+  "application_id": "c5a627f2-9647-4abb-86aa-2f6f815df3cf",
+  "people_checked": 6,
+  "found": 5,
+  "not_found": 1,
+  "skipped_reason": null,
+  "emails_redacted": [
+    "r***@jumptrading.com",
+    "a***@jumptrading.com",
+    "r***@jumptrading.com",
+    "b***@jumptrading.com",
+    "l***@jumptrading.com"
+  ],
+  "per_person": [
+    {
+      "category": "school",
+      "index": 0,
+      "outcome": "email_found"
+    },
+    {
+      "category": "beyond",
+      "index": 0,
+      "outcome": "email_found"
+    },
+    {
+      "category": "beyond",
+      "index": 1,
+      "outcome": "email_found"
+    },
+    {
+      "category": "beyond",
+      "index": 2,
+      "outcome": "email_found"
+    },
+    {
+      "category": "beyond",
+      "index": 3,
+      "outcome": "email_found"
+    },
+    {
+      "category": "beyond",
+      "index": 4,
+      "outcome": "not_found"
+    }
+  ],
+  "notes": [
+    "school: 1 people to check",
+    "beyond: 5 people to check"
+  ],
+  "registry": "insider-v1"
+}

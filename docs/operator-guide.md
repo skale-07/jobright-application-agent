@@ -340,7 +340,10 @@ Previous Company), clicks each person's email icon, and on
 "Contact Info Found!" clicks **Connect Now** and scrapes the email address
 ONLY out of the Connect Via Email modal — JobRight's drafted subject/body
 is never captured, and **Start Email is never clicked** (nothing sends).
-"Contact Info Not Found!" people are skipped. Jobs with no insider panels
+"Contact Info Not Found!" people are skipped. A leftover
+"Contact Info Found!" toast after Cancel is dismissed before the next
+lookup — otherwise later people short-circuit on the first popup and
+never open a new modal. Jobs with no insider panels
 skip cleanly. Output: the deduped email list on stdout, contact rows
 (email + source only) for the outreach step, and a REDACTED artifact under
 `artifacts/contacts/` (full addresses never enter the pushed repo).
