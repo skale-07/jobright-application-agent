@@ -1,0 +1,22 @@
+{
+  "ats": "lever",
+  "url": "https://careers.example.com/apply/1",
+  "requested_url": "https://careers.example.com/apply/1",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "ATS_MISMATCH",
+    "reason": "URL validated as generic, binding is lever",
+    "final_url": null
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [],
+  "written_at": "2026-08-20T21:43:27.785Z"
+}

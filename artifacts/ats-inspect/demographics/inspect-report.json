@@ -1,6 +1,6 @@
 {
   "fixture": "demographics",
-  "inspected_at": "2026-08-18T01:01:58.923Z",
+  "inspected_at": "2026-08-20T21:44:55.578Z",
   "inspection": {
     "ats": "greenhouse",
     "adapter_version": 1,
@@ -84,8 +84,8 @@
         "Decline to self-identify"
       ],
       "name": "gender",
-      "canonical_field": "gender",
-      "mapping_confidence": "medium"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     },
     {
       "id": "race",
@@ -98,7 +98,7 @@
       ],
       "name": "race",
       "inputId": "race",
-      "canonical_field": "address.city",
+      "canonical_field": "race_ethnicity",
       "mapping_confidence": "medium"
     },
     {
@@ -112,8 +112,8 @@
       ],
       "name": "veteran",
       "inputId": "veteran",
-      "canonical_field": "veteran_status",
-      "mapping_confidence": "high"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     }
   ],
   "essays": [],
@@ -156,10 +156,10 @@
     }
   ],
   "unmapped_required": [],
-  "route": "ready_for_fill_later",
+  "route": "skip_unsupported_ats",
   "form_fill_enabled": false,
   "inspection_only": true,
   "notes": [
-    "Mapped enough for a future fill phase — FORM_FILL stays off in Phase 4"
+    "Route: skip unsupported ATS (URL claimed by no adapter)"
   ]
 }

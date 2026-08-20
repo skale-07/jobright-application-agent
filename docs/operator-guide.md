@@ -140,6 +140,28 @@ Extension-first filling requires `present`; anything else falls back to
 the native deterministic fill. Optionally pin `JOBRIGHT_EXTENSION_ID` in
 `.env` for exact-id matching.
 
+**Turning extension-first filling on** (after the one-time setup):
+
+1. `npm run jobright:ext-check` must say `present`.
+2. Run one capture per ATS you care about:
+   `npm run jobright:ext-capture -- --url <a real ATS application URL>`,
+   activate the extension's autofill by hand when prompted, and promote
+   the working trigger selector from `selector-candidates.json` into
+   `src/jobright/extension/selectors.ts` (`autofillTrigger`). Until that
+   list has entries, activation reports "no promoted trigger selectors"
+   and every run stays native — that is the fail-closed default.
+3. Set `JOBRIGHT_AUTOFILL_ENABLED=true` in `.env`.
+
+Pipeline behavior with all three done: inspection routes the app through
+`JOBRIGHT_AUTOFILL_RUNNING` — one CDP session activates the extension,
+reads the form back, fills only the gap the extension left, and verifies
+the WHOLE form. A failed verify parks with an operator brief exactly like
+a native miss; greenhouse apps, fixture runs, and `--submit`-held runs
+always use the native path. Every run records `strategy`, a
+`fill-trace-*.jsonl` step artifact, and per-field `filled_by`
+(extension/native/skipped) — the training corpus for the long-run
+autonomous filler.
+
 ## 2. Discover
 
 ```powershell

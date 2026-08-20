@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-08-20T21:44:27.878Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": false,
+    "notes": [
+      "refusing: AUTOMATION_ENABLED not satisfied in the task environment",
+      "refusing: FORM_FILL_ENABLED not satisfied in the task environment",
+      "refusing: SUBMIT_ENABLED not satisfied in the task environment",
+      "refusing: NAVIGATION_ENABLED not satisfied in the task environment",
+      "refusing: DRY_RUN=false not satisfied in the task environment",
+      "refusing: SUBMIT_REQUIRES_LOCAL_CONFIRMATION must be false in the task environment (the arm row budget is the control)"
+    ],
+    "default_resume": "MISSING at /home/user/jobright-application-agent/private/candidate/resumes/default.pdf — every app with no registered resume will park at materials. Point DEFAULT_RESUME_PATH in .env at your real resume.",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": null,
+  "session": null,
+  "outcome": "refused",
+  "notes": []
+}

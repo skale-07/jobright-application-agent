@@ -1,0 +1,30 @@
+{
+  "run_id": "nav-ac5f95f4-1202-4636-9e86-21c7ce9155b7",
+  "application_id": "943e7040-4541-4d36-abe5-0233e82d8ccc",
+  "jobright_job_id": "6a684a5eaab84f4a6c9ee7ed",
+  "method": null,
+  "resolved_url": null,
+  "resolved_ats": null,
+  "wall": "closed",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "open",
+      "outcome": "posting is CLOSED on JobRight — navigation abandoned"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "ephemeral",
+  "notes": [
+    "jobright banner says this job has closed; no Apply path exists"
+  ],
+  "congruence": null,
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-20T21:44:42.076Z"
+}

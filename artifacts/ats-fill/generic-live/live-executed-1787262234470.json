@@ -1,0 +1,105 @@
+{
+  "ats": "generic",
+  "url": "http://localhost:4599/portal",
+  "requested_url": "http://localhost:4599/portal",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "http://localhost:4599/portal",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 2,
+    "skipped_count": 1,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "email",
+      "label": "Email",
+      "type": "text",
+      "canonical_field": "email",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "phone",
+      "label": "Phone",
+      "type": "text",
+      "canonical_field": "phone",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    }
+  ],
+  "form_snapshot_path": "/home/user/jobright-application-agent/artifacts/ats-fill/generic-live/form-snapshot-1787262234228.html",
+  "fill": {
+    "filled": [
+      "phone"
+    ],
+    "skipped": [],
+    "errors": [],
+    "field_meta": [
+      {
+        "field_id": "phone",
+        "canonical_field": "phone",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "fields": [
+      {
+        "canonical_field": "email",
+        "expected": "a***@example.com",
+        "observed": "a***@example.com",
+        "match": true
+      },
+      {
+        "canonical_field": "phone",
+        "expected": "***-***-0100",
+        "observed": "***-***-0100",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "page class at gate: form (3 fillable field(s))",
+    "extension activation: attempted=true activated=true",
+    "extension fill settled: 2 field(s) newly non-empty",
+    "extension satisfied 1/2 planned answer(s) — native gap-fill covers the rest",
+    "form-advance: visible submit after page 1 — leaving it for the gated submit path",
+    "submit not attempted — live fill never submits",
+    "fixture-served page (test seam) — validation level demoted, not live evidence"
+  ],
+  "extension": {
+    "attempted": true,
+    "activated": true,
+    "trigger": "#jr-fill",
+    "changed_fields": 2,
+    "notes": [
+      "extension fill settled: 2 field(s) newly non-empty"
+    ],
+    "satisfied_answers": [
+      "email"
+    ]
+  },
+  "harvested_options": [],
+  "wizard_pages": [],
+  "written_at": "2026-08-20T21:43:54.483Z"
+}

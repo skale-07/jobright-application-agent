@@ -1,0 +1,2 @@
+{"event":"native_fill","at":"2026-08-20T21:43:58.534Z","filled":["email","phone"],"errors":[]}
+{"event":"verify","at":"2026-08-20T21:43:58.534Z","passed":true,"fields":[{"canonical_field":"email","match":true},{"canonical_field":"phone","match":true}]}

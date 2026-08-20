@@ -1,0 +1,2 @@
+{"event":"native_fill","at":"2026-08-20T21:43:44.902Z","filled":["legal_name.first"],"errors":[]}
+{"event":"verify","at":"2026-08-20T21:43:44.902Z","passed":true,"fields":[{"canonical_field":"legal_name.first","match":true}]}

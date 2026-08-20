@@ -1,0 +1,8 @@
+{
+  "kind": "plan",
+  "lines": [
+    "1 fill / 1 skip / 0 review",
+    "FILL             First Name → Ada  [Mapped from public profile]",
+    "SKIP             Expected graduation  [Profile value empty for graduation_year]"
+  ]
+}
