@@ -177,6 +177,70 @@ describe("extension-first live fill with native gap-fill (FIXTURE_CONFIRMED)", (
     }
   }, 60_000);
 
+  it("X4: the run records strategy, trace artifact, and per-field filled_by attribution", async () => {
+    applyFixtureFillEnv();
+    applyControlledFillEnv({ JOBRIGHT_AUTOFILL_ENABLED: "true" });
+    const fs = await import("node:fs");
+    const os = await import("node:os");
+    const { randomUUID } = await import("node:crypto");
+    const { openDatabase, migrate, closeDatabase } = await import(
+      "../../src/storage/db/client.js"
+    );
+    const { getConfig } = await import("../../src/config/index.js");
+    const dbPath = path.join(os.tmpdir(), `jaa-x4-${randomUUID()}.sqlite`);
+    const db = openDatabase(dbPath);
+    try {
+      migrate(db);
+      const applicationId = randomUUID();
+      await runAtsLiveFill({
+        binding: ATS_BINDINGS.generic,
+        url: "http://localhost:4599/portal",
+        execute: true,
+        extensionFirst: true,
+        extensionTriggerSelectors: ["#jr-fill"],
+        profile: PROFILE,
+        capture: { db, applicationId },
+        fixtureHtml: EXT_FORM,
+      });
+      const run = db
+        .prepare(
+          `SELECT strategy, trace_relpath FROM fill_runs ORDER BY created_at DESC LIMIT 1`,
+        )
+        .get() as { strategy: string; trace_relpath: string | null };
+      expect(run.strategy).toBe("EXTENSION_FIRST");
+      expect(run.trace_relpath).toMatch(/fill-trace-\d+\.jsonl$/);
+
+      const tracePath = path.join(
+        getConfig().artifactsDir,
+        run.trace_relpath!,
+      );
+      const trace = fs.readFileSync(tracePath, "utf8");
+      expect(trace).toContain('"event":"activation"');
+      expect(trace).toContain('"event":"verify"');
+      // PII rule: classed/identifier data only.
+      expect(trace).not.toContain("Ada Lovelace");
+      expect(trace).not.toContain("ada@example.com");
+      expect(trace).not.toContain("555-0100");
+
+      const byField = db
+        .prepare(
+          `SELECT canonical_field, filled_by FROM fill_field_outcomes
+           WHERE fill_run_id = (SELECT id FROM fill_runs ORDER BY created_at DESC LIMIT 1)`,
+        )
+        .all() as Array<{ canonical_field: string | null; filled_by: string | null }>;
+      const attribution = new Map(
+        byField.map((r) => [r.canonical_field, r.filled_by]),
+      );
+      expect(attribution.get("email")).toBe("extension");
+      expect(attribution.get("phone")).toBe("native");
+    } finally {
+      closeDatabase(db);
+      for (const p of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+      }
+    }
+  }, 60_000);
+
   it("flag off: extensionFirst degrades to a plain native fill", async () => {
     applyFixtureFillEnv();
     const report = await runAtsLiveFill({

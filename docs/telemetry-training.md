@@ -60,3 +60,18 @@ Each domain is already shaped as (features → label):
 Failures are as valuable as successes — never prune failed rows.
 Attempt caps stay mandatory: a training corpus never justifies an
 unbounded retry loop.
+
+## Extension-first attribution (X4, 2026-08-20)
+
+Migration 009 adds the columns the extension-first architecture trains
+on. `fill_runs.strategy` records which path served the run
+(`EXTENSION_FIRST` | `NATIVE_ONLY`); `fill_runs.trace_relpath` joins the
+run to its step-level `fill-trace-<ts>.jsonl` artifact (activation →
+extension_satisfied → native_fill → verify — the fill-side sibling of the
+nav agent-trace, classed/identifier data only); and
+`fill_field_outcomes.filled_by` labels each field `extension` (JobRight's
+extension satisfied the planned answer before we typed anything),
+`native` (our deterministic gap-fill), or `skipped`. The long-run model —
+an in-house agent that replaces the extension — learns per-field from
+exactly this: which field shapes the extension handles, which it misses,
+and which walls it never clears.

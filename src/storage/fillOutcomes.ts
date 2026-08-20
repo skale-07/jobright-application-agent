@@ -57,6 +57,12 @@ export type RecordFillRunInput = {
   application_id?: string | null;
   job_db_id?: string | null;
   mutation_attempted: boolean;
+  /** X4: which fill strategy served this run (EXTENSION_FIRST | NATIVE_ONLY). */
+  strategy?: string | null;
+  /** X4: relpath of the fill-trace.jsonl artifact for this run. */
+  trace_relpath?: string | null;
+  /** X4: canonical answers the extension satisfied (filled_by attribution). */
+  extension_satisfied?: string[] | null;
   validation_level?: string | null;
   fillable_count?: number | null;
   skipped_count?: number | null;
@@ -99,6 +105,7 @@ export type FillFieldOutcomeRow = {
   value_fingerprint: string | null;
   selected_option: string | null;
   match_basis: string | null;
+  filled_by: string | null;
   heal_status: string;
   notes_json: string;
   options_sample_json: string | null;
@@ -280,6 +287,7 @@ export function buildFillFieldOutcomes(
     (input.verify?.fields ?? []).map((f) => [f.canonical_field, f]),
   );
 
+  const extSatisfied = new Set(input.extension_satisfied ?? []);
   const healStill = new Set(input.heal?.still_failing ?? []);
   const healHealed = new Set(input.heal?.healed ?? []);
   const healNotesByField = new Map<string, string[]>();
@@ -373,6 +381,16 @@ export function buildFillFieldOutcomes(
       match_basis = "mismatch";
     }
 
+    // X4 training label: who put the value on the page. Extension wins
+    // when the pre-fill verify matched this canonical; native when our
+    // fill filled it; skipped otherwise.
+    let filled_by: string | null = null;
+    if (input.mode === "executed") {
+      if (canonical != null && extSatisfied.has(canonical)) filled_by = "extension";
+      else if (fill_ok === 1) filled_by = "native";
+      else filled_by = "skipped";
+    }
+
     let heal_status = "none";
     if (healHealed.has(entry.field_id)) heal_status = "healed";
     else if (healStill.has(entry.field_id)) heal_status = "still_failing";
@@ -402,6 +420,7 @@ export function buildFillFieldOutcomes(
       value_fingerprint: valueFingerprint(expectedRaw, canonical),
       selected_option: meta?.selected_option ?? null,
       match_basis,
+      filled_by,
       heal_status,
       notes_json: JSON.stringify(notes),
       options_sample_json: meta?.options_sample
@@ -454,13 +473,15 @@ export function recordFillRun(
         company, role, application_id, job_db_id, mutation_attempted,
         validation_level, verify_passed, fillable_count, skipped_count,
         upload_resume_verified, heal_attempted, heal_healed, heal_still_failing,
-        report_artifact_relpath, schema_version, metadata_json, code_version
+        report_artifact_relpath, schema_version, metadata_json, code_version,
+        strategy, trace_relpath
       ) VALUES (
         @id, @created_at, @mode, @source, @ats, @job_url, @job_host, @job_id_observed,
         @company, @role, @application_id, @job_db_id, @mutation_attempted,
         @validation_level, @verify_passed, @fillable_count, @skipped_count,
         @upload_resume_verified, @heal_attempted, @heal_healed, @heal_still_failing,
-        @report_artifact_relpath, @schema_version, @metadata_json, @code_version
+        @report_artifact_relpath, @schema_version, @metadata_json, @code_version,
+        @strategy, @trace_relpath
       )
     `);
 
@@ -469,13 +490,13 @@ export function recordFillRun(
         id, fill_run_id, field_id, label, field_type, canonical_field,
         control_kind, plan_action, approved, fill_ok, fill_error, verify_match,
         expected_redacted, observed_redacted, expected_class, observed_class,
-        value_fingerprint, selected_option, match_basis, heal_status,
+        value_fingerprint, selected_option, match_basis, filled_by, heal_status,
         notes_json, options_sample_json
       ) VALUES (
         @id, @fill_run_id, @field_id, @label, @field_type, @canonical_field,
         @control_kind, @plan_action, @approved, @fill_ok, @fill_error, @verify_match,
         @expected_redacted, @observed_redacted, @expected_class, @observed_class,
-        @value_fingerprint, @selected_option, @match_basis, @heal_status,
+        @value_fingerprint, @selected_option, @match_basis, @filled_by, @heal_status,
         @notes_json, @options_sample_json
       )
     `);
@@ -506,6 +527,8 @@ export function recordFillRun(
         heal_healed: heal?.healed?.length ?? 0,
         heal_still_failing: heal?.still_failing?.length ?? 0,
         report_artifact_relpath: input.report_artifact_relpath ?? null,
+        strategy: input.strategy ?? null,
+        trace_relpath: input.trace_relpath ?? null,
         schema_version: FILL_OUTCOMES_SCHEMA_VERSION,
         metadata_json: JSON.stringify({
           notes: input.notes ?? [],

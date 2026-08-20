@@ -14,6 +14,7 @@ import {
   attemptExtensionAutofill,
   type ExtensionActivationResult,
 } from "../jobright/extension/autofill.js";
+import { writeFillTrace, type FillTraceEvent } from "../storage/fillTrace.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -1151,6 +1152,44 @@ export async function runAtsLiveFill(input: {
     const reportPath = path.join(outDir, `live-${r.mode}-${Date.now()}.json`);
 
     if (r.mode === "executed" && plans) {
+      // X4: step-level trace artifact — classed/identifier data only.
+      const now = () => new Date().toISOString();
+      const traceEvents: FillTraceEvent[] = [];
+      if (r.extension) {
+        traceEvents.push({
+          event: "activation",
+          at: now(),
+          attempted: r.extension.attempted,
+          activated: r.extension.activated,
+          trigger: r.extension.trigger,
+          changed_fields: r.extension.changed_fields,
+        });
+        traceEvents.push({
+          event: "extension_satisfied",
+          at: now(),
+          canonical_fields: r.extension.satisfied_answers,
+        });
+      }
+      traceEvents.push({
+        event: "native_fill",
+        at: now(),
+        filled: r.fill?.filled ?? [],
+        errors: (r.fill?.errors ?? []).map((e) => String(e).slice(0, 200)),
+      });
+      traceEvents.push({
+        event: "verify",
+        at: now(),
+        passed: r.verify?.passed ?? null,
+        fields: (r.verify?.fields ?? []).map((f) => ({
+          canonical_field: f.canonical_field,
+          match: f.match,
+        })),
+      });
+      const tracePath = writeFillTrace(
+        outDir,
+        `fill-trace-${Date.now()}.jsonl`,
+        traceEvents,
+      );
       recordFillRun({
         mode: "executed",
         // A threaded capture means the pipeline invoked us for a tracked
@@ -1158,6 +1197,9 @@ export async function runAtsLiveFill(input: {
         // join promised in docs/telemetry-training.md.
         source: input.capture?.applicationId ? "pipeline" : "cli_url",
         application_id: input.capture?.applicationId ?? null,
+        strategy: input.extensionFirst ? "EXTENSION_FIRST" : "NATIVE_ONLY",
+        trace_relpath: path.relative(cfg.artifactsDir, tracePath),
+        extension_satisfied: r.extension?.satisfied_answers ?? null,
         ats: r.ats,
         job_url: r.url,
         mutation_attempted: true,
