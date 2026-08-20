@@ -1059,7 +1059,11 @@ export async function runAtsLiveFill(input: {
     if (r.mode === "executed" && plans) {
       recordFillRun({
         mode: "executed",
-        source: "cli_url",
+        // A threaded capture means the pipeline invoked us for a tracked
+        // application — recording "cli_url"/NULL there broke the corpus
+        // join promised in docs/telemetry-training.md.
+        source: input.capture?.applicationId ? "pipeline" : "cli_url",
+        application_id: input.capture?.applicationId ?? null,
         ats: r.ats,
         job_url: r.url,
         mutation_attempted: true,
@@ -1082,7 +1086,8 @@ export async function runAtsLiveFill(input: {
         verify: r.verify,
         uploads: r.uploads,
         heal: null,
-      });
+      },
+      input.capture?.db ? { db: input.capture.db } : {});
     }
 
     const redacted = redactFillReportForArtifact({
