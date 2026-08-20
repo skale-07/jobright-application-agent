@@ -4,6 +4,17 @@ import type { FlagsView, Summary } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
 
+type ExtensionStatus = {
+  verdict: "present" | "unknown";
+  cdp_url: string;
+  cdp_reachable: boolean;
+  matched_targets: string[];
+  notes: string[];
+  flag_enabled: boolean;
+  trigger_selectors_promoted: number;
+  ready: boolean;
+};
+
 type GmailStatus = {
   flow_status: string;
   token_present: boolean;
@@ -30,8 +41,69 @@ export function SettingsPage(): JSX.Element {
       <CapabilitiesCard flags={flags.data} summary={summary.data} />
       <GmailCard status={gmail.data} onChanged={gmail.refresh} />
       <DefaultResumeCard />
+      <ExtensionCard />
       <MaterialsCard />
     </>
+  );
+}
+
+function ExtensionCard(): JSX.Element {
+  // X6: extension-first readiness without the CLI. Read-only probe; the
+  // one step the console cannot do is selector promotion (a code change),
+  // which the checklist calls out.
+  const status = usePoll<ExtensionStatus>(
+    () => apiGet<ExtensionStatus>("/api/extension/status"),
+    15000,
+  );
+  const s = status.data;
+  const row = (ok: boolean | null, label: string, hint: string): JSX.Element => (
+    <li>
+      <span className={`badge ${ok === true ? "ok" : ok === false ? "warn" : ""}`}>
+        {ok === true ? "ready" : ok === false ? "todo" : "…"}
+      </span>{" "}
+      {label} <span className="faint">— {hint}</span>
+    </li>
+  );
+  return (
+    <div className="card">
+      <h2>JobRight extension</h2>
+      <p className="faint" style={{ marginTop: 0 }}>
+        When ready, applications fill with JobRight's own autofill first and
+        Dispatch only completes what it missed.
+      </p>
+      {!s ? (
+        <p className="faint">Checking…</p>
+      ) : (
+        <>
+          {s.ready ? (
+            <div className="banner ok">Extension-first filling is ready.</div>
+          ) : null}
+          <ul style={{ margin: 0 }}>
+            {row(
+              s.verdict === "present" ? true : s.cdp_reachable ? false : null,
+              "Extension detected in the debug Chrome",
+              s.verdict === "present"
+                ? s.matched_targets[0] ?? "matched"
+                : s.cdp_reachable
+                  ? "install the JobRight extension in the debug Chrome window and sign in"
+                  : "start the debug Chrome first (Settings → operator guide § JobRight extension)",
+            )}
+            {row(
+              s.trigger_selectors_promoted > 0,
+              "Autofill trigger captured",
+              s.trigger_selectors_promoted > 0
+                ? `${s.trigger_selectors_promoted} selector(s) promoted`
+                : "one-time: run jobright:ext-capture on a real application page (see guide)",
+            )}
+            {row(
+              s.flag_enabled,
+              "JOBRIGHT_AUTOFILL_ENABLED",
+              s.flag_enabled ? "on" : "set it to true in .env and restart the console",
+            )}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }
 

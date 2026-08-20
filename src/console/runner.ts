@@ -12,6 +12,18 @@ import {
 } from "../queue/automationRuns.js";
 import { createStdioConfirm, serializeFrame } from "./frames.js";
 import { GATED_FLAG_KEYS } from "./flagCeiling.js";
+import { runInsiderTriage } from "../contacts/insiderTriage.js";
+import { listContacts } from "../contacts/repository.js";
+import { rankOutreachContacts } from "../contacts/rank.js";
+import {
+  generateEmailForContact,
+  OUTREACH_PROMPT_VERSION,
+} from "../contacts/emailGenerate.js";
+import { makeLlmClient } from "../contacts/emailLlm.js";
+import { createGmailDraft } from "../outreach/gmailDrafts.js";
+
+/** Outreach loops stay bounded — a run never fans past this many contacts. */
+const MAX_EMAIL_GENERATIONS_PER_RUN = 8;
 
 /**
  * Child entrypoint for console-launched runs:
@@ -51,13 +63,17 @@ async function main(): Promise<void> {
       kind !== "nav" &&
       kind !== "submit" &&
       kind !== "discover" &&
-      kind !== "automation") ||
+      kind !== "automation" &&
+      kind !== "contacts" &&
+      kind !== "email" &&
+      kind !== "gmail_draft") ||
     argsFlag !== "--args" ||
     !argsPath
   ) {
     emit({
       jaa_frame: "error",
-      message: "usage: runner <pipeline|nav|submit|discover|automation> --args <file>",
+      message:
+        "usage: runner <pipeline|nav|submit|discover|automation|contacts|email|gmail_draft> --args <file>",
     });
     process.exit(2);
     return;
@@ -137,6 +153,99 @@ async function main(): Promise<void> {
           throw err;
         }
       }
+    } else if (kind === "contacts") {
+      // X6: Insider Connection email triage from the console — one job
+      // page, bounded people cap inside triageInsiderEmails.
+      if (!args.application_id) throw new Error("contacts requires application_id");
+      report = await runInsiderTriage({
+        db,
+        applicationId: args.application_id,
+        headless: !args.headed,
+      });
+    } else if (kind === "email") {
+      // X6: generate outreach emails for every triaged contact that does
+      // not already have a VALIDATED generation. Bounded by the contact
+      // cap; each generation is idempotent per (app, contact, prompt).
+      if (!args.application_id) throw new Error("email requires application_id");
+      const contacts = rankOutreachContacts(
+        listContacts(db, args.application_id),
+        null,
+      ).slice(0, MAX_EMAIL_GENERATIONS_PER_RUN);
+      if (contacts.length === 0) {
+        report = {
+          generated: 0,
+          note: "no contacts on this application — run insider triage first",
+        };
+      } else {
+        const client = makeLlmClient();
+        const results = [];
+        for (const contact of contacts) {
+          const existing = db
+            .prepare(
+              `SELECT validation_status FROM email_generations
+               WHERE application_id = ? AND contact_id = ? AND prompt_version = ?`,
+            )
+            .get(args.application_id, contact.id, OUTREACH_PROMPT_VERSION) as
+            | { validation_status: string }
+            | undefined;
+          if (existing?.validation_status === "VALIDATED") {
+            results.push({ contact_id: contact.id, status: "already_validated" });
+            continue;
+          }
+          const r = await generateEmailForContact({
+            db,
+            applicationId: args.application_id,
+            contactId: contact.id,
+            client,
+          });
+          results.push({
+            contact_id: contact.id,
+            status: r.validation_status,
+            violations: r.violations,
+          });
+        }
+        report = {
+          generated: results.filter((r) => r.status === "VALIDATED").length,
+          results,
+        };
+      }
+    } else if (kind === "gmail_draft") {
+      // X6: create Gmail drafts for every contact with a VALIDATED
+      // generation. createGmailDraft is idempotent per (app, recipient)
+      // and NEVER sends.
+      if (!args.application_id) throw new Error("gmail_draft requires application_id");
+      const contacts = listContacts(db, args.application_id).slice(
+        0,
+        MAX_EMAIL_GENERATIONS_PER_RUN,
+      );
+      const results = [];
+      for (const contact of contacts) {
+        const validated = db
+          .prepare(
+            `SELECT id FROM email_generations
+             WHERE application_id = ? AND contact_id = ? AND validation_status = 'VALIDATED'`,
+          )
+          .get(args.application_id, contact.id);
+        if (!validated) {
+          results.push({ contact_id: contact.id, status: "no_validated_email" });
+          continue;
+        }
+        const r = await createGmailDraft({
+          db,
+          applicationId: args.application_id,
+          contactId: contact.id,
+          headless: !args.headed,
+        });
+        results.push({
+          contact_id: contact.id,
+          status: r.status,
+          verified: r.verified,
+        });
+      }
+      report = {
+        drafted: results.filter((r) => r.status === "DRAFTED").length,
+        results,
+      };
     } else {
       if (!args.application_id) throw new Error("submit requires application_id");
       // Own the automation run explicitly so a one-shot console submit does

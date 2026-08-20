@@ -384,6 +384,11 @@ contacts, capture it with the recorder and promote real selectors.
 **Insider Connection email triage** (needs `LINKEDIN_ENRICHMENT_ENABLED=true`
 — each lookup spends a JobRight contact credit):
 
+> Console-first: the whole outreach pipeline is three buttons on the
+> application's page in the console (Outreach card: Find insider emails →
+> Write outreach emails → Save Gmail drafts) — no command needed. The
+> CLI below remains for scripting.
+
 ```powershell
 npm run contacts:insider -- --application <uuid> --headed
 ```
