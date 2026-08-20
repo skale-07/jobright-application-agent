@@ -1,7 +1,15 @@
 /**
- * Expand bare city for location typeaheads
- * ("Baltimore" + MD + US → "Baltimore, Maryland, USA").
+ * Greenhouse "Current location" is one typeahead. Paylocity (live 2026-08-19)
+ * has separate City / State / Country boxes — stuffing the composed string
+ * into City is wrong, and it is what the operator saw.
  */
+export function shouldComposeCityTypeahead(
+  fields: Array<{ canonical_field?: string | null }>,
+): boolean {
+  const canons = new Set(fields.map((f) => f.canonical_field));
+  if (!canons.has("address.city")) return false;
+  return !canons.has("address.state") && !canons.has("address.country");
+}
 export function locationTypeaheadQuery(
   city: string,
   state?: string | null,

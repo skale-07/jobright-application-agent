@@ -235,11 +235,18 @@ export async function generateEmailForContact(input: {
 
   const app = getApplication(db, applicationId);
   if (!app) throw new Error(`Unknown application: ${applicationId}`);
-  if (
-    app.state !== "CONTACTS_EXTRACTED" &&
-    app.state !== "EMAIL_GENERATING" &&
-    app.state !== "EMAIL_GENERATED"
-  ) {
+  // COMPLETED is the pipeline's skip when EMAIL_GENERATION_ENABLED was
+  // off ("run email:generate manually"). It is terminal — generate
+  // anyway, do not rewind the state machine.
+  const allowed = new Set([
+    "CONTACTS_EXTRACTED",
+    "EMAIL_GENERATING",
+    "EMAIL_GENERATED",
+    "DRAFT_CREATING",
+    "DRAFT_CREATED",
+    "COMPLETED",
+  ]);
+  if (!allowed.has(app.state)) {
     throw new Error(
       `Email generation requires CONTACTS_EXTRACTED+ (got ${app.state})`,
     );

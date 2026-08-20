@@ -2,12 +2,12 @@ import type { ApplicationAdapter, DetectionResult, ApplicationInspection } from 
 
 export const UNSUPPORTED_ADAPTER_VERSION = 1;
 
-// Workday is no longer here — it has a real adapter (ats/workday). These
-// remain unsupported until they get their own adapters.
-const UNSUPPORTED_PATTERNS: Array<{ id: string; re: RegExp }> = [
-  { id: "icims", re: /icims\.com/i },
-  { id: "oracle", re: /oraclecloud\.com|taleo/i },
-];
+// No host is a fill hard-stop. iCIMS/Oracle/Taleo used to live here and
+// planApplicationFill threw "Fill supports greenhouse/… only". Those
+// boards ask the same questions as everyone else; they go through the
+// generic adapter. This class remains so inspect can still name a URL
+// that no adapter can even fetch (non-https, JobRight).
+const UNSUPPORTED_PATTERNS: Array<{ id: string; re: RegExp }> = [];
 
 export class UnsupportedAtsAdapter implements ApplicationAdapter {
   readonly id = "unsupported";

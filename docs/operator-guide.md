@@ -392,7 +392,10 @@ email-only contact (from `contacts:insider`) must be greeted exactly
 → `REJECTED`: row recorded, review item opened, **no draft possible**, exit 3.
 
 Expected: `validation_status: "VALIDATED"` with the full email printed for
-your inspection, state `EMAIL_GENERATED`.
+your inspection. If the application is still in the outreach states it
+advances to `EMAIL_GENERATED`; a `COMPLETED` app (pipeline skipped
+generation because the flag was off) stays `COMPLETED` — the email row
+is enough for `gmail:draft`.
 
 **Failure modes:** flag/key refusals name what's missing; persona missing →
 copy the example first; repeated `REJECTED` for the same rule usually means
@@ -632,6 +635,13 @@ other adapter. An armed session's revival sweep re-opens apps previously
 parked `UNSUPPORTED_ATS` whose URL an adapter now claims (once per app,
 capped per sweep).
 
+If no vendor adapter claims the page, fill uses generic. That includes
+SPA shells with inputs and no `<form>` tag (Paylocity, 2026-08-19) and
+hosts that used to be a hard skip (iCIMS, Oracle/Taleo). A vendor
+allowlist throw at plan time is a bug; the real blockers are login,
+captcha, completeness, and submit gates. `UNSUPPORTED_ATS` remains only
+for URLs that fail transport (non-https) or are JobRight itself.
+
 A company-hosted form is filled, verified, resume-uploaded and
 submitted through **the same path as any vendor** — same approved plan,
 same completeness scan, same submit gates.
@@ -655,9 +665,6 @@ downgraded to heuristics.
   carrying essay answers is refused before the submit gate rather than
   submitted incomplete.
 - **No form reset.** Reload the page to start over.
-
-Turn it off and every generic host reverts to `UNSUPPORTED_ATS`; nothing
-else changes.
 
 ## 15. Navigation (autonomous employer-URL resolution)
 
@@ -1386,6 +1393,13 @@ miss (submit used to skip that hop when no Apply control was visible). If
 it is still on a posting after that, the application parks with
 `FORM_NOT_REACHED` / `FORM_NOT_FOUND` rather than filling a listing page's
 search widgets.
+
+That leftover-Apply rule does **not** apply once the URL path is already
+the form (`/Jobs/Apply/…`, `/apply`, `/application`). Paylocity
+(2026-08-19) clicked Apply, landed on `/Recruiting/Jobs/Apply/4429441`
+with 32 fields, and still parked because the wizard header said Apply and
+the field names were opaque ASP.NET ids. The click worked; the classifier
+was wrong.
 
 ### Skip a job the agent is stuck on
 

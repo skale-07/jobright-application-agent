@@ -61,6 +61,30 @@ describe("applicationFiller multi-ATS dispatch (W2)", () => {
     expect(adapter.id).toBe("generic");
   });
 
+  it("Paylocity-style inputs without a <form> wrapper still plan (UNIT_CONFIRMED)", async () => {
+    // Live 2026-08-19: detectAts required a <form> tag, missed the SPA,
+    // returned unsupported, planApplicationFill threw the vendor allowlist.
+    const { adapter } = await planApplicationFill({
+      url: "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+      html: `<html><body>
+        <a>Apply</a>
+        <input name="ctl00$MainContent$txtFirst" />
+        <input name="ctl00$MainContent$txtLast" />
+      </body></html>`,
+      profile: PROFILE,
+    });
+    expect(adapter.id).toBe("generic");
+  });
+
+  it("an iCIMS host plans via generic instead of throwing unsupported (UNIT_CONFIRMED)", async () => {
+    const { adapter } = await planApplicationFill({
+      url: "https://careers-acme.icims.com/jobs/123/job",
+      html: `<html><body><form><label>Email<input name="email" type="email"/></label></form></body></html>`,
+      profile: PROFILE,
+    });
+    expect(adapter.id).toBe("generic");
+  });
+
   it("still refuses non-fillable fixture names", async () => {
     await expect(
       runAtsFixtureFill("workday", { execute: false, profile: PROFILE }),

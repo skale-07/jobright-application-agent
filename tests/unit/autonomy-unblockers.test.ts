@@ -324,6 +324,14 @@ describe("label resolution for machine-named fields (UNIT_CONFIRMED)", () => {
     expect(discoverFieldsFromHtml(html)[0]?.label).toBe("Email address");
   });
 
+  it("uses data-for when the label is a sibling with no for= (Paylocity)", () => {
+    const html = `<div>
+      <label>First Name<span><em> (required)</em></span></label>
+      <input data-automation-id="infoFirstName" data-for="First Name" id="info.firstName" type="text" />
+    </div>`;
+    expect(discoverFieldsFromHtml(html)[0]?.label).toBe("First Name");
+  });
+
   it("returns null rather than guessing when nothing informative precedes", () => {
     const html = `<form><input name="cards[abc][field0]" /></form>`;
     expect(nearestSectionHeading(html, html.indexOf("<input"))).toBeNull();

@@ -155,7 +155,11 @@ const ALLOWED: Partial<Record<ApplicationState, readonly ApplicationState[]>> = 
   // Operator resolution (console/CLI): the operator solved the captcha in a
   // headed session — or the wall is gone — so re-open the employer page.
   CAPTCHA_REQUIRED: ["APPLICATION_OPENING", "FAILED_FINAL"],
-  AMBIGUOUS_FIELD: ["FIELD_VERIFICATION", "FAILED_FINAL"],
+  AMBIGUOUS_FIELD: [
+    "FIELD_VERIFICATION",
+    "NATIVE_AUTOFILL_RUNNING",
+    "FAILED_FINAL",
+  ],
   // Operator resolution: a corrected, supported employer URL was supplied —
   // re-open against it (URL validity is enforced by setEmployerApplicationUrl).
   UNSUPPORTED_ATS: ["APPLICATION_OPENING", "FAILED_FINAL"],

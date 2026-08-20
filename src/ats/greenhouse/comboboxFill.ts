@@ -210,12 +210,96 @@ const COUNTRY_SYNONYMS: Record<string, string> = {
   uk: "united kingdom",
 };
 
+/**
+ * USPS name ↔ abbreviation. Paylocity (live 053aa25b) lists MD, not
+ * Maryland. Matching only fires when the page actually offers one of the
+ * pair — we never invent a code into an empty list.
+ */
+const US_STATE_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["alabama", "al"],
+  ["alaska", "ak"],
+  ["arizona", "az"],
+  ["arkansas", "ar"],
+  ["california", "ca"],
+  ["colorado", "co"],
+  ["connecticut", "ct"],
+  ["delaware", "de"],
+  ["district of columbia", "dc"],
+  ["florida", "fl"],
+  ["georgia", "ga"],
+  ["hawaii", "hi"],
+  ["idaho", "id"],
+  ["illinois", "il"],
+  ["indiana", "in"],
+  ["iowa", "ia"],
+  ["kansas", "ks"],
+  ["kentucky", "ky"],
+  ["louisiana", "la"],
+  ["maine", "me"],
+  ["maryland", "md"],
+  ["massachusetts", "ma"],
+  ["michigan", "mi"],
+  ["minnesota", "mn"],
+  ["mississippi", "ms"],
+  ["missouri", "mo"],
+  ["montana", "mt"],
+  ["nebraska", "ne"],
+  ["nevada", "nv"],
+  ["new hampshire", "nh"],
+  ["new jersey", "nj"],
+  ["new mexico", "nm"],
+  ["new york", "ny"],
+  ["north carolina", "nc"],
+  ["north dakota", "nd"],
+  ["ohio", "oh"],
+  ["oklahoma", "ok"],
+  ["oregon", "or"],
+  ["pennsylvania", "pa"],
+  ["rhode island", "ri"],
+  ["south carolina", "sc"],
+  ["south dakota", "sd"],
+  ["tennessee", "tn"],
+  ["texas", "tx"],
+  ["utah", "ut"],
+  ["vermont", "vt"],
+  ["virginia", "va"],
+  ["washington", "wa"],
+  ["west virginia", "wv"],
+  ["wisconsin", "wi"],
+  ["wyoming", "wy"],
+];
+
+const US_STATE_ABBR: Record<string, string> = Object.fromEntries(US_STATE_PAIRS);
+const US_STATE_NAME: Record<string, string> = Object.fromEntries(
+  US_STATE_PAIRS.map(([name, abbr]) => [abbr, name]),
+);
+
+function usStateSynonyms(expectedKey: string): string[] | null {
+  const abbr = US_STATE_ABBR[expectedKey];
+  if (abbr) return [expectedKey, abbr];
+  const name = US_STATE_NAME[expectedKey];
+  if (name) return [expectedKey, name];
+  return null;
+}
+
+function pickUsStateOption(
+  options: string[],
+  expected: string,
+): OptionPick | null {
+  const syns = usStateSynonyms(optionKey(expected));
+  if (!syns) return null;
+  const hits = options.filter((o) => syns.includes(optionKey(o)));
+  if (hits.length === 0) return null;
+  const prefer = hits.find((o) => optionKey(o) === optionKey(expected));
+  return { ok: true, label: prefer ?? hits[0]!, via: "synonym" };
+}
+
 function locationParts(s: string): string[] {
   return s
     .split(",")
     .map((p) => optionKey(p))
     .filter((p) => p.length > 0)
-    .map((p) => COUNTRY_SYNONYMS[p] ?? p);
+    .map((p) => COUNTRY_SYNONYMS[p] ?? US_STATE_ABBR[p] ?? p);
 }
 
 /**
@@ -403,10 +487,23 @@ export function pickOptionLabel(options: string[], expected: string): OptionPick
     return { ok: true, label: dialHits[0], via: "ci_exact" };
   }
 
+  // State name ↔ USPS code before substring (Maryland must not land on
+  // Maryland Heights when MD is on the list).
+  const statePick = pickUsStateOption(options, exp);
+  if (statePick) return statePick;
+
   // Location strings before generic token overlap — Baltimore variants tie
   // under token scoring but resolve cleanly by comma-part comparison.
   const locPick = pickLocationOption(options, exp);
   if (locPick) return locPick;
+  // Full state name with no USPS/name option: do not unique-substring
+  // into "Maryland Heights". Codes like OR/IN still fall through.
+  if (US_STATE_ABBR[optionKey(exp)]) {
+    return {
+      ok: false,
+      reason: `no option matches "${exp}" (options: ${options.slice(0, 8).join(" | ")}${options.length > 8 ? " | …" : ""})`,
+    };
+  }
   // country dial substrings: optionKey compare already handled as dialHits.
   // Keep dial-stripped unique substring here too (tight length gate):
   const dialSub = options.filter((o) => {
@@ -672,6 +769,8 @@ export function labelsCompatible(
   if (op.length >= 2 && od.length >= 2 && (op.includes(od) || od.includes(op))) {
     return true;
   }
+  const pSyns = usStateSynonyms(op);
+  if (pSyns && pSyns.includes(od)) return true;
   // Dial-code-only display after picking "Country +N"
   if (/^\+\d+$/.test(d) && p.includes(d)) return true;
   return false;
@@ -726,6 +825,22 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
     closest: (s: string) => ContainerEl | null;
   };
   const raw = await loc.evaluate((el: ContainerEl & { value?: string; parentElement?: ContainerEl | null }) => {
+    // Paylocity FIRST. `[class*="select_"]` matches `pcty-input-select__input`
+    // (the inner filter wrap), which does not contain the committed label.
+    // Live 2026-08-19: display already said "United States"; verify read
+    // the empty input and fill then typed a filter that wiped the pick.
+    const pctyWrap =
+      el.closest('[id$="-select-wrapper"]') ??
+      el.closest('[class*="input-select-full-container"]') ??
+      el.closest('[data-automation-id$="-input-base"]');
+    if (pctyWrap) {
+      const single = pctyWrap.querySelector('[class*="single-value"]');
+      const t = (single?.textContent || "").replace(/\s+/g, " ").trim();
+      if (t && !/^select(\s+a)?\s+(country|state|option|one)\b/i.test(t)) {
+        return t;
+      }
+    }
+
     const shell =
       el.closest('[class*="select-shell"]') ??
       el.closest('[class*="select__control"]') ??
@@ -793,7 +908,8 @@ export async function readComboboxValue(loc: Locator): Promise<string | null> {
   return text;
 }
 
-const LISTBOX_SELECTOR = '[role="listbox"], [class*="select__menu"]';
+const LISTBOX_SELECTOR =
+  '[role="listbox"], [class*="select__menu"], [id$="-dropdown-list-container"]';
 const OPTION_SELECTOR = '[role="option"], [class*="select__option"]';
 
 /**
@@ -827,6 +943,14 @@ export function buildFilterCandidates(expected: string): string[] {
   const commaParts = full.split(",").map((p) => p.trim()).filter(Boolean);
   if (commaParts.length >= 2 && commaParts[0]!.length >= 3) {
     push(commaParts[0]!);
+  }
+
+  // Paylocity state lists filter on USPS codes. Typing "Maryland" yields
+  // no rows; typing "MD" does. Only when the whole expected string is a
+  // state — do not inject MD into "Baltimore, Maryland, USA".
+  if (commaParts.length < 2) {
+    const abbr = US_STATE_ABBR[optionKey(full)];
+    if (abbr) push(abbr.toUpperCase());
   }
 
   // Degree: type "Bachelor" / "Master" first — GH job-boards catalogue
@@ -928,24 +1052,103 @@ async function openCombobox(
   loc: Locator,
 ): Promise<{ clickTarget: Locator; notes: string[] }> {
   const notes: string[] = [];
-  const control = loc
-    .locator(
-      'xpath=ancestor-or-self::*[contains(@class,"select__control") or contains(@class,"select-shell") or @role="combobox"][1]',
-    )
+  // Paylocity: the inner filter input is not the open control. Click the
+  // expand chevron (or the aria-haspopup wrapper) so the owned list mounts.
+  const pcty = loc
+    .locator('xpath=ancestor::*[@aria-haspopup="listbox"][1]')
     .first();
-  const clickTarget = (await control.count()) > 0 ? control : loc;
+  let clickTarget: Locator;
+  if ((await pcty.count()) > 0) {
+    const icon = pcty
+      .locator('[aria-label="expand"], [class*="dropdown-icon"]')
+      .first();
+    clickTarget = (await icon.count()) > 0 ? icon : pcty;
+  } else {
+    const control = loc
+      .locator(
+        'xpath=ancestor-or-self::*[contains(@class,"select__control") or contains(@class,"select-shell") or @role="combobox"][1]',
+      )
+      .first();
+    clickTarget = (await control.count()) > 0 ? control : loc;
+  }
   await clickTarget.scrollIntoViewIfNeeded().catch(() => undefined);
 
-  // Wipe prior chips/selection first — Greenhouse multi-selects *append*.
-  // Without this you get Non-binary+Man, East Asian+Hispanic, Glassdoor+LinkedIn.
   notes.push(...(await clearComboboxSelection(page, clickTarget)));
 
-  // force: inner input is often 3×20; the control div is the real hit target.
-  // Single click only — do not Escape/re-click while the menu is opening.
   await clickTarget.click({ timeout: 10_000, force: true });
   notes.push("opened via control click");
   await page.waitForTimeout(200);
   return { clickTarget, notes };
+}
+
+async function listboxForControl(page: Page, loc: Locator): Promise<Locator> {
+  const ownedId = await loc.evaluate(
+    (el: {
+      closest: (s: string) => { getAttribute: (n: string) => string | null } | null;
+      getAttribute: (n: string) => string | null;
+    }) => {
+      const wrap = el.closest("[aria-owns]");
+      return wrap?.getAttribute("aria-owns") ?? el.getAttribute("aria-controls");
+    },
+  );
+  if (ownedId) {
+    return page.locator(`[id="${ownedId.replace(/"/g, '\\"')}"]`);
+  }
+  return page.locator(LISTBOX_SELECTOR).filter({ visible: true }).first();
+}
+
+async function clickListedOption(
+  listbox: Locator,
+  expected: string,
+): Promise<{ label: string; via: "exact" | "ci_exact" | "unique_substring" | "synonym" } | null> {
+  const clean = (texts: string[]) =>
+    texts.map((t) => t.replace(/\s+/g, " ").trim()).filter((t) => t.length > 0 && t.length < 80);
+
+  const roleLabels = clean(
+    await listbox.locator(OPTION_SELECTOR).filter({ visible: true }).allTextContents(),
+  );
+  const rolePick = pickOptionLabel(roleLabels, expected);
+  if (rolePick.ok) {
+    const byRole = listbox
+      .getByRole("option", { name: rolePick.label, exact: true })
+      .filter({ visible: true });
+    if ((await byRole.count().catch(() => 0)) > 0) {
+      await byRole.first().click({ timeout: 5_000, force: true });
+      return { label: rolePick.label, via: rolePick.via };
+    }
+    const byClass = listbox
+      .locator(OPTION_SELECTOR)
+      .filter({ visible: true })
+      .filter({ hasText: rolePick.label });
+    if ((await byClass.count().catch(() => 0)) > 0) {
+      await byClass.first().click({ timeout: 5_000, force: true });
+      return { label: rolePick.label, via: rolePick.via };
+    }
+  }
+
+  // Paylocity (live 2026-08-19): listbox opens, rows are plain divs with
+  // no role=option, collector returned []. Click the visible string.
+  const exact = listbox.getByText(expected, { exact: true }).filter({ visible: true });
+  if ((await exact.count().catch(() => 0)) > 0) {
+    await exact.first().click({ timeout: 5_000, force: true });
+    return { label: expected, via: "exact" };
+  }
+  const loosePick = pickOptionLabel(
+    clean(
+      await listbox.locator("div, li, button").filter({ visible: true }).allTextContents(),
+    ),
+    expected,
+  );
+  if (loosePick.ok) {
+    const named = listbox
+      .getByText(loosePick.label, { exact: true })
+      .filter({ visible: true });
+    if ((await named.count().catch(() => 0)) > 0) {
+      await named.first().click({ timeout: 5_000, force: true });
+      return { label: loosePick.label, via: loosePick.via };
+    }
+  }
+  return null;
 }
 
 /**
@@ -961,20 +1164,60 @@ export async function fillComboboxControl(
   const notes: string[] = [];
   const expectedText = String(expected);
 
+  const already = await readComboboxValue(loc);
+  if (already && labelsCompatible(expectedText, already)) {
+    notes.push(`already committed "${already}"`);
+    return {
+      committed: true,
+      selectedLabel: already,
+      notes,
+      pickVia: "exact",
+    };
+  }
+
   const opened = await openCombobox(page, loc);
   notes.push(...opened.notes);
 
-  // Multiple menus exist in the DOM (one per combobox); only the one just
-  // opened is visible — scope everything to visible elements.
-  const listbox = page
-    .locator(LISTBOX_SELECTOR)
-    .filter({ visible: true })
-    .first();
+  const listbox = await listboxForControl(page, loc);
   try {
     await listbox.waitFor({ state: "visible", timeout: 5_000 });
   } catch {
     notes.push("listbox did not open after click");
     return { committed: false, selectedLabel: null, notes };
+  }
+
+  const direct = await clickListedOption(listbox, expectedText);
+  if (direct) {
+    notes.push(`picked "${direct.label}" (${direct.via}) from open list`);
+    await listbox
+      .waitFor({ state: "hidden", timeout: 5_000 })
+      .catch(async () => {
+        notes.push("listbox still visible after pick");
+        await page.keyboard.press("Escape").catch(() => undefined);
+      });
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.waitForTimeout(250);
+    let committedLabel = await readComboboxValue(loc);
+    if (!committedLabel) {
+      await page.waitForTimeout(300);
+      committedLabel = await readComboboxValue(loc);
+    }
+    const committed = labelsCompatible(direct.label, committedLabel) ||
+      Boolean(
+        committedLabel &&
+          normalize(committedLabel).includes(normalize(direct.label)),
+      );
+    if (!committed) {
+      notes.push(
+        `commit not confirmed: display shows ${committedLabel === null ? "placeholder" : `"${committedLabel}"`}`,
+      );
+    }
+    return {
+      committed,
+      selectedLabel: committed ? (committedLabel ?? direct.label) : null,
+      notes,
+      pickVia: direct.via,
+    };
   }
 
   const collectOptions = async (): Promise<string[]> =>
@@ -1005,6 +1248,27 @@ export async function fillComboboxControl(
       options = [];
       for (let i = 0; i < 18; i++) {
         await page.waitForTimeout(120);
+        const typed = await clickListedOption(listbox, expectedText);
+        if (typed) {
+          notes.push(
+            `filter "${typeText}" then picked "${typed.label}" (${typed.via})`,
+          );
+          await page.keyboard.press("Escape").catch(() => undefined);
+          await page.waitForTimeout(250);
+          const committedLabel = await readComboboxValue(loc);
+          const committed =
+            labelsCompatible(typed.label, committedLabel) ||
+            Boolean(
+              committedLabel &&
+                normalize(committedLabel).includes(normalize(typed.label)),
+            );
+          return {
+            committed,
+            selectedLabel: committed ? (committedLabel ?? typed.label) : typed.label,
+            notes,
+            pickVia: typed.via,
+          };
+        }
         options = await collectOptions();
         if (options.length === 0) continue;
         if (pickOptionLabel(options, expectedText).ok) break;
@@ -1030,6 +1294,23 @@ export async function fillComboboxControl(
       await page.waitForTimeout(250);
       options = await collectOptions();
       notes.push("filter yielded no/unmatched options; re-collected unfiltered (residue cleared)");
+      const afterOpen = await clickListedOption(listbox, expectedText);
+      if (afterOpen) {
+        notes.push(`picked "${afterOpen.label}" (${afterOpen.via}) after reopen`);
+        await page.keyboard.press("Escape").catch(() => undefined);
+        await page.waitForTimeout(250);
+        const committedLabel = await readComboboxValue(loc);
+        return {
+          committed: Boolean(
+            committedLabel &&
+              (labelsCompatible(afterOpen.label, committedLabel) ||
+                normalize(committedLabel).includes(normalize(afterOpen.label))),
+          ),
+          selectedLabel: committedLabel ?? afterOpen.label,
+          notes,
+          pickVia: afterOpen.via,
+        };
+      }
     }
   } catch {
     options = await collectOptions();

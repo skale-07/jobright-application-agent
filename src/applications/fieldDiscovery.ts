@@ -89,6 +89,7 @@ export function discoverFieldsFromHtml(
     const inputId = getAttr(attrs, "id") ?? undefined;
     const ariaLabel = getAttr(attrs, "aria-label") ?? undefined;
     const placeholder = getAttr(attrs, "placeholder") ?? undefined;
+    const dataFor = getAttr(attrs, "data-for") ?? undefined;
     const required =
       /\brequired\b/i.test(attrs) ||
       /aria-required=["']true["']/i.test(attrs);
@@ -97,6 +98,7 @@ export function discoverFieldsFromHtml(
       (inputId ? labelMap.get(inputId) : undefined) ??
       ariaLabel ??
       placeholder ??
+      dataFor ??
       name ??
       `field_${idx}`;
 

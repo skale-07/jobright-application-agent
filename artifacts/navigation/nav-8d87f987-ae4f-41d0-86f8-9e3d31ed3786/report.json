@@ -1,0 +1,45 @@
+{
+  "run_id": "nav-8d87f987-ae4f-41d0-86f8-9e3d31ed3786",
+  "application_id": "053aa25b-b34a-4adf-a3f8-c7732f5d2fac",
+  "jobright_job_id": "6a86105fe459fa3baa865aa4",
+  "method": "apply_click_popup",
+  "resolved_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+  "resolved_ats": "generic",
+  "wall": "none",
+  "phase_trace": [
+    {
+      "phase": "open",
+      "outcome": "job page loaded"
+    },
+    {
+      "phase": "A_anchor_hrefs",
+      "outcome": "no congruent apply href (6 external links)",
+      "evidence": "recruiting.paylocity.com, www.linkedin.com, www.crunchbase.com, www.etegent.com"
+    },
+    {
+      "phase": "B_apply_click",
+      "outcome": "resolved via popup",
+      "evidence": "recruiting.paylocity.com"
+    }
+  ],
+  "agent": null,
+  "gmail": null,
+  "need": null,
+  "session": "cdp",
+  "notes": [
+    "phase A: 4 external host(s) seen: recruiting.paylocity.com, www.linkedin.com, www.crunchbase.com, www.etegent.com",
+    "Apply control: autofill CTA (tier 0)",
+    "popup captured on attempt 1",
+    "employer congruence unverifiable (company name is a placeholder — identity not checkable) — recorded"
+  ],
+  "congruence": {
+    "verdict": "unknown",
+    "slug": null,
+    "detail": "company name is a placeholder — identity not checkable",
+    "expected_company": "Unknown company (manual enqueue)",
+    "url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441?jr_id=6a86105fe459fa3baa865aa4"
+  },
+  "duplicates": null,
+  "login_wall": null,
+  "written_at": "2026-08-20T01:27:17.684Z"
+}

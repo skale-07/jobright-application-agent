@@ -24,11 +24,10 @@ export async function detectAts(input: {
   html: string;
   title?: string;
 }): Promise<{ adapter: ApplicationAdapter; detection: DetectionResult }> {
-  // Prefer explicit unsupported (Workday etc.) over generic
-  const u = await unsupported.detect(input);
-  if (u.matched) {
-    return { adapter: unsupported, detection: u };
-  }
+  // iCIMS/Oracle used to short-circuit to the unsupported adapter here
+  // and fill threw. Vendor adapters still win on their own hosts; anything
+  // else is generic. UNSUPPORTED_ATS is a URL-transport failure now
+  // (non-https / JobRight), decided by detectAtsFromUrl, not this registry.
 
   const g = await greenhouse.detect(input);
   if (g.matched && g.confidence >= 0.5) {
@@ -61,13 +60,17 @@ export async function detectAts(input: {
     return { adapter: generic, detection: gen };
   }
 
+  // No vendor claimed it and the page has no discoverable controls yet
+  // (SPA shell, posting chrome). Fill still uses the generic path; the
+  // pre-mutation gate names posting/auth/unknown. Never throw a vendor
+  // allowlist at this seam — live 2026-08-19 Paylocity Apply page.
   return {
-    adapter: unsupported,
+    adapter: generic,
     detection: {
       matched: true,
       confidence: 0.2,
-      atsId: "unknown",
-      evidence: ["no adapter matched confidently"],
+      atsId: "generic",
+      evidence: ["no vendor matched — using generic adapter"],
     },
   };
 }

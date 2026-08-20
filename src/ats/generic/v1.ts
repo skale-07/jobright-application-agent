@@ -105,19 +105,25 @@ export class GenericAdapterV1 implements ApplicationAdapter {
 
   /**
    * Lowest-confidence detector in the registry by design: it claims any
-   * page carrying a form with fillable controls, and registry.ts asks it
-   * LAST so every vendor gets first refusal.
+   * page with fillable controls, and registry.ts asks it LAST so every
+   * vendor gets first refusal. A wrapping `<form>` is typical, not
+   * required — Paylocity (live 2026-08-19) rendered 32 inputs in a SPA
+   * shell; requiring the tag sent detectAts to unsupported and fill threw.
    */
   async detect(input: { url: string; html: string }): Promise<DetectionResult> {
     const fields = discoverFieldsFromHtml(input.html);
     const hasForm = genericSelectorsV1.formMarkers.test(input.html);
-    const matched = hasForm && fields.length > 0;
+    const matched = fields.length > 0 || hasForm;
     return {
       matched,
       confidence: matched ? 0.4 : 0,
       atsId: this.id,
       evidence: matched
-        ? [`generic form with ${fields.length} discoverable field(s)`]
+        ? [
+            fields.length > 0
+              ? `generic form with ${fields.length} discoverable field(s)`
+              : "form markup present",
+          ]
         : ["no form with fillable controls detected"],
     };
   }

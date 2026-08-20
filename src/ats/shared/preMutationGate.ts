@@ -64,9 +64,14 @@ export async function verifyPageBeforeMutationGeneric(
   // render timeout here is what made /portal look like a hang before the
   // run refused NO_APPLICATION_FORM. Skip the wait when the first paint
   // is already a posting; unknown/empty first paints still wait.
+  // A form-class page without a <form> tag (Paylocity) also never grows
+  // one — waiting the full timeout is a 10s stall on a page we can fill.
+  const firstClass = classifyPage({
+    html: htmlImmediate,
+    url: page.url(),
+  }).page_class;
   const html0 =
-    classifyPage({ html: htmlImmediate, url: page.url() }).page_class ===
-    "posting"
+    firstClass === "posting" || firstClass === "form"
       ? htmlImmediate
       : await waitForRenderedContent(
           page,
@@ -131,7 +136,7 @@ export async function verifyPageBeforeMutationGeneric(
       `blocking CAPTCHA detected: ${captcha.signals.join(",")}`,
     );
   }
-  if (!formDetected) {
+  if (!formDetected && discovered.length === 0) {
     return fail(
       "NO_APPLICATION_FORM",
       "application form markers not found on the final page",
@@ -145,6 +150,9 @@ export async function verifyPageBeforeMutationGeneric(
   // cannot type into is not a form, and a silent 0-field fill is worse than
   // a refusal — it burns an attempt and reports a failure nobody can
   // diagnose. Vendor-blind on purpose: every adapter shares this gate.
+  //
+  // Paylocity (live 2026-08-19): 32 fields, no wrapping <form> tag. The
+  // marker regex is not the form. Field count is.
   if (discovered.length === 0) {
     return fail(
       "NO_APPLICATION_FORM",

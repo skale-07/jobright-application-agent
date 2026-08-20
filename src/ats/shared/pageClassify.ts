@@ -57,6 +57,9 @@ export function hasApplicationIdentityFields(
   return fields.some((f) => {
     const blob = `${f.label} ${f.name ?? ""}`.toLowerCase();
     if (/\b(search|keyword|job title, id)\b/.test(blob)) return false;
+    // type=email is identity even when the label is an ASP.NET machine
+    // name (`ctl00$txtContact`). `\be-?mail\b` misses those concatenations.
+    if (f.type === "email") return true;
     return (
       /\be-?mail\b/.test(blob) ||
       /\bfirst[\s_-]*name\b|\blast[\s_-]*name\b|\bfull[\s_-]*name\b|\byour name\b/.test(
@@ -66,6 +69,26 @@ export function hasApplicationIdentityFields(
       (f.type === "file" && /resume|cv|cover[\s_-]*letter/.test(blob))
     );
   });
+}
+
+/**
+ * The URL is already the application, not the job listing. Paylocity
+ * (live 2026-08-19): `/Recruiting/Jobs/Details/4429441` → click Apply →
+ * `/Recruiting/Jobs/Apply/4429441`. The apply wizard keeps an "Apply"
+ * header link and uses opaque field names, so the listing discriminator
+ * (Apply CTA + no identity label) would keep calling it a posting and
+ * park FORM_NOT_REACHED on the real form.
+ *
+ * Segment-bounded: `/apply-filters` and `/easy-apply-tips` do not match.
+ */
+export function isApplicationFormPath(url: string): boolean {
+  let path: string;
+  try {
+    path = new URL(url).pathname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return /\/(jobs\/)?apply(\/|$)/.test(path) || /\/application(\/|$)/.test(path);
 }
 
 export function classifyPage(input: {
@@ -126,7 +149,9 @@ export function classifyPage(input: {
   // The discriminator is what the fields ARE. Every real application form
   // asks who you are; a listing page's search chrome never does. So an
   // Apply CTA plus no identity field means posting, however many inputs
-  // the page's furniture contributes.
+  // the page's furniture contributes — unless the URL path is already
+  // /apply. Leftover Apply chrome on that path is the wizard header, not
+  // a listing still waiting to be clicked.
   // Script/JSON blobs contain "apply" constantly (`{"apply":true}`). That
   // is not an Apply button. Jump Trading 2026-08-17: regex said posting,
   // findApplyControl found nothing, fill refused in 4s.
@@ -134,8 +159,13 @@ export function classifyPage(input: {
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "");
   const hasCta = APPLY_CTA_RE.test(visibleHtml);
+  const onApplyPath = isApplicationFormPath(url);
   if (fieldCount > 0) {
-    if (hasCta && !hasApplicationIdentityFields(fields)) {
+    if (
+      hasCta &&
+      !hasApplicationIdentityFields(fields) &&
+      !onApplyPath
+    ) {
       return {
         page_class: "posting",
         field_count: fieldCount,

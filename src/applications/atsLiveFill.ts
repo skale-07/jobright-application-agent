@@ -668,6 +668,14 @@ export async function runAtsLiveFill(input: {
 
       landing = classifyPage({ html: planHtml, url: planUrl });
       report.gate.page_class = landing.page_class;
+      if (landing.page_class === "form" && !report.gate.ok) {
+        report.gate.ok = true;
+        report.gate.failure_code = null;
+        report.gate.reason = null;
+        report.notes.push(
+          "page class is form — proceeding despite missing <form> marker",
+        );
+      }
 
       if (!report.gate.ok && landing.page_class !== "form") {
         if (landing.page_class === "auth") {

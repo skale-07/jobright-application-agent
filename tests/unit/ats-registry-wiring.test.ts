@@ -37,6 +37,18 @@ describe("ATS registry wiring (W1, UNIT_CONFIRMED)", () => {
     ]);
   });
 
+  it("Paylocity SPA inputs without a form tag are generic, not unsupported", async () => {
+    const { adapter, detection } = await detectAts({
+      url: "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+      html: `<html><body>
+        <input name="ctl00$MainContent$txtFirst" />
+        <input name="ctl00$MainContent$txtLast" />
+      </body></html>`,
+    });
+    expect(adapter.id).toBe("generic");
+    expect(detection.atsId).toBe("generic");
+  });
+
   it("routes the lever fixture to the lever adapter", async () => {
     const { adapter, detection } = await detectAts(loadAtsFixture("lever"));
     expect(adapter.id).toBe("lever");

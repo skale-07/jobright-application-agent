@@ -102,9 +102,46 @@ describe("pickOptionLabel (UNIT_CONFIRMED)", () => {
     expect(pickOptionLabel(junk, "Baltimore, Maryland, USA").ok).toBe(false);
   });
 
+  it("maps US state names to USPS abbreviations and back", () => {
+    const codes = ["AL", "CA", "MD", "NY", "VA"];
+    expect(pickOptionLabel(codes, "Maryland")).toMatchObject({
+      ok: true,
+      label: "MD",
+      via: "synonym",
+    });
+    expect(pickOptionLabel(["Maryland", "Massachusetts"], "MD")).toMatchObject({
+      ok: true,
+      label: "Maryland",
+      via: "synonym",
+    });
+    expect(pickOptionLabel(["Maryland Heights", "MD"], "Maryland")).toMatchObject({
+      ok: true,
+      label: "MD",
+    });
+    expect(pickOptionLabel(["Maryland Heights"], "Maryland").ok).toBe(false);
+    expect(pickOptionLabel([], "Maryland").ok).toBe(false);
+  });
+
+  it("location-shaped values still match Maryland vs MD in the state slot", () => {
+    expect(
+      pickOptionLabel(
+        ["Baltimore, MD, United States", "Baltimore, OH, United States"],
+        "Baltimore, Maryland, USA",
+      ),
+    ).toMatchObject({
+      ok: true,
+      label: "Baltimore, MD, United States",
+    });
+  });
+
   it("location-shaped values filter by CITY first", () => {
     const candidates = buildFilterCandidates("Baltimore, Maryland, USA");
     expect(candidates[0]).toBe("Baltimore");
+    expect(candidates).not.toContain("MD");
+  });
+
+  it("types the USPS code first for a bare state name", () => {
+    expect(buildFilterCandidates("Maryland")[0]).toBe("MD");
   });
 
   it("maps job-boards country dial labels and degree taxonomy", () => {
@@ -324,6 +361,8 @@ describe("labelsCompatible (UNIT_CONFIRMED)", () => {
     expect(labelsCompatible("United States +1", "+1")).toBe(true);
     expect(labelsCompatible("United States +1", "United States")).toBe(true);
     expect(labelsCompatible("May", "May")).toBe(true);
+    expect(labelsCompatible("Maryland", "MD")).toBe(true);
+    expect(labelsCompatible("MD", "Maryland")).toBe(true);
     expect(labelsCompatible("Yes", null)).toBe(false);
   });
 });
@@ -372,6 +411,113 @@ describe("combobox interaction on fixture (FIXTURE_CONFIRMED)", () => {
       expect(await readComboboxValue(loc)).toBe("United States");
       // The filter input carries no residue.
       expect(await loc.inputValue()).toBe("");
+    });
+  }, 30_000);
+
+  it("clicks United States in a Paylocity-style listbox with no role=option (FIXTURE_CONFIRMED)", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <div class="pcty-input-select-full-container" id="country-select-wrapper"
+           aria-haspopup="listbox" aria-owns="country-dropdown-list-container">
+        <div class="input-select-input-single-value" id="country-display">Select a country</div>
+        <div class="pcty-input-select__input">
+          <input id="country" aria-autocomplete="list" />
+        </div>
+        <div class="pcty-input-select__dropdown-icon" aria-label="expand">v</div>
+      </div>
+      <div id="country-dropdown-list-container" hidden></div>
+      <script>
+        const input = document.getElementById("country");
+        const list = document.getElementById("country-dropdown-list-container");
+        const display = document.getElementById("country-display");
+        const expand = document.querySelector('[aria-label="expand"]');
+        const open = () => {
+          list.hidden = false;
+          list.innerHTML = "<div>Canada</div><div>United Kingdom</div><div>United States</div>";
+        };
+        expand.addEventListener("click", open);
+        list.addEventListener("click", (e) => {
+          const t = e.target && e.target.textContent.trim();
+          if (!t) return;
+          display.textContent = t;
+          list.hidden = true;
+          list.innerHTML = "";
+        });
+      </script>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const loc = page.locator("#country");
+      const result = await fillComboboxControl(page, loc, "United States");
+      expect(result.committed).toBe(true);
+      expect(result.selectedLabel).toBe("United States");
+      expect(await page.locator("#country-display").innerText()).toBe(
+        "United States",
+      );
+    });
+  }, 30_000);
+
+  it("picks MD from a Paylocity-style state list when the plan says Maryland (FIXTURE_CONFIRMED)", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <div class="pcty-input-select-full-container" id="state-select-wrapper"
+           aria-haspopup="listbox" aria-owns="state-dropdown-list-container">
+        <div class="input-select-input-single-value" id="state-display">Select a state</div>
+        <div class="pcty-input-select__input">
+          <input id="state" aria-autocomplete="list" />
+        </div>
+        <div class="pcty-input-select__dropdown-icon" aria-label="expand">v</div>
+      </div>
+      <div id="state-dropdown-list-container" hidden></div>
+      <script>
+        const list = document.getElementById("state-dropdown-list-container");
+        const display = document.getElementById("state-display");
+        const expand = document.querySelector('[aria-label="expand"]');
+        const rows = ["AL","CA","MD","NY","VA"];
+        const open = () => {
+          list.hidden = false;
+          list.innerHTML = rows.map((s) => "<div>" + s + "</div>").join("");
+        };
+        expand.addEventListener("click", open);
+        list.addEventListener("click", (e) => {
+          const t = e.target && e.target.textContent.trim();
+          if (!t) return;
+          display.textContent = t;
+          list.hidden = true;
+          list.innerHTML = "";
+        });
+      </script>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const result = await fillComboboxControl(
+        page,
+        page.locator("#state"),
+        "Maryland",
+      );
+      expect(result.committed).toBe(true);
+      expect(result.selectedLabel).toBe("MD");
+      expect(await page.locator("#state-display").innerText()).toBe("MD");
+    });
+  }, 30_000);
+
+  it("does not reopen a Paylocity country that already shows the value (FIXTURE_CONFIRMED)", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <div class="pcty-input-select-full-container" id="country-select-wrapper">
+        <div class="input-select-input-single-value">United States</div>
+        <div class="pcty-input-select__input">
+          <input id="country" aria-autocomplete="list" value="" />
+        </div>
+      </div>
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      expect(await readComboboxValue(page.locator("#country"))).toBe(
+        "United States",
+      );
+      const result = await fillComboboxControl(
+        page,
+        page.locator("#country"),
+        "United States",
+      );
+      expect(result.committed).toBe(true);
+      expect(result.notes.join(" ")).toMatch(/already committed/);
+      expect(await page.locator("#country").inputValue()).toBe("");
     });
   }, 30_000);
 

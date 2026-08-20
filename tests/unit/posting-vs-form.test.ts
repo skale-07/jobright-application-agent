@@ -86,6 +86,22 @@ describe("posting page vs application form (FIXTURE_CONFIRMED)", () => {
     });
   }, 30_000);
 
+  it("passes a field-bearing page that has no wrapping <form> tag", async () => {
+    const html = `<!DOCTYPE html><html><body>
+      <label>Country</label>
+      <input id="public-site-address-country" />
+      <label>City</label>
+      <input id="public-site-address-city" />
+    </body></html>`;
+    await withFixtureHtmlPage(html, async (page) => {
+      const gate = await verifyPageBeforeMutationGeneric(page, {
+        isTrustedHost: () => true,
+        formMarkers: /<form[\s>]/i,
+      });
+      expect(gate.ok).toBe(true);
+    });
+  }, 30_000);
+
   /**
    * The page kind is what turns a bare refusal into a diagnosis. These are
    * the same three live situations the old URL heuristic tried to infer

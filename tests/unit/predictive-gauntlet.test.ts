@@ -273,7 +273,7 @@ describe("vendor-unknown page on a validated URL (UNIT_CONFIRMED)", () => {
       html: PAYCOM_LISTING,
     });
     expect(report.route).not.toBe("skip_unsupported_ats");
-    expect(report.notes.join(" ")).toMatch(/vendor-unknown page on a generic-validated URL/);
+    expect(report.inspection.ats).toBe("generic");
   });
 
   it("an auth-walled account modal routes to the portal-auth path", async () => {

@@ -10,7 +10,7 @@ import {
   getSensitiveValue,
   tryLoadSensitiveProfile,
 } from "../candidate/sensitiveProfileIO.js";
-import { locationTypeaheadQuery } from "./locationQuery.js";
+import { locationTypeaheadQuery, shouldComposeCityTypeahead } from "./locationQuery.js";
 import type { ScreenerResolution } from "../candidate/screenerMatch.js";
 import { normalizeFieldLabel } from "./fieldNormalization.js";
 import {
@@ -337,8 +337,13 @@ export function buildFillPlan(
     if (field.canonical_field === "requires_sponsorship") {
       value = normalizeSponsorship(value);
     }
-    if (field.canonical_field === "address.city" && typeof value === "string") {
-      // Location typeaheads want "Baltimore, Maryland, USA" not bare city.
+    if (
+      field.canonical_field === "address.city" &&
+      typeof value === "string" &&
+      shouldComposeCityTypeahead(mapped)
+    ) {
+      // Lone location typeaheads want "Baltimore, Maryland, USA".
+      // Split City/State/Country forms keep the bare city.
       value = locationTypeaheadQuery(
         value,
         profile.address?.state ?? "",

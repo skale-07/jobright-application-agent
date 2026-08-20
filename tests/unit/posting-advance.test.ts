@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyPage,
   hasApplicationIdentityFields,
+  isApplicationFormPath,
 } from "../../src/ats/shared/pageClassify.js";
 import { advancePastPosting } from "../../src/ats/shared/postingAdvance.js";
 import { withFixtureHtmlPage } from "../../src/browser/fixtureSession.js";
@@ -123,9 +124,58 @@ describe("posting vs form discrimination (UNIT_CONFIRMED)", () => {
     expect(classifyPage({ html, url: "https://x.example" }).page_class).toBe("form");
   });
 
+  it("Paylocity /Jobs/Apply is a form even when leftover Apply chrome remains", () => {
+    // Live 2026-08-19 (053aa25b): Apply click reached /Jobs/Apply/4429441
+    // with 32 opaque ASP.NET fields. The header still said Apply, identity
+    // regex missed `ctl00$txtContact`, classifier called it a posting,
+    // hop 2 found no control, fill parked FORM_NOT_REACHED.
+    const applyWizard = `<html><body>
+      <a href="/Recruiting/Jobs/Apply/4429441">Apply</a>
+      <form>
+        <input name="ctl00$MainContent$txtFirst" />
+        <input name="ctl00$MainContent$txtLast" />
+        <input name="ctl00$MainContent$txtContact" />
+        <input name="ctl00$MainContent$txtPhone" />
+      </form>
+    </body></html>`;
+    expect(
+      classifyPage({
+        html: applyWizard,
+        url: "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+      }).page_class,
+    ).toBe("form");
+    expect(
+      classifyPage({
+        html: applyWizard,
+        url: "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+      }).page_class,
+    ).toBe("posting");
+  });
+
+  it("isApplicationFormPath is a path segment, not a substring", () => {
+    expect(
+      isApplicationFormPath(
+        "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+      ),
+    ).toBe(true);
+    expect(
+      isApplicationFormPath(
+        "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+      ),
+    ).toBe(false);
+    expect(
+      isApplicationFormPath("https://boards.example/careers/apply-filters"),
+    ).toBe(false);
+  });
+
   it("hasApplicationIdentityFields names the applicant questions only", () => {
     expect(
       hasApplicationIdentityFields([{ label: "Email", type: "email" }]),
+    ).toBe(true);
+    expect(
+      hasApplicationIdentityFields([
+        { label: "ctl00$txtContact", name: "ctl00$txtContact", type: "email" },
+      ]),
     ).toBe(true);
     expect(
       hasApplicationIdentityFields([{ label: "First Name", type: "text" }]),

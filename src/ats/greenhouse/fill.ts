@@ -117,6 +117,9 @@ function isLocationStyleField(entry: {
   name?: string;
   inputId?: string;
 }): boolean {
+  const label = entry.label.replace(/\(.*?\)/g, "").trim().toLowerCase();
+  // Split address "City" is a text box, not a Places typeahead.
+  if (/^city$/.test(label)) return false;
   if (entry.canonical_field === "address.city") return true;
   const blob = `${entry.field_id} ${entry.label} ${entry.name ?? ""} ${entry.inputId ?? ""}`.toLowerCase();
   return (
@@ -666,9 +669,25 @@ export async function greenhouseFillFromPlan(
               : {}),
           });
           if (!result.committed) {
-            throw new Error(
-              `combobox option not committed: ${result.notes.join("; ")}`,
+            const noList = result.notes.some((n) =>
+              n.includes("listbox did not open after click"),
             );
+            // Places-style address inputs advertise combobox but the list
+            // only appears after typing (Paylocity Address Line 1). Don't
+            // refuse a street we can type.
+            if (noList) {
+              await loc.fill(String(entry.value));
+              field_meta[field_meta.length - 1] = {
+                field_id: entry.field_id,
+                canonical_field: entry.canonical_field,
+                control_kind: "text",
+                notes: [...result.notes, "fell back to text fill — no listbox"],
+              };
+            } else {
+              throw new Error(
+                `combobox option not committed: ${result.notes.join("; ")}`,
+              );
+            }
           }
         } else if (kind === "native_select") {
           await setSelectByValueOrLabel(loc, entry.value);
@@ -750,8 +769,42 @@ export async function greenhouseReadFieldValue(
     return { value, label };
   }
   const type = await loc.getAttribute("type");
-  if (type === "checkbox" || type === "radio") {
+  if (type === "checkbox") {
     return loc.isChecked();
+  }
+  if (type === "radio") {
+    const name = await loc.getAttribute("name");
+    const group = name
+      ? page.locator(
+          `input[type="radio"][name="${name.replace(/"/g, '\\"')}"]`,
+        )
+      : page.locator('input[type="radio"]');
+    const n = await group.count();
+    for (let i = 0; i < n; i++) {
+      const opt = group.nth(i);
+      if (!(await opt.isChecked())) continue;
+      const value = (await opt.getAttribute("value")) ?? "";
+      const attrLabel = (await opt.getAttribute("label")) ?? "";
+      const labelText = await opt.evaluate((el: {
+        id: string;
+        parentElement?: { textContent?: string | null } | null;
+      }) => {
+        if (el.id) {
+          const lab = (
+            globalThis as unknown as {
+              document?: {
+                querySelector: (s: string) => { textContent?: string | null } | null;
+              };
+            }
+          ).document?.querySelector(`label[for="${el.id}"]`);
+          if (lab?.textContent) return lab.textContent.trim();
+        }
+        return el.parentElement?.textContent?.trim() ?? "";
+      });
+      const label = (attrLabel || labelText || value).replace(/\s+/g, " ").trim();
+      return { value, label };
+    }
+    return { value: "", label: "" };
   }
   // Combobox inner inputs: inputValue() is the transient filter text and
   // LIES about commitment — read the committed display instead, null while

@@ -1219,6 +1219,22 @@ async function step(
       return { to: "READY_TO_SUBMIT", note: `verified (${detail})` };
     }
 
+    case "AMBIGUOUS_FIELD": {
+      // Verify miss is not a terminal identity crisis. Re-run fill so a
+      // combobox fix can actually land (Paylocity 2026-08-19 parked here
+      // with no handler — `no handler for state AMBIGUOUS_FIELD`).
+      transitionApplication(db, {
+        applicationId: app.id,
+        nextState: "NATIVE_AUTOFILL_RUNNING",
+        reason: "pipeline: retry fill after verification miss",
+        runId,
+      });
+      return {
+        to: "NATIVE_AUTOFILL_RUNNING",
+        note: "retrying fill after verification miss",
+      };
+    }
+
     case "FIELD_VERIFICATION": {
       // Reached via the essay path (resume-essay). The binding pre-click
       // verification happens inside runAtsSubmission on the live page;

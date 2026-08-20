@@ -513,4 +513,19 @@ describe("generateEmailForContact with stub client (UNIT_CONFIRMED, no network)"
     expect(result.validation_status).toBe("REJECTED");
     expect(result.violations.join(" ")).toMatch(/schema validation/);
   });
+
+  it("COMPLETED apps still generate — pipeline skip is not a dead end", async () => {
+    db.prepare(`UPDATE applications SET state = 'COMPLETED' WHERE id = ?`).run(
+      applicationId,
+    );
+    const result = await generateEmailForContact({
+      db,
+      applicationId,
+      contactId,
+      client: new StubClient(validOutput("beyond")),
+    });
+    expect(result.validation_status).toBe("VALIDATED");
+    expect(result.application_state).toBe("COMPLETED");
+    expect(getApplication(db, applicationId)?.state).toBe("COMPLETED");
+  });
 });

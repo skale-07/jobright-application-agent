@@ -92,9 +92,9 @@ import { greenhouseFillEssays } from "../ats/greenhouse/essayFill.js";
 import { pickOptionLabel } from "../ats/greenhouse/comboboxFill.js";
 
 /**
- * The three fill-capable adapters all carry this surface (the base
- * ApplicationAdapter interface leaves fill methods optional because
- * generic/unsupported adapters lack them).
+ * Fill-capable adapters. The base ApplicationAdapter interface leaves
+ * fill methods optional because the leftover unsupported adapter has
+ * none — fill never uses that adapter; unmatched pages use generic.
  */
 export type FillCapableAdapter = ApplicationAdapter & {
   setFillContext(entries: FillPlanEntry[], fields: DiscoveredField[]): void;
@@ -249,19 +249,17 @@ export async function planApplicationFill(input: {
    * text box the form reveals next. Consumed by the other-specify sweep. */
   otherFallbacks: OtherFallback[];
 }> {
-  const { adapter: detected, detection } = await detectAts({
+  const { adapter: detected } = await detectAts({
     url: input.url,
     html: input.html,
   });
-  // The generic adapter is a first-class adapter (operator directive
-  // 2026-08-14; the former GENERIC_ATS_ENABLED gate parked every long-tail
-  // employer). Planning is read-only; mutation stays behind the fill flags.
-  const makeAdapter = FILLABLE_ADAPTERS[detected.id];
-  if (!makeAdapter) {
-    throw new Error(
-      `Fill supports greenhouse/lever/ashby/workable/workday/generic only — detected "${detected.id}" (${detection.evidence.join("; ") || "no evidence"})`,
-    );
-  }
+  // Vendor adapters win on their own hosts. Everything else — including
+  // a page HTML detection used to call "unsupported" — uses generic.
+  // Live 2026-08-19: Paylocity Apply had no `<form>` wrapper, detectAts
+  // returned unsupported, and this throw killed a form that was already
+  // on screen. Mutation stays behind the fill flags.
+  const makeAdapter =
+    FILLABLE_ADAPTERS[detected.id] ?? (() => new GenericAdapterV1());
   const adapter = makeAdapter();
   const discovered = await adapter.discoverFields({ html: input.html });
   // Give every tier below the real answer space before it decides anything.

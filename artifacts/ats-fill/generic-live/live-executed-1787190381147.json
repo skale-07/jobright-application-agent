@@ -1,0 +1,511 @@
+{
+  "ats": "generic",
+  "url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+  "requested_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+  "mode": "executed",
+  "gate": {
+    "ok": true,
+    "failure_code": null,
+    "reason": null,
+    "final_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+    "page_class": "form"
+  },
+  "plan_summary": {
+    "fillable_count": 7,
+    "skipped_count": 25,
+    "review_required_count": 0
+  },
+  "plan_fields": [
+    {
+      "field_id": "btn-resume",
+      "label": "field_0",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "useAttachedResumeToFillOutApplication",
+      "label": "Fill out application with my resume",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoFirstName",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoLastName",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoMiddleName",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoPreferredName",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoEmail",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoCellPhone",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoPhone",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "public-site-address-country",
+      "label": "Country United States",
+      "type": "text",
+      "canonical_field": "address.country",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "public-site-address-address-1",
+      "label": "Address Line 1",
+      "type": "text",
+      "canonical_field": "address.line1",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "public-site-address-address-2",
+      "label": "Address Line 2 (optional)",
+      "type": "text",
+      "canonical_field": "address.line2",
+      "action": "SKIP",
+      "reason": "Profile value empty for address.line2"
+    },
+    {
+      "field_id": "public-site-address-city",
+      "label": "City",
+      "type": "text",
+      "canonical_field": "address.city",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "public-site-address-county",
+      "label": "County",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "public-site-address-us-state",
+      "label": "State Select a state",
+      "type": "text",
+      "canonical_field": "address.state",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "public-site-address-zip",
+      "label": "Zip Code",
+      "type": "text",
+      "canonical_field": "address.postal_code",
+      "action": "FILL",
+      "reason": "Mapped from public profile"
+    },
+    {
+      "field_id": "info.dateAvailableToStart",
+      "label": "MM/DD/YYYY",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Predict produced no usable answer"
+    },
+    {
+      "field_id": "infoLinkedIn",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoMinimumDesiredSalary",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "infoMaximumDesiredSalary",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "info.howDidYouHearAboutUs",
+      "label": "Salary Range",
+      "type": "radio",
+      "canonical_field": "screener:custom:how_heard_source",
+      "action": "FILL",
+      "reason": "Screener bank answer (exact_option)"
+    },
+    {
+      "field_id": "infoReferredBy",
+      "label": "",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "info.skills",
+      "label": "Type a skill and press enter",
+      "type": "text",
+      "canonical_field": "screener:custom:skill_tag",
+      "action": "FILL",
+      "reason": "Screener bank answer (free_text)"
+    },
+    {
+      "field_id": "btn-coverLetter",
+      "label": "field_27",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "btn-additionalFiles",
+      "label": "field_28",
+      "type": "file",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "File uploads handled via uploadResume/uploadCoverLetter"
+    },
+    {
+      "field_id": "ot-group-id-C0004",
+      "label": "Targeting Cookies",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "ot-group-id-C0002",
+      "label": "Performance Cookies",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "vendor-search-handler",
+      "label": "vendor-search-handler",
+      "type": "text",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "Predict produced no usable answer"
+    },
+    {
+      "field_id": "chkbox-id",
+      "label": "checkbox label",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "select-all-hosts-groups-handler",
+      "label": "Switch Label",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "select-all-vendor-groups-handler",
+      "label": "Switch Label",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    },
+    {
+      "field_id": "select-all-vendor-leg-handler",
+      "label": "Switch Label",
+      "type": "checkbox",
+      "canonical_field": null,
+      "action": "SKIP",
+      "reason": "No answer-alias mapping"
+    }
+  ],
+  "form_snapshot_path": "C:\\dev\\jobright-application-agent\\artifacts\\ats-fill\\generic-live\\form-snapshot-1787190362714.html",
+  "fill": {
+    "filled": [
+      "address.line1",
+      "address.city",
+      "address.postal_code",
+      "screener:custom:how_heard_source",
+      "screener:custom:skill_tag"
+    ],
+    "skipped": [],
+    "errors": [
+      "public-site-address-country: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"United States\" (options: )",
+      "public-site-address-us-state: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"Maryland\" (options: )"
+    ],
+    "field_meta": [
+      {
+        "field_id": "public-site-address-country",
+        "canonical_field": "address.country",
+        "control_kind": "combobox",
+        "selected_option": null,
+        "match_via": null,
+        "notes": [
+          "opened via control click",
+          "filter yielded no/unmatched options; re-collected unfiltered (residue cleared)",
+          "no option matches \"United States\" (options: )"
+        ],
+        "options_sample": []
+      },
+      {
+        "field_id": "public-site-address-address-1",
+        "canonical_field": "address.line1",
+        "control_kind": "text",
+        "notes": [
+          "opened via control click",
+          "listbox did not open after click",
+          "fell back to text fill — no listbox"
+        ]
+      },
+      {
+        "field_id": "public-site-address-city",
+        "canonical_field": "address.city",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "public-site-address-us-state",
+        "canonical_field": "address.state",
+        "control_kind": "combobox",
+        "selected_option": null,
+        "match_via": null,
+        "notes": [
+          "opened via control click",
+          "filter yielded no/unmatched options; re-collected unfiltered (residue cleared)",
+          "no option matches \"Maryland\" (options: )"
+        ],
+        "options_sample": []
+      },
+      {
+        "field_id": "public-site-address-zip",
+        "canonical_field": "address.postal_code",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "info.howDidYouHearAboutUs",
+        "canonical_field": "screener:custom:how_heard_source",
+        "control_kind": "text"
+      },
+      {
+        "field_id": "info.skills",
+        "canonical_field": "screener:custom:skill_tag",
+        "control_kind": "text"
+      }
+    ]
+  },
+  "verify": {
+    "passed": false,
+    "fields": [
+      {
+        "canonical_field": "address.country",
+        "expected": "United States",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "address.line1",
+        "expected": "3510 N Charles St",
+        "observed": {
+          "value": "3510 N Charles St",
+          "label": "3510 N Charles St"
+        },
+        "match": true
+      },
+      {
+        "canonical_field": "address.city",
+        "expected": "Baltimore",
+        "observed": "Baltimore",
+        "match": true
+      },
+      {
+        "canonical_field": "address.state",
+        "expected": "Maryland",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "match": false
+      },
+      {
+        "canonical_field": "address.postal_code",
+        "expected": "21218",
+        "observed": "21218",
+        "match": true
+      },
+      {
+        "canonical_field": "screener:custom:how_heard_source",
+        "expected": "Online Job Board",
+        "observed": true,
+        "match": false
+      },
+      {
+        "canonical_field": "screener:custom:skill_tag",
+        "expected": "Python",
+        "observed": "Python",
+        "match": true
+      }
+    ],
+    "uploads": [],
+    "warnings": []
+  },
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "page class at gate: posting (no fields, Apply CTA present)",
+    "landed on a posting (no fields, Apply CTA present); clicking Apply via role=link \"Apply\"",
+    "Apply landed on: form (32 fillable field(s))",
+    "option harvest: \"Country United States\" is a combobox but offered no readable options",
+    "option harvest: \"Address Line 1\" is a combobox but offered no readable options",
+    "option harvest: \"State Select a state\" is a combobox but offered no readable options",
+    "submit not attempted — live fill never submits"
+  ],
+  "harvested_options": [],
+  "operator_brief": {
+    "title": "Live fill — generic https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+    "summary": "5 item(s) need attention (verify failed — submit click blocked)",
+    "items": [
+      {
+        "id": "verify:address.country",
+        "question": "Country United States",
+        "field_id": "public-site-address-country",
+        "canonical_field": "address.country",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"United States\"; page shows \"(empty)\"",
+        "expected": "United States",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: United States). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"United States\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.country",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.country\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:address.state",
+        "question": "State Select a state",
+        "field_id": "public-site-address-us-state",
+        "canonical_field": "address.state",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Maryland\"; page shows \"(empty)\"",
+        "expected": "Maryland",
+        "observed": {
+          "value": "",
+          "label": ""
+        },
+        "how_to_answer": [
+          "Type the intended value on the form (planned: Maryland). If a places/autocomplete list appears, select a matching suggestion; plain city text is enough when no list opens.",
+          "System expected \"Maryland\" but the page is empty after fill. Fix fill path, control type, or map; or enter the value manually and re-verify.",
+          "Profile source: private/candidate/public-profile.json → address.state",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"address.state\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "verify:screener:custom:how_heard_source",
+        "question": "Salary Range",
+        "field_id": "info.howDidYouHearAboutUs",
+        "canonical_field": "screener:custom:how_heard_source",
+        "kind": "verify_mismatch",
+        "problem": "Expected \"Online Job Board\"; page shows \"true\"",
+        "expected": "Online Job Board",
+        "observed": true,
+        "how_to_answer": [
+          "DOM shows \"true\" but plan expected \"Online Job Board\". Correct the value on the form or fix profile/aliases so the plan matches the real answer.",
+          "Profile source: private/candidate/public-profile.json (key: screener:custom:how_heard_source)",
+          "Alias check: private/candidate/answer-aliases.json phrases for \"screener:custom:how_heard_source\" should match the on-form question text."
+        ]
+      },
+      {
+        "id": "fill_error:public-site-address-country: combobox option not committed: opened via control c",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "public-site-address-country: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"United States\" (options: )",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      },
+      {
+        "id": "fill_error:public-site-address-us-state: combobox option not committed: opened via control ",
+        "question": "(fill error — see problem)",
+        "field_id": null,
+        "canonical_field": null,
+        "kind": "fill_error",
+        "problem": "public-site-address-us-state: combobox option not committed: opened via control click; filter yielded no/unmatched options; re-collected unfiltered (residue cleared); no option matches \"Maryland\" (options: )",
+        "expected": null,
+        "observed": null,
+        "how_to_answer": [
+          "Inspect the form control this error names; fix selector/control kind or answer that field manually.",
+          "Re-run fill after fixing profile/aliases if the wrong value caused the error."
+        ]
+      }
+    ],
+    "ok_count": 4,
+    "fail_count": 5
+  },
+  "written_at": "2026-08-20T01:46:23.096Z"
+}

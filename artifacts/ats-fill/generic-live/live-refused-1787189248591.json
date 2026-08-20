@@ -1,0 +1,31 @@
+{
+  "ats": "generic",
+  "url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+  "requested_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Details/4429441",
+  "mode": "refused",
+  "gate": {
+    "ok": false,
+    "failure_code": "FORM_NOT_REACHED",
+    "reason": "still on the job posting after trying Apply — no application form to fill",
+    "final_url": "https://recruiting.paylocity.com/Recruiting/Jobs/Apply/4429441",
+    "page_class": "posting"
+  },
+  "plan_summary": null,
+  "plan_fields": null,
+  "form_snapshot_path": null,
+  "fill": null,
+  "verify": null,
+  "uploads": null,
+  "validation_level": "UNVERIFIED",
+  "submit_attempted": false,
+  "notes": [
+    "session: handoff (caller-owned page, not closed here)",
+    "page class at gate: posting (Apply CTA present and none of the 7 field(s) ask who you are — page furniture, not an application)",
+    "popups dismissed: close (aria-label)",
+    "landed on a posting (Apply CTA present and none of the 7 field(s) ask who you are — page furniture, not an application); clicking Apply via role=link \"Apply\"",
+    "Apply landed on: posting (Apply CTA present and none of the 32 field(s) ask who you are — page furniture, not an application)",
+    "posting page (Apply CTA present and none of the 32 field(s) ask who you are — page furniture, not an application) but no Apply control found — not filling the posting; visible apply-ish: span \"Software Development Co-Op\"",
+    "parked: refused to fill a listing page's own search widgets"
+  ],
+  "written_at": "2026-08-20T01:27:28.591Z"
+}
