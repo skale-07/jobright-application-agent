@@ -186,3 +186,44 @@ describe("Phase 4 ATS inspection", () => {
     );
   });
 });
+
+describe("consent-manager DOM exclusion (UNIT_CONFIRMED)", () => {
+  // Live Paylocity 2026-08-19: OneTrust's banner contributed 6 "fields"
+  // (cookie toggles + hidden template placeholders "checkbox label" /
+  // "Switch Label"), inflating the count that decides posting-vs-form and
+  // polluting the operator brief. The subtree is furniture, not the form.
+  const CONSENT_HTML = `<html><body>
+    <div id="onetrust-consent-sdk">
+      <div id="onetrust-pc-sdk" class="otPcCenter">
+        <input type="checkbox" id="ot-group-id-C0004" aria-label="Targeting Cookies" />
+        <input type="checkbox" id="ot-group-id-C0002" aria-label="Performance Cookies" />
+        <input type="checkbox" id="chkbox-id" aria-label="checkbox label" />
+        <input type="checkbox" id="select-all-vendor-groups-handler" aria-label="Switch Label" />
+        <input type="text" id="vendor-search-handler" placeholder="Search…" />
+      </div>
+    </div>
+    <label for="info.firstName">First Name</label>
+    <input type="text" id="info.firstName" name="firstName" />
+    <label for="info.email">Email</label>
+    <input type="email" id="info.email" name="email" />
+  </body></html>`;
+
+  it("cookie-banner controls are never discovered as application fields", () => {
+    const fields = discoverFieldsFromHtml(CONSENT_HTML);
+    const ids = fields.map((f) => f.id);
+    expect(ids).toContain("info.firstName");
+    expect(ids).toContain("info.email");
+    expect(ids.join(" ")).not.toMatch(/ot-group|chkbox-id|vendor|handler/);
+    expect(fields).toHaveLength(2);
+  });
+
+  it("optanon-classed and data-optanongroupid subtrees are dropped too", () => {
+    const html = `<html><body>
+      <div class="optanon-alert-box-wrapper"><input type="checkbox" id="opt-1" /></div>
+      <div data-optanongroupid="C0003"><input type="checkbox" id="opt-2" /></div>
+      <input type="text" id="real" name="city" aria-label="City" />
+    </body></html>`;
+    const ids = discoverFieldsFromHtml(html).map((f) => f.id);
+    expect(ids).toEqual(["real"]);
+  });
+});
