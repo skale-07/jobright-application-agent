@@ -47,6 +47,7 @@ import {
   probeCdpTargetsForExtension,
   probeDomForExtension,
 } from "../automation/extensionPreflight.js";
+import { captureExtensionSession } from "../jobright/extension/capture.js";
 import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { runGmailAuthFlow } from "../gmail/authFlow.js";
 import { GmailClient } from "../gmail/client.js";
@@ -170,6 +171,7 @@ Commands:
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   contacts:insider --application <uuid> [--headed]   — Insider Connection email triage (school + beyond panels only; needs LINKEDIN_ENRICHMENT_ENABLED)
   jobright:ext-check [--url <ats-url>]               — read-only probe: is the JobRight extension present in the CDP Chrome? (--url adds an on-page DOM probe)
+  jobright:ext-capture --url <ats-url>               — headed capture: YOU activate the extension's autofill; writes before/after diff + selector candidates
   gmail:draft --application <uuid> --contact <contact_id> [--headed]   — save the generated email as a Gmail DRAFT (never sends; needs GMAIL_DRAFTS_ENABLED)
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
@@ -708,6 +710,68 @@ async function cmdContactsInsider(
     }
   } finally {
     closeDatabase(db);
+  }
+}
+
+/**
+ * Headed extension-capture session (X1): the OPERATOR activates the
+ * JobRight extension by hand; this command only snapshots before/after
+ * and writes scrubbed diff + selector-candidate artifacts. Nothing is
+ * clicked by code, so no capability flag is needed — it is a read-only
+ * observation of an operator action.
+ */
+async function cmdExtCapture(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const url = flags["url"];
+  if (typeof url !== "string") {
+    console.error("Usage: jobright:ext-capture --url <ats-application-url>");
+    console.error(
+      "Opens the URL in the CDP Chrome; YOU activate the extension's autofill, then press Enter.",
+    );
+    process.exit(2);
+    return;
+  }
+  const session = new PlaywrightServiceSession({
+    service: "jobright",
+    headless: false,
+  });
+  await session.open();
+  try {
+    const page = await session.newPage({ purpose: "ext_capture" });
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    await page.waitForTimeout(2_000);
+    const report = await captureExtensionSession({
+      page,
+      url,
+      waitForOperator: async () => {
+        console.log(
+          "\n>>> Activate the JobRight extension's autofill on the page now.",
+        );
+        console.log(">>> When the fill has settled, press Enter here...");
+        await new Promise<void>((resolve) => {
+          process.stdin.resume();
+          process.stdin.once("data", () => {
+            process.stdin.pause();
+            resolve();
+          });
+        });
+      },
+    });
+    console.log(`capture written: ${report.out_dir}`);
+    console.log(
+      `fields: ${report.before_fields}; extension filled (empty→value): ${report.diff.filled_count}`,
+    );
+    if (report.trigger_candidates.length > 0) {
+      console.log("autofill-trigger candidates (pre-activation DOM):");
+      for (const c of report.trigger_candidates) console.log(`  ${c}`);
+    }
+    for (const n of report.notes) console.log(`note: ${n}`);
+    console.log(
+      "Next: promote working selectors into src/jobright/extension/selectors.ts (autofillTrigger).",
+    );
+  } finally {
+    await session.close();
   }
 }
 
@@ -1865,6 +1929,9 @@ async function main(): Promise<void> {
       return;
     case "jobright:ext-check":
       await cmdExtCheck(flags);
+      return;
+    case "jobright:ext-capture":
+      await cmdExtCapture(flags);
       return;
     case "gmail:draft": {
       const application = flags["application"];

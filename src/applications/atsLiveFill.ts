@@ -9,6 +9,7 @@ import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { walkWorkdayWizard } from "./workdayWizard.js";
 import { walkGenericFormPages } from "./genericFormAdvance.js";
 import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
+import { scrubHtmlForSnapshot } from "./htmlScrub.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -1033,16 +1034,7 @@ export async function runAtsLiveFill(input: {
     const outDir = path.join(cfg.artifactsDir, "ats-fill", `${binding.id}-live`);
     fs.mkdirSync(outDir, { recursive: true });
     const snapshotPath = path.join(outDir, `form-snapshot-${Date.now()}.html`);
-    const scrubbed = html
-      .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-      .replace(/\bvalue\s*=\s*"[^"]*"/gi, 'value="[SCRUBBED]"')
-      .replace(/\bvalue\s*=\s*'[^']*'/gi, "value='[SCRUBBED]'")
-      .replace(
-        /(<textarea\b[^>]*>)[\s\S]*?(<\/textarea>)/gi,
-        "$1[SCRUBBED]$2",
-      )
-      .slice(0, 2_000_000);
-    fs.writeFileSync(snapshotPath, scrubbed, "utf8");
+    fs.writeFileSync(snapshotPath, scrubHtmlForSnapshot(html), "utf8");
     return snapshotPath;
   }
 
