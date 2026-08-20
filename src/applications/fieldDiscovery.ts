@@ -215,6 +215,22 @@ function matchingCloseIndex(html: string, tag: string, from: number): number {
  * waits 2s for visibility, errors, and the Next walker never starts
  * (/fillhard page 2).
  */
+/**
+ * Consent-manager (OneTrust/Optanon) DOM is page furniture, not the
+ * application. Live Paylocity 2026-08-19: 6 cookie toggles were planned as
+ * application fields — including OneTrust's own hidden template
+ * placeholders ("checkbox label", "Switch Label") — inflating the field
+ * count that decides posting-vs-form and polluting the operator brief.
+ * The whole banner subtree is dropped before discovery.
+ */
+function isConsentManagerAttrs(attrs: string): boolean {
+  const id = getAttr(attrs, "id") ?? "";
+  if (/^(onetrust|ot-sdk|optanon)/i.test(id)) return true;
+  const cls = getAttr(attrs, "class") ?? "";
+  if (/(^|\s)(onetrust|ot-sdk|optanon)/i.test(cls)) return true;
+  return /\bdata-optanongroupid\s*=/i.test(attrs);
+}
+
 function stripHiddenSubtrees(html: string): string {
   const openRe = /<([a-z][a-z0-9]*)\b([^>]*?)>/gi;
   let out = "";
@@ -223,7 +239,8 @@ function stripHiddenSubtrees(html: string): string {
   while ((m = openRe.exec(html)) !== null) {
     const tag = (m[1] ?? "").toLowerCase();
     const attrs = m[2] ?? "";
-    if (VOID_TAGS.has(tag) || !isHiddenAttrs(attrs)) continue;
+    if (VOID_TAGS.has(tag)) continue;
+    if (!isHiddenAttrs(attrs) && !isConsentManagerAttrs(attrs)) continue;
     if (/\/\s*$/.test(attrs)) continue;
     const end = matchingCloseIndex(html, tag, m.index + m[0].length);
     if (end < 0) continue;

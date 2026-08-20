@@ -677,6 +677,16 @@ export async function runAtsLiveFill(input: {
         );
       }
 
+      // plan_only cannot click Apply, so a posting has nothing plannable —
+      // a listing page's own widgets (search boxes, newsletter signups)
+      // must never become the "form" just because the field-count gate now
+      // tolerates form-less SPAs (live 2026-08-19 Paylocity). Execute mode
+      // advances past postings above; refusing here keeps plan_only honest.
+      if (!input.execute && report.gate.ok && landing.page_class === "posting") {
+        report.gate.ok = false;
+        report.gate.reason =
+          "posting page — Apply advance is execute-only, nothing to plan";
+      }
       if (!report.gate.ok && landing.page_class !== "form") {
         if (landing.page_class === "auth") {
           report.gate.failure_code = report.gate.failure_code ?? "LOGIN_WALL";
