@@ -29,6 +29,7 @@ import {
   runGreenhouseLiveFill,
 } from "../ats/greenhouse/liveFill.js";
 import { runAtsLiveFill } from "../applications/atsLiveFill.js";
+import { resolveFillStrategy } from "../applications/fillStrategy.js";
 import {
   probeCdpEndpoint,
   runNavigation,
@@ -172,6 +173,20 @@ type StepContext = {
   options: PipelineOptions;
   /** Same-run fill page held for `--submit` so the click is on that DOM. */
   heldSubmitSession: { current: PublicUrlSession | null };
+  /**
+   * X2: outcome of the JOBRIGHT_AUTOFILL_RUNNING step, consumed by the
+   * VERIFICATION step in the SAME run — the extension's writes live in
+   * the page, so the two steps share one loop pass. Absent after a
+   * restart, which VERIFICATION treats as "run native".
+   */
+  extensionOutcome?:
+    | {
+        ran: boolean;
+        verifyPassed: boolean;
+        detail: string;
+        operatorBrief?: OperatorFieldBrief;
+      }
+    | undefined;
 };
 
 const URL_MISMATCH_REVIEW_RE = /URL belongs to/;
@@ -980,18 +995,204 @@ async function step(
             stop: "review",
           };
         }
-        default:
+        default: {
+          // X2 strategy seam: EXTENSION_FIRST only when every precondition
+          // holds (flag, non-fixture, non-submit-held, extension present,
+          // promoted trigger selectors) — resolveFillStrategy is the one
+          // place that decision lives.
+          const strategy = await resolveFillStrategy({
+            fixture: Boolean(ctx.options.fixtureHtmlPath),
+            submitHeld: Boolean(ctx.options.submit),
+          });
+          const next =
+            strategy.strategy === "EXTENSION_FIRST"
+              ? "JOBRIGHT_AUTOFILL_RUNNING"
+              : "NATIVE_AUTOFILL_RUNNING";
           transitionApplication(db, {
             applicationId: app.id,
-            nextState: "NATIVE_AUTOFILL_RUNNING",
-            reason: `pipeline: inspection route ${inspect.route}`,
+            nextState: next,
+            reason: `pipeline: inspection route ${inspect.route} (${strategy.strategy}: ${strategy.notes[0] ?? ""})`,
             runId,
           });
           return {
-            to: "NATIVE_AUTOFILL_RUNNING",
-            note: `route ${inspect.route} — proceeding to deterministic fill`,
+            to: next,
+            note: `route ${inspect.route} — ${strategy.strategy === "EXTENSION_FIRST" ? "extension-first fill" : "proceeding to deterministic fill"}`,
           };
+        }
       }
+    }
+
+    case "JOBRIGHT_AUTOFILL_RUNNING": {
+      // X2: the extension-first fill happens in ONE browser session inside
+      // runAtsLiveFill (activate → pre-verify → native gap-fill → whole
+      // verify) — this state exists so the transition log and training
+      // data can tell extension-first apps from native ones. The heavy
+      // lifting reuses the NATIVE handler below by falling through via
+      // states: RUNNING → VERIFICATION here, VERIFICATION routes on the
+      // stored outcome.
+      if (!cfg.formFillEnabled || cfg.dryRun) {
+        return {
+          to: null,
+          note: "fill gate closed (FORM_FILL_ENABLED/DRY_RUN) — set flags to proceed",
+          stop: "gate",
+        };
+      }
+      const url = getEmployerApplicationUrl(db, app.id);
+      const detected = url ? detectAtsFromUrl(url) : null;
+      // Preconditions the extension path cannot serve: no URL yet (native
+      // handler owns the navigation bounce), greenhouse (dedicated
+      // deterministic runner, no extensionFirst seam), fixture/submit runs
+      // (no extension in those browsers — strategy should not have routed
+      // here, but re-check rather than trust).
+      const fallbackReason =
+        !url
+          ? "no employer URL — native path owns the navigation bounce"
+          : detected?.ats === null
+            ? "employer URL no longer validates"
+            : detected?.ats === "greenhouse"
+              ? "greenhouse uses the dedicated deterministic runner"
+              : ctx.options.fixtureHtmlPath || ctx.options.submit
+                ? "fixture/submit-held run cannot reach the extension"
+                : null;
+      if (fallbackReason) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "JOBRIGHT_AUTOFILL_VERIFICATION",
+          reason: `pipeline: extension fill not attempted — ${fallbackReason}`,
+          runId,
+        });
+        ctx.extensionOutcome = { ran: false, verifyPassed: false, detail: fallbackReason };
+        return {
+          to: "JOBRIGHT_AUTOFILL_VERIFICATION",
+          note: `extension fill skipped: ${fallbackReason}`,
+        };
+      }
+      const filled = await withNavHandoffPage(ctx, async (handoff) => {
+        if (!handoff) return null;
+        const liveReport = await runAtsLiveFill({
+          binding: ATS_BINDINGS[detected!.ats as keyof typeof ATS_BINDINGS],
+          url: url!,
+          execute: true,
+          extensionFirst: true,
+          headless: ctx.options.headless ?? false,
+          capture: { db, applicationId: app.id },
+          existingPage: handoff,
+        });
+        return liveReport;
+      });
+      if (!filled) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "JOBRIGHT_AUTOFILL_VERIFICATION",
+          reason:
+            "pipeline: extension fill not attempted — CDP session unavailable",
+          runId,
+        });
+        ctx.extensionOutcome = {
+          ran: false,
+          verifyPassed: false,
+          detail: "CDP session unavailable — extension lives in the CDP Chrome",
+        };
+        return {
+          to: "JOBRIGHT_AUTOFILL_VERIFICATION",
+          note: "extension fill skipped: CDP session unavailable",
+        };
+      }
+      if (!filled.gate.ok) {
+        return {
+          to: null,
+          note: `${detected!.ats} extension-first fill refused: ${filled.gate.failure_code}`,
+          stop: "gate",
+        };
+      }
+      const detail = `extension-first fill: activated=${filled.extension?.activated === true}, satisfied ${filled.extension?.satisfied_answers.length ?? 0}, native-filled ${filled.fill?.filled.length ?? 0}`;
+      ctx.extensionOutcome = {
+        ran: true,
+        verifyPassed: filled.verify?.passed === true,
+        detail,
+        ...(filled.operator_brief ? { operatorBrief: filled.operator_brief } : {}),
+      };
+      transitionApplication(db, {
+        applicationId: app.id,
+        nextState: "JOBRIGHT_AUTOFILL_VERIFICATION",
+        reason: `pipeline: ${detail}`,
+        runId,
+      });
+      return {
+        to: "JOBRIGHT_AUTOFILL_VERIFICATION",
+        note: detail,
+      };
+    }
+
+    case "JOBRIGHT_AUTOFILL_VERIFICATION": {
+      const outcome = ctx.extensionOutcome;
+      ctx.extensionOutcome = undefined;
+      if (!outcome || !outcome.ran) {
+        // Extension never filled (precondition miss, CDP loss, or a
+        // process restart dropped the in-memory outcome) — run the full
+        // native fill; nothing was typed yet in the no-outcome case, and
+        // a re-fill is idempotent when it was.
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "NATIVE_AUTOFILL_RUNNING",
+          reason: `pipeline: extension outcome ${outcome ? `unusable (${outcome.detail})` : "not in memory"} — native fill`,
+          runId,
+        });
+        return {
+          to: "NATIVE_AUTOFILL_RUNNING",
+          note: "falling back to native fill",
+        };
+      }
+      if (!outcome.verifyPassed) {
+        transitionApplication(db, {
+          applicationId: app.id,
+          nextState: "AMBIGUOUS_FIELD",
+          reason: "pipeline: extension-first read-back verification failed",
+          runId,
+          route: "AMBIGUOUS_FIELD",
+        });
+        upsertOpenReviewItem(db, {
+          applicationId: app.id,
+          kind: "AMBIGUOUS_FIELD",
+          title: "Extension-first fill verification failed",
+          payload: {
+            detail: outcome.detail,
+            filled_by: "extension",
+            ...(outcome.operatorBrief
+              ? { operator_brief: outcome.operatorBrief }
+              : {}),
+          },
+        });
+        return {
+          to: "AMBIGUOUS_FIELD",
+          note: "extension-first verification failed",
+          stop: "review",
+        };
+      }
+      transitionApplication(db, {
+        applicationId: app.id,
+        nextState: "FIELD_VERIFICATION",
+        reason: `pipeline: ${outcome.detail} — verified`,
+        runId,
+      });
+      return { to: "FIELD_VERIFICATION", note: `verified (${outcome.detail})` };
+    }
+
+    case "FORM_RESETTING": {
+      // Legal edge kept honest: nothing automated routes here yet (the
+      // gap-fill overwrites instead of resetting), but a hand-moved app
+      // must not park as "no handler". Native fill overwrites committed
+      // values field-by-field, which is the reset we actually trust.
+      transitionApplication(db, {
+        applicationId: app.id,
+        nextState: "NATIVE_AUTOFILL_RUNNING",
+        reason: "pipeline: form reset delegated to native overwrite",
+        runId,
+      });
+      return {
+        to: "NATIVE_AUTOFILL_RUNNING",
+        note: "native fill overwrites in place — proceeding",
+      };
     }
 
     case "NATIVE_AUTOFILL_RUNNING": {

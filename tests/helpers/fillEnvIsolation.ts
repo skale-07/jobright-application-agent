@@ -25,6 +25,10 @@ export const CONTROLLED_FILL_ENV_KEYS = [
   "OUTLOOK_VERIFICATION_ENABLED",
   "ESSAY_REQUIRED_GATE_ENABLED",
   "AUTOMATION_ENABLED",
+  // X2: these gate the extension-first fill strategy; an ambient "true"
+  // would flip fixture pipelines into the extension path.
+  "JOBRIGHT_AUTOFILL_ENABLED",
+  "NATIVE_AUTOFILL_ENABLED",
   // Standing portal creds: if these leak, isRecognizedAtsAuthHost treats
   // every https host as authorized (workday/vault tests then fail).
   "PORTAL_LOGIN_EMAIL",
