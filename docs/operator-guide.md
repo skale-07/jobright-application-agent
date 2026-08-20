@@ -108,6 +108,38 @@ carry auth into fresh contexts (a known open question, see
 [current-state-and-phase56.md](./current-state-and-phase56.md) §2.6b), run
 the diagnostic: `npx tsx scripts/diag-jobright-feed.ts`.
 
+### JobRight extension (extension-first fill)
+
+The extension-first fill strategy drives **JobRight's browser extension**
+as the primary form filler, so the extension must be installed in the
+Chrome that Dispatch attaches to over CDP. Two workable setups:
+
+- **Option A (recommended): the debug profile.** Chrome 136+ refuses
+  `--remote-debugging-port` on your default profile, so "attach to my
+  everyday Chrome" is not something modern Chrome allows. Instead, treat
+  the `jobright-cdp` debug profile as your *application Chrome*: in the
+  `npm run chrome:debug:jobright` window, install the JobRight extension
+  from the Web Store and sign it in once. The profile persists, so this is
+  one-time setup. Everything else (logins, sessions) already lives there.
+- **Option B: your own Chrome on a separate data dir.** Launch any Chrome
+  yourself with `--remote-debugging-port=9222 --user-data-dir=<non-default
+  dir>` and point `AGENT_CDP_URL` at it. Dispatch will attach but will
+  NEVER manage that browser: autolaunch/restart/kill are hard-restricted
+  to the `jobright-cdp` profile and refuse anything else.
+
+Check what Dispatch can see:
+
+```powershell
+npm run jobright:ext-check                       # CDP target scan
+npm run jobright:ext-check -- --url <ats-url>    # + on-page DOM probe
+```
+
+The verdict is `present` or `unknown` — never a confident absent (an
+idle extension worker and a closed shadow root are both invisible).
+Extension-first filling requires `present`; anything else falls back to
+the native deterministic fill. Optionally pin `JOBRIGHT_EXTENSION_ID` in
+`.env` for exact-id matching.
+
 ## 2. Discover
 
 ```powershell

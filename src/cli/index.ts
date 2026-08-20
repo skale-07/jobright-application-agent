@@ -43,6 +43,11 @@ import { ATS_BINDINGS } from "../applications/atsBindings.js";
 import { detectAtsFromUrl } from "../ats/shared/urlValidationDispatch.js";
 import { isLoopbackUrl } from "../ats/generic/urlValidation.js";
 import { runNavigation } from "../navigation/runNavigation.js";
+import {
+  probeCdpTargetsForExtension,
+  probeDomForExtension,
+} from "../automation/extensionPreflight.js";
+import { PlaywrightServiceSession } from "../auth/serviceSession.js";
 import { runGmailAuthFlow } from "../gmail/authFlow.js";
 import { GmailClient } from "../gmail/client.js";
 import { waitForRenderedContent } from "../ats/shared/preMutationGate.js";
@@ -164,6 +169,7 @@ Commands:
   retry [--app <uuid>]                  FAILED_RETRYABLE → QUEUED (all, or one; --app requeues even at cap 3)
   contacts:extract --application <uuid> [--fixture <html-path>] [--headed]
   contacts:insider --application <uuid> [--headed]   — Insider Connection email triage (school + beyond panels only; needs LINKEDIN_ENRICHMENT_ENABLED)
+  jobright:ext-check [--url <ats-url>]               — read-only probe: is the JobRight extension present in the CDP Chrome? (--url adds an on-page DOM probe)
   gmail:draft --application <uuid> --contact <contact_id> [--headed]   — save the generated email as a Gmail DRAFT (never sends; needs GMAIL_DRAFTS_ENABLED)
   email:generate --application <uuid> [--contact <id>] [--persona <id>]
   draft:create --application <uuid> --contact <contact_id> [--headed]
@@ -702,6 +708,52 @@ async function cmdContactsInsider(
     }
   } finally {
     closeDatabase(db);
+  }
+}
+
+/**
+ * Read-only JobRight-extension preflight. Never mutates anything: probes
+ * the CDP target list, and with --url opens ONE new tab in the attached
+ * Chrome to run the DOM marker probe. Verdict is "present" or "unknown"
+ * — an MV3 worker idles out and a panel can hide in a closed shadow
+ * root, so absence is never claimed with confidence.
+ */
+async function cmdExtCheck(
+  flags: Record<string, string | boolean>,
+): Promise<void> {
+  const cfg = getConfig();
+  const report = await probeCdpTargetsForExtension(cfg.agentCdpUrl);
+  console.log(`CDP endpoint: ${cfg.agentCdpUrl} (reachable: ${report.cdp_reachable})`);
+  for (const t of report.matched_targets) console.log(`  matched: ${t}`);
+  for (const n of report.notes) console.log(`  note: ${n}`);
+
+  const url = flags["url"];
+  if (typeof url === "string" && report.cdp_reachable) {
+    const session = new PlaywrightServiceSession({
+      service: "jobright",
+      headless: false,
+    });
+    await session.open();
+    try {
+      const page = await session.newPage({ purpose: "ext_check" });
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+      await page.waitForTimeout(2_000);
+      const dom = await probeDomForExtension(page);
+      console.log(
+        dom.verdict === "present"
+          ? `  DOM probe: extension UI found via ${dom.matched_selector}`
+          : "  DOM probe: no marker matched (closed shadow roots / extension frames are invisible — still inconclusive)",
+      );
+      if (dom.verdict === "present") report.verdict = "present";
+    } finally {
+      await session.close();
+    }
+  }
+  console.log(`verdict: ${report.verdict}`);
+  if (report.verdict !== "present") {
+    console.log(
+      "EXTENSION_FIRST fill requires a present verdict — install the JobRight extension into the debug Chrome profile (see operator-guide § JobRight extension) and re-check.",
+    );
   }
 }
 
@@ -1810,6 +1862,9 @@ async function main(): Promise<void> {
       return;
     case "contacts:insider":
       await cmdContactsInsider(flags);
+      return;
+    case "jobright:ext-check":
+      await cmdExtCheck(flags);
       return;
     case "gmail:draft": {
       const application = flags["application"];

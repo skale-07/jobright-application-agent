@@ -70,6 +70,7 @@ export async function ensureCdpChrome(
     return report;
   }
   const userDataDir = cdpUserDataDir("jobright");
+  assertDebugProfileDir(userDataDir);
   const port = new URL(defaultCdpUrl()).port || "9222";
   const args = chromeCdpLaunchArgs({ port, userDataDir, startUrl: "about:blank" });
   try {
@@ -103,11 +104,31 @@ export async function ensureCdpChrome(
 }
 
 /**
+ * Structural guard for every destructive/managing action in this module:
+ * the target must be the DEDICATED debug profile (…/jobright-cdp), never
+ * the operator's everyday Chrome. With the extension-first architecture
+ * the operator may point AGENT_CDP_URL at an extension-bearing Chrome
+ * they launched themselves — that Chrome is attach-only; autolaunch and
+ * kill must refuse to manage it. An empty/mis-resolved dir would make
+ * pkill -f dangerously broad, so that throws too.
+ */
+export function assertDebugProfileDir(userDataDir: string): void {
+  const trimmed = (userDataDir ?? "").trim();
+  const base = trimmed.split(/[\\/]/).filter(Boolean).pop() ?? "";
+  if (trimmed.length < 8 || base !== "jobright-cdp") {
+    throw new Error(
+      `refusing to manage Chrome profile "${trimmed}" — only the dedicated jobright-cdp debug profile may be launched or killed by this process`,
+    );
+  }
+}
+
+/**
  * Kill ONLY the debug-profile Chrome: process match is on the debug
  * user-data-dir in the command line, so the operator's everyday Chrome
  * windows are never touched. Best-effort — "no process matched" is fine.
  */
 function killDebugChrome(userDataDir: string): void {
+  assertDebugProfileDir(userDataDir);
   try {
     if (process.platform === "win32") {
       execFileSync(
