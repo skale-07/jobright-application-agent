@@ -1,6 +1,6 @@
 {
   "fixture": "ashby",
-  "inspected_at": "2026-08-20T01:36:24.326Z",
+  "inspected_at": "2026-08-20T21:44:55.695Z",
   "inspection": {
     "ats": "ashby",
     "adapter_version": 1,
@@ -145,8 +145,8 @@
       "required": false,
       "name": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
       "inputId": "aaaa1111-bbbb-cccc-dddd-eeee00001111",
-      "canonical_field": "how_heard",
-      "mapping_confidence": "medium"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     },
     {
       "id": "dddd4444-eeee-ffff-0000-111122223333",
@@ -155,8 +155,8 @@
       "required": false,
       "name": "dddd4444-eeee-ffff-0000-111122223333",
       "inputId": "dddd4444-eeee-ffff-0000-111122223333",
-      "canonical_field": "address.country",
-      "mapping_confidence": "high"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     },
     {
       "id": "bbbb2222-cccc-dddd-eeee-ffff00002222",
@@ -178,8 +178,8 @@
         "No"
       ],
       "name": "c0ffee00-1111-2222-3333-444455556666",
-      "canonical_field": "work_authorization",
-      "mapping_confidence": "medium"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     },
     {
       "id": "eeee5555-6666-7777-8888-99990000aaaa",
@@ -192,8 +192,8 @@
         "Decline to self-identify"
       ],
       "name": "eeee5555-6666-7777-8888-99990000aaaa",
-      "canonical_field": "gender_identity",
-      "mapping_confidence": "medium"
+      "canonical_field": null,
+      "mapping_confidence": "none"
     }
   ],
   "essays": [
@@ -232,12 +232,25 @@
       "inputId": "_systemfield_name",
       "canonical_field": null,
       "mapping_confidence": "none"
+    },
+    {
+      "id": "c0ffee00-1111-2222-3333-444455556666",
+      "label": "Are you legally authorized to work in the United States?",
+      "type": "radio",
+      "required": true,
+      "options": [
+        "Yes",
+        "No"
+      ],
+      "name": "c0ffee00-1111-2222-3333-444455556666",
+      "canonical_field": null,
+      "mapping_confidence": "none"
     }
   ],
   "route": "needs_review_unmapped",
   "form_fill_enabled": false,
   "inspection_only": true,
   "notes": [
-    "1 required field(s) unmapped to answer aliases"
+    "2 required field(s) unmapped to answer aliases"
   ]
 }

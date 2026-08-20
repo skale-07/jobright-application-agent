@@ -57,7 +57,7 @@
       ],
       "key_files": {
         "src/logging/logger.ts": "logger with service/action metadata",
-        "src/logging/redaction.ts": "redactObject \u2014 artifact scrubbing",
+        "src/logging/redaction.ts": "redactObject — artifact scrubbing",
         "src/security/artifactScan.ts": "scans artifacts for leaked secrets"
       },
       "key_exports": {
@@ -73,7 +73,7 @@
       "id": "queue",
       "label": "Queue & state machine",
       "layer": "core",
-      "purpose": "Application lifecycle (docs/state-machine.md). ALL status changes go through transitionApplication \u2014 never ad-hoc writes. Review items are the human-work queue; advisory items do not freeze an app. Automation runs hold the atomic unattended-submission budget.",
+      "purpose": "Application lifecycle (docs/state-machine.md). ALL status changes go through transitionApplication — never ad-hoc writes. Review items are the human-work queue; advisory items do not freeze an app. Automation runs hold the atomic unattended-submission budget.",
       "paths": [
         "src/queue"
       ],
@@ -130,14 +130,14 @@
       "id": "auth-browser",
       "label": "Browser sessions & auth",
       "layer": "core",
-      "purpose": "The ONLY allowed chromium.launch sites (house rule): serviceSession, loginFlow, fixtureSession. CDP_ATTACH connects to the operator's own Chrome and close() only disconnects \u2014 never closes their tabs.",
+      "purpose": "The ONLY allowed chromium.launch sites (house rule): serviceSession, loginFlow, fixtureSession. CDP_ATTACH connects to the operator's own Chrome and close() only disconnects — never closes their tabs.",
       "paths": [
         "src/auth",
         "src/browser",
         "src/accounts"
       ],
       "key_files": {
-        "src/auth/serviceSession.ts": "PlaywrightServiceSession \u2014 storage-state / CDP / persistent modes",
+        "src/auth/serviceSession.ts": "PlaywrightServiceSession — storage-state / CDP / persistent modes",
         "src/auth/loginFlow.ts": "interactive login capture",
         "src/browser/fixtureSession.ts": "withFixtureHtmlPage / withPublicUrlPage / openPublicUrlSession (pipeline --submit holds the fill browser for the click)",
         "src/browser/obstructions.ts": "cookie/promo popup dismisser (never-click screened)",
@@ -161,16 +161,19 @@
       "id": "jobright",
       "label": "JobRight ingress",
       "layer": "ingress",
-      "purpose": "Discovery (feed -> SQLite), job-detail inspection, resume download, materials registration, and the on-page primitives navigation uses (Apply click, interstitial handling, closed-posting detection). All jobs enter here \u2014 provenance is the trust model.",
+      "purpose": "Discovery (feed -> SQLite), job-detail inspection, resume download, materials registration, and the on-page primitives navigation uses (Apply click, interstitial handling, closed-posting detection). All jobs enter here — provenance is the trust model.",
       "paths": [
         "src/jobright"
       ],
       "key_files": {
-        "src/jobright/discoveryRun.ts": "runJobRightDiscovery \u2014 feed to QUEUED apps; fails loud on empty feed",
+        "src/jobright/discoveryRun.ts": "runJobRightDiscovery — feed to QUEUED apps; fails loud on empty feed",
         "src/jobright/enqueueJobs.ts": "enqueue by id; validates employer URL at ingestion",
         "src/jobright/navigateToEmployer.ts": "Apply click + popup capture (settledPopupUrl waits out about:blank), customize-resume interstitial: PROCEED never X",
         "src/jobright/materialsRegister.ts": "resume registration incl. default-resume auto-attach",
-        "src/jobright/selectors/v1.ts": "versioned JobRight selectors (house rule: selectors live in registries)"
+        "src/jobright/selectors/v1.ts": "versioned JobRight selectors (house rule: selectors live in registries)",
+        "src/jobright/extension/selectors.ts": "JobRight browser-extension selector registry (autofillTrigger ships empty until ext-capture promotes; presence markers for the preflight DOM probe)",
+        "src/jobright/extension/autofill.ts": "attemptExtensionAutofill — clicks only promoted trigger selectors, value-fingerprint settle detection, bounded",
+        "src/jobright/extension/capture.ts": "headed ext-capture: operator activates, before/after diff + selector candidates, classed values only"
       },
       "key_exports": {
         "src/jobright/navigateToEmployer.ts": [
@@ -261,12 +264,12 @@
       "id": "ats",
       "label": "ATS adapters",
       "layer": "fill",
-      "purpose": "One adapter per vendor (greenhouse/lever/ashby/workable/workday) + GENERIC for any https employer form (no flag \u2014 operator directive 2026-08-14; trust is provenance). detectAtsFromUrl dispatches vendor-first, generic last. HTML detectAts never returns unsupported for a fillable page \u2014 unmatched hosts and form-less SPAs use generic. Shared pre-mutation gate requires trusted host + no login wall + no captcha + form markers + at least one fillable FIELD. greenhouseFillFromPlan/greenhouseVerifyAnswers are vendor-blind despite the filename. Option harvest (2026-08-14) scrapes each control's real answer space from the LIVE page before planning: HTML alone cannot see a React-select's list, so dropdowns used to reach the planner empty and fall through to blind free-text typing.",
+      "purpose": "One adapter per vendor (greenhouse/lever/ashby/workable/workday) + GENERIC for any https employer form (no flag — operator directive 2026-08-14; trust is provenance). detectAtsFromUrl dispatches vendor-first, generic last. HTML detectAts never returns unsupported for a fillable page — unmatched hosts and form-less SPAs use generic. Shared pre-mutation gate requires trusted host + no login wall + no captcha + form markers + at least one fillable FIELD. greenhouseFillFromPlan/greenhouseVerifyAnswers are vendor-blind despite the filename. Option harvest (2026-08-14) scrapes each control's real answer space from the LIVE page before planning: HTML alone cannot see a React-select's list, so dropdowns used to reach the planner empty and fall through to blind free-text typing.",
       "paths": [
         "src/ats"
       ],
       "key_files": {
-        "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl \u2014 the single URL-to-adapter decision",
+        "src/ats/shared/urlValidationDispatch.ts": "detectAtsFromUrl — the single URL-to-adapter decision",
         "src/ats/shared/preMutationGate.ts": "verifyPageBeforeMutationGeneric (host/captcha/mismatch terminal; login wall and zero-field pages still fail the mutation lock)",
         "src/ats/shared/requiredCompleteness.ts": "refuse submit with unanswered required questions. Greenhouse React-select: skip empty filter inputs; committed value is .select__single-value, same as comboboxFill readback.",
         "src/ats/shared/submitControl.ts": "submit control resolve cascade; resolveAdvanceControl is Next/Continue (never the gated submit)",
@@ -274,13 +277,13 @@
         "src/ats/greenhouse/liveFill.ts": "shared guarded live fill core; reachGreenhouseApplicationForm is the landing recovery submit reuses (SPA settle, iframe hop, Apply on a posting)",
         "src/ats/workday/pageKind.ts": "classifyWorkdayPage: auth checked BEFORE wizard (Create Account is step 1 of the wizard)",
         "src/ats/generic/urlValidation.ts": "https-only, never jobright, vendor-owned hosts rejected",
-        "src/ats/shared/optionHarvest.ts": "harvestFieldOptions \u2014 opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
-        "src/ats/shared/otherSpecify.ts": "fillOtherSpecify \u2014 fills the free-text box a form reveals after \"Other\" is chosen",
-        "src/ats/shared/postingAdvance.ts": "advancePastPosting \u2014 classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
-        "src/ats/shared/frameHop.ts": "findApplicationFrameUrl \u2014 hop into an iframe whose document has fillable fields (https, or loopback http for the operator sandbox). Greenhouse embed/job_app URLs hop even when the child document is still empty/unreadable.",
-        "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password or emailed-code wall \u2192 auth, identity fields \u2192 form, Apply without identity \u2192 posting unless the URL path is already /apply, else unknown. Fill recovers from page_class, not the collapsed gate code.",
-        "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions \u2014 the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
-        "src/ats/ashby/discovery.ts": "ashbyDiscoverFields \u2014 generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs \u2192 ONE field with options[]; per-option fields suppressed)"
+        "src/ats/shared/optionHarvest.ts": "harvestFieldOptions — opens each live control and scrapes its REAL option list before planning; classifies CLOSED (choose only) vs OPEN (type anything)",
+        "src/ats/shared/otherSpecify.ts": "fillOtherSpecify — fills the free-text box a form reveals after \"Other\" is chosen",
+        "src/ats/shared/postingAdvance.ts": "advancePastPosting — classify the landing; if it is a job posting, click Apply and look again (any ATS, bounded at 2 hops)",
+        "src/ats/shared/frameHop.ts": "findApplicationFrameUrl — hop into an iframe whose document has fillable fields (https, or loopback http for the operator sandbox). Greenhouse embed/job_app URLs hop even when the child document is still empty/unreadable.",
+        "src/ats/shared/pageClassify.ts": "classifyPage is the landing authority: password or emailed-code wall → auth, identity fields → form, Apply without identity → posting unless the URL path is already /apply, else unknown. Fill recovers from page_class, not the collapsed gate code.",
+        "src/ats/greenhouse/questionsApi.ts": "fetchGreenhouseQuestions — the board's PUBLIC JSON declares every question and its COMPLETE option list; authoritative answer space, one request, fail-open to the DOM harvest",
+        "src/ats/ashby/discovery.ts": "ashbyDiscoverFields — generic pass + radiogroup pass + fieldset question groups (question-title label + per-option inputs → ONE field with options[]; per-option fields suppressed)"
       },
       "key_exports": {
         "src/ats/shared/urlValidationDispatch.ts": [
@@ -349,14 +352,14 @@
         "src/applications"
       ],
       "key_files": {
-        "src/applications/atsLiveFill.ts": "live fill orchestrator; branches on classifyPage (auth\u2192portal auth, posting\u2192Apply, unknown\u2192park); Workday Apply Manually still owned by portalAuth; loopback-only --submit",
-        "src/applications/applicationFiller.ts": "planApplicationFill \u2014 adapter dispatch + plan build",
+        "src/applications/atsLiveFill.ts": "live fill orchestrator; branches on classifyPage (auth→portal auth, posting→Apply, unknown→park); Workday Apply Manually still owned by portalAuth; loopback-only --submit",
+        "src/applications/applicationFiller.ts": "planApplicationFill — adapter dispatch + plan build",
         "src/applications/resolveAnswers.ts": "buildFillPlan: profile, screeners, consent checkboxes, demographics-from-sensitive-profile",
-        "src/applications/approvedFillPlan.ts": "assertExecutableApprovedEntry \u2014 the never-weaken gate",
-        "src/applications/submitRun.ts": "runAtsSubmission \u2014 greenhouse landing recovery then identity gate; same-run --submit reuses the filled page (no cold re-fill); click gate + unattended budget consumption",
+        "src/applications/approvedFillPlan.ts": "assertExecutableApprovedEntry — the never-weaken gate",
+        "src/applications/submitRun.ts": "runAtsSubmission — greenhouse landing recovery then identity gate; same-run --submit reuses the filled page (no cold re-fill); click gate + unattended budget consumption",
         "src/applications/fieldDiscovery.ts": "discoverFieldsFromHtml (also the pre-mutation gate's field count)",
         "src/applications/atsBindings.ts": "ATS_BINDINGS: per-vendor gate/fill/submit fns",
-        "src/applications/genericFormAdvance.ts": "walkGenericFormPages \u2014 after a passing generic fill, click Next/Continue (never Submit), re-plan, fill; bounded",
+        "src/applications/genericFormAdvance.ts": "walkGenericFormPages — after a passing generic fill, click Next/Continue (never Submit), re-plan, fill; bounded",
         "src/applications/essayAutofill.ts": "essay generate-and-fill from about-me (ESSAY_AUTOFILL_ENABLED or SCREENER_PREDICT_LLM_ENABLED; validateDraft-checked)",
         "src/applications/screenerOptionSelect.ts": "LLM chooses from the page's own options, validated verbatim"
       },
@@ -435,7 +438,7 @@
         "src/verification"
       ],
       "key_files": {
-        "src/verification/portalAuth.ts": "authenticateAtsPortal \u2014 sign-in first, create on rejection",
+        "src/verification/portalAuth.ts": "authenticateAtsPortal — sign-in first, create on rejection",
         "src/verification/loginWallDiagnosis.ts": "zero-mutation wall shape classifier",
         "src/verification/emailVerification.ts": "provider resolution (Gmail/Outlook)",
         "src/verification/accountCredentials.ts": "standing creds + vault + minting rules",
@@ -464,7 +467,7 @@
       "id": "mail",
       "label": "Gmail (read-only) & Outlook (drafts-only)",
       "layer": "verify",
-      "purpose": "Gmail is READ-ONLY (readonlyGuards bans mutating identifiers); used for verification codes. Outlook creates DRAFTS only \u2014 sendGuards.ts is the banned-identifier source enforced by scripts/check-forbidden.ts. Mail is never sent by this system.",
+      "purpose": "Gmail is READ-ONLY (readonlyGuards bans mutating identifiers); used for verification codes. Outlook creates DRAFTS only — sendGuards.ts is the banned-identifier source enforced by scripts/check-forbidden.ts. Mail is never sent by this system.",
       "paths": [
         "src/gmail",
         "src/outlook"
@@ -538,7 +541,8 @@
         "src/automation/autoCycle.ts": "scheduled headless cycle (desktop task)",
         "src/automation/artifactAutopush.ts": "ARTIFACT_AUTOPUSH_ENABLED git push of run artifacts",
         "src/automation/cdpChrome.ts": "CDP_AUTOLAUNCH_ENABLED debug-Chrome self-repair",
-        "src/automation/skipRequests.ts": "requestSkip \u2014 cooperative operator skip; runPipeline reads it between steps so a stuck job can be abandoned at a safe boundary"
+        "src/automation/skipRequests.ts": "requestSkip — cooperative operator skip; runPipeline reads it between steps so a stuck job can be abandoned at a safe boundary",
+        "src/automation/extensionPreflight.ts": "extension presence probes (CDP target scan + DOM markers); verdict present|unknown, never confident absent"
       },
       "key_exports": {
         "src/automation/worker.ts": [
@@ -566,7 +570,7 @@
       "id": "console",
       "label": "Operator console",
       "layer": "surface",
-      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING \u2014 a child can never hold a flag the process `.env` lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
+      "purpose": "Local web UI (frontend/ builds into it). RunManager spawns child runs with a flag CEILING — a child can never hold a flag the process `.env` lacks; unattended submit env only for armed automation runs. Confirmation seam for one-shot submits.",
       "paths": [
         "src/console"
       ],
@@ -588,7 +592,7 @@
       "id": "cli",
       "label": "CLI",
       "layer": "surface",
-      "purpose": "All operator commands (discover, inspect, fill, submit, pipeline, verify, screeners, accounts, viz). docs/operator-guide.md is the operator contract \u2014 update it when CLI behavior changes.",
+      "purpose": "All operator commands (discover, inspect, fill, submit, pipeline, verify, screeners, accounts, viz). docs/operator-guide.md is the operator contract — update it when CLI behavior changes.",
       "paths": [
         "src/cli",
         "src/index.ts",
@@ -620,16 +624,16 @@
       "id": "sandbox",
       "label": "Employer sandbox",
       "layer": "operator",
-      "purpose": "A fake employer on the operator's OWN machine (loopback only), driven by the real pipeline with the operator's real presets. /gauntlet = weird-questions application (predictive tiers, incl. odd questions from live artifacts in both CLOSED and OPEN classes); /portal = posting \u2192 email/password wall \u2192 form (posting advance + portalAuth account creation/sign-in). Page hits, fill-plan lines (with model rationale via POST /trace), and received submissions echo to the sandbox terminal + artifacts/sandbox/. Generic URL validation and portal-auth host recognition carry narrow loopback-only allowances so ats:fill --url http://localhost:4599/\u2026 drives it. ats:fill --submit is loopback-only and still requires SUBMIT_ENABLED + confirmation. 2026-08-16: /portal gained an emailed-code wall (random 6-digit per issue, newest wins) so the Gmail mailbox-scan recovery rehearses end to end; /navhard and /fillhard re-create the exact obstacles live artifacts show the nav and fill systems struggling with.",
+      "purpose": "A fake employer on the operator's OWN machine (loopback only), driven by the real pipeline with the operator's real presets. /gauntlet = weird-questions application (predictive tiers, incl. odd questions from live artifacts in both CLOSED and OPEN classes); /portal = posting → email/password wall → form (posting advance + portalAuth account creation/sign-in). Page hits, fill-plan lines (with model rationale via POST /trace), and received submissions echo to the sandbox terminal + artifacts/sandbox/. Generic URL validation and portal-auth host recognition carry narrow loopback-only allowances so ats:fill --url http://localhost:4599/… drives it. ats:fill --submit is loopback-only and still requires SUBMIT_ENABLED + confirmation. 2026-08-16: /portal gained an emailed-code wall (random 6-digit per issue, newest wins) so the Gmail mailbox-scan recovery rehearses end to end; /navhard and /fillhard re-create the exact obstacles live artifacts show the nav and fill systems struggling with.",
       "paths": [
         "src/sandbox"
       ],
       "key_files": {
-        "src/sandbox/server.ts": "startEmployerSandbox \u2014 zero-dependency HTTP server, binds 127.0.0.1 only",
-        "src/sandbox/trace.ts": "postSandboxTrace \u2014 ats:fill posts plan/rationale to the sandbox terminal (loopback only)",
-        "src/cli/sandboxCli.ts": "npm run sandbox \u2014 start + print the drive-it recipes",
+        "src/sandbox/server.ts": "startEmployerSandbox — zero-dependency HTTP server, binds 127.0.0.1 only",
+        "src/sandbox/trace.ts": "postSandboxTrace — ats:fill posts plan/rationale to the sandbox terminal (loopback only)",
+        "src/cli/sandboxCli.ts": "npm run sandbox — start + print the drive-it recipes",
         "src/sandbox/hardPages.ts": "HARD courses: /navhard (cookie banner, decoys, late-settling popup, Paycom-shape lead-capture modal) and /fillhard (iframe wizard, virtualized combobox, pre-filled wrong value, error banner)",
-        "src/sandbox/email.ts": "deliverVerificationCode \u2014 Resend-backed verification-code mail to the OPERATOR's own inbox (RESEND_API_KEY + SANDBOX_VERIFY_TO/PORTAL_LOGIN_EMAIL; console fallback); codes only, never outreach"
+        "src/sandbox/email.ts": "deliverVerificationCode — Resend-backed verification-code mail to the OPERATOR's own inbox (RESEND_API_KEY + SANDBOX_VERIFY_TO/PORTAL_LOGIN_EMAIL; console fallback); codes only, never outreach"
       },
       "key_exports": {
         "src/sandbox/server.ts": [

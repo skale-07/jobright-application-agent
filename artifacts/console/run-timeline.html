@@ -60,15 +60,15 @@
 </style></head>
 <body><div class="wrap">
 <h1>Dispatch run timeline</h1>
-<p class="sub">Generated 2026-08-18T00:48:22.048Z · 40 navigation run(s) · read-only view of artifacts/</p>
-<div class="stats"><span class="stat"><b>28</b> resolved</span><span class="stat"><b>6</b> duplicate_url</span><span class="stat"><b>2</b> auth</span><span class="stat"><b>2</b> budget</span><span class="stat"><b>1</b> closed</span><span class="stat"><b>1</b> submit_risk</span></div>
+<p class="sub">Generated 2026-08-20T21:44:29.955Z · 40 navigation run(s) · read-only view of artifacts/</p>
+<div class="stats"><span class="stat"><b>27</b> resolved</span><span class="stat"><b>4</b> auth</span><span class="stat"><b>4</b> budget</span><span class="stat"><b>2</b> submit_risk</span><span class="stat"><b>2</b> duplicate_url</span><span class="stat"><b>1</b> closed</span></div>
 <section class="cycle">
   <h2>Latest cycle</h2>
   <dl>
-    <div><dt>Started</dt><dd>2026-08-18T00:48:20.921Z</dd></div>
+    <div><dt>Started</dt><dd>2026-08-20T21:44:29.940Z</dd></div>
     <div><dt>Outcome</dt><dd>skipped_already_armed</dd></div>
     <div><dt>Agent leg</dt><dd>UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app</dd></div>
-    <div><dt>Default resume</dt><dd>ready (C:\dev\jobright-application-agent\private\candidate\resumes\Shubham_Kale_Resume_SWE.pdf)</dd></div>
+    <div><dt>Default resume</dt><dd>MISSING at /home/user/jobright-application-agent/private/candidate/resumes/default.pdf — every app with no registered resume will park at materials. Point DEFAULT_RESUME_PATH in .env at your real resume.</dd></div>
     <div><dt>Apps started</dt><dd>—</dd></div>
     <div><dt>Submits used</dt><dd>—</dd></div>
     <div><dt>Stopped</dt><dd>—</dd></div>
@@ -76,6 +76,336 @@
   
 </section>
 <h2>Applications</h2>
+<details class="app ok">
+  <summary>
+    <span class="id">26e4123c</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">generic</span>
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">careers.acme.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: cred_available:false</li><li>agent[1]: leaked:none</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">careers.acme.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">99bd6bf7</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">ashby</span>
+    <span class="chip">agent 2t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>D_gmail</b> — verification code retrieved</li><li><b>C_agent</b> — resolved (turn 2, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[2]: continuation ok</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">86131093</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>verification need rejected: agent's page evidence shows no verification prompt</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">0fa1ec90</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    <span class="chip">agent 1t/5s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: budget (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li><li>agent[1]: final_url rejected: host evil.example.com is outside allowed domains</li><li>agent[1] reason: sidecar final_url rejected: host evil.example.com is outside allowed domains</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">eb7f55fc</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent phase failed: Unexpected token 'o', &quot;not json at all&quot; is not valid JSON</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">11bab518</span>
+    <span class="co">—</span>
+    <span class="badge">wall: submit_risk</span>
+    
+    
+    <span class="chip">agent 1t/3s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: submit_risk (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1] reason: agent stopped: submit_risk</li></ul>
+    
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">7dcbc451</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/8s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>verification need rejected: agent's page evidence shows no verification prompt</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">1dce6be1</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — resolved via popup<span class="ev">careers.acme.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>popup captured on attempt 1</li><li>phase B: landing shows a sign-in wall — stored anyway; fill owns portal auth</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">e68a5b0b</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">lever</span>
+    <span class="chip">agent 1t/5s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer unverified)<span class="ev">jobs.lever.co</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li><li>agent[1]: URL reads as &quot;othercorp&quot; (slug &quot;othercorp&quot; shares nothing with company &quot;Acme&quot;) — kept</li><li>congruence: URL names &quot;othercorp&quot;, not &quot;Acme&quot; (slug &quot;othercorp&quot; shares nothing with company &quot;Acme&quot;) — recorded, not refused</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">51e1cf6f</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">lever</span>
+    <span class="chip">agent 1t/5s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">jobs.lever.co</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">053aa25b</span>
+    <span class="co">Unknown company (manual enqueue)</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (6 external links)<span class="ev">recruiting.paylocity.com, www.linkedin.com, www.crunchbase.com, www.etegent.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">recruiting.paylocity.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 4 external host(s) seen: recruiting.paylocity.com, www.linkedin.com, www.crunchbase.com, www.etegent.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li><li>employer congruence unverifiable (company name is a placeholder — identity not checkable) — recorded</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">d0d57599</span>
+    <span class="co">Unknown company (manual enqueue)</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">greenhouse</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (9 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Unknown company (manual enqueue)&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 9 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk, www.techtimes.com, techstartups.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;datadog&quot; (slug &quot;datadog&quot; shares nothing with company &quot;Unknown company (manual enqueue)&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;datadog&quot;, not &quot;Unknown company (manual enqueue)&quot; (slug &quot;datadog&quot; shares nothing with company &quot;Unknown company (manual enqueue)&quot;) — recorded, not refused</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">d0d57599</span>
+    <span class="co">Datadog</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">greenhouse</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (9 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Datadog&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 9 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk, www.techtimes.com, techstartups.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">b4619451</span>
+    <span class="co">Bear Robotics</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (11 external links)<span class="ev">bear-robotics.breezy.hr, www.linkedin.com, x.com, www.crunchbase.com, bearrobotics.ai, www.techinasia.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">bear-robotics.breezy.hr</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: 8 external host(s) seen: bear-robotics.breezy.hr, www.linkedin.com, x.com, www.crunchbase.com, bearrobotics.ai, www.techinasia.com, www.einpresswire.com, en.acnnewswire.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (path), which shares nothing with company &quot;Bear Robotics&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot;, not &quot;Bear Robotics&quot; (URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (path), which shares nothing with company &quot;Bear Robotics&quot;) — recorded, not refused</li></ul>
+    
+  </div>
+</details>
+<details class="app warn">
+  <summary>
+    <span class="id">b29c2f6e</span>
+    <span class="co">—</span>
+    <span class="badge">wall: auth</span>
+    
+    
+    <span class="chip">agent 1t/4s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>verification need rejected: agent's page evidence shows no verification prompt</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">97449a9e</span>
+    <span class="co">Chase</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (12 external links)<span class="ev">jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">jpmc.fa.oraclecloud.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 9 external host(s) seen: jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com, frontofficesports.com, www.prnewswire.com, www.pymnts.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;hcmui&quot;, not &quot;Chase&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — recorded, not refused</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">d59e4a75</span>
+    <span class="co">Plymouth Rock Assurance</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (12 candidates, employer match)<span class="ev">myjobs.adp.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
+    
+  </div>
+</details>
+<details class="app bad">
+  <summary>
+    <span class="id">34a3cffd</span>
+    <span class="co">—</span>
+    <span class="badge">wall: budget</span>
+    
+    
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent phase failed: Unexpected token 'o', &quot;not json at all&quot; is not valid JSON</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">a3c720c4</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">agent</span>
+    <span class="chip">ashby</span>
+    <span class="chip">agent 2t/6s</span>
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>D_gmail</b> — verification code retrieved</li><li><b>C_agent</b> — resolved (turn 2, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[2]: continuation ok</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">c5a627f2</span>
+    <span class="co">Jump Trading</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">greenhouse</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (8 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Jump Trading&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com, www.finsmes.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">19e6dfca</span>
+    <span class="co">Ergo</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">www.ycombinator.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">1ac01437</span>
+    <span class="co">Acme</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — resolved via popup<span class="ev">careers.acme.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>popup captured on attempt 1</li><li>phase B: landing shows a sign-in wall — stored anyway; fill owns portal auth</li></ul>
+    
+  </div>
+</details>
 <details class="app muted">
   <summary>
     <span class="id">7583fc26</span>
@@ -88,6 +418,21 @@
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>open</b> — posting is CLOSED on JobRight — navigation abandoned</li></ol>
     <h4>Notes</h4><ul class="notes"><li>jobright banner says this job has closed; no Apply path exists</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">4a03b318</span>
+    <span class="co">Intel</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">workday</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">intel.wd1.myworkdayjobs.com</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
     
   </div>
 </details>
@@ -108,27 +453,42 @@
 </details>
 <details class="app ok">
   <summary>
-    <span class="id">a3c720c4</span>
+    <span class="id">88ece651</span>
+    <span class="co">Amazon Web Services (AWS)</span>
+    <span class="badge">resolved</span>
+    <span class="chip">anchor_href</span>
+    <span class="chip">generic</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (10 candidates, employer match)<span class="ev">www.amazon.jobs</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">7ddab8f4</span>
     <span class="co">Acme</span>
     <span class="badge">resolved</span>
     <span class="chip">agent</span>
-    <span class="chip">ashby</span>
-    <span class="chip">agent 2t/6s</span>
+    <span class="chip">lever</span>
+    <span class="chip">agent 1t/5s</span>
   </summary>
   <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>D_gmail</b> — verification code retrieved</li><li><b>C_agent</b> — resolved (turn 2, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[2]: continuation ok</li></ul>
-    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">jobs.lever.co</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li></ul>
+    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
   </div>
 </details>
 <details class="app warn">
   <summary>
-    <span class="id">b29c2f6e</span>
+    <span class="id">1ec48f4d</span>
     <span class="co">—</span>
     <span class="badge">wall: auth</span>
     
     
-    <span class="chip">agent 1t/4s</span>
+    <span class="chip">agent 1t/8s</span>
   </summary>
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review</li></ol>
@@ -151,66 +511,6 @@
     <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
   </div>
 </details>
-<details class="app bad">
-  <summary>
-    <span class="id">34a3cffd</span>
-    <span class="co">—</span>
-    <span class="badge">wall: budget</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — error</li></ol>
-    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent phase failed: Unexpected token 'o', &quot;not json at all&quot; is not valid JSON</li></ul>
-    
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">3929b5ea</span>
-    <span class="co">—</span>
-    <span class="badge">wall: submit_risk</span>
-    
-    
-    <span class="chip">agent 1t/3s</span>
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: submit_risk (turn 1)</li></ol>
-    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1] reason: agent stopped: submit_risk</li></ul>
-    
-  </div>
-</details>
-<details class="app warn">
-  <summary>
-    <span class="id">1ec48f4d</span>
-    <span class="co">—</span>
-    <span class="badge">wall: auth</span>
-    
-    
-    <span class="chip">agent 1t/8s</span>
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — needs_input WITHOUT verification evidence on the page — mailbox not consulted, human review</li></ol>
-    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>verification need rejected: agent's page evidence shows no verification prompt</li></ul>
-    <h4>Hosts visited</h4><p class="hosts">jobs.ashbyhq.com</p>
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">1ac01437</span>
-    <span class="co">Acme</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — resolved via popup<span class="ev">careers.acme.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>popup captured on attempt 1</li><li>phase B: landing shows a sign-in wall — stored anyway; fill owns portal auth</li></ul>
-    
-  </div>
-</details>
 <details class="app ok">
   <summary>
     <span class="id">1d8c22c3</span>
@@ -226,138 +526,18 @@
     <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
   </div>
 </details>
-<details class="app ok">
+<details class="app bad">
   <summary>
-    <span class="id">7ddab8f4</span>
-    <span class="co">Acme</span>
-    <span class="badge">resolved</span>
-    <span class="chip">agent</span>
-    <span class="chip">lever</span>
-    <span class="chip">agent 1t/5s</span>
+    <span class="id">3929b5ea</span>
+    <span class="co">—</span>
+    <span class="badge">wall: submit_risk</span>
+    
+    
+    <span class="chip">agent 1t/3s</span>
   </summary>
   <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — resolved (turn 1, employer match)<span class="ev">jobs.lever.co</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1]: reached form</li></ul>
-    <h4>Hosts visited</h4><p class="hosts">jobright.ai → jobs.lever.co</p>
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">d59e4a75</span>
-    <span class="co">Plymouth Rock Assurance</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (12 candidates, employer match)<span class="ev">myjobs.adp.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">4a03b318</span>
-    <span class="co">Intel</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">workday</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">intel.wd1.myworkdayjobs.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">97449a9e</span>
-    <span class="co">Chase</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (12 external links)<span class="ev">jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">jpmc.fa.oraclecloud.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 9 external host(s) seen: jpmc.fa.oraclecloud.com, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.chase.com, frontofficesports.com, www.prnewswire.com, www.pymnts.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;hcmui&quot;, not &quot;Chase&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;Chase&quot;) — recorded, not refused</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">88ece651</span>
-    <span class="co">Amazon Web Services (AWS)</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (10 candidates, employer match)<span class="ev">www.amazon.jobs</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">b4619451</span>
-    <span class="co">Bear Robotics</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (11 external links)<span class="ev">bear-robotics.breezy.hr, www.linkedin.com, x.com, www.crunchbase.com, bearrobotics.ai, www.techinasia.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">bear-robotics.breezy.hr</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 8 external host(s) seen: bear-robotics.breezy.hr, www.linkedin.com, x.com, www.crunchbase.com, bearrobotics.ai, www.techinasia.com, www.einpresswire.com, en.acnnewswire.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (path), which shares nothing with company &quot;Bear Robotics&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot;, not &quot;Bear Robotics&quot; (URL names &quot;b8d4995f6d23softwareengineeringinterndeveloperproductivit&quot; (path), which shares nothing with company &quot;Bear Robotics&quot;) — recorded, not refused</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">d0d57599</span>
-    <span class="co">Datadog</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">greenhouse</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (9 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Datadog&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 9 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.datadoghq.com, www.verdict.co.uk, www.techtimes.com, techstartups.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">19e6dfca</span>
-    <span class="co">Ergo</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">www.ycombinator.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">c5a627f2</span>
-    <span class="co">Jump Trading</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">greenhouse</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (8 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Jump Trading&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.prnewswire.com, www.hedgeweek.com, www.finsmes.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no external anchors</li><li><b>B_apply_click</b> — unresolved by deterministic phases</li><li><b>C_agent</b> — wall: submit_risk (turn 1)</li></ol>
+    <h4>Notes</h4><ul class="notes"><li>no standard Apply control found (exact and broad name tiers both empty)</li><li>agent[1] reason: agent stopped: submit_risk</li></ul>
     
   </div>
 </details>
@@ -378,7 +558,7 @@
 </details>
 <details class="app ok">
   <summary>
-    <span class="id">15449252</span>
+    <span class="id">277bd1b3</span>
     <span class="co">Neuralink</span>
     <span class="badge">resolved</span>
     <span class="chip">apply_click_popup</span>
@@ -408,21 +588,6 @@
 </details>
 <details class="app ok">
   <summary>
-    <span class="id">d1974007</span>
-    <span class="co">Neuralink</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">greenhouse</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (10 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Neuralink&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
     <span class="id">5b5a55c7</span>
     <span class="co">Neuralink</span>
     <span class="badge">resolved</span>
@@ -438,7 +603,7 @@
 </details>
 <details class="app ok">
   <summary>
-    <span class="id">277bd1b3</span>
+    <span class="id">15449252</span>
     <span class="co">Neuralink</span>
     <span class="badge">resolved</span>
     <span class="chip">apply_click_popup</span>
@@ -448,6 +613,21 @@
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (10 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
     <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Neuralink&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li></ul>
+    
+  </div>
+</details>
+<details class="app ok">
+  <summary>
+    <span class="id">d1974007</span>
+    <span class="co">Neuralink</span>
+    <span class="badge">resolved</span>
+    <span class="chip">apply_click_popup</span>
+    <span class="chip">greenhouse</span>
+    
+  </summary>
+  <div class="body">
+    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (10 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
+    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Neuralink&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
     
   </div>
 </details>
@@ -468,66 +648,6 @@
 </details>
 <details class="app ok">
   <summary>
-    <span class="id">33588303</span>
-    <span class="co">Annie Mac Home Mortgages</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (12 external links)<span class="ev">www.paycomonline.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.uhm.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">www.paycomonline.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 8 external host(s) seen: www.paycomonline.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.uhm.com, www.housingwire.com, www.prnewswire.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li><li>employer congruence unverifiable (no employer name decodable from URL (host and path are generic)) — recorded</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">9a30b836</span>
-    <span class="co">ByteDance</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (9 external links)<span class="ev">joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">joinbytedance.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 7 external host(s) seen: joinbytedance.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, eu.36kr.com, www.media-outreach.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li></ul>
-    
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">458d22bd</span>
-    <span class="co">IBM</span>
-    <span class="badge">wall: duplicate_url</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">ibmglobal.avature.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>employer URL already held by 1 other application(s): 7d6c2811 (IBM — Intern Application Developer – Strategy &amp; Transformation 2027, APPLICATION_OPENING)</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">a600b3bc</span>
-    <span class="co">Notion</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">ashby</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
     <span class="id">71ab785a</span>
     <span class="co">Hypercubic</span>
     <span class="badge">resolved</span>
@@ -538,36 +658,6 @@
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
     <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">6bc9c5ce</span>
-    <span class="co">IBM</span>
-    <span class="badge">wall: duplicate_url</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">ibmglobal.avature.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>employer URL already held by 1 other application(s): 7d6c2811 (IBM — Intern Application Developer – Strategy &amp; Transformation 2027, APPLICATION_OPENING)</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">4dc34df9</span>
-    <span class="co">Neuralink</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">greenhouse</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (10 external links)<span class="ev">x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;Neuralink&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.neuralink.com, www.businessinsider.es, web.archive.org, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li></ul>
     
   </div>
 </details>
@@ -582,96 +672,6 @@
   </summary>
   <div class="body">
     <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>none</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">246956ed</span>
-    <span class="co">JPMorganChase</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (11 external links)<span class="ev">jpmc.fa.oraclecloud.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.jpmorganchase.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">jpmc.fa.oraclecloud.com</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;JPMorganChase&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 8 external host(s) seen: jpmc.fa.oraclecloud.com, x.com, www.linkedin.com, www.crunchbase.com, www.glassdoor.com, www.jpmorganchase.com, www.morningstar.com, www.marketscreener.com</li><li>Apply control: autofill CTA (tier 0)</li><li>jobright interstitial: clicked &quot;Apply Without Customizing&quot;</li><li>popup settled off about:blank after the interstitial</li><li>popup captured on attempt 1</li><li>phase B: captured URL reads as &quot;hcmui&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;JPMorganChase&quot;) — kept, provenance is the Apply click</li><li>congruence: URL names &quot;hcmui&quot;, not &quot;JPMorganChase&quot; (URL names &quot;hcmui&quot; (path), which shares nothing with company &quot;JPMorganChase&quot;) — recorded, not refused</li></ul>
-    
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">5213e16d</span>
-    <span class="co">IBM</span>
-    <span class="badge">wall: duplicate_url</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">ibmglobal.avature.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>employer URL already held by 1 other application(s): 7d6c2811 (IBM — Intern Application Developer – Strategy &amp; Transformation 2027, APPLICATION_OPENING)</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">5902f351</span>
-    <span class="co">TransMarket Group</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">greenhouse</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (9 external links)<span class="ev">www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.businesswire.com, boards.greenhouse.io</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">job-boards.greenhouse.io</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: anchor reads as &quot;greenhouse&quot; (URL names &quot;greenhouse&quot; (host), which shares nothing with company &quot;TransMarket Group&quot;) — not preferred, deferring to the Apply click</li><li>phase A: 6 external host(s) seen: www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.businesswire.com, boards.greenhouse.io</li><li>phase A: greenhouse-host anchor failed strict validation: boards.greenhouse.io/embed/job_app — Embed job_app URL missing or invalid board token (?for=...)</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">0082b074</span>
-    <span class="co">Union Home Mortgage Corp.</span>
-    <span class="badge">resolved</span>
-    <span class="chip">apply_click_popup</span>
-    <span class="chip">generic</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — no congruent apply href (12 external links)<span class="ev">www.paycomonline.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.uhm.com</span></li><li><b>B_apply_click</b> — resolved via popup<span class="ev">www.paycomonline.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>phase A: 8 external host(s) seen: www.paycomonline.net, www.linkedin.com, x.com, www.crunchbase.com, www.glassdoor.com, www.uhm.com, www.housingwire.com, www.prnewswire.com</li><li>Apply control: autofill CTA (tier 0)</li><li>popup captured on attempt 1</li><li>employer congruence unverifiable (no employer name decodable from URL (host and path are generic)) — recorded</li></ul>
-    
-  </div>
-</details>
-<details class="app bad">
-  <summary>
-    <span class="id">57243ef5</span>
-    <span class="co">IBM</span>
-    <span class="badge">wall: duplicate_url</span>
-    
-    
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (9 candidates, employer match)<span class="ev">ibmglobal.avature.net</span></li></ol>
-    <h4>Notes</h4><ul class="notes"><li>employer URL already held by 1 other application(s): 7d6c2811 (IBM — Intern Application Developer – Strategy &amp; Transformation 2027, APPLICATION_OPENING)</li></ul>
-    
-  </div>
-</details>
-<details class="app ok">
-  <summary>
-    <span class="id">d607b204</span>
-    <span class="co">Composio</span>
-    <span class="badge">resolved</span>
-    <span class="chip">anchor_href</span>
-    <span class="chip">ashby</span>
-    
-  </summary>
-  <div class="body">
-    <h4>Phases</h4><ol class="phases"><li><b>open</b> — job page loaded</li><li><b>A_anchor_hrefs</b> — resolved (10 candidates, employer match)<span class="ev">jobs.ashbyhq.com</span></li></ol>
     <h4>Notes</h4><ul class="notes"><li>none</li></ul>
     
   </div>

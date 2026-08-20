@@ -1,0 +1,10 @@
+{
+  "outcome": "FAILED_BEFORE_CLICK",
+  "application_id": "446e5d0b-6e4a-430a-a2e3-3844c8580b6b",
+  "submission_id": "5c1d543f-5c93-471c-b2d2-8e150dcbbc09",
+  "attempt": 1,
+  "receipt": null,
+  "review_item_id": null,
+  "reason": "resolved via role-name: \"Submit application\"; submit control disabled; diagnosis: email verification code required (sent to candidate@example.com); no mailbox provider enabled (OUTLOOK_VERIFICATION_ENABLED / GMAIL_VERIFICATION_ENABLED) — cannot fetch the code",
+  "artifact_path": null
+}

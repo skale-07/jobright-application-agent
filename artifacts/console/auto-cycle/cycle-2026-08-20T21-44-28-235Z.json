@@ -1,0 +1,47 @@
+{
+  "started_at": "2026-08-20T21:44:28.235Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "MISSING at /home/user/jobright-application-agent/private/candidate/resumes/default.pdf — every app with no registered resume will park at materials. Point DEFAULT_RESUME_PATH in .env at your real resume.",
+    "agent_leg": "available (debug Chrome autolaunched)"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "436534a9-ae34-46ec-a29f-eb9210224220",
+    "armed_until": "2026-08-20T23:44:29.737Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": {
+    "arm_run_id": "436534a9-ae34-46ec-a29f-eb9210224220",
+    "stopped_reason": "queue_drained",
+    "apps_started": 0,
+    "submits_used": 0,
+    "discover_runs": 0,
+    "emails_generated": 0,
+    "drafts_saved": 0,
+    "essay_drafts_generated": 0,
+    "screener_predictions_generated": 0,
+    "notes": [],
+    "per_app": []
+  },
+  "outcome": "completed",
+  "notes": [
+    "CDP autolaunch: started debug Chrome on port 9222"
+  ]
+}

@@ -73,6 +73,9 @@ export type ApplicationDetail = {
   materials: Array<Record<string, unknown>>;
   fill_runs: Array<Record<string, unknown>>;
   drafts: Array<Record<string, unknown>>;
+  gmail_drafts: Array<Record<string, unknown>>;
+  contacts: Array<Record<string, unknown>>;
+  email_generations: Array<Record<string, unknown>>;
   contacts_count: number;
   email_generations_count: number;
   artifact_links: string[];
@@ -113,7 +116,15 @@ export type SubmitConfirmationSummary = {
   };
 };
 
-export type RunKind = "pipeline" | "nav" | "submit" | "discover" | "automation";
+export type RunKind =
+  | "pipeline"
+  | "nav"
+  | "submit"
+  | "discover"
+  | "automation"
+  | "contacts"
+  | "email"
+  | "gmail_draft";
 
 export type RunRecord = {
   id: string;

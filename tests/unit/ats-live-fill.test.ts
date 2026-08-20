@@ -455,4 +455,50 @@ describe("runAtsLiveFill (W5)", () => {
     },
     45_000,
   );
+
+  it(
+    "a pipeline-invoked fill records application_id + source pipeline (X4a corpus-join fix)",
+    async () => {
+      applyFixtureFillEnv();
+      const os = await import("node:os");
+      const { randomUUID } = await import("node:crypto");
+      const { openDatabase, migrate, closeDatabase } = await import(
+        "../../src/storage/db/client.js"
+      );
+      const dbPath = path.join(os.tmpdir(), `jaa-x4a-${randomUUID()}.sqlite`);
+      const db = openDatabase(dbPath);
+      try {
+        migrate(db);
+        const applicationId = randomUUID();
+        const report = await runAtsLiveFill({
+          binding: ATS_BINDINGS.generic,
+          url: "http://localhost:4599/portal",
+          execute: true,
+          profile: PROFILE,
+          capture: { db, applicationId },
+          fixtureHtml: `<!doctype html><html><body>
+            <form>
+              <label for="first_name">First Name</label>
+              <input id="first_name" name="first_name" />
+              <button type="submit">Submit application</button>
+            </form>
+          </body></html>`,
+        });
+        expect(report.mode).toBe("executed");
+        const row = db
+          .prepare(
+            `SELECT source, application_id FROM fill_runs ORDER BY created_at DESC LIMIT 1`,
+          )
+          .get() as { source: string; application_id: string | null };
+        expect(row.source).toBe("pipeline");
+        expect(row.application_id).toBe(applicationId);
+      } finally {
+        closeDatabase(db);
+        for (const p of [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]) {
+          if (fs.existsSync(p)) fs.unlinkSync(p);
+        }
+      }
+    },
+    45_000,
+  );
 });

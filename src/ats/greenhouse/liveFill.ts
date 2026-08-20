@@ -361,6 +361,7 @@ export async function reachGreenhouseApplicationForm(
 function tryRecordFillOutcomes(
   report: GreenhouseLiveFillReport,
   reportRelpath: string,
+  capture?: { db?: Db; applicationId: string | null },
 ): void {
   if (report.mode !== "executed" || !report.mutation_attempted) return;
 
@@ -387,7 +388,10 @@ function tryRecordFillOutcomes(
 
   recordFillRun({
     mode: "executed",
-    source: "cli_url",
+    // A threaded capture means the pipeline invoked us for a tracked
+    // application — recording "cli_url"/NULL there broke the corpus join.
+    source: capture?.applicationId ? "pipeline" : "cli_url",
+    application_id: capture?.applicationId ?? null,
     ats: report.ats,
     job_url: report.final_url ?? report.url,
     company: report.identity_verification?.company ?? null,
@@ -411,10 +415,14 @@ function tryRecordFillOutcomes(
     verify: report.verify ?? null,
     uploads: report.uploads ?? null,
     heal: report.heal ?? null,
-  });
+  },
+  capture?.db ? { db: capture.db } : {});
 }
 
-function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
+function persist(
+  report: GreenhouseLiveFillReport,
+  capture?: { db?: Db; applicationId: string | null },
+): GreenhouseLiveFillReport {
   const outDir = path.join(getConfig().artifactsDir, "ats-fill", "greenhouse-live");
   fs.mkdirSync(outDir, { recursive: true });
   const file = path.join(
@@ -423,7 +431,7 @@ function persist(report: GreenhouseLiveFillReport): GreenhouseLiveFillReport {
   );
 
   // SQLite outcomes first (uses raw report values) then redacted artifact.
-  tryRecordFillOutcomes(report, path.relative(getConfig().artifactsDir, file));
+  tryRecordFillOutcomes(report, path.relative(getConfig().artifactsDir, file), capture);
 
   const redacted = {
     ...redactFillReportForArtifact(report),
@@ -483,7 +491,7 @@ export async function runGreenhouseLiveFill(input: {
     base.notes.push(urlValidation.failureReason ?? "URL validation failed");
     throw new GreenhouseLiveFillError(
       `Refusing live fill: ${urlValidation.failureReason ?? "invalid Greenhouse application URL"}`,
-      persist(base),
+      persist(base, input.capture),
     );
   }
 
@@ -498,7 +506,7 @@ export async function runGreenhouseLiveFill(input: {
       base.notes.push(`resume preflight failed: ${abs} — ${check.evidence}`);
       throw new GreenhouseLiveFillError(
         `Resume file failed preflight: ${abs} — ${check.evidence}`,
-        persist(base),
+        persist(base, input.capture),
       );
     }
   }
@@ -567,7 +575,7 @@ export async function runGreenhouseLiveFill(input: {
           );
           throw new GreenhouseLiveFillError(
             `Refusing live fill (AUTH_REQUIRED): portal auth did not clear the wall (${auth.status})`,
-            persist(base),
+            persist(base, input.capture),
           );
         }
         verified = await verifyPageBeforeMutation(
@@ -586,7 +594,7 @@ export async function runGreenhouseLiveFill(input: {
         base.notes.push(verified.reason ?? "page failed verification");
         throw new GreenhouseLiveFillError(
           `Refusing live fill (${verified.failureCode}): ${verified.reason}`,
-          persist(base),
+          persist(base, input.capture),
         );
       }
 
@@ -655,7 +663,7 @@ export async function runGreenhouseLiveFill(input: {
         base.notes.push(
           "plan_only — no mutation. Set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to fill.",
         );
-        return persist(base);
+        return persist(base, input.capture);
       }
 
       // Re-assert immediately before the first mutation.
@@ -794,7 +802,7 @@ export async function runGreenhouseLiveFill(input: {
         base.operator_brief = brief;
         printOperatorFieldBrief(brief);
       }
-      return persist(base);
+      return persist(base, input.capture);
     },
   );
 }

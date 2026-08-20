@@ -211,6 +211,10 @@ function pickNextApplication(db: Db, seen: Set<string>): string | null {
     query(
       `'MATERIALS_GENERATING','RESUME_DOWNLOADED','APPLICATION_OPENING',` +
         `'ATS_DETECTION','APPLICATION_INSPECTION','NATIVE_AUTOFILL_RUNNING',` +
+        // X2: an app crashed mid-extension-first-fill resumes safely — the
+        // VERIFICATION handler treats a missing in-memory outcome as
+        // "run the full native fill".
+        `'JOBRIGHT_AUTOFILL_RUNNING','JOBRIGHT_AUTOFILL_VERIFICATION','FORM_RESETTING',` +
         `'FIELD_VERIFICATION','READY_TO_SUBMIT'`,
     ),
   );

@@ -7,6 +7,7 @@ import { StateBadge } from "../components/StateBadge";
 import { Timeline } from "../components/Timeline";
 import { JsonView } from "../components/JsonView";
 import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
+import { OutreachCard } from "../components/OutreachCard";
 
 function str(record: Record<string, unknown>, key: string): string | null {
   const v = record[key];
@@ -204,6 +205,8 @@ export function ApplicationDetailPage(): JSX.Element {
           </table>
         </div>
       ) : null}
+
+      <OutreachCard applicationId={id} detail={data} />
 
       <div className="card">
         <h2>Timeline</h2>

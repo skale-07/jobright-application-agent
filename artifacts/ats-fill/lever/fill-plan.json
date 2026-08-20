@@ -6,10 +6,7 @@
     "answers": {
       "legal_name.first": "Ada",
       "email": "a***@example.com",
-      "phone": "***-***-0100",
-      "gender": "Male",
-      "race_ethnicity": "Asian",
-      "veteran_status": "I am not a veteran"
+      "phone": "***-***-0100"
     },
     "entries": [
       {
@@ -61,46 +58,46 @@
         "field_id": "urls-linkedin",
         "label": "LinkedIn URL",
         "type": "text",
-        "canonical_field": "linkedin_url",
-        "action": "skip_empty",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "Profile value empty for linkedin_url"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "urls-github",
         "label": "GitHub URL",
         "type": "text",
-        "canonical_field": "github_url",
-        "action": "skip_empty",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "Profile value empty for github_url"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "urls-portfolio",
         "label": "Portfolio URL",
         "type": "text",
-        "canonical_field": "personal_website",
-        "action": "skip_empty",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "Profile value empty for personal_website"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "card-hearabout",
         "label": "How did you hear about us?",
         "type": "text",
-        "canonical_field": "how_heard",
-        "action": "skip_empty",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "Profile value empty for how_heard"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "card-workauth",
         "label": "Are you legally authorized to work in the United States?",
         "type": "select",
-        "canonical_field": "work_authorization",
-        "action": "review_required",
+        "canonical_field": null,
+        "action": "skip_unmapped",
         "value": null,
-        "reason": "Required work_authorization missing from profile — human review"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "comments",
@@ -116,32 +113,32 @@
         "label": "Gender",
         "type": "select",
         "canonical_field": "gender",
-        "action": "fill",
-        "value": "Male",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "skip_demographics",
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       },
       {
         "field_id": "eeo-race",
         "label": "Race",
         "type": "select",
         "canonical_field": "race_ethnicity",
-        "action": "fill",
-        "value": "Asian",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "skip_demographics",
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       },
       {
         "field_id": "eeo-veteran",
         "label": "Veteran status",
         "type": "select",
         "canonical_field": "veteran_status",
-        "action": "fill",
-        "value": "I am not a veteran",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "skip_demographics",
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       }
     ],
-    "fillable_count": 6,
-    "skipped_count": 7,
-    "review_required_count": 1
+    "fillable_count": 3,
+    "skipped_count": 11,
+    "review_required_count": 0
   },
   "approved_plan": {
     "entries": [
@@ -199,51 +196,51 @@
         "field_id": "urls-linkedin",
         "label": "LinkedIn URL",
         "type": "text",
-        "canonical_field": "linkedin_url",
+        "canonical_field": null,
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Profile value empty for linkedin_url"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "urls-github",
         "label": "GitHub URL",
         "type": "text",
-        "canonical_field": "github_url",
+        "canonical_field": null,
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Profile value empty for github_url"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "urls-portfolio",
         "label": "Portfolio URL",
         "type": "text",
-        "canonical_field": "personal_website",
+        "canonical_field": null,
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Profile value empty for personal_website"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "card-hearabout",
         "label": "How did you hear about us?",
         "type": "text",
-        "canonical_field": "how_heard",
+        "canonical_field": null,
         "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Profile value empty for how_heard"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "card-workauth",
         "label": "Are you legally authorized to work in the United States?",
         "type": "select",
-        "canonical_field": "work_authorization",
-        "action": "REVIEW_REQUIRED",
+        "canonical_field": null,
+        "action": "SKIP",
         "approved": false,
         "value": null,
-        "reason": "Required work_authorization missing from profile — human review"
+        "reason": "No answer-alias mapping"
       },
       {
         "field_id": "comments",
@@ -260,47 +257,44 @@
         "label": "Gender",
         "type": "select",
         "canonical_field": "gender",
-        "action": "FILL",
-        "approved": true,
-        "value": "Male",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       },
       {
         "field_id": "eeo-race",
         "label": "Race",
         "type": "select",
         "canonical_field": "race_ethnicity",
-        "action": "FILL",
-        "approved": true,
-        "value": "Asian",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       },
       {
         "field_id": "eeo-veteran",
         "label": "Veteran status",
         "type": "select",
         "canonical_field": "veteran_status",
-        "action": "FILL",
-        "approved": true,
-        "value": "I am not a veteran",
-        "reason": "Mapped from sensitive profile (operator-supplied)"
+        "action": "SKIP",
+        "approved": false,
+        "value": null,
+        "reason": "Demographics deferred to sensitive-profile policy path"
       }
     ],
     "answers": {
       "legal_name.first": "Ada",
       "email": "a***@example.com",
-      "phone": "***-***-0100",
-      "gender": "Male",
-      "race_ethnicity": "Asian",
-      "veteran_status": "I am not a veteran"
+      "phone": "***-***-0100"
     },
-    "fillable_count": 6,
-    "skipped_count": 7,
-    "review_required_count": 1
+    "fillable_count": 3,
+    "skipped_count": 11,
+    "review_required_count": 0
   },
   "submit_attempted": false,
   "notes": [
     "plan_only — set --execute with FORM_FILL_ENABLED=true and DRY_RUN=false to mutate"
   ],
-  "written_at": "2026-08-20T01:36:26.069Z"
+  "written_at": "2026-08-20T21:44:35.787Z"
 }

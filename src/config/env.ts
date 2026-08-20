@@ -98,6 +98,12 @@ const envSchema = z.object({
    * loud refusal, never a silent fallback to another provider.
    */
   LLM_PROVIDER: z.enum(["anthropic", "openai", "kimi"]).optional(),
+  /**
+   * Chrome Web Store id of the JobRight extension (optional). When set,
+   * the extension preflight matches CDP targets by exact id instead of a
+   * /jobright/i title heuristic. Plain setting, not a capability flag.
+   */
+  JOBRIGHT_EXTENSION_ID: z.string().optional(),
   /** Phase 6 J1: browser-use authoring sidecar. Fail closed. */
   AGENT_AUTHORING_ENABLED: boolFromEnv.default(false),
   SCREENER_LLM_MATCH_ENABLED: boolFromEnv.default(false),
@@ -192,6 +198,7 @@ export type AppConfig = {
   moonshotApiKey: string | undefined;
   kimiLlmModel: string;
   llmProvider: "anthropic" | "openai" | "kimi" | undefined;
+  jobrightExtensionId: string | undefined;
   agentAuthoringEnabled: boolean;
   screenerLlmMatchEnabled: boolean;
   screenerPredictLlmEnabled: boolean;
@@ -276,6 +283,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     moonshotApiKey: parsed.MOONSHOT_API_KEY,
     kimiLlmModel: parsed.KIMI_LLM_MODEL,
     llmProvider: parsed.LLM_PROVIDER,
+    jobrightExtensionId: parsed.JOBRIGHT_EXTENSION_ID,
     agentAuthoringEnabled: parsed.AGENT_AUTHORING_ENABLED,
     screenerLlmMatchEnabled: parsed.SCREENER_LLM_MATCH_ENABLED,
     screenerPredictLlmEnabled: parsed.SCREENER_PREDICT_LLM_ENABLED,

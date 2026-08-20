@@ -108,6 +108,60 @@ carry auth into fresh contexts (a known open question, see
 [current-state-and-phase56.md](./current-state-and-phase56.md) §2.6b), run
 the diagnostic: `npx tsx scripts/diag-jobright-feed.ts`.
 
+### JobRight extension (extension-first fill)
+
+The extension-first fill strategy drives **JobRight's browser extension**
+as the primary form filler, so the extension must be installed in the
+Chrome that Dispatch attaches to over CDP. Two workable setups:
+
+- **Option A (recommended): the debug profile.** Chrome 136+ refuses
+  `--remote-debugging-port` on your default profile, so "attach to my
+  everyday Chrome" is not something modern Chrome allows. Instead, treat
+  the `jobright-cdp` debug profile as your *application Chrome*: in the
+  `npm run chrome:debug:jobright` window, install the JobRight extension
+  from the Web Store and sign it in once. The profile persists, so this is
+  one-time setup. Everything else (logins, sessions) already lives there.
+- **Option B: your own Chrome on a separate data dir.** Launch any Chrome
+  yourself with `--remote-debugging-port=9222 --user-data-dir=<non-default
+  dir>` and point `AGENT_CDP_URL` at it. Dispatch will attach but will
+  NEVER manage that browser: autolaunch/restart/kill are hard-restricted
+  to the `jobright-cdp` profile and refuse anything else.
+
+Check what Dispatch can see:
+
+```powershell
+npm run jobright:ext-check                       # CDP target scan
+npm run jobright:ext-check -- --url <ats-url>    # + on-page DOM probe
+```
+
+The verdict is `present` or `unknown` — never a confident absent (an
+idle extension worker and a closed shadow root are both invisible).
+Extension-first filling requires `present`; anything else falls back to
+the native deterministic fill. Optionally pin `JOBRIGHT_EXTENSION_ID` in
+`.env` for exact-id matching.
+
+**Turning extension-first filling on** (after the one-time setup):
+
+1. `npm run jobright:ext-check` must say `present`.
+2. Run one capture per ATS you care about:
+   `npm run jobright:ext-capture -- --url <a real ATS application URL>`,
+   activate the extension's autofill by hand when prompted, and promote
+   the working trigger selector from `selector-candidates.json` into
+   `src/jobright/extension/selectors.ts` (`autofillTrigger`). Until that
+   list has entries, activation reports "no promoted trigger selectors"
+   and every run stays native — that is the fail-closed default.
+3. Set `JOBRIGHT_AUTOFILL_ENABLED=true` in `.env`.
+
+Pipeline behavior with all three done: inspection routes the app through
+`JOBRIGHT_AUTOFILL_RUNNING` — one CDP session activates the extension,
+reads the form back, fills only the gap the extension left, and verifies
+the WHOLE form. A failed verify parks with an operator brief exactly like
+a native miss; greenhouse apps, fixture runs, and `--submit`-held runs
+always use the native path. Every run records `strategy`, a
+`fill-trace-*.jsonl` step artifact, and per-field `filled_by`
+(extension/native/skipped) — the training corpus for the long-run
+autonomous filler.
+
 ## 2. Discover
 
 ```powershell
@@ -329,6 +383,11 @@ contacts, capture it with the recorder and promote real selectors.
 
 **Insider Connection email triage** (needs `LINKEDIN_ENRICHMENT_ENABLED=true`
 — each lookup spends a JobRight contact credit):
+
+> Console-first: the whole outreach pipeline is three buttons on the
+> application's page in the console (Outreach card: Find insider emails →
+> Write outreach emails → Save Gmail drafts) — no command needed. The
+> CLI below remains for scripting.
 
 ```powershell
 npm run contacts:insider -- --application <uuid> --headed

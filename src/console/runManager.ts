@@ -55,7 +55,18 @@ export function defaultConsoleRunnerInvocation(): {
  * stdin, which the child treats as decline.
  */
 
-export type RunKind = "pipeline" | "nav" | "submit" | "discover" | "automation";
+export type RunKind =
+  | "pipeline"
+  | "nav"
+  | "submit"
+  | "discover"
+  | "automation"
+  // X6 console-first outreach: insider-email triage, per-contact email
+  // generation, and Gmail draft creation — each a bounded child run so no
+  // CLI is ever required for the outreach pipeline.
+  | "contacts"
+  | "email"
+  | "gmail_draft";
 export type RunStatus =
   | "pending"
   | "running"

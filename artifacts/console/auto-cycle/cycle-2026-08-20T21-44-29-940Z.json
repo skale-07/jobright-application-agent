@@ -1,0 +1,35 @@
+{
+  "started_at": "2026-08-20T21:44:29.940Z",
+  "updated": {
+    "pulled": false,
+    "head": null,
+    "installed": false,
+    "notes": [
+      "update skipped (--no-update)"
+    ]
+  },
+  "preflight": {
+    "ok": true,
+    "notes": [],
+    "default_resume": "MISSING at /home/user/jobright-application-agent/private/candidate/resumes/default.pdf — every app with no registered resume will park at materials. Point DEFAULT_RESUME_PATH in .env at your real resume.",
+    "agent_leg": "UNAVAILABLE — AGENT_FALLBACK_ENABLED is off; nav phase C will be skipped for every app"
+  },
+  "arm": {
+    "armed": true,
+    "arm_run_id": "46a540a7-2d91-4946-bbde-1d5190fb7991",
+    "armed_until": "2026-08-20T23:44:29.940Z",
+    "seconds_remaining": 7200,
+    "max_submits": 10,
+    "submits_used": 0,
+    "max_apps": 25,
+    "apps_started": 0,
+    "discover_max": 10,
+    "rediscover_every": 5,
+    "last_error_code": null
+  },
+  "session": null,
+  "outcome": "skipped_already_armed",
+  "notes": [
+    "an armed session is already live — not double-arming (arm 46a540a7, 0/25 apps, 120 min left)"
+  ]
+}

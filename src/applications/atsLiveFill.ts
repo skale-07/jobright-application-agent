@@ -9,6 +9,12 @@ import { workdaySelectorsV1 } from "../ats/workday/selectors.js";
 import { walkWorkdayWizard } from "./workdayWizard.js";
 import { walkGenericFormPages } from "./genericFormAdvance.js";
 import { discoverFieldsFromHtml } from "./fieldDiscovery.js";
+import { scrubHtmlForSnapshot } from "./htmlScrub.js";
+import {
+  attemptExtensionAutofill,
+  type ExtensionActivationResult,
+} from "../jobright/extension/autofill.js";
+import { writeFillTrace, type FillTraceEvent } from "../storage/fillTrace.js";
 import path from "node:path";
 import fs from "node:fs";
 import { getConfig } from "../config/index.js";
@@ -295,6 +301,12 @@ export type AtsLiveFillReport = {
   }>;
   /** Text boxes revealed by choosing "Other", and what went into them. */
   other_specify?: OtherSpecifyOutcome[];
+  /**
+   * Extension-first activation outcome (X2): whether JobRight's extension
+   * was triggered, whether the form changed, and which planned answers it
+   * satisfied (those fields were left alone by the native gap-fill).
+   */
+  extension?: ExtensionActivationResult & { satisfied_answers: string[] };
   fill: FillResult | null;
   verify: FormVerificationResult | null;
   uploads: UploadVerification[] | null;
@@ -374,6 +386,14 @@ export async function runAtsLiveFill(input: {
    * is demoted — a fixture-served page is never live evidence.
    */
   fixtureHtml?: string;
+  /**
+   * X2: activate the JobRight extension before planning and fill only the
+   * gap it leaves. Requires execute + JOBRIGHT_AUTOFILL_ENABLED + promoted
+   * trigger selectors; anything missing degrades to a full native fill.
+   */
+  extensionFirst?: boolean;
+  /** Test seam: overrides the registry's trigger selectors (fixtures). */
+  extensionTriggerSelectors?: string[];
   /**
    * Session handoff (nav N6): run on this page — typically a CDP-attached
    * page whose cookies survive from navigation. The caller owns its
@@ -713,6 +733,36 @@ export async function runAtsLiveFill(input: {
         return persist(report);
       }
 
+      // Extension-first (X2): activate JobRight's extension BEFORE option
+      // harvest and planning, so its writes are on the page by the time
+      // the pre-fill verify decides which answers are already satisfied.
+      // Execute-only (activation IS mutation, same gates as our own
+      // typing), opt-in (JOBRIGHT_AUTOFILL_ENABLED), and inert until an
+      // ext-capture promoted trigger selectors. Failure is soft: the run
+      // simply proceeds as a full native fill.
+      if (input.extensionFirst && input.execute) {
+        assertFormFillAllowed(`atsLiveFill.${binding.id}.extension`);
+        if (!getConfig().jobrightAutofillEnabled) {
+          report.notes.push(
+            "extensionFirst requested but JOBRIGHT_AUTOFILL_ENABLED is off — native fill",
+          );
+        } else {
+          const activation = await attemptExtensionAutofill(page, {
+            ...(input.extensionTriggerSelectors
+              ? { triggerSelectors: input.extensionTriggerSelectors }
+              : {}),
+          });
+          report.extension = { ...activation, satisfied_answers: [] };
+          report.notes.push(
+            `extension activation: attempted=${activation.attempted} activated=${activation.activated}`,
+            ...activation.notes,
+          );
+          if (activation.activated) {
+            planHtml = await page.content();
+          }
+        }
+      }
+
       // Scrape each control's REAL answer space before planning anything.
       // HTML cannot see a React-select's option list, so without this every
       // dropdown reaches the planner empty and the tiers below degrade to
@@ -827,7 +877,53 @@ export async function runAtsLiveFill(input: {
       assertFormFillAllowed(`atsLiveFill.${binding.id}.execute`);
       report.mode = "executed";
       const knownFieldIds = new Set(plannedFields.map((f) => f.id));
+      // Gap restriction (X3): when the extension activated, read the form
+      // back BEFORE typing anything — every planned answer the page
+      // already matches was the extension's work and is left alone. The
+      // adapters execute from their STORED approved plan (answers are
+      // advisory), so the restriction flips satisfied entries to
+      // approved:false for the fill and restores the full plan before the
+      // whole-form verify — a wrong extension value is still caught.
+      let planRestricted = false;
+      if (report.extension?.activated) {
+        const preVerify = await adapter.verify(page, approvedPlan.answers);
+        const satisfied = preVerify.fields
+          .filter((f) => f.match)
+          .map((f) => f.canonical_field);
+        report.extension.satisfied_answers = satisfied;
+        if (satisfied.length > 0) {
+          const skip = new Set(satisfied);
+          const gapPlan = {
+            ...approvedPlan,
+            entries: approvedPlan.entries.map((e) =>
+              skip.has(e.canonical_field ?? e.field_id)
+                ? {
+                    ...e,
+                    approved: false as const,
+                    reason:
+                      "extension_filled — left in place, verified whole-form",
+                  }
+                : e,
+            ),
+          };
+          adapter.setApprovedFillPlan(
+            gapPlan,
+            ...(input.profile ? [input.profile] : []),
+          );
+          planRestricted = true;
+        }
+        report.notes.push(
+          `extension satisfied ${satisfied.length}/${approvedPlan.fillable_count} planned answer(s) — native gap-fill covers the rest`,
+        );
+      }
       report.fill = await adapter.fill(page, approvedPlan.answers);
+      if (planRestricted) {
+        // Whole-form verify must cover extension-filled fields too.
+        adapter.setApprovedFillPlan(
+          approvedPlan,
+          ...(input.profile ? [input.profile] : []),
+        );
+      }
       // Choosing "Other" usually reveals an "Other (please specify)" box —
       // an OPEN answer space that only exists after the option commits.
       // The real answer the closed list could not hold goes in there.
@@ -1033,16 +1129,7 @@ export async function runAtsLiveFill(input: {
     const outDir = path.join(cfg.artifactsDir, "ats-fill", `${binding.id}-live`);
     fs.mkdirSync(outDir, { recursive: true });
     const snapshotPath = path.join(outDir, `form-snapshot-${Date.now()}.html`);
-    const scrubbed = html
-      .replace(/<script\b[\s\S]*?<\/script>/gi, "")
-      .replace(/\bvalue\s*=\s*"[^"]*"/gi, 'value="[SCRUBBED]"')
-      .replace(/\bvalue\s*=\s*'[^']*'/gi, "value='[SCRUBBED]'")
-      .replace(
-        /(<textarea\b[^>]*>)[\s\S]*?(<\/textarea>)/gi,
-        "$1[SCRUBBED]$2",
-      )
-      .slice(0, 2_000_000);
-    fs.writeFileSync(snapshotPath, scrubbed, "utf8");
+    fs.writeFileSync(snapshotPath, scrubHtmlForSnapshot(html), "utf8");
     return snapshotPath;
   }
 
@@ -1065,9 +1152,54 @@ export async function runAtsLiveFill(input: {
     const reportPath = path.join(outDir, `live-${r.mode}-${Date.now()}.json`);
 
     if (r.mode === "executed" && plans) {
+      // X4: step-level trace artifact — classed/identifier data only.
+      const now = () => new Date().toISOString();
+      const traceEvents: FillTraceEvent[] = [];
+      if (r.extension) {
+        traceEvents.push({
+          event: "activation",
+          at: now(),
+          attempted: r.extension.attempted,
+          activated: r.extension.activated,
+          trigger: r.extension.trigger,
+          changed_fields: r.extension.changed_fields,
+        });
+        traceEvents.push({
+          event: "extension_satisfied",
+          at: now(),
+          canonical_fields: r.extension.satisfied_answers,
+        });
+      }
+      traceEvents.push({
+        event: "native_fill",
+        at: now(),
+        filled: r.fill?.filled ?? [],
+        errors: (r.fill?.errors ?? []).map((e) => String(e).slice(0, 200)),
+      });
+      traceEvents.push({
+        event: "verify",
+        at: now(),
+        passed: r.verify?.passed ?? null,
+        fields: (r.verify?.fields ?? []).map((f) => ({
+          canonical_field: f.canonical_field,
+          match: f.match,
+        })),
+      });
+      const tracePath = writeFillTrace(
+        outDir,
+        `fill-trace-${Date.now()}.jsonl`,
+        traceEvents,
+      );
       recordFillRun({
         mode: "executed",
-        source: "cli_url",
+        // A threaded capture means the pipeline invoked us for a tracked
+        // application — recording "cli_url"/NULL there broke the corpus
+        // join promised in docs/telemetry-training.md.
+        source: input.capture?.applicationId ? "pipeline" : "cli_url",
+        application_id: input.capture?.applicationId ?? null,
+        strategy: input.extensionFirst ? "EXTENSION_FIRST" : "NATIVE_ONLY",
+        trace_relpath: path.relative(cfg.artifactsDir, tracePath),
+        extension_satisfied: r.extension?.satisfied_answers ?? null,
         ats: r.ats,
         job_url: r.url,
         mutation_attempted: true,
@@ -1090,7 +1222,8 @@ export async function runAtsLiveFill(input: {
         verify: r.verify,
         uploads: r.uploads,
         heal: null,
-      });
+      },
+      input.capture?.db ? { db: input.capture.db } : {});
     }
 
     const redacted = redactFillReportForArtifact({

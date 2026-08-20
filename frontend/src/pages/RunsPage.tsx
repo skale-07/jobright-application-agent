@@ -6,7 +6,15 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
 
-type Kind = "pipeline" | "nav" | "submit" | "discover" | "automation";
+type Kind =
+  | "pipeline"
+  | "nav"
+  | "submit"
+  | "discover"
+  | "automation"
+  | "contacts"
+  | "email"
+  | "gmail_draft";
 
 const KIND_HELP: Record<Kind, string> = {
   pipeline: "Advance applications through the state machine.",
@@ -15,6 +23,10 @@ const KIND_HELP: Record<Kind, string> = {
   discover: "Pull jobs from the JobRight feed and enqueue them (needs a JobRight session).",
   automation:
     "L3 worker: process the queue unattended while the arm session is live (arm on Overview first).",
+  contacts:
+    "Find insider emails on the JobRight job page (school + beyond panels; spends contact credits).",
+  email: "Write outreach emails for this application's contacts (LLM; drafts only).",
+  gmail_draft: "Save the written emails as Gmail drafts (never sends).",
 };
 
 export function RunsPage(): JSX.Element {
@@ -90,6 +102,9 @@ export function RunsPage(): JSX.Element {
                 <option value="submit">submit</option>
                 <option value="discover">discover — pull + enqueue jobs</option>
                 <option value="automation">automation — L3 unattended worker</option>
+                <option value="contacts">contacts — find insider emails</option>
+                <option value="email">email — write outreach emails</option>
+                <option value="gmail_draft">gmail_draft — save Gmail drafts</option>
               </select>
             </label>
             <p className="faint" style={{ margin: 0 }}>

@@ -1,10 +1,10 @@
 {
   "fixture": "login-required",
-  "inspected_at": "2026-08-18T01:01:58.933Z",
+  "inspected_at": "2026-08-20T21:44:55.581Z",
   "inspection": {
     "ats": "greenhouse",
     "adapter_version": 1,
-    "url": "https://boards.greenhouse.io/acme/jobs/login-1",
+    "url": "https://boards.greenhouse.io/acme/jobs/4000003",
     "title": "Login required",
     "requires_login": true,
     "captcha_detected": false,

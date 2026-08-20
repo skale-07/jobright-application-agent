@@ -74,6 +74,20 @@ approves; generation stays banned). Embedding-scale, not agent-scale.
 - **Anything unbounded** — every agent call keeps attempt caps and
   wall-clock budgets; self-reports stay UNVERIFIED until read back.
 
+## The JobRight extension (2026-08-20 addendum)
+
+The extension-first fill strategy (X0–X4) does not move a model into the
+fill loop — it adds an EXTERNAL deterministic-activation tool under the
+same regime as everything else: activation clicks only registry-promoted
+selectors (never a model's guess), the approved plan still decides every
+value, the whole-form read-back verify still judges the result, and the
+submit chain is untouched. What the extension adds is a fast first pass
+whose per-field outcomes (`filled_by` in the fill corpus) are exactly the
+training data surface 4 was waiting for: the eventual in-house filler
+learns field-by-field from what the extension handles, misses, and gets
+wrong. The endgame of the extension is the same as every model surface
+here — its own retirement.
+
 ## The shape that falls out
 
 Deterministic spine, model at the edges: models clear walls (1), heal

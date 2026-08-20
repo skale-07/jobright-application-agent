@@ -151,6 +151,12 @@ export type ApplicationDetail = {
   materials: Array<Record<string, unknown>>;
   fill_runs: Array<Record<string, unknown>>;
   drafts: Array<Record<string, unknown>>;
+  /** X6: gmail_drafts rows (source-tagged separately from Outlook). */
+  gmail_drafts: Array<Record<string, unknown>>;
+  /** X6: contact rows for the Outreach card — local console, own data. */
+  contacts: Array<Record<string, unknown>>;
+  /** X6: generated outreach emails (operator's own drafts, full text). */
+  email_generations: Array<Record<string, unknown>>;
   contacts_count: number;
   email_generations_count: number;
   artifact_links: string[];
@@ -261,11 +267,31 @@ export function getApplicationDetail(
     )
     .all(applicationId) as Array<Record<string, unknown>>;
 
-  const contactsCount = (
-    db
-      .prepare(`SELECT COUNT(*) AS n FROM contacts WHERE application_id = ?`)
-      .get(applicationId) as { n: number }
-  ).n;
+  // X6 Outreach card data. The console is loopback-only and this is the
+  // operator's own outreach data — names/emails/subjects render so the
+  // operator can review before anything is drafted. jobright_context_json
+  // stays out (raw scrape payload, no UI value).
+  const contacts = db
+    .prepare(
+      `SELECT id, name, title, company, email, source_category, created_at
+       FROM contacts WHERE application_id = ? ORDER BY created_at ASC`,
+    )
+    .all(applicationId) as Array<Record<string, unknown>>;
+  const emailGenerations = db
+    .prepare(
+      `SELECT id, contact_id, prompt_version, model, subject, body_text,
+              validation_status, created_at
+       FROM email_generations WHERE application_id = ?
+       ORDER BY created_at DESC LIMIT 25`,
+    )
+    .all(applicationId) as Array<Record<string, unknown>>;
+  const gmailDrafts = db
+    .prepare(
+      `SELECT id, contact_id, recipient_email, subject, status, verified, created_at
+       FROM gmail_drafts WHERE application_id = ? ORDER BY created_at DESC`,
+    )
+    .all(applicationId) as Array<Record<string, unknown>>;
+  const contactsCount = contacts.length;
   const emailGenCount = (
     db
       .prepare(
@@ -298,6 +324,9 @@ export function getApplicationDetail(
     materials,
     fill_runs: fillRuns,
     drafts,
+    gmail_drafts: gmailDrafts,
+    contacts,
+    email_generations: emailGenerations,
     contacts_count: contactsCount,
     email_generations_count: emailGenCount,
     artifact_links: [...artifactLinks].sort(),

@@ -31,6 +31,12 @@ const KIND_MINIMUMS: Record<RunKind, { flags: GatedFlagKey[]; live_mode: boolean
     flags: ["AUTOMATION_ENABLED", "FORM_FILL_ENABLED", "SUBMIT_ENABLED"],
     live_mode: true,
   },
+  // X6 outreach kinds. Each module re-asserts its own gate in the child;
+  // these are the friendly pre-checks. Triage/drafts open browsers but do
+  // not consult DRY_RUN, so live_mode stays false.
+  contacts: { flags: ["LINKEDIN_ENRICHMENT_ENABLED"], live_mode: false },
+  email: { flags: ["EMAIL_GENERATION_ENABLED"], live_mode: false },
+  gmail_draft: { flags: ["GMAIL_DRAFTS_ENABLED"], live_mode: false },
 };
 
 function json(res: ServerResponse, status: number, body: unknown): void {
@@ -135,10 +141,14 @@ export function buildRunRoutes(deps: { runManager: RunManager; db: Db }): Route[
           kind !== "nav" &&
           kind !== "submit" &&
           kind !== "discover" &&
-          kind !== "automation"
+          kind !== "automation" &&
+          kind !== "contacts" &&
+          kind !== "email" &&
+          kind !== "gmail_draft"
         ) {
           json(res, 400, {
-            error: "kind must be pipeline | nav | submit | discover | automation",
+            error:
+              "kind must be pipeline | nav | submit | discover | automation | contacts | email | gmail_draft",
           });
           return;
         }
@@ -158,7 +168,14 @@ export function buildRunRoutes(deps: { runManager: RunManager; db: Db }): Route[
           ) as NonNullable<FlagOptIns["flags"]>,
           live_mode: body["live_mode"] === true,
         };
-        if ((kind === "nav" || kind === "submit") && typeof params["application_id"] !== "string") {
+        if (
+          (kind === "nav" ||
+            kind === "submit" ||
+            kind === "contacts" ||
+            kind === "email" ||
+            kind === "gmail_draft") &&
+          typeof params["application_id"] !== "string"
+        ) {
           json(res, 400, { error: `${kind} requires params.application_id` });
           return;
         }
