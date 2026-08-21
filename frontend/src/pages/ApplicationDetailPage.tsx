@@ -4,10 +4,19 @@ import { apiGet, apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
+import { StatusChip } from "../components/StatusChip";
 import { Timeline } from "../components/Timeline";
 import { JsonView } from "../components/JsonView";
-import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
+import { APP_STATUS, deriveStatus } from "../lib/appStatus";
 import { OutreachCard } from "../components/OutreachCard";
+import { SkeletonCard } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
+import {
+  artifactLabel,
+  artifactUrl,
+  FillEvidence,
+  ScreenshotEvidence,
+} from "../components/Evidence";
 
 function str(record: Record<string, unknown>, key: string): string | null {
   const v = record[key];
@@ -24,7 +33,13 @@ export function ApplicationDetailPage(): JSX.Element {
   const [toggleBusy, setToggleBusy] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
-  if (loading && !data) return <p className="faint">Loading…</p>;
+  if (loading && !data)
+    return (
+      <>
+        <SkeletonCard lines={5} />
+        <SkeletonCard lines={3} />
+      </>
+    );
   if (error) return <div className="banner danger">{error}</div>;
   if (!data) return <p className="faint">Not found.</p>;
 
@@ -34,7 +49,13 @@ export function ApplicationDetailPage(): JSX.Element {
   const hasOpenReview = data.review_items.some((r) =>
     ["OPEN", "IN_PROGRESS"].includes(r.status),
   );
-  const chip = deriveChip(state, hasOpenReview);
+  const status = deriveStatus(state, hasOpenReview);
+  const receipts = data.submissions.filter(
+    (s) => typeof s["screenshot_path"] === "string" && s["screenshot_path"],
+  );
+  const latestFillReport = data.fill_runs
+    .map((f) => f["report_artifact_relpath"])
+    .find((r): r is string => typeof r === "string" && r.length > 0);
 
   const toggleAutomation = async (): Promise<void> => {
     setToggleBusy(true);
@@ -59,11 +80,13 @@ export function ApplicationDetailPage(): JSX.Element {
               — {str(data.job, "role") ?? "?"}
             </span>
           </h1>
-          <div className="sub mono">{id}</div>
+          {/* The head speaks the operator's language; the machine state
+              lives in the technical block below with the rest of the
+              debugging surface. */}
+          <div className="sub">{APP_STATUS[status].hint}</div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <span className={`badge ${CHIP_CLASS[chip]}`}>{chip}</span>
-          <StateBadge value={state} />
+        <div className="row">
+          <StatusChip status={status} />
           <button className="ghost" onClick={() => void toggleAutomation()} disabled={toggleBusy}>
             {excluded ? "include in automation" : "exclude from automation"}
           </button>
@@ -74,6 +97,37 @@ export function ApplicationDetailPage(): JSX.Element {
         <div className="banner warn">
           Excluded from L3 automation — the unattended worker will skip this
           application until it is included again.
+        </div>
+      ) : null}
+
+      {/* Evidence first. What this application actually did lives on disk
+          as screenshots and per-field reports; the page leads with those
+          instead of ending in a list of file paths. */}
+      {receipts.length > 0 || latestFillReport ? (
+        <div className="card">
+          <h2>Evidence</h2>
+          {receipts.length > 0 ? (
+            <div className="evidence-grid">
+              {receipts.map((r) => (
+                <ScreenshotEvidence
+                  key={String(r["id"])}
+                  path={String(r["screenshot_path"])}
+                  caption={`Attempt ${String(r["submission_attempt_number"])} · ${String(r["status"])}`}
+                  when={
+                    r["submitted_at"]
+                      ? new Date(String(r["submitted_at"])).toLocaleString()
+                      : null
+                  }
+                />
+              ))}
+            </div>
+          ) : null}
+          {latestFillReport ? (
+            <>
+              <h3 style={{ margin: "1rem 0 0.5rem" }}>Last fill, field by field</h3>
+              <FillEvidence relpath={latestFillReport} />
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -101,9 +155,15 @@ export function ApplicationDetailPage(): JSX.Element {
             <dd>{String(data.application["route"] ?? "—")}</dd>
             <dt>Attempt</dt>
             <dd>{String(data.application["attempt"] ?? 0)}</dd>
+            <dt>Machine state</dt>
+            <dd>
+              <StateBadge value={state} />
+            </dd>
+            <dt>Application ID</dt>
+            <dd className="mono faint">{id}</dd>
           </dl>
           {state === "READY_TO_SUBMIT" ? (
-            <div className="banner ok" style={{ marginTop: "1rem" }}>
+            <div className="banner ok stack">
               Ready to submit. Launch a submit run from{" "}
               <Link to="/runs">Runs</Link>, or from a terminal:
               <pre className="json mono" style={{ marginTop: "0.5rem" }}>
@@ -138,7 +198,7 @@ export function ApplicationDetailPage(): JSX.Element {
             </table>
           )}
           {data.submissions.length > 0 ? (
-            <table style={{ marginTop: "0.75rem" }}>
+            <table className="stack-sm">
               <thead>
                 <tr>
                   <th>Attempt</th>
@@ -218,14 +278,8 @@ export function ApplicationDetailPage(): JSX.Element {
           <h2>Artifacts</h2>
           <div className="t-artifacts">
             {data.artifact_links.map((a) => (
-              <a
-                key={a}
-                className="mono"
-                href={`/api/artifacts?path=${encodeURIComponent(a)}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {a}
+              <a key={a} href={artifactUrl(a)} target="_blank" rel="noreferrer" title={a}>
+                {artifactLabel(a)}
               </a>
             ))}
           </div>
@@ -235,7 +289,11 @@ export function ApplicationDetailPage(): JSX.Element {
       <div className="card">
         <h2>Fill runs</h2>
         {data.fill_runs.length === 0 ? (
-          <p className="faint">No fill runs recorded.</p>
+          <EmptyState
+            icon="file"
+            title="No fill runs yet"
+            body="Each attempt to fill this form will be recorded here with what verified and what did not."
+          />
         ) : (
           <table>
             <thead>

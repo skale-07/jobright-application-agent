@@ -69,8 +69,12 @@ export function listApplicationRows(
 export function listSubmissionRows(db: Db): Array<Record<string, unknown>> {
   return db
     .prepare(
+      // screenshot_path and confirmation_url are the evidence a submission
+      // actually left behind; the console renders the receipt itself rather
+      // than a checkmark and a count.
       `SELECT s.id, s.application_id, s.submission_attempt_number, s.status,
               s.submitted, s.submitted_at, s.application_identifier,
+              s.screenshot_path, s.confirmation_url,
               j.company, j.role
        FROM submissions s
        JOIN applications a ON a.id = s.application_id

@@ -2,6 +2,8 @@ import { apiGet } from "../api/client";
 import type { FillOutcomesView } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
+import { SkeletonTable } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 function num(row: Record<string, unknown>, key: string): number {
   const v = row[key];
@@ -14,7 +16,7 @@ export function FillOutcomesPage(): JSX.Element {
     10000,
   );
 
-  if (loading && !data) return <p className="faint">Loading…</p>;
+  if (loading && !data) return <SkeletonTable rows={6} cols={8} />;
   if (error) return <div className="banner danger">{error}</div>;
   if (!data) return <p className="faint">No data.</p>;
 
@@ -35,10 +37,10 @@ export function FillOutcomesPage(): JSX.Element {
               <th>Field</th>
               <th>Canonical</th>
               <th>Control</th>
-              <th style={{ textAlign: "right" }}>Attempts</th>
-              <th style={{ textAlign: "right" }}>Fill ok</th>
-              <th style={{ textAlign: "right" }}>Verified</th>
-              <th style={{ textAlign: "right" }}>Verify fail</th>
+              <th className="num">Attempts</th>
+              <th className="num">Fill ok</th>
+              <th className="num">Verified</th>
+              <th className="num">Verify fail</th>
             </tr>
           </thead>
           <tbody>
@@ -52,10 +54,10 @@ export function FillOutcomesPage(): JSX.Element {
                   <td>{String(r["label"] ?? "—")}</td>
                   <td className="mono faint">{String(r["canonical_field"] ?? "—")}</td>
                   <td className="mono faint">{String(r["control_kind"] ?? "—")}</td>
-                  <td className="mono" style={{ textAlign: "right" }}>
+                  <td className="mono num">
                     {attempts}
                   </td>
-                  <td className="mono" style={{ textAlign: "right" }}>
+                  <td className="mono num">
                     {num(r, "fill_ok_count")}
                   </td>
                   <td
@@ -75,7 +77,13 @@ export function FillOutcomesPage(): JSX.Element {
             })}
           </tbody>
         </table>
-        {rates.length === 0 ? <div className="empty">No fill runs recorded yet.</div> : null}
+        {rates.length === 0 ? (
+          <EmptyState
+            icon="file"
+            title="No fill runs recorded yet"
+            body="Per-field accuracy appears once Dispatch has filled at least one form."
+          />
+        ) : null}
       </div>
 
       <div className="card">

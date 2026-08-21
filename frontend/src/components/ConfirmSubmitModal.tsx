@@ -44,7 +44,7 @@ export function ConfirmSubmitModal({
     <div className="modal-backdrop">
       <div className="modal">
         <h2>Submit this application?</h2>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted flush-top">
           This is the single irreversible click. Everything below is what the
           run is about to send.
         </p>
@@ -70,13 +70,13 @@ export function ConfirmSubmitModal({
         </dl>
 
         {disabled ? (
-          <div className="banner warn" style={{ marginTop: "1rem" }}>
+          <div className="banner warn stack">
             Connection to the run was lost. It will decline on its own when the
             timer runs out.
           </div>
         ) : null}
 
-        <label className="field" style={{ marginTop: "1rem" }}>
+        <label className="field stack">
           Type <strong>{expected || "the company name"}</strong> to enable Submit
           <input
             value={typed}

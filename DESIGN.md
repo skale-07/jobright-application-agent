@@ -26,8 +26,17 @@ with code, the code is wrong or this file must be amended in the same PR.
 Dispatch is **mission control for job applications**. The metaphor the
 product already speaks — arming a session, walls that park an application,
 budgets, evidence artifacts, verified receipts — is an operations-room
-metaphor. The design leans into it: dark-first, log-dense, monospace where
-data lives, color used as signal rather than decoration.
+metaphor. The design leans into it: log-dense, monospace where data
+lives, color used as signal rather than decoration.
+
+**Light is the default theme, dark is first-class** (operator directive
+2026-08-21, the "Calm" direction: light-first, airy, larger type, one
+thing per screen — the Notion/Stripe family rather than the
+Linear/Superhuman one). The OS preference still selects dark
+automatically and the toggle overrides either way; both palettes are
+complete and both are tested. This file said "dark-first" until that
+directive; the palettes themselves did not change, only which one is
+the ground state.
 
 Tagline: **"Every application accounted for."**
 
@@ -102,6 +111,19 @@ referral drafting. Referral drafts are presented as the second half of
 every application, never as sent mail. Motion is orchestrated, sparse,
 and fully disabled under `prefers-reduced-motion`.
 
+**One system, two densities.** The site consumes the same tokens as the
+console — palette, type scale, spacing, motion — written out literally
+because it has no build step to import `tokens.css`. That duplication is
+a contract, not a convention: `tests/unit/design-tokens.test.ts` fails if
+either palette drifts, if the site's dark copies disagree with each
+other, or if the site invents a font size outside the shared scale. What
+differs between the surfaces is **density, never values**: dense product,
+sparse marketing.
+
+`src/dashboard/server.ts` (the GET-only read-only dashboard) carries the
+palette too, for the same reason and under the same test. No operator
+surface is unbranded.
+
 **Construction**: 24×24 grid; track from (6,18) to (18,6), stroke 2,
 round caps; open stations r=2.4 at the ends of each segment, filled
 terminal station r=3. The lockup pairs the mark with the wordmark
@@ -161,9 +183,38 @@ both palettes and the light values must hold ≥ 4.5:1 contrast for text.
 | `--font-ui` | Inter / system sans | prose, labels, buttons |
 | `--font-mono` | SFMono / Cascadia / Menlo | ids, hashes, states, evidence, log lines, the wordmark |
 
-Type scale (rem): page title 1.25, card heading 0.95 (uppercase-tracked),
-body 0.875 (14px base), meta/mono 0.78. Never introduce sizes outside the
-scale; if a new size feels needed, the layout is too dense.
+Type scale, as shipped in `tokens.css` and mirrored in
+`design/tokens.json` — nine steps, one variable each:
+
+| Token | rem | Use |
+|---|---|---|
+| `--text-2xs` | 0.6875 | badges, stat labels, footnotes |
+| `--text-xs` | 0.78 | metadata, mono detail, captions |
+| `--text-sm` | 0.875 | body, controls, table text |
+| `--text-base` | 0.95 | card headings, emphasis |
+| `--text-md` | 1.05 | section headings, lead paragraphs |
+| `--text-lg` | 1.25 | page titles |
+| `--text-xl` | 1.5 | hero titles, stat values |
+| `--text-2xl` | 1.65 | display — marketing headings |
+| `--text-3xl` | 2 | display — marketing prices and numbers |
+
+Never introduce a size outside the scale; if a new size feels needed, the
+layout is too dense. The two display steps exist for the marketing site
+and the console has no use for them — same scale, different rungs.
+
+Inter is **self-hosted** in the console (`@fontsource-variable/inter`): a
+loopback-only local-first tool must not fetch a font from a CDN. The
+public marketing site links Google Fonts, where that objection does not
+apply. Before 2026-08-21 `--font-ui` named Inter but nothing loaded it,
+so the console had always rendered in system-ui.
+
+Spacing, motion, radius, shadow, and z-layers ride their own scales
+(`--space-1..7`, `--duration-fast|base` + `--ease-out`, `--radius-sm|
+default|lg`, `--shadow-sm|shadow`, `--z-sticky|banner|modal`). Space is
+**varied by hierarchy, never uniform** — identical padding everywhere is
+the marker of a templated UI. Motion appears only on a state change or an
+arrival, never as decoration, and always under the
+`prefers-reduced-motion` guard.
 
 **Monospace is semantic**: anything the operator might copy, grep, or
 compare (uuids, sha256, states, flag names, file paths, counts like
@@ -223,9 +274,19 @@ invent parallel variants of an existing component.
 
 ### 3.1 Sidebar + shell
 
-Fixed left sidebar (`--bg-inset`), wordmark on top, one nav entry per page,
-active entry filled with `--accent-dim`. Content area max-width free but
-tables scroll inside their own wrapper — the page never scrolls sideways.
+Fixed left sidebar (`--bg-inset`), wordmark on top, active entry filled
+with `--accent-dim`. Content area max-width free but tables scroll inside
+their own wrapper — the page never scrolls sideways.
+
+Navigation is **split by audience, not one entry per page**: a primary set
+answering the three questions any user has (what is happening, what needs
+me, what is in flight) plus a collapsed "advanced" group holding the
+operator-grade pages. A non-technical user should never have to learn what
+a fill outcome is in order to use the product.
+
+Below `--breakpoint-compact` (960px) the shell restacks and the sidebar
+becomes a top bar. The navigation stays complete there — collapsing it
+behind a hamburger hides the product from the person using it.
 
 ### 3.2 Cards
 
@@ -301,7 +362,11 @@ How Dispatch behaves as an agent product — these shape every new feature:
    human's words. UI copy never suggests otherwise.
 4. **Evidence over reassurance.** Progress UIs show counters and states,
    not vibes. "7 apps started, 1 submit used, stopped: queue_drained"
-   beats a progress bar.
+   beats a progress bar. And where a real artifact exists — a receipt
+   screenshot, a per-field fill report, a generated email — the UI shows
+   **the artifact**, not a count of it and not a path to it
+   (`components/Evidence.tsx`). A file path is what a product prints when
+   it has nothing real to show; Dispatch always does.
 5. **Fail closed, visibly.** A refused action names its gate. A disabled
    button that can't explain itself is a bug.
 
@@ -309,11 +374,24 @@ How Dispatch behaves as an agent product — these shape every new feature:
 
 ## 5. Responsive + accessibility
 
-- Desktop-first (an operator tool), functional down to ~960px; below that
-  the sidebar collapses to a top bar. Tables always scroll in their own
-  wrapper.
+- Desktop-first (an operator tool), functional down to
+  `--breakpoint-compact` (960px); below that the sidebar collapses to a top
+  bar. Tables always scroll in their own wrapper. *Asserted by
+  `tests/unit/design-tokens.test.ts` — the media query literal must equal
+  the token, and the block must actually restack the shell.*
 - Interactive targets ≥ 32px tall; focus states visible (accent outline);
-  every icon-only control carries `aria-label`.
+  every icon-only control carries `aria-label`. A skip link precedes the
+  nav and the primary nav is a labelled landmark. *Asserted by
+  `tests/unit/console-a11y.test.ts`.*
+- One icon vocabulary (`components/Icon.tsx`, 16px grid, `currentColor`,
+  `aria-hidden` unless labelled) and one status vocabulary
+  (`lib/appStatus.ts` + `StatusChip`). Colour carries urgency and repeats
+  by design; the icon carries identity. *Asserted by
+  `tests/unit/console-vocabulary.test.ts`.*
+- Every state is designed — loading is a `Skeleton` shaped like the
+  content arriving, empty is an `EmptyState` that distinguishes "nothing
+  here because everything is handled" from "nothing here yet, here is the
+  action that fills it".
 - Color is never the only signal: chips carry words, badges carry state
   names, the ARMED banner carries text alongside red.
 - Both themes must hold WCAG AA contrast for text tokens; check when

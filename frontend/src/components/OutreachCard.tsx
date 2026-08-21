@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
+import { EmptyState } from "./EmptyState";
+import { Icon } from "./Icon";
 
 /**
  * X6: the whole outreach pipeline as three plain buttons — no CLI. Each
@@ -49,7 +51,7 @@ export function OutreachCard(props: {
   return (
     <div className="card">
       <h2>Outreach</h2>
-      <p className="faint" style={{ marginTop: 0 }}>
+      <p className="faint flush-top">
         Find people at the company, write them an email, save it as a Gmail
         draft. Nothing ever sends — you review drafts in Gmail.
       </p>
@@ -78,7 +80,7 @@ export function OutreachCard(props: {
       </div>
 
       {contacts.length > 0 ? (
-        <div className="table-wrap" style={{ marginTop: "0.75rem" }}>
+        <div className="table-wrap stack-sm">
           <table>
             <thead>
               <tr>
@@ -99,7 +101,11 @@ export function OutreachCard(props: {
           </table>
         </div>
       ) : (
-        <p className="faint">No contacts yet.</p>
+        <EmptyState
+          icon="mail"
+          title="No contacts yet"
+          body="Step 1 finds people at this company who can refer you."
+        />
       )}
 
       {emails.length > 0 ? (
@@ -119,7 +125,11 @@ export function OutreachCard(props: {
                   className="ghost"
                   onClick={() => setOpenEmail(openEmail === id ? null : id)}
                 >
-                  {openEmail === id ? "▾" : "▸"} {String(e["subject"] ?? "(no subject)")}
+                  <Icon
+                    name={openEmail === id ? "chevron-down" : "chevron-right"}
+                    size={13}
+                  />{" "}
+                  {String(e["subject"] ?? "(no subject)")}
                 </button>{" "}
                 <span className={`badge ${ok ? "ok" : "danger"}`}>
                   {String(e["validation_status"])}
@@ -139,9 +149,9 @@ export function OutreachCard(props: {
       ) : null}
 
       {gmailDrafts.length + outlookDrafts.length > 0 ? (
-        <div style={{ marginTop: "0.75rem" }}>
+        <div className="stack-sm">
           <h3 style={{ margin: "0 0 0.25rem" }}>Drafts</h3>
-          <ul style={{ margin: 0 }}>
+          <ul className="flush">
             {gmailDrafts.map((d) => (
               <li key={`g-${String(d["id"])}`}>
                 Gmail → <span className="mono">{String(d["recipient_email"])}</span>{" "}

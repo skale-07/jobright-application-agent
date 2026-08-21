@@ -1,71 +1,67 @@
 /* Dispatch design tokens — the entire visual system lives in these
    variables; DESIGN.md (repo root) documents what each one MEANS and the
-   rules for using it. Dark is the primary theme (operator tool,
-   log-heavy); light is derived. Manual toggle sets data-theme on <html>;
-   otherwise the OS decides. Signal colors are bound to domain meanings
-   (DESIGN.md §2.3): accent=navigation/in-progress, ok=verified facts,
-   warn=needs attention, danger=needs-human/destructive/ARMED,
-   purple=agent/LLM-touched. New tokens go in BOTH palettes. */
+   rules for using it.
+
+   LIGHT is the default theme (operator directive 2026-08-21: the Calm
+   direction — light-first, airy, larger type). Dark stays first-class:
+   the OS preference picks it automatically and the manual toggle sets
+   data-theme on <html> either way.
+
+   Signal colors are bound to domain meanings (DESIGN.md §2.3):
+   accent=navigation/in-progress, ok=verified facts, warn=needs attention,
+   danger=needs-human/destructive/ARMED, purple=agent/LLM-touched.
+   New tokens go in BOTH palettes and in design/tokens.json — the pairing
+   is enforced by tests/unit/design-tokens.test.ts. */
 
 :root {
   --font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas,
     monospace;
-  --font-ui: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-ui: "Inter Variable", "Inter", ui-sans-serif, system-ui, "Segoe UI",
+    Roboto, sans-serif;
 
-  /* dark palette (default) */
-  --bg: #0d1117;
-  --bg-raised: #161b22;
-  --bg-inset: #010409;
-  --bg-hover: #1c2129;
-  --border: #30363d;
-  --border-strong: #484f58;
-  --text: #e6edf3;
-  --text-dim: #8b949e;
-  --text-faint: #6e7681;
+  /* Type scale. The middle four are DESIGN.md's documented scale; 2xs, md
+     and xl extend it at the ends. Nothing outside this scale may appear in
+     a component — if a new size feels needed, the layout is too dense. */
+  --text-2xs: 0.6875rem;
+  --text-xs: 0.78rem;
+  --text-sm: 0.875rem;
+  --text-base: 0.95rem;
+  --text-md: 1.05rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  /* Display steps. The console has no use for them; the marketing site
+     does, and inventing sizes there is exactly how one system becomes
+     two. Sparse marketing, dense product — same scale, different rungs. */
+  --text-2xl: 1.65rem;
+  --text-3xl: 2rem;
 
-  --accent: #58a6ff;
-  --accent-dim: rgba(88, 166, 255, 0.15);
-  --ok: #3fb950;
-  --ok-dim: rgba(63, 185, 80, 0.15);
-  --warn: #d29922;
-  --warn-dim: rgba(210, 153, 34, 0.15);
-  --danger: #f85149;
-  --danger-dim: rgba(248, 81, 73, 0.15);
-  --purple: #bc8cff;
-  --purple-dim: rgba(188, 140, 255, 0.15);
+  /* Spacing scale. All component padding/margin rides this — varied by
+     hierarchy, never uniform (identical padding everywhere is the marker
+     of a templated UI, not a designed one). */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
 
-  --radius: 8px;
+  /* Motion. Only ever on a state change or an arrival — never decorative.
+     Every use must be wrapped by the prefers-reduced-motion guard in
+     base.css. */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
   --radius-sm: 5px;
-  --shadow: 0 8px 24px rgba(1, 4, 9, 0.55);
-  --sidebar-w: 13.5rem;
-}
+  --radius: 8px;
+  --radius-lg: 12px;
 
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) {
-    --bg: #f6f8fa;
-    --bg-raised: #ffffff;
-    --bg-inset: #eef1f4;
-    --bg-hover: #f0f3f6;
-    --border: #d0d7de;
-    --border-strong: #afb8c1;
-    --text: #1f2328;
-    --text-dim: #59636e;
-    --text-faint: #818b98;
-    --accent: #0969da;
-    --accent-dim: rgba(9, 105, 218, 0.1);
-    --ok: #1a7f37;
-    --ok-dim: rgba(26, 127, 55, 0.12);
-    --warn: #9a6700;
-    --warn-dim: rgba(154, 103, 0, 0.12);
-    --danger: #cf222e;
-    --danger-dim: rgba(207, 34, 46, 0.1);
-    --purple: #8250df;
-    --purple-dim: rgba(130, 80, 223, 0.1);
-    --shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
-  }
-}
+  --z-sticky: 30;
+  --z-banner: 40;
+  --z-modal: 50;
 
-:root[data-theme="light"] {
+  /* light palette (default) */
   --bg: #f6f8fa;
   --bg-raised: #ffffff;
   --bg-inset: #eef1f4;
@@ -75,6 +71,7 @@
   --text: #1f2328;
   --text-dim: #59636e;
   --text-faint: #818b98;
+
   --accent: #0969da;
   --accent-dim: rgba(9, 105, 218, 0.1);
   --ok: #1a7f37;
@@ -85,5 +82,66 @@
   --danger-dim: rgba(207, 34, 46, 0.1);
   --purple: #8250df;
   --purple-dim: rgba(130, 80, 223, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(31, 35, 40, 0.06);
   --shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+  --sidebar-w: 13.5rem;
+  /* Below this the sidebar becomes a top bar. Media queries cannot read a
+     custom property, so base.css repeats the number literally — the token
+     test asserts the two agree. */
+  --breakpoint-compact: 960px;
+}
+
+/* Dark palette. Declared twice on purpose — once for the OS preference and
+   once for the explicit toggle — because CSS cannot share a declaration
+   block across a media boundary. The two are asserted identical by
+   tests/unit/design-tokens.test.ts, so they cannot drift apart. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1117;
+    --bg-raised: #161b22;
+    --bg-inset: #010409;
+    --bg-hover: #1c2129;
+    --border: #30363d;
+    --border-strong: #484f58;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --text-faint: #6e7681;
+    --accent: #58a6ff;
+    --accent-dim: rgba(88, 166, 255, 0.15);
+    --ok: #3fb950;
+    --ok-dim: rgba(63, 185, 80, 0.15);
+    --warn: #d29922;
+    --warn-dim: rgba(210, 153, 34, 0.15);
+    --danger: #f85149;
+    --danger-dim: rgba(248, 81, 73, 0.15);
+    --purple: #bc8cff;
+    --purple-dim: rgba(188, 140, 255, 0.15);
+    --shadow-sm: 0 1px 2px rgba(1, 4, 9, 0.4);
+    --shadow: 0 8px 24px rgba(1, 4, 9, 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1117;
+  --bg-raised: #161b22;
+  --bg-inset: #010409;
+  --bg-hover: #1c2129;
+  --border: #30363d;
+  --border-strong: #484f58;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-faint: #6e7681;
+  --accent: #58a6ff;
+  --accent-dim: rgba(88, 166, 255, 0.15);
+  --ok: #3fb950;
+  --ok-dim: rgba(63, 185, 80, 0.15);
+  --warn: #d29922;
+  --warn-dim: rgba(210, 153, 34, 0.15);
+  --danger: #f85149;
+  --danger-dim: rgba(248, 81, 73, 0.15);
+  --purple: #bc8cff;
+  --purple-dim: rgba(188, 140, 255, 0.15);
+  --shadow-sm: 0 1px 2px rgba(1, 4, 9, 0.4);
+  --shadow: 0 8px 24px rgba(1, 4, 9, 0.55);
 }

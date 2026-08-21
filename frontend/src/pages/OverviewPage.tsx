@@ -5,6 +5,8 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { ArmCard } from "../components/ArmCard";
 import { useArmStatus } from "../hooks/useArmStatus";
+import { SkeletonCard } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 const STAGE_MEANING: Record<number, string> = {
   1: "inspection only — fill disabled",
@@ -21,7 +23,18 @@ export function OverviewPage(): JSX.Element {
   );
   const { status: arm, refresh: refreshArm } = useArmStatus();
 
-  if (loading && !data) return <p className="faint">Loading…</p>;
+  if (loading && !data)
+    return (
+      <>
+        <div className="stat-row">
+          <SkeletonCard lines={1} />
+          <SkeletonCard lines={1} />
+          <SkeletonCard lines={1} />
+          <SkeletonCard lines={1} />
+        </div>
+        <SkeletonCard lines={4} />
+      </>
+    );
   if (error) return <div className="banner danger">{error}</div>;
   if (!data) return <p className="faint">No data.</p>;
 
@@ -75,7 +88,11 @@ export function OverviewPage(): JSX.Element {
         <div className="card">
           <h2>Applications by state</h2>
           {byState.length === 0 ? (
-            <p className="faint">Nothing enqueued yet.</p>
+            <EmptyState
+              icon="inbox"
+              title="Nothing enqueued yet"
+              body="Applications land here once discovery pulls jobs from your JobRight feed."
+            />
           ) : (
             <table>
               <tbody>

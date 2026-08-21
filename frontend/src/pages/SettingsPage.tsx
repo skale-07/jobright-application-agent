@@ -3,6 +3,8 @@ import { apiGet, apiPost, apiUpload, getToken, setToken } from "../api/client";
 import type { FlagsView, Summary } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
+import { Skeleton } from "../components/Skeleton";
+import { Icon } from "../components/Icon";
 
 type ExtensionStatus = {
   verdict: "present" | "unknown";
@@ -67,18 +69,18 @@ function ExtensionCard(): JSX.Element {
   return (
     <div className="card">
       <h2>JobRight extension</h2>
-      <p className="faint" style={{ marginTop: 0 }}>
+      <p className="faint flush-top">
         When ready, applications fill with JobRight's own autofill first and
         Dispatch only completes what it missed.
       </p>
       {!s ? (
-        <p className="faint">Checking…</p>
+        <Skeleton width="14rem" />
       ) : (
         <>
           {s.ready ? (
             <div className="banner ok">Extension-first filling is ready.</div>
           ) : null}
-          <ul style={{ margin: 0 }}>
+          <ul className="flush">
             {row(
               s.verdict === "present" ? true : s.cdp_reachable ? false : null,
               "Extension detected in the debug Chrome",
@@ -115,12 +117,12 @@ function TokenCard(): JSX.Element {
   return (
     <div className="card">
       <h2>Console token</h2>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted flush-top">
         Mutations need the per-boot token printed when the console started. It
         normally arrives in the <code>#token=</code> fragment of the startup
         URL; paste it here if you opened the console in a fresh tab.
       </p>
-      <div className="toolbar" style={{ marginBottom: 0 }}>
+      <div className="toolbar flush-bottom">
         <span className={`badge ${present ? "ok" : "warn"}`}>
           {present ? "token stored" : "no token"}
         </span>
@@ -157,7 +159,7 @@ function CapabilitiesCard({
   return (
     <div className="card">
       <h2>Capability ceiling</h2>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted flush-top">
         These come from the shell that started the console. A run receives a
         flag only if it is enabled here <em>and</em> you opt into it when
         launching. Restart the console with different env to change them.
@@ -188,15 +190,15 @@ function CapabilitiesCard({
               </tr>
             </tbody>
           </table>
-          <div style={{ marginTop: "0.75rem" }}>
+          <div className="stack-sm">
             <JsonView value={flags.always_forced} label="always forced for console runs" />
           </div>
         </>
       ) : (
-        <p className="faint">Loading…</p>
+        <Skeleton width="12rem" />
       )}
       {summary ? (
-        <p className="faint mono" style={{ marginBottom: 0 }}>
+        <p className="faint mono flush-bottom">
           database: {summary.database}
         </p>
       ) : null}
@@ -294,12 +296,12 @@ function GmailCard({
 
       {consentUrl ? (
         <div style={{ display: "grid", gap: "0.6rem" }}>
-          <p className="muted" style={{ margin: 0 }}>
+          <p className="muted flush">
             Open the consent URL, approve, then paste the localhost URL you land
             on (it will fail to load — that is expected).
           </p>
           <a href={consentUrl} target="_blank" rel="noreferrer" className="mono">
-            open Google consent →
+            open Google consent <Icon name="arrow-right" size={13} />
           </a>
           <label className="field">
             Pasted redirect URL
@@ -350,7 +352,7 @@ function GmailCard({
               Start OAuth flow
             </button>
           </div>
-          <p className="faint" style={{ margin: 0 }}>
+          <p className="faint flush">
             Scope is pinned to gmail.readonly; a grant carrying anything wider is
             refused before it is stored.
           </p>
@@ -386,7 +388,7 @@ function DefaultResumeCard(): JSX.Element {
   return (
     <div className="card">
       <h2>Default resume</h2>
-      <p className="muted" style={{ marginTop: 0 }}>
+      <p className="muted flush-top">
         The fallback resume auto-attached to any application that reaches the
         materials stage with none registered — required for unattended
         sessions to process freshly discovered jobs.
@@ -470,7 +472,7 @@ function MaterialsCard(): JSX.Element {
         </div>
       </div>
       {result ? (
-        <div style={{ marginTop: "1rem" }}>
+        <div className="stack">
           <JsonView value={result} label="registered material" open />
         </div>
       ) : null}

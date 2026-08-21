@@ -5,6 +5,8 @@ import type { FlagsView, RunRecord } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
+import { Skeleton } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 type Kind =
   | "pipeline"
@@ -107,7 +109,7 @@ export function RunsPage(): JSX.Element {
                 <option value="gmail_draft">gmail_draft — save Gmail drafts</option>
               </select>
             </label>
-            <p className="faint" style={{ margin: 0 }}>
+            <p className="faint flush">
               {KIND_HELP[kind]}
             </p>
             {kind === "discover" ? (
@@ -121,7 +123,7 @@ export function RunsPage(): JSX.Element {
                 />
               </label>
             ) : kind === "automation" ? (
-              <p className="faint" style={{ margin: 0 }}>
+              <p className="faint flush">
                 Scope comes from the armed session (caps, discovery cadence) —
                 nothing to configure here.
               </p>
@@ -146,7 +148,7 @@ export function RunsPage(): JSX.Element {
                     onChange={(e) => setMaxApplications(e.target.value)}
                   />
                 </label>
-                <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                <label className="row">
                   <input
                     type="checkbox"
                     checked={submitOptIn}
@@ -159,7 +161,7 @@ export function RunsPage(): JSX.Element {
                 </label>
               </>
             ) : null}
-            <label style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+            <label className="row">
               <input
                 type="checkbox"
                 checked={headed}
@@ -187,12 +189,12 @@ export function RunsPage(): JSX.Element {
                 onToggleLive={setLiveMode}
               />
             ) : (
-              <p className="faint">Loading flags…</p>
+              <Skeleton width="16rem" />
             )}
           </div>
         </div>
 
-        <div className="toolbar" style={{ marginTop: "1rem", marginBottom: 0 }}>
+        <div className="toolbar stack flush-bottom">
           <button className="primary" onClick={launch} disabled={busy || Boolean(active)}>
             {busy ? "Starting…" : "Launch run"}
           </button>
@@ -236,7 +238,11 @@ export function RunsPage(): JSX.Element {
           </tbody>
         </table>
         {(runs.data?.length ?? 0) === 0 ? (
-          <div className="empty">No runs yet.</div>
+          <EmptyState
+            icon="play"
+            title="No runs yet"
+            body="Every action you start from the console shows up here with its live log."
+          />
         ) : null}
       </div>
     </>

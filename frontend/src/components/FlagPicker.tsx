@@ -56,7 +56,7 @@ export function FlagPicker({
           {available.map((key) => (
             <label
               key={key}
-              style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}
+              className="row"
             >
               <input
                 type="checkbox"

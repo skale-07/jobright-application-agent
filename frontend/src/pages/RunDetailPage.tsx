@@ -6,6 +6,7 @@ import { StateBadge } from "../components/StateBadge";
 import { LogViewer } from "../components/LogViewer";
 import { JsonView } from "../components/JsonView";
 import { ConfirmSubmitModal } from "../components/ConfirmSubmitModal";
+import { Icon } from "../components/Icon";
 
 export function RunDetailPage(): JSX.Element {
   const { id = "" } = useParams();
@@ -44,7 +45,9 @@ export function RunDetailPage(): JSX.Element {
             {run?.kind ?? "run"} <span className="muted mono">{id.slice(4, 12)}</span>
           </h1>
           <div className="sub">
-            <Link to="/runs">← all runs</Link>
+            <Link to="/runs">
+              <Icon name="arrow-left" size={13} /> all runs
+            </Link>
           </div>
         </div>
         <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
@@ -78,7 +81,7 @@ export function RunDetailPage(): JSX.Element {
             <dd>{run.exit_code ?? "—"}</dd>
           </dl>
           {run.gates ? (
-            <div style={{ marginTop: "0.75rem" }}>
+            <div className="stack-sm">
               <JsonView value={run.gates} label="gates the child actually received" />
             </div>
           ) : null}

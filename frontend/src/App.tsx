@@ -16,6 +16,7 @@ import { usePoll } from "./hooks/usePoll";
 import { apiGet } from "./api/client";
 import type { ReviewItemView } from "./api/types";
 import { DispatchMark } from "./components/DispatchMark";
+import { Icon } from "./components/Icon";
 
 /**
  * Navigation is split by audience. The primary set answers the three
@@ -58,6 +59,11 @@ export function App(): JSX.Element {
 
   return (
     <div className="shell">
+      {/* The first stop for a keyboard: skip the whole nav and land on
+          the page content. */}
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <aside className="sidebar">
         <div className="brand" title="Dispatch — every application accounted for">
           <span className="brand-mark">
@@ -65,7 +71,7 @@ export function App(): JSX.Element {
           </span>
           dispatch<span>·console</span>
         </div>
-        <nav>
+        <nav aria-label="Primary">
           {PRIMARY_NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -75,7 +81,9 @@ export function App(): JSX.Element {
             >
               {item.label}
               {item.to === "/review" && needsYou > 0 ? (
-                <span className="nav-count">{needsYou}</span>
+                <span className="nav-count" aria-label={`${needsYou} waiting`}>
+                  {needsYou}
+                </span>
               ) : null}
             </NavLink>
           ))}
@@ -84,7 +92,8 @@ export function App(): JSX.Element {
             onClick={toggleAdvanced}
             aria-expanded={advancedOpen}
           >
-            {advancedOpen ? "▾" : "▸"} advanced
+            <Icon name={advancedOpen ? "chevron-down" : "chevron-right"} size={13} />{" "}
+            advanced
           </button>
           {advancedOpen
             ? ADVANCED_NAV.map((item) => (
@@ -101,7 +110,12 @@ export function App(): JSX.Element {
             : null}
         </nav>
         <div className="spacer" />
-        <button className="ghost" onClick={cycle} style={{ textAlign: "left" }}>
+        <button
+          className="ghost"
+          onClick={cycle}
+          aria-label={`Theme: ${theme}. Click to change.`}
+          style={{ textAlign: "left" }}
+        >
           theme: {theme}
         </button>
         <div className="foot">
@@ -111,14 +125,14 @@ export function App(): JSX.Element {
         </div>
       </aside>
 
-      <main className="main">
+      <main className="main" id="main">
         {arm?.armed ? (
           <Link
             to="/"
             className="armed-banner"
             title="An unattended session is live"
           >
-            ⚡ Dispatch is applying — {formatCountdown(arm.seconds_remaining)} left ·{" "}
+            <Icon name="bolt" size={13} /> Dispatch is applying — {formatCountdown(arm.seconds_remaining)} left ·{" "}
             {arm.submits_used}/{arm.max_submits} submitted · {arm.apps_started}/
             {arm.max_apps} worked
           </Link>
