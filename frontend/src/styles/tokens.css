@@ -29,6 +29,11 @@
   --text-md: 1.05rem;
   --text-lg: 1.25rem;
   --text-xl: 1.5rem;
+  /* Display steps. The console has no use for them; the marketing site
+     does, and inventing sizes there is exactly how one system becomes
+     two. Sparse marketing, dense product — same scale, different rungs. */
+  --text-2xl: 1.65rem;
+  --text-3xl: 2rem;
 
   /* Spacing scale. All component padding/margin rides this — varied by
      hierarchy, never uniform (identical padding everywhere is the marker

@@ -15,21 +15,70 @@ import {
   listSubmissionRows,
 } from "./reportData.js";
 
+/**
+ * The read-only dashboard: the oldest operator surface, kept because a
+ * GET-only server with no mutation routes at all is a genuinely
+ * different safety posture from the console. It was also the last
+ * surface with no brand — four CSS rules and a #f5f5f5 box.
+ *
+ * It now carries the palette, both themes, and the type scale, written
+ * out literally: this page ships as a string inside the server and has
+ * no way to import tokens.css. tests/unit/design-tokens.test.ts checks
+ * the colors here against the console palette so the copy cannot drift.
+ */
 const INDEX_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dispatch — dashboard (read-only)</title>
 <style>
-  body { font-family: ui-monospace, monospace; margin: 2rem; max-width: 72rem; }
-  h1 { font-size: 1.2rem; } h2 { font-size: 1rem; margin-top: 1.5rem; }
-  pre { background: #f5f5f5; padding: 1rem; overflow-x: auto; }
-  a { margin-right: 1rem; }
+  :root {
+    --bg: #f6f8fa; --bg-raised: #ffffff; --bg-inset: #eef1f4;
+    --border: #d0d7de; --text: #1f2328; --text-dim: #59636e;
+    --accent: #0969da; --ok: #1a7f37;
+    --font-mono: "SFMono-Regular", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    --font-ui: "Inter Variable", "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --bg-raised: #161b22; --bg-inset: #010409;
+      --border: #30363d; --text: #e6edf3; --text-dim: #8b949e;
+      --accent: #58a6ff; --ok: #3fb950;
+    }
+  }
+  body {
+    font-family: var(--font-ui); background: var(--bg); color: var(--text);
+    margin: 0; padding: 2rem 1.5rem 4rem; line-height: 1.6;
+  }
+  main { max-width: 72rem; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 0.5rem; }
+  p.sub { color: var(--text-dim); font-size: 0.875rem; margin: 0 0 1.5rem; }
+  nav { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  nav a {
+    font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent);
+    background: var(--bg-raised); border: 1px solid var(--border);
+    border-radius: 5px; padding: 0.3rem 0.7rem; text-decoration: none;
+  }
+  nav a:hover { border-color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  pre {
+    font-family: var(--font-mono); font-size: 0.78rem;
+    background: var(--bg-inset); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem; overflow-x: auto;
+    font-variant-numeric: tabular-nums;
+  }
+  .safe { color: var(--ok); font-family: var(--font-mono); font-size: 0.6875rem; }
 </style>
 </head>
 <body>
+<main>
 <h1>Dispatch — read-only dashboard</h1>
-<p>Bound to localhost only. No mutation routes exist.</p>
+<p class="sub">
+  Bound to localhost only. <span class="safe">No mutation routes exist on this server.</span>
+  For anything that acts, use the console.
+</p>
 <nav>
   <a href="/api/summary">summary</a>
   <a href="/api/applications">applications</a>
@@ -39,6 +88,7 @@ const INDEX_HTML = `<!DOCTYPE html>
 </nav>
 <h2>Summary</h2>
 <pre id="out">loading…</pre>
+</main>
 <script>
   fetch("/api/summary").then(r => r.json()).then(d => {
     document.getElementById("out").textContent = JSON.stringify(d, null, 2);

@@ -214,23 +214,79 @@ describe("design/tokens.json ↔ tokens.css contract (UNIT_CONFIRMED)", () => {
     }
   });
 
-  it("the marketing site's palette matches the console's — one system, two surfaces", () => {
-    // site/dispatch.css re-declares the palette as literal hexes because it
-    // ships with no build step. Nothing guarded that until now, which made
-    // it the one place a palette change could silently diverge.
-    const sitePath = path.join(process.cwd(), "site", "dispatch.css");
-    const site = fs.readFileSync(sitePath, "utf8");
-    const siteDark = parseVars(blockAfter(site, /:root\s*\{([\s\S]*?)\}/));
+  it("the marketing site runs the console's system exactly — one system, two surfaces", () => {
+    // site/dispatch.css re-declares everything as literals because it ships
+    // with no build step, so the mirror is a contract rather than a
+    // convention: both palettes and every shared scale must agree
+    // value-for-value with tokens.css.
+    const site = fs.readFileSync(
+      path.join(process.cwd(), "site", "dispatch.css"),
+      "utf8",
+    );
+    const siteLight = parseVars(blockAfter(site, /:root\s*\{([\s\S]*?)\}/));
+    const siteDark = parseVars(
+      blockAfter(site, /:root\[data-theme="dark"\]\s*\{([\s\S]*?)\}/),
+    );
+    const siteDarkMedia = parseVars(
+      blockAfter(site, /:root:not\(\[data-theme="light"\]\)\s*\{([\s\S]*?)\}/),
+    );
+    expect(siteDarkMedia, "the site's two dark copies are identical").toEqual(
+      siteDark,
+    );
+
+    for (const [theme, siteVars] of [
+      ["light", siteLight],
+      ["dark", siteDark],
+    ] as const) {
+      for (const [name, value] of Object.entries(siteVars)) {
+        const consoleValue = css[theme][name];
+        if (consoleValue === undefined) continue; // site-only layout var
+        expect(
+          value.toLowerCase().replace(/\s+/g, " "),
+          `site/dispatch.css --${name} (${theme}) matches tokens.css`,
+        ).toBe(consoleValue.toLowerCase().replace(/\s+/g, " "));
+      }
+    }
+
+    // The site must not invent a font size outside the shared scale — the
+    // exact drift that made the console's own scale documentation false.
+    const sizes = [...site.matchAll(/font-size:\s*([^;]+);/g)].map((m) =>
+      m[1]!.trim(),
+    );
+    const strays = sizes.filter(
+      (v) =>
+        !v.startsWith("var(--text-") &&
+        // The rem anchor on <body>, the fluid hero, and SVG drawing units
+        // are layout decisions, not scale steps.
+        !["16px", "12px", "10px"].includes(v) &&
+        !v.startsWith("clamp("),
+    );
+    expect(strays, "site font sizes come from the shared type scale").toEqual([]);
+  });
+
+  it("the read-only dashboard carries the palette too — no unbranded surface", () => {
+    // src/dashboard/server.ts ships its page as a string inside the server
+    // and cannot import tokens.css, so it writes the palette out literally.
+    const server = fs.readFileSync(
+      path.join(process.cwd(), "src", "dashboard", "server.ts"),
+      "utf8",
+    );
+    const html = server.slice(
+      server.indexOf("const INDEX_HTML"),
+      server.indexOf("</html>`;"),
+    );
+    expect(html).toContain("prefers-color-scheme: dark");
     const palette = new Set(
       [...Object.values(css.dark), ...Object.values(css.light)].map((v) =>
-        v.toLowerCase().replace(/\s+/g, " "),
+        v.toLowerCase(),
       ),
     );
-    for (const [name, value] of Object.entries(siteDark)) {
-      if (!/^#|rgba?\(/.test(value)) continue;
+    const hexes = [...html.matchAll(/#[0-9a-f]{6}\b/gi)].map((m) => m[0]!);
+    expect(hexes.length).toBeGreaterThanOrEqual(8);
+    for (const hex of hexes) {
       expect(
-        palette.has(value.toLowerCase().replace(/\s+/g, " ")),
-        `site/dispatch.css --${name}: ${value} is a console palette color`,
+        palette.has(hex.toLowerCase()),
+        `dashboard color ${hex} is a palette color`,
       ).toBe(true);
     }
   });
