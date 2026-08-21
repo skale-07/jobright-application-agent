@@ -12,6 +12,7 @@ import {
 } from "../components/ScreenerAnswerCard";
 import { Icon } from "../components/Icon";
 import { EmptyState } from "../components/EmptyState";
+import { artifactUrl } from "../components/Evidence";
 
 /**
  * Home — the non-technical front door. One question per section:
@@ -29,6 +30,9 @@ type SubmissionRow = {
   submitted_at: string | null;
   company: string | null;
   role: string | null;
+  /** The receipt screenshot the submit run took, if it still exists. */
+  screenshot_path: string | null;
+  confirmation_url: string | null;
 };
 
 export function HomePage(): JSX.Element {
@@ -170,10 +174,12 @@ export function HomePage(): JSX.Element {
           {todoTotal > 0 ? <span className="badge danger">{todoTotal}</span> : null}
         </h2>
         {todo.length === 0 ? (
-          <p className="faint">
-            Nothing — when an application needs a human (an essay, a CAPTCHA,
-            a login), it shows up here as a simple to-do.
-          </p>
+          // An empty queue is the goal state, so it reads as reassurance.
+          <EmptyState
+            tone="good"
+            title="Nothing needs you"
+            body="When an application hits an essay, a CAPTCHA or a login, it appears here as one simple to-do."
+          />
         ) : (
           <ul className="todo-list">
             {todo.map(({ item, plain }) =>
@@ -254,17 +260,26 @@ export function HomePage(): JSX.Element {
               body="Every verified submission lands here with the evidence that it went through."
             />
           ) : (
-            <ul className="done-list">
+            /* A receipt, not a checkmark: the company, the role, when it
+               went out, and the screenshot the browser took at the
+               moment it did. */
+            <ul className="receipt-list">
               {submitted.map((s) => (
                 <li key={s.id}>
                   <Link to={`/applications/${s.application_id}`}>
-                    <span className="done-check">
-                      <Icon name="check" size={12} />
+                    <Receipt path={s.screenshot_path} label={jobLabel(s)} />
+                    <span className="receipt-line">
+                      <span className="receipt-job">{jobLabel(s)}</span>
+                      <span className="receipt-when">
+                        {s.submitted_at
+                          ? new Date(s.submitted_at).toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "date unrecorded"}
+                        {s.confirmation_url ? " · confirmation on file" : ""}
+                      </span>
                     </span>
-                    {jobLabel(s)}
-                    {s.submitted_at ? (
-                      <span className="faint"> · {s.submitted_at.slice(0, 10)}</span>
-                    ) : null}
                   </Link>
                 </li>
               ))}
@@ -314,6 +329,31 @@ const SERVICE_LABELS: Record<string, { label: string; fix: string }> = {
     fix: "connect to find people for referrals",
   },
 };
+
+/**
+ * The receipt thumbnail. A submission with no screenshot on file is
+ * still a real submission — it gets the verified mark rather than a
+ * broken frame, because the absence of a screenshot is a fact about the
+ * evidence, not about whether it was sent.
+ */
+function Receipt(props: { path: string | null; label: string }): JSX.Element {
+  const [broken, setBroken] = useState(false);
+  if (!props.path || broken)
+    return (
+      <span className="receipt-thumb receipt-thumb-missing" aria-hidden>
+        <Icon name="check" size={18} />
+      </span>
+    );
+  return (
+    <img
+      className="receipt-thumb"
+      src={artifactUrl(props.path)}
+      alt={`Submission receipt for ${props.label}`}
+      loading="lazy"
+      onError={() => setBroken(true)}
+    />
+  );
+}
 
 function buildReadiness(summary: Summary | null): ReadinessRow[] {
   if (!summary) return [];

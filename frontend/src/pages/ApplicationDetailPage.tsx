@@ -11,6 +11,12 @@ import { APP_STATUS, deriveStatus } from "../lib/appStatus";
 import { OutreachCard } from "../components/OutreachCard";
 import { SkeletonCard } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
+import {
+  artifactLabel,
+  artifactUrl,
+  FillEvidence,
+  ScreenshotEvidence,
+} from "../components/Evidence";
 
 function str(record: Record<string, unknown>, key: string): string | null {
   const v = record[key];
@@ -44,6 +50,12 @@ export function ApplicationDetailPage(): JSX.Element {
     ["OPEN", "IN_PROGRESS"].includes(r.status),
   );
   const status = deriveStatus(state, hasOpenReview);
+  const receipts = data.submissions.filter(
+    (s) => typeof s["screenshot_path"] === "string" && s["screenshot_path"],
+  );
+  const latestFillReport = data.fill_runs
+    .map((f) => f["report_artifact_relpath"])
+    .find((r): r is string => typeof r === "string" && r.length > 0);
 
   const toggleAutomation = async (): Promise<void> => {
     setToggleBusy(true);
@@ -85,6 +97,37 @@ export function ApplicationDetailPage(): JSX.Element {
         <div className="banner warn">
           Excluded from L3 automation — the unattended worker will skip this
           application until it is included again.
+        </div>
+      ) : null}
+
+      {/* Evidence first. What this application actually did lives on disk
+          as screenshots and per-field reports; the page leads with those
+          instead of ending in a list of file paths. */}
+      {receipts.length > 0 || latestFillReport ? (
+        <div className="card">
+          <h2>Evidence</h2>
+          {receipts.length > 0 ? (
+            <div className="evidence-grid">
+              {receipts.map((r) => (
+                <ScreenshotEvidence
+                  key={String(r["id"])}
+                  path={String(r["screenshot_path"])}
+                  caption={`Attempt ${String(r["submission_attempt_number"])} · ${String(r["status"])}`}
+                  when={
+                    r["submitted_at"]
+                      ? new Date(String(r["submitted_at"])).toLocaleString()
+                      : null
+                  }
+                />
+              ))}
+            </div>
+          ) : null}
+          {latestFillReport ? (
+            <>
+              <h3 style={{ margin: "1rem 0 0.5rem" }}>Last fill, field by field</h3>
+              <FillEvidence relpath={latestFillReport} />
+            </>
+          ) : null}
         </div>
       ) : null}
 
@@ -235,14 +278,8 @@ export function ApplicationDetailPage(): JSX.Element {
           <h2>Artifacts</h2>
           <div className="t-artifacts">
             {data.artifact_links.map((a) => (
-              <a
-                key={a}
-                className="mono"
-                href={`/api/artifacts?path=${encodeURIComponent(a)}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {a}
+              <a key={a} href={artifactUrl(a)} target="_blank" rel="noreferrer" title={a}>
+                {artifactLabel(a)}
               </a>
             ))}
           </div>
