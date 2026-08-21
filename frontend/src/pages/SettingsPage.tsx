@@ -4,6 +4,7 @@ import type { FlagsView, Summary } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
 import { Skeleton } from "../components/Skeleton";
+import { Icon } from "../components/Icon";
 
 type ExtensionStatus = {
   verdict: "present" | "unknown";
@@ -300,7 +301,7 @@ function GmailCard({
             on (it will fail to load — that is expected).
           </p>
           <a href={consentUrl} target="_blank" rel="noreferrer" className="mono">
-            open Google consent →
+            open Google consent <Icon name="arrow-right" size={13} />
           </a>
           <label className="field">
             Pasted redirect URL

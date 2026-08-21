@@ -3,6 +3,7 @@ import type { FillOutcomesView } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
 import { SkeletonTable } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 function num(row: Record<string, unknown>, key: string): number {
   const v = row[key];
@@ -76,7 +77,13 @@ export function FillOutcomesPage(): JSX.Element {
             })}
           </tbody>
         </table>
-        {rates.length === 0 ? <div className="empty">No fill runs recorded yet.</div> : null}
+        {rates.length === 0 ? (
+          <EmptyState
+            icon="file"
+            title="No fill runs recorded yet"
+            body="Per-field accuracy appears once Dispatch has filled at least one form."
+          />
+        ) : null}
       </div>
 
       <div className="card">

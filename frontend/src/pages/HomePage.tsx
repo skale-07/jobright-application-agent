@@ -10,6 +10,8 @@ import {
   isAnswerableScreenerItem,
   ScreenerAnswerCard,
 } from "../components/ScreenerAnswerCard";
+import { Icon } from "../components/Icon";
+import { EmptyState } from "../components/EmptyState";
 
 /**
  * Home — the non-technical front door. One question per section:
@@ -127,7 +129,7 @@ export function HomePage(): JSX.Element {
                 Stop applying
               </button>
               <Link to="/runs" className="btn-link">
-                watch it work →
+                watch it work <Icon name="arrow-right" size={13} />
               </Link>
             </div>
           </>
@@ -151,10 +153,11 @@ export function HomePage(): JSX.Element {
                 onClick={() => void startSession()}
                 disabled={busy}
               >
-                ▶ Start applying
+                <Icon name="play" size={14} /> Start applying
               </button>
               <Link to="/overview" className="btn-link">
-                custom limits &amp; advanced controls →
+                custom limits &amp; advanced controls{" "}
+                <Icon name="arrow-right" size={13} />
               </Link>
             </div>
           </>
@@ -191,7 +194,13 @@ export function HomePage(): JSX.Element {
                     <span className="todo-why">
                       {plain.why}{" "}
                       <span style={{ color: "var(--purple)" }}>
-                        {openAnswerId === item.id ? "▲ close" : "▼ answer here"}
+                        <Icon
+                          name={
+                            openAnswerId === item.id ? "chevron-down" : "chevron-right"
+                          }
+                          size={12}
+                        />{" "}
+                        {openAnswerId === item.id ? "close" : "answer here"}
                       </span>
                     </span>
                   </button>
@@ -239,15 +248,19 @@ export function HomePage(): JSX.Element {
         <div className="card">
           <h2>Submitted</h2>
           {submitted.length === 0 ? (
-            <p className="faint">
-              Verified submissions land here with a receipt.
-            </p>
+            <EmptyState
+              icon="file"
+              title="No receipts yet"
+              body="Every verified submission lands here with the evidence that it went through."
+            />
           ) : (
             <ul className="done-list">
               {submitted.map((s) => (
                 <li key={s.id}>
                   <Link to={`/applications/${s.application_id}`}>
-                    <span className="done-check">✓</span>
+                    <span className="done-check">
+                      <Icon name="check" size={12} />
+                    </span>
                     {jobLabel(s)}
                     {s.submitted_at ? (
                       <span className="faint"> · {s.submitted_at.slice(0, 10)}</span>
@@ -275,7 +288,9 @@ export function HomePage(): JSX.Element {
             ))}
           </ul>
           <p className="faint" style={{ marginBottom: 0 }}>
-            <Link to="/settings">open settings →</Link>
+            <Link to="/settings">
+              open settings <Icon name="arrow-right" size={13} />
+            </Link>
           </p>
         </div>
       </div>

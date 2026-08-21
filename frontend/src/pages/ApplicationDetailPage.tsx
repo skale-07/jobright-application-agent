@@ -4,9 +4,10 @@ import { apiGet, apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
+import { StatusChip } from "../components/StatusChip";
 import { Timeline } from "../components/Timeline";
 import { JsonView } from "../components/JsonView";
-import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
+import { APP_STATUS, deriveStatus } from "../lib/appStatus";
 import { OutreachCard } from "../components/OutreachCard";
 import { SkeletonCard } from "../components/Skeleton";
 import { EmptyState } from "../components/EmptyState";
@@ -42,7 +43,7 @@ export function ApplicationDetailPage(): JSX.Element {
   const hasOpenReview = data.review_items.some((r) =>
     ["OPEN", "IN_PROGRESS"].includes(r.status),
   );
-  const chip = deriveChip(state, hasOpenReview);
+  const status = deriveStatus(state, hasOpenReview);
 
   const toggleAutomation = async (): Promise<void> => {
     setToggleBusy(true);
@@ -67,11 +68,13 @@ export function ApplicationDetailPage(): JSX.Element {
               — {str(data.job, "role") ?? "?"}
             </span>
           </h1>
-          <div className="sub mono">{id}</div>
+          {/* The head speaks the operator's language; the machine state
+              lives in the technical block below with the rest of the
+              debugging surface. */}
+          <div className="sub">{APP_STATUS[status].hint}</div>
         </div>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <span className={`badge ${CHIP_CLASS[chip]}`}>{chip}</span>
-          <StateBadge value={state} />
+          <StatusChip status={status} />
           <button className="ghost" onClick={() => void toggleAutomation()} disabled={toggleBusy}>
             {excluded ? "include in automation" : "exclude from automation"}
           </button>
@@ -109,6 +112,12 @@ export function ApplicationDetailPage(): JSX.Element {
             <dd>{String(data.application["route"] ?? "—")}</dd>
             <dt>Attempt</dt>
             <dd>{String(data.application["attempt"] ?? 0)}</dd>
+            <dt>Machine state</dt>
+            <dd>
+              <StateBadge value={state} />
+            </dd>
+            <dt>Application ID</dt>
+            <dd className="mono faint">{id}</dd>
           </dl>
           {state === "READY_TO_SUBMIT" ? (
             <div className="banner ok" style={{ marginTop: "1rem" }}>

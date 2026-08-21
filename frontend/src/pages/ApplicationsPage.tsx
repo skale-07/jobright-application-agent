@@ -3,8 +3,11 @@ import { Link, useSearchParams } from "react-router-dom";
 import { apiGet, apiPost } from "../api/client";
 import type { ApplicationsPage as Page } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
-import { StateBadge } from "../components/StateBadge";
-import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
+import { StatusChip } from "../components/StatusChip";
+import { Icon } from "../components/Icon";
+import { EmptyState } from "../components/EmptyState";
+import { SkeletonTable } from "../components/Skeleton";
+import { deriveStatus } from "../lib/appStatus";
 
 const PAGE_SIZE = 100;
 
@@ -77,7 +80,7 @@ export function ApplicationsPage(): JSX.Element {
         <button onClick={() => applyFilters({ q: query })}>Search</button>
         {state ? (
           <button className="ghost" onClick={() => applyFilters({ state: "" })}>
-            clear state: {state} ✕
+            clear state: {state} <Icon name="x" size={12} />
           </button>
         ) : null}
         {params.get("q") ? (
@@ -88,7 +91,7 @@ export function ApplicationsPage(): JSX.Element {
               applyFilters({ q: "" });
             }}
           >
-            clear search ✕
+            clear search <Icon name="x" size={12} />
           </button>
         ) : null}
       </div>
@@ -103,7 +106,6 @@ export function ApplicationsPage(): JSX.Element {
               <th>Company</th>
               <th>Role</th>
               <th>Status</th>
-              <th>State</th>
               <th>Automation</th>
               <th>Updated</th>
               <th className="mono">ID</th>
@@ -111,18 +113,19 @@ export function ApplicationsPage(): JSX.Element {
           </thead>
           <tbody>
             {(data?.rows ?? []).map((row) => {
-              const chip = deriveChip(row.state, row.has_open_review);
+              const status = deriveStatus(row.state, row.has_open_review);
               return (
                 <tr key={row.id}>
                   <td>
                     <Link to={`/applications/${row.id}`}>{row.company ?? "—"}</Link>
                   </td>
                   <td className="muted">{row.role ?? "—"}</td>
-                  <td>
-                    <span className={`badge ${CHIP_CLASS[chip]}`}>{chip}</span>
-                  </td>
-                  <td>
-                    <StateBadge value={row.state} />
+                  {/* One status, not two. The machine state stays reachable
+                      on hover and on the application's own page — a list
+                      shouldn't make you read SHOUTING_SNAKE_CASE to know
+                      whether something needs you. */}
+                  <td title={row.state}>
+                    <StatusChip status={status} />
                   </td>
                   <td>
                     <button
@@ -134,7 +137,8 @@ export function ApplicationsPage(): JSX.Element {
                       }
                       onClick={() => void toggleAutomation(row.id, !row.automation_excluded)}
                     >
-                      {row.automation_excluded ? "excluded ✕" : "included ✓"}
+                      <Icon name={row.automation_excluded ? "x" : "check"} size={12} />{" "}
+                      {row.automation_excluded ? "excluded" : "included"}
                     </button>
                     {/* Skip acts on a run ALREADY in flight — the pipeline
                         reads the request between steps and moves on. The
@@ -146,7 +150,7 @@ export function ApplicationsPage(): JSX.Element {
                       onClick={() => void skipApplication(row.id)}
                       style={{ marginLeft: "0.4rem" }}
                     >
-                      skip ⏭
+                      <Icon name="skip" size={12} /> skip
                     </button>
                   </td>
                   <td className="mono faint nowrap">
@@ -158,15 +162,24 @@ export function ApplicationsPage(): JSX.Element {
             })}
           </tbody>
         </table>
+        {loading && !data ? <SkeletonTable rows={6} cols={6} /> : null}
         {!loading && (data?.rows.length ?? 0) === 0 ? (
-          <div className="empty">No applications match these filters.</div>
+          <EmptyState
+            icon="search"
+            title="Nothing matches these filters"
+            body={
+              state || params.get("q")
+                ? "Clear the filters above to see everything Dispatch is tracking."
+                : "Applications appear here as soon as Dispatch discovers them."
+            }
+          />
         ) : null}
       </div>
 
       {(data?.total ?? 0) > PAGE_SIZE ? (
         <div className="toolbar" style={{ marginTop: "1rem" }}>
           <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
-            ← Previous
+            <Icon name="arrow-left" size={13} /> Previous
           </button>
           <span className="faint mono">
             {offset + 1}–{Math.min(offset + PAGE_SIZE, data?.total ?? 0)} of {data?.total}
@@ -175,7 +188,7 @@ export function ApplicationsPage(): JSX.Element {
             disabled={offset + PAGE_SIZE >= (data?.total ?? 0)}
             onClick={() => setOffset(offset + PAGE_SIZE)}
           >
-            Next →
+            Next <Icon name="arrow-right" size={13} />
           </button>
         </div>
       ) : null}

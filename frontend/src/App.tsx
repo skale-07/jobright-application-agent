@@ -16,6 +16,7 @@ import { usePoll } from "./hooks/usePoll";
 import { apiGet } from "./api/client";
 import type { ReviewItemView } from "./api/types";
 import { DispatchMark } from "./components/DispatchMark";
+import { Icon } from "./components/Icon";
 
 /**
  * Navigation is split by audience. The primary set answers the three
@@ -84,7 +85,8 @@ export function App(): JSX.Element {
             onClick={toggleAdvanced}
             aria-expanded={advancedOpen}
           >
-            {advancedOpen ? "▾" : "▸"} advanced
+            <Icon name={advancedOpen ? "chevron-down" : "chevron-right"} size={13} />{" "}
+            advanced
           </button>
           {advancedOpen
             ? ADVANCED_NAV.map((item) => (
@@ -118,7 +120,7 @@ export function App(): JSX.Element {
             className="armed-banner"
             title="An unattended session is live"
           >
-            ⚡ Dispatch is applying — {formatCountdown(arm.seconds_remaining)} left ·{" "}
+            <Icon name="bolt" size={13} /> Dispatch is applying — {formatCountdown(arm.seconds_remaining)} left ·{" "}
             {arm.submits_used}/{arm.max_submits} submitted · {arm.apps_started}/
             {arm.max_apps} worked
           </Link>

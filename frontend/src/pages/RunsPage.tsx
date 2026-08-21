@@ -6,6 +6,7 @@ import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
 import { Skeleton } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 type Kind =
   | "pipeline"
@@ -237,7 +238,11 @@ export function RunsPage(): JSX.Element {
           </tbody>
         </table>
         {(runs.data?.length ?? 0) === 0 ? (
-          <div className="empty">No runs yet.</div>
+          <EmptyState
+            icon="play"
+            title="No runs yet"
+            body="Every action you start from the console shows up here with its live log."
+          />
         ) : null}
       </div>
     </>

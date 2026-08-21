@@ -249,6 +249,26 @@ th.mono {
   color: var(--text-faint);
 }
 
+/* ── icons ──────────────────────────────────────────────────────── */
+
+/* One icon vocabulary means one alignment rule. Every glyph in the app
+   is an <svg> from Icon.tsx inheriting currentColor, so the only thing
+   left to state is where it sits: on the baseline of the text beside
+   it, and never squeezed by a flex parent. Before this, icons were
+   Unicode characters whose size and baseline came from whichever emoji
+   font the OS happened to pick. */
+button > svg,
+.btn > svg,
+.btn-link > svg,
+a > svg,
+.done-check > svg {
+  vertical-align: -0.14em;
+}
+.badge > svg,
+.empty-state > svg {
+  flex: none;
+}
+
 /* ── badges ─────────────────────────────────────────────────────── */
 
 .badge {

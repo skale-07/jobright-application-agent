@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
 import { EmptyState } from "./EmptyState";
+import { Icon } from "./Icon";
 
 /**
  * X6: the whole outreach pipeline as three plain buttons — no CLI. Each
@@ -124,7 +125,11 @@ export function OutreachCard(props: {
                   className="ghost"
                   onClick={() => setOpenEmail(openEmail === id ? null : id)}
                 >
-                  {openEmail === id ? "▾" : "▸"} {String(e["subject"] ?? "(no subject)")}
+                  <Icon
+                    name={openEmail === id ? "chevron-down" : "chevron-right"}
+                    size={13}
+                  />{" "}
+                  {String(e["subject"] ?? "(no subject)")}
                 </button>{" "}
                 <span className={`badge ${ok ? "ok" : "danger"}`}>
                   {String(e["validation_status"])}
