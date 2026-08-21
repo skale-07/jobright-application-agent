@@ -81,7 +81,7 @@ export function RunDetailPage(): JSX.Element {
             <dd>{run.exit_code ?? "—"}</dd>
           </dl>
           {run.gates ? (
-            <div style={{ marginTop: "0.75rem" }}>
+            <div className="stack-sm">
               <JsonView value={run.gates} label="gates the child actually received" />
             </div>
           ) : null}

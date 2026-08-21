@@ -37,10 +37,10 @@ export function FillOutcomesPage(): JSX.Element {
               <th>Field</th>
               <th>Canonical</th>
               <th>Control</th>
-              <th style={{ textAlign: "right" }}>Attempts</th>
-              <th style={{ textAlign: "right" }}>Fill ok</th>
-              <th style={{ textAlign: "right" }}>Verified</th>
-              <th style={{ textAlign: "right" }}>Verify fail</th>
+              <th className="num">Attempts</th>
+              <th className="num">Fill ok</th>
+              <th className="num">Verified</th>
+              <th className="num">Verify fail</th>
             </tr>
           </thead>
           <tbody>
@@ -54,10 +54,10 @@ export function FillOutcomesPage(): JSX.Element {
                   <td>{String(r["label"] ?? "—")}</td>
                   <td className="mono faint">{String(r["canonical_field"] ?? "—")}</td>
                   <td className="mono faint">{String(r["control_kind"] ?? "—")}</td>
-                  <td className="mono" style={{ textAlign: "right" }}>
+                  <td className="mono num">
                     {attempts}
                   </td>
-                  <td className="mono" style={{ textAlign: "right" }}>
+                  <td className="mono num">
                     {num(r, "fill_ok_count")}
                   </td>
                   <td

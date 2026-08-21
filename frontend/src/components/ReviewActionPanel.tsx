@@ -118,7 +118,7 @@ export function ReviewActionPanel({
   };
 
   return (
-    <div style={{ marginTop: "0.75rem" }}>
+    <div className="stack-sm">
       {error ? <div className="banner danger">{error}</div> : null}
       {result ? <div className="banner ok">{result}</div> : null}
 
@@ -215,7 +215,7 @@ export function ReviewActionPanel({
         <input value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
 
-      <div className="toolbar" style={{ marginBottom: 0 }}>
+      <div className="toolbar flush-bottom">
         {actions.map((a) => (
           <button
             key={a.action}

@@ -128,7 +128,7 @@ export function HomePage(): JSX.Element {
                 </div>
               </div>
             </div>
-            <div className="toolbar" style={{ marginBottom: 0 }}>
+            <div className="toolbar flush-bottom">
               <button className="danger" onClick={() => void stopSession()} disabled={busy}>
                 Stop applying
               </button>
@@ -151,7 +151,7 @@ export function HomePage(): JSX.Element {
                 below — sessions still run, but some abilities stay off.
               </div>
             ) : null}
-            <div className="toolbar" style={{ marginBottom: 0 }}>
+            <div className="toolbar flush-bottom">
               <button
                 className="primary hero-cta"
                 onClick={() => void startSession()}
@@ -244,7 +244,7 @@ export function HomePage(): JSX.Element {
           </ul>
         )}
         {todoTotal > todo.length ? (
-          <p className="faint" style={{ marginBottom: 0 }}>
+          <p className="faint flush-bottom">
             <Link to="/review">…and {todoTotal - todo.length} more</Link>
           </p>
         ) : null}
@@ -302,7 +302,7 @@ export function HomePage(): JSX.Element {
               </li>
             ))}
           </ul>
-          <p className="faint" style={{ marginBottom: 0 }}>
+          <p className="faint flush-bottom">
             <Link to="/settings">
               open settings <Icon name="arrow-right" size={13} />
             </Link>

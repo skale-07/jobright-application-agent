@@ -59,6 +59,11 @@ export function App(): JSX.Element {
 
   return (
     <div className="shell">
+      {/* The first stop for a keyboard: skip the whole nav and land on
+          the page content. */}
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <aside className="sidebar">
         <div className="brand" title="Dispatch — every application accounted for">
           <span className="brand-mark">
@@ -66,7 +71,7 @@ export function App(): JSX.Element {
           </span>
           dispatch<span>·console</span>
         </div>
-        <nav>
+        <nav aria-label="Primary">
           {PRIMARY_NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -76,7 +81,9 @@ export function App(): JSX.Element {
             >
               {item.label}
               {item.to === "/review" && needsYou > 0 ? (
-                <span className="nav-count">{needsYou}</span>
+                <span className="nav-count" aria-label={`${needsYou} waiting`}>
+                  {needsYou}
+                </span>
               ) : null}
             </NavLink>
           ))}
@@ -103,7 +110,12 @@ export function App(): JSX.Element {
             : null}
         </nav>
         <div className="spacer" />
-        <button className="ghost" onClick={cycle} style={{ textAlign: "left" }}>
+        <button
+          className="ghost"
+          onClick={cycle}
+          aria-label={`Theme: ${theme}. Click to change.`}
+          style={{ textAlign: "left" }}
+        >
           theme: {theme}
         </button>
         <div className="foot">
@@ -113,7 +125,7 @@ export function App(): JSX.Element {
         </div>
       </aside>
 
-      <main className="main">
+      <main className="main" id="main">
         {arm?.armed ? (
           <Link
             to="/"

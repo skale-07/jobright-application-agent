@@ -1002,3 +1002,112 @@ a.evidence-frame:hover {
   font-size: var(--text-xs);
   color: var(--text-dim);
 }
+
+/* ── compact layout ─────────────────────────────────────────────── */
+
+/* DESIGN.md §5 has promised since the brand work that the sidebar
+   collapses to a top bar below ~960px. It never did — the app carried no
+   @media rule other than theme detection, so the documentation was
+   simply false. The number below is --breakpoint-compact; a media query
+   cannot read a custom property, and tests/unit/design-tokens.test.ts
+   asserts the literal here still matches the token. */
+@media (max-width: 960px) {
+  .shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: auto;
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+  .sidebar .brand {
+    padding: 0;
+  }
+  .sidebar nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+  }
+  .sidebar .spacer {
+    flex: 1;
+  }
+  /* The one thing that genuinely does not fit on a narrow top bar. The
+     nav itself stays complete — collapsing navigation into a hamburger
+     hides the product from the person using it. */
+  .sidebar .foot {
+    display: none;
+  }
+  .main {
+    padding: var(--space-4) var(--space-3) var(--space-7);
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── skip link ──────────────────────────────────────────────────── */
+
+/* Off-screen until focused, then the first thing a keyboard reaches. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: var(--space-2);
+  z-index: var(--z-modal);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+.skip-link:focus {
+  left: var(--space-3);
+}
+
+/* ── layout utilities ───────────────────────────────────────────── */
+
+/* DESIGN.md §6.2 forbids inline style objects; the console carried 110
+   of them, and roughly half were one of six spacing decisions repeated
+   over and over. Named here once, they also become the place the
+   spacing scale is actually enforced — an inline "0.72rem" cannot be. */
+.flush {
+  margin: 0;
+}
+.flush-top {
+  margin-top: 0;
+}
+.flush-bottom {
+  margin-bottom: 0;
+}
+.stack-sm {
+  margin-top: var(--space-3);
+}
+.stack {
+  margin-top: var(--space-4);
+}
+/* Numeric table cells: right-aligned so digits line up column-wise, and
+   tabular figures so they line up character-wise. */
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.stack-grid {
+  display: grid;
+  gap: var(--space-3);
+}

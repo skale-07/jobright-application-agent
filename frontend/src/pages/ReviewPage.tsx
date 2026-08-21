@@ -33,7 +33,7 @@ export function ReviewPage(): JSX.Element {
       {error ? <div className="banner danger">{error}</div> : null}
       {!loading && items.length === 0 ? (
         <div className="card">
-          <p className="faint" style={{ margin: 0 }}>
+          <p className="faint flush">
             Nothing waiting on you.
           </p>
         </div>

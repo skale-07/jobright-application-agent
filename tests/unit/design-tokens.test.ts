@@ -126,6 +126,9 @@ describe("design/tokens.json ↔ tokens.css contract (UNIT_CONFIRMED)", () => {
     expect(css.light["radius-sm"]).toBe(leaf(json, "radius", "sm").$value);
     expect(css.light["radius-lg"]).toBe(leaf(json, "radius", "lg").$value);
     expect(css.light["sidebar-w"]).toBe(leaf(json, "layout", "sidebar-width").$value);
+    expect(css.light["breakpoint-compact"]).toBe(
+      leaf(json, "layout", "breakpoint-compact").$value,
+    );
     for (const theme of ["light", "dark"] as const) {
       expect(css[theme]["shadow-sm"]).toBe(leaf(json, "shadow", theme, "sm").$value);
       expect(css[theme]["shadow"]).toBe(leaf(json, "shadow", theme, "default").$value);
@@ -161,6 +164,28 @@ describe("design/tokens.json ↔ tokens.css contract (UNIT_CONFIRMED)", () => {
     for (const name of Object.keys(layer).filter((k) => !k.startsWith("$"))) {
       expect(css.light[`z-${name}`], `--z-${name}`).toBe(layer[name]!.$value);
     }
+  });
+
+  it("the compact layout exists and fires at the documented breakpoint", () => {
+    // DESIGN.md §5 promised since the brand work that the sidebar
+    // collapses to a top bar below ~960px. Nothing implemented it, and
+    // nothing caught that the documentation was false. A media query
+    // cannot read a custom property, so the literal in base.css is
+    // checked against the token instead.
+    const base = fs.readFileSync(
+      path.join(process.cwd(), "frontend", "src", "styles", "base.css"),
+      "utf8",
+    );
+    const breakpoint = css.light["breakpoint-compact"]!;
+    expect(base).toMatch(
+      new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}\\)`),
+    );
+    // The rule has to actually restack the shell, not merely exist.
+    const block = base.match(
+      new RegExp(`@media\\s*\\(max-width:\\s*${breakpoint}\\)\\s*\\{([\\s\\S]*?)\\n\\}`),
+    )?.[1];
+    expect(block, "compact block body").toBeTruthy();
+    expect(block).toMatch(/\.shell\s*\{[^}]*flex-direction:\s*column/);
   });
 
   it("brand assets use palette colors only (favicon + every design/*.svg)", () => {

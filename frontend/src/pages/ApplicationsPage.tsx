@@ -177,7 +177,7 @@ export function ApplicationsPage(): JSX.Element {
       </div>
 
       {(data?.total ?? 0) > PAGE_SIZE ? (
-        <div className="toolbar" style={{ marginTop: "1rem" }}>
+        <div className="toolbar stack">
           <button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}>
             <Icon name="arrow-left" size={13} /> Previous
           </button>

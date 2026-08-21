@@ -141,12 +141,12 @@ export function ArmCard({
               </div>
             ) : null}
           </div>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="muted flush-top">
             Submits made by the automation worker during this window skip the
             per-app confirmation. Disarm — or a console restart — stops that
             immediately.
           </p>
-          <div className="toolbar" style={{ marginBottom: 0 }}>
+          <div className="toolbar flush-bottom">
             <button className="primary" onClick={() => void startWorker()} disabled={busy}>
               Start automation worker
             </button>
@@ -157,7 +157,7 @@ export function ArmCard({
         </>
       ) : (
         <>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="muted flush-top">
             While armed, the automation worker may click Submit without asking
             per application — bounded by the duration and caps below. Every
             other gate still runs; walls still park; mail is never sent.
@@ -192,7 +192,7 @@ export function ArmCard({
               />
             </label>
           </div>
-          <div className="toolbar" style={{ marginBottom: 0 }}>
+          <div className="toolbar flush-bottom">
             <button className="primary" onClick={() => void startSession()} disabled={busy}>
               Start L3 session
             </button>
@@ -200,7 +200,7 @@ export function ArmCard({
               Arm only
             </button>
           </div>
-          <p className="faint" style={{ marginBottom: 0 }}>
+          <p className="faint flush-bottom">
             Start L3 session = arm with these bounds, then launch the
             automation worker. Arm only leaves launching to you.
           </p>

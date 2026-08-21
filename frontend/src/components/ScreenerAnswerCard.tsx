@@ -64,7 +64,7 @@ export function ScreenerAnswerCard({
 
   if (saved !== null) {
     return (
-      <div className="banner ok" style={{ margin: 0 }}>
+      <div className="banner ok flush">
         Saved "{saved}" — this question now fills automatically on every form.
       </div>
     );

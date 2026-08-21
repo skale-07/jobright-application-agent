@@ -85,7 +85,7 @@ export function ApplicationDetailPage(): JSX.Element {
               debugging surface. */}
           <div className="sub">{APP_STATUS[status].hint}</div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+        <div className="row">
           <StatusChip status={status} />
           <button className="ghost" onClick={() => void toggleAutomation()} disabled={toggleBusy}>
             {excluded ? "include in automation" : "exclude from automation"}
@@ -163,7 +163,7 @@ export function ApplicationDetailPage(): JSX.Element {
             <dd className="mono faint">{id}</dd>
           </dl>
           {state === "READY_TO_SUBMIT" ? (
-            <div className="banner ok" style={{ marginTop: "1rem" }}>
+            <div className="banner ok stack">
               Ready to submit. Launch a submit run from{" "}
               <Link to="/runs">Runs</Link>, or from a terminal:
               <pre className="json mono" style={{ marginTop: "0.5rem" }}>
@@ -198,7 +198,7 @@ export function ApplicationDetailPage(): JSX.Element {
             </table>
           )}
           {data.submissions.length > 0 ? (
-            <table style={{ marginTop: "0.75rem" }}>
+            <table className="stack-sm">
               <thead>
                 <tr>
                   <th>Attempt</th>

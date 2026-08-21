@@ -65,7 +65,7 @@ export function EnqueuePage(): JSX.Element {
             placeholder={"https://jobright.ai/jobs/info/…\n…"}
           />
         </label>
-        <label className="field" style={{ marginTop: "0.75rem" }}>
+        <label className="field stack-sm">
           Employer application URL (optional — single reference only)
           <input
             value={employerUrl}
@@ -74,7 +74,7 @@ export function EnqueuePage(): JSX.Element {
             disabled={list.length > 1}
           />
         </label>
-        <div className="toolbar" style={{ marginTop: "1rem", marginBottom: 0 }}>
+        <div className="toolbar stack flush-bottom">
           <button
             className="primary"
             onClick={() => void enqueue()}
@@ -84,7 +84,7 @@ export function EnqueuePage(): JSX.Element {
           </button>
         </div>
         {report ? (
-          <div style={{ marginTop: "1rem" }}>
+          <div className="stack">
             <JsonView value={report} label="enqueue report" open />
           </div>
         ) : null}
@@ -92,7 +92,7 @@ export function EnqueuePage(): JSX.Element {
 
       <div className="card">
         <h2>Retry failed applications</h2>
-        <p className="muted" style={{ marginTop: 0 }}>
+        <p className="muted flush-top">
           Requeues everything in FAILED_RETRYABLE that is under the attempt cap,
           and finalizes the rest.
         </p>
@@ -100,7 +100,7 @@ export function EnqueuePage(): JSX.Element {
           Run retry sweep
         </button>
         {retried ? (
-          <div style={{ marginTop: "1rem" }}>
+          <div className="stack">
             <JsonView value={retried} label="retry result" open />
           </div>
         ) : null}

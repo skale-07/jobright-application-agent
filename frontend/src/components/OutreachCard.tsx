@@ -51,7 +51,7 @@ export function OutreachCard(props: {
   return (
     <div className="card">
       <h2>Outreach</h2>
-      <p className="faint" style={{ marginTop: 0 }}>
+      <p className="faint flush-top">
         Find people at the company, write them an email, save it as a Gmail
         draft. Nothing ever sends — you review drafts in Gmail.
       </p>
@@ -80,7 +80,7 @@ export function OutreachCard(props: {
       </div>
 
       {contacts.length > 0 ? (
-        <div className="table-wrap" style={{ marginTop: "0.75rem" }}>
+        <div className="table-wrap stack-sm">
           <table>
             <thead>
               <tr>
@@ -149,9 +149,9 @@ export function OutreachCard(props: {
       ) : null}
 
       {gmailDrafts.length + outlookDrafts.length > 0 ? (
-        <div style={{ marginTop: "0.75rem" }}>
+        <div className="stack-sm">
           <h3 style={{ margin: "0 0 0.25rem" }}>Drafts</h3>
-          <ul style={{ margin: 0 }}>
+          <ul className="flush">
             {gmailDrafts.map((d) => (
               <li key={`g-${String(d["id"])}`}>
                 Gmail → <span className="mono">{String(d["recipient_email"])}</span>{" "}
