@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiPost } from "../api/client";
 import type { ApplicationDetail } from "../api/types";
+import { EmptyState } from "./EmptyState";
 
 /**
  * X6: the whole outreach pipeline as three plain buttons — no CLI. Each
@@ -99,7 +100,11 @@ export function OutreachCard(props: {
           </table>
         </div>
       ) : (
-        <p className="faint">No contacts yet.</p>
+        <EmptyState
+          icon="mail"
+          title="No contacts yet"
+          body="Step 1 finds people at this company who can refer you."
+        />
       )}
 
       {emails.length > 0 ? (

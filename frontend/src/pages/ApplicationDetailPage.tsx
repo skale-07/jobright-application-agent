@@ -8,6 +8,8 @@ import { Timeline } from "../components/Timeline";
 import { JsonView } from "../components/JsonView";
 import { CHIP_CLASS, deriveChip } from "../lib/appStatus";
 import { OutreachCard } from "../components/OutreachCard";
+import { SkeletonCard } from "../components/Skeleton";
+import { EmptyState } from "../components/EmptyState";
 
 function str(record: Record<string, unknown>, key: string): string | null {
   const v = record[key];
@@ -24,7 +26,13 @@ export function ApplicationDetailPage(): JSX.Element {
   const [toggleBusy, setToggleBusy] = useState(false);
   const [toggleError, setToggleError] = useState<string | null>(null);
 
-  if (loading && !data) return <p className="faint">Loading…</p>;
+  if (loading && !data)
+    return (
+      <>
+        <SkeletonCard lines={5} />
+        <SkeletonCard lines={3} />
+      </>
+    );
   if (error) return <div className="banner danger">{error}</div>;
   if (!data) return <p className="faint">Not found.</p>;
 
@@ -235,7 +243,11 @@ export function ApplicationDetailPage(): JSX.Element {
       <div className="card">
         <h2>Fill runs</h2>
         {data.fill_runs.length === 0 ? (
-          <p className="faint">No fill runs recorded.</p>
+          <EmptyState
+            icon="file"
+            title="No fill runs yet"
+            body="Each attempt to fill this form will be recorded here with what verified and what did not."
+          />
         ) : (
           <table>
             <thead>

@@ -1,9 +1,16 @@
 import type { TimelineEntry } from "../api/types";
 import { StateBadge } from "./StateBadge";
+import { EmptyState } from "./EmptyState";
 
 export function Timeline({ entries }: { entries: TimelineEntry[] }): JSX.Element {
   if (entries.length === 0) {
-    return <p className="faint">No state transitions recorded yet.</p>;
+    return (
+      <EmptyState
+        icon="clock"
+        title="No steps yet"
+        body="Every state change this application makes will be recorded here, with its reason."
+      />
+    );
   }
   return (
     <ul className="timeline">

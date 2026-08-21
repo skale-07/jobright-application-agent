@@ -3,6 +3,7 @@ import { apiGet, apiPost, apiUpload, getToken, setToken } from "../api/client";
 import type { FlagsView, Summary } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
+import { Skeleton } from "../components/Skeleton";
 
 type ExtensionStatus = {
   verdict: "present" | "unknown";
@@ -72,7 +73,7 @@ function ExtensionCard(): JSX.Element {
         Dispatch only completes what it missed.
       </p>
       {!s ? (
-        <p className="faint">Checking…</p>
+        <Skeleton width="14rem" />
       ) : (
         <>
           {s.ready ? (
@@ -193,7 +194,7 @@ function CapabilitiesCard({
           </div>
         </>
       ) : (
-        <p className="faint">Loading…</p>
+        <Skeleton width="12rem" />
       )}
       {summary ? (
         <p className="faint mono" style={{ marginBottom: 0 }}>

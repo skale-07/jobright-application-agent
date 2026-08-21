@@ -498,7 +498,7 @@ details.json-block > summary {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  z-index: 50;
+  z-index: var(--z-modal);
 }
 .modal {
   background: var(--bg-raised);
@@ -695,4 +695,147 @@ details.json-block > summary {
 }
 .sidebar nav a.nav-advanced.active {
   color: var(--text);
+}
+
+/* ── motion, focus, and designed states ─────────────────────────── */
+
+/* Interactive surfaces animate their OWN state change and nothing else:
+   hover, focus, press. Nothing here animates on load, and nothing loops
+   except the loading pulse, which is a status report. */
+a,
+button,
+.btn,
+.badge,
+input,
+select,
+textarea,
+.sidebar nav a,
+tbody tr.clickable,
+.todo-list li a,
+.todo-inline-toggle,
+.card {
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+/* Press is physical: the control moves under the cursor. */
+button:active:not(:disabled),
+.btn:active,
+.todo-list li a:active,
+.todo-inline-toggle:active {
+  transform: translateY(1px);
+}
+
+/* One focus ring for the whole app. DESIGN.md §5 has required this since
+   the brand work; until now only inputs had one, so a keyboard operator
+   could not see where they were on any button, link, or nav item. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.sidebar nav a:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Content that has just arrived announces itself once, briefly. */
+@keyframes dispatch-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.arrive {
+  animation: dispatch-arrive var(--duration-base) var(--ease-out) both;
+}
+
+/* ── loading skeletons ──────────────────────────────────────────── */
+
+@keyframes dispatch-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+.skeleton {
+  display: block;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: dispatch-pulse 1.5s ease-in-out infinite;
+}
+.skeleton-title {
+  margin-bottom: var(--space-4);
+}
+.skeleton-lines {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Screen-reader-only: skeletons are aria-hidden, so the live region needs
+   real text to announce. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── empty states ───────────────────────────────────────────────── */
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  /* Deliberately the most generous padding in the system: an empty state
+     is mostly space, and the space is the message. */
+  padding: var(--space-7) var(--space-5);
+  text-align: center;
+}
+.empty-state h3 {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.empty-state p {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.empty-action {
+  margin-top: var(--space-2);
+}
+/* "Nothing needs you" is a success, and green is reserved for verified
+   facts — an empty queue is one. */
+.empty-good > svg {
+  color: var(--ok);
+}
+.empty-waiting > svg {
+  color: var(--text-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

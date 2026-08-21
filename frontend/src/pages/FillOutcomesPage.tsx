@@ -2,6 +2,7 @@ import { apiGet } from "../api/client";
 import type { FillOutcomesView } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { JsonView } from "../components/JsonView";
+import { SkeletonTable } from "../components/Skeleton";
 
 function num(row: Record<string, unknown>, key: string): number {
   const v = row[key];
@@ -14,7 +15,7 @@ export function FillOutcomesPage(): JSX.Element {
     10000,
   );
 
-  if (loading && !data) return <p className="faint">Loading…</p>;
+  if (loading && !data) return <SkeletonTable rows={6} cols={8} />;
   if (error) return <div className="banner danger">{error}</div>;
   if (!data) return <p className="faint">No data.</p>;
 

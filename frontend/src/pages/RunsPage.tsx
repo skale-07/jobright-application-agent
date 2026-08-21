@@ -5,6 +5,7 @@ import type { FlagsView, RunRecord } from "../api/types";
 import { usePoll } from "../hooks/usePoll";
 import { StateBadge } from "../components/StateBadge";
 import { FlagPicker } from "../components/FlagPicker";
+import { Skeleton } from "../components/Skeleton";
 
 type Kind =
   | "pipeline"
@@ -187,7 +188,7 @@ export function RunsPage(): JSX.Element {
                 onToggleLive={setLiveMode}
               />
             ) : (
-              <p className="faint">Loading flags…</p>
+              <Skeleton width="16rem" />
             )}
           </div>
         </div>
